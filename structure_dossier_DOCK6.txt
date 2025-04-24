@@ -1,0 +1,77 @@
+
+Structure du projet : DOCK6_COMPLETE_PIPELINE
+---------------------------------------------
+
+📁 data/
+│
+├── 📁 input/
+│   ├── genotype_data.bed
+│   ├── genotype_data.bim
+│   ├── genotype_data.fam
+│   ├── genotype_data.gamma_input.txt
+│   ├── genotype_data.map
+│   ├── genotype_data.ped
+│   └── genotype_data.raw
+│
+├── 📁 output/
+│   ├── 📁 adegenet_results/
+│   ├── 📁 gamma_results/
+│   ├── 📁 ibd_results/
+│   └── 📁 roh_results/
+
+📁 scripts/
+│   ├── adegenet_analysis.R
+│   └── commands_pipeline_dock6.sh
+
+📄 pipeline_dock6.py
+📄 README_DOCK6_PIPELINE.md
+
+Description :
+-------------
+- Le dossier `data/input/` contient les fichiers nécessaires à l'exécution du pipeline (génotypage, carte, format PED/RAW).
+- Le dossier `data/output/` est organisé par type d’analyse :
+  - `roh_results/` : résultats PLINK sur les segments ROH
+  - `ibd_results/` : résultats KING sur la parenté
+  - `adegenet_results/` : graphiques de structure populationnelle (DAPC, arbres)
+  - `gamma_results/` : fichiers pour datation de la mutation
+- Le dossier `scripts/` contient les scripts shell ou R appelés dans le pipeline.
+- `pipeline_dock6.py` est le script principal d’analyse.
+- `README_DOCK6_PIPELINE.md` fournit la documentation d’utilisation.
+
+structure modulaire
+
+Effet_fondateur/
+├── scripts/                      # Tous les modules fonctionnels du pipeline
+│   ├── __init__.py
+│   ├── preprocessing.py         # Préparation, filtrage, .raw/.bed, groupes cas-témoins
+│   ├── roh.py                   # Analyse ROH (PLINK)
+│   ├── ibd.py                   # Analyse IBD (KING + PLINK)
+│   ├── ld.py                    # Calcul de LD (r² + D, PLINK)
+│   ├── gamma.py                 # Conversion .raw vers Gamma, exécution + graphique
+│   ├── adegenet.py              # Génération script R adegenet + arbre
+│   ├── reporting.py             # Rapport PDF + HTML avec résumé
+│   └── utils.py                 # Fonctions utilitaires (log, exécution shell, etc.)
+│
+├── tests/                       # Tous les tests unitaires
+│   ├── test_preprocessing.py
+│   ├── test_roh.py
+│   ├── test_ibd.py
+│   ├── test_ld.py
+│   ├── test_gamma.py
+│   ├── test_adegenet.py
+│   └── test_reporting.py        # à venir
+│
+├── simulate_reporting_test.py   # Générateur de tests visuels (figures + résumé)
+├── run_pipeline.py              # (à venir) Script principal pour exécuter tout le pipeline
+├── run_tests.sh                 # (à venir) Lance tous les tests unitaires
+│
+├── output/                      # Dossier de résultats (figures + .csv/.txt)
+│   ├── roh/
+│   ├── ibd/
+│   ├── ld/
+│   ├── gamma/
+│   ├── adegenet/
+│   ├── summary.csv              # Résumé des modules
+│   ├── rapport_final.pdf
+│   └── rapport_final.html
+

@@ -1,0 +1,41 @@
+# Fichiers temporaires Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Environnements virtuels
+env/
+venv/
+
+# Logs, caches, et fichiers système
+*.log
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db
+
+# Fichiers temporaires d’éditeur
+*.swp
+*.swo
+*.~ 
+*.orig
+
+# Dossiers de sortie volumineux
+data/output/
+data/input/
+test/
+
+# Résultats finaux à ne pas traquer
+rapport_final.pdf
+rapport_final.html
+
+# Outils externes ou binaires
+King/
+
+# Checkpoints Jupyter
+.ipynb_checkpoints/
+
+# Fichiers de configuration spécifiques
+*.Rhistory
+*.RData
+*.Rproj

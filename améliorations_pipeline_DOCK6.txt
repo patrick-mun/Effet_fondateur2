@@ -1,0 +1,39 @@
+
+Améliorations proposées pour le pipeline DOCK6
+----------------------------------------------
+
+1. 🔧 Refactorisation en modules Python
+   - Séparer les fonctions en plusieurs fichiers : roh.py, ibd.py, gamma.py, reporting.py, etc.
+   - Facilite la maintenance et les tests unitaires
+
+2. 🐳 Dockerisation complète
+   - Créer une image Docker contenant Python, R (package adgenet et ses dependence, ), PLINK, KING, Gamma et les scripts
+   - Reproductibilité assurée sur toute machine
+
+3. 🌐 Portage vers une interface web (Streamlit)
+   - Plus moderne et multiplateforme que Tkinter
+   - Permet un accès distant (navigateur web)
+   - Simplifie l'intégration dans Docker
+
+4. 📦 Option d’export automatique
+   - Ajouter une commande `--export-zip` pour créer une archive finale des résultats
+   - Permet de générer un rapport .zip facilement partageable
+
+5. 📁 Meilleure organisation des dossiers
+   - Ajouter un dossier `logs/` pour les fichiers .log
+   - Séparer les graphiques bruts, les rapports PDF, et les tables
+
+6. 📄 Génération de documentation automatique
+   - Générer un fichier Markdown ou PDF avec :
+     - Structure du projet
+     - Explication des étapes
+     - Exemple d’entrée / sortie
+
+7. 📑 Validation et pré-traitement
+   - Vérification du format des fichiers `.raw`, `.map`, `.ped`
+   - Signaler les colonnes manquantes ou SNP invalides
+
+8. 🧪 Ajout de tests unitaires (optionnel)
+   - Vérifier que chaque fonction retourne les résultats attendus
+   - Peut être intégré à un futur GitHub CI/CD (fait)
+
