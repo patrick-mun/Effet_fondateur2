@@ -11,6 +11,7 @@ from scripts.gamma_age_estimation import estimate_mutation_age
 from scripts.adegenet import generate_adegenet_script, run_adegenet_script
 from scripts.reporting import generate_full_report
 from scripts.utils import safe_mkdir
+from scripts.roh_visuals import load_roh_segments, plot_roh_for_individuals
 
 logging.basicConfig(level=logging.INFO)
 
@@ -24,6 +25,7 @@ cas_file = os.path.join(data_dir, "cas.txt")
 temoins_file = os.path.join(data_dir, "temoins.txt")
 group_file = os.path.join(data_dir, "groupes.txt")
 
+
 def main():
     safe_mkdir(output_dir)
 
@@ -32,6 +34,16 @@ def main():
 
     # ROH
     run_roh(input_prefix, f"{output_dir}/roh")
+
+    # Visualisation ROH pour les atteints
+    roh_df = load_roh_segments(os.path.join(output_dir, "roh", "roh.hom"))
+    if roh_df is not None:
+        plot_roh_for_individuals(
+            roh_df,
+            os.path.join(output_dir, "roh", "figures"),
+            group_file,
+            only_status="ATTEINT"
+        )
 
     # IBD
     run_ibd_king(f"{output_dir}/geno/filtered_data", f"{output_dir}/ibd")
@@ -77,6 +89,6 @@ def main():
     # Rapport
     generate_full_report(output_dir, "rapport_final.pdf", "rapport_final.html")
 
+
 if __name__ == "__main__":
      main()
-
