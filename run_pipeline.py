@@ -12,6 +12,7 @@ from scripts.adegenet import generate_adegenet_script, run_adegenet_script
 from scripts.reporting import generate_full_report
 from scripts.utils import safe_mkdir
 from scripts.roh_visuals import load_roh_segments, plot_roh_for_individuals
+from scripts.roh_overlap import plot_roh_overlap
 
 logging.basicConfig(level=logging.INFO)
 
@@ -24,7 +25,6 @@ map_path = f"{output_dir}/geno/filtered_data.map"
 cas_file = os.path.join(data_dir, "cas.txt")
 temoins_file = os.path.join(data_dir, "temoins.txt")
 group_file = os.path.join(data_dir, "groupes.txt")
-
 
 def main():
     safe_mkdir(output_dir)
@@ -40,9 +40,21 @@ def main():
     if roh_df is not None:
         plot_roh_for_individuals(
             roh_df,
-            os.path.join(output_dir, "roh", "figures"),
+            os.path.join(output_dir, "roh", "figures", "atteints"),
             group_file,
             only_status="ATTEINT"
+        )
+        plot_roh_for_individuals(
+            roh_df,
+            os.path.join(output_dir, "roh", "figures", "temoins"),
+            group_file,
+            only_status="TEMOIN"
+        )
+        plot_roh_overlap(
+            roh_df,
+            os.path.join(output_dir, "roh", "figures", "roh_overlap.png"),
+            group_file,
+            target_group="ATTEINT"
         )
 
     # IBD
