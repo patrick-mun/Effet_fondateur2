@@ -4,7 +4,7 @@ import logging
 import pandas as pd
 from scripts.preprocessing import run_preprocessing
 from scripts.roh import run_roh
-from scripts.ibd import run_ibd_king, run_ibd_plink
+from scripts.ibd import run_ibd_king, run_ibd_plink, summarize_ibd_king, plot_ibd_network
 from scripts.ld import run_ld
 from scripts.gamma import prepare_gamma_input
 from scripts.gamma_age_estimation import estimate_mutation_age
@@ -35,7 +35,7 @@ def main():
     # ROH
     run_roh(input_prefix, f"{output_dir}/roh")
 
-    # Visualisation ROH pour les atteints
+    # Visualisation ROH pour les atteints et temoins
     roh_df = load_roh_segments(os.path.join(output_dir, "roh", "roh.hom"))
     if roh_df is not None:
         plot_roh_for_individuals(
@@ -59,6 +59,13 @@ def main():
 
     # IBD
     run_ibd_king(f"{output_dir}/geno/filtered_data", f"{output_dir}/ibd")
+    try:
+        summarize_ibd_king(f"{output_dir}/ibd")
+        plot_ibd_network(f"{output_dir}/ibd", kinship_threshold=0.05)
+        logging.info("[IBD-Resume] Résumé et graphe KING terminés avec succès.")
+    except Exception as e:
+        logging.error(f"[IBD-Resume] Une erreur est survenue durant la génération du résumé ou du graphe : {e}")
+
     run_ibd_plink(f"{output_dir}/geno/filtered_data", f"{output_dir}/ibd")
 
     # LD (corrigé pour utiliser les données filtrées)
@@ -101,6 +108,5 @@ def main():
     # Rapport
     generate_full_report(output_dir, "rapport_final.pdf", "rapport_final.html")
 
-
 if __name__ == "__main__":
-     main()
+    main()
