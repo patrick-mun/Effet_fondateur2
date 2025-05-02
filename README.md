@@ -1,100 +1,129 @@
+# 🧬 DOCK6 Pipeline – Analyse de l’effet fondateur
 
-# Pipeline – Analyse de l’effet fondateur
+## 📌 Objectif du pipeline
 
-Ce pipeline exécute une analyse complète pour démontrer un **effet fondateur** autour d'une mutation génétique, en utilisant des données SNP issues de puces ACPA.
+Le pipeline **DOCK6** automatise l’analyse génétique d’un **effet fondateur** à partir de données SNP issues de puces de génotypage. Il combine des outils éprouvés (PLINK, KING, Gamma, R/Adegenet) pour :
 
-## 🧪 Objectif
-
-- Identifier les segments d'autozygotie (ROH)
-- Détecter les liens familiaux cachés (IBD)
-- Analyser la structure populationnelle via les SNPs
-- Dater l'apparition de la mutation via déséquilibre de liaison (Gamma)
-- Générer des graphiques et un rapport PDF
-
----
-
-## ⚙️ Dépendances
-
-- Python 3.x
-- Modules Python : `pandas`, `matplotlib`, `fpdf`
-- Logiciels : `PLINK`, `KING`, `Gamma`, `R` (avec les packages `adegenet`, `poppr`, `ape`, `ggtree`)
+- Détecter les segments d’autozygotie (ROH)
+- Identifier les liens familiaux cachés (IBD)
+- Représenter la structure populationnelle
+- Estimer la date d’apparition d’une mutation
+- Générer graphiques et rapports
 
 ---
 
-## 📁 Structure des fichiers attendus
+## 📦 Dépendances et environnement
 
-Placer vos fichiers d'entrée dans `data/input/` :
+### Langages et outils requis
+- Python ≥ 3.8
+- R (avec packages : `adegenet`, `poppr`, `ape`)
+- Binaries : `PLINK`, `KING`, `Gamma`
 
-| Fichier                   | Description                             | Comment l’obtenir                                |
-|--------------------------|-----------------------------------------|---------------------------------------------------|
-| `genotype_data.ped`      | Données SNP au format texte             | Export depuis Affymetrix ou conversion VCF → PED  |
-| `genotype_data.map`      | Carte des SNPs                          | Généré avec `.ped` via PLINK                      |
-| `genotype_data.bed`      | Fichier binaire compressé               | `plink --make-bed`                                |
-| `genotype_data.bim`      | Informations SNPs en binaire            | Généré avec `.bed`                                |
-| `genotype_data.fam`      | Métadonnées individus                   | Généré avec `.bed`                                |
-| `genotype_data.raw`      | Tableau de génotypes 0/1/2              | `plink --recodeA`                                 |
-| `genotype_data.map`      | Carte génétique (positions en cM)       | Nécessaire pour Gamma                             |
+### Modules Python
+```bash
+pip install pandas matplotlib fpdf
+```
 
 ---
 
-## 🚀 Lancer le pipeline
+## 📁 Structure du projet
 
-### Exécution complète
+```
+DOCK6_PROJECT/
+├── data/
+│   ├── input/         ← Fichiers PED, MAP, RAW, BED, etc.
+│   └── output/        ← Résultats des différentes étapes
+├── scripts/           ← Scripts R et commandes shell
+├── pipeline_dock6.py  ← Script principal Python
+├── dock6_app.py       ← Interface Streamlit (optionnelle)
+└── README.md          ← Ce document
+```
+
+---
+
+## 🔄 Étapes du pipeline
+
+| Étape        | Outil       | Description principale                             |
+|--------------|-------------|----------------------------------------------------|
+| ROH          | PLINK       | Détection des segments d’autozygotie               |
+| IBD          | KING        | Identification des relations de parenté            |
+| Structure    | Adegenet    | Analyse des clusters et arbres phylogénétiques     |
+| Gamma        | Gamma       | Estimation de la date d’apparition de la mutation  |
+
+---
+
+## 🚀 Exécution du pipeline
+
+### Lancer toutes les étapes automatiquement
 ```bash
 python pipeline_dock6.py
 ```
 
-### Options CLI
-
-| Option             | Description                                                             |
-|--------------------|-------------------------------------------------------------------------|
-| `--version`        | Affiche la version du pipeline                                          |
-| `--step`           | Exécute une étape spécifique (`roh`, `ibd`, `adegenet`, `gamma`, `all`) |
-| `--debug`          | Affiche les messages de débogage détaillés                              |
-| `--resume`         | Réservé pour relancer un run interrompu (à venir)                       |
-
-Exemples :
+### Lancer une étape spécifique
 ```bash
 python pipeline_dock6.py --step roh
 python pipeline_dock6.py --step gamma --debug
 ```
 
----
-
-## 📦 Résultats générés
-
-| Dossier              | Contenu                                           |
-|----------------------|---------------------------------------------------|
-| `output/roh_results` | Segments ROH détectés par PLINK                   |
-| `output/ibd_results` | Liens familiaux détectés par KING                 |
-| `output/adegenet_results` | Arbres phylogénétiques, matrices de distance |
-| `output/gamma_results` | `gamma_input.txt`, graphique PNG, rapport PDF   |
+Options disponibles :
+- `--step` : `roh`, `ibd`, `adegenet`, `gamma`, `all`
+- `--debug` : active le mode verbeux (logs détaillés)
+- `--resume` : option future pour relancer un run interrompu
 
 ---
 
-## 📄 Rapport final
+## 📤 Résultats générés
 
-Un fichier PDF est généré automatiquement avec :
-- Un graphique des fréquences alléliques des SNPs informatifs
-- Un tableau statistique : moyenne, min, max, nombre total de SNPs
-
----
-
-## 📌 Bonnes pratiques
-
-- Vérifiez la cohérence entre `.raw` et `.map`
-- Supprimez les SNPs non informatifs (invariants)
-- Travaillez sur un sous-ensemble de données avant d'appliquer au jeu complet
+| Dossier              | Contenu                                               |
+|----------------------|-------------------------------------------------------|
+| `roh_results/`       | Fichiers `.hom` (segments homozygotes PLINK)          |
+| `ibd_results/`       | Table `.kin0` (parenté KING)                          |
+| `adegenet_results/`  | Arbres, graphiques DAPC, matrices de distance         |
+| `gamma_results/`     | Fichier `.txt`, graphique de fréquence, rapport PDF   |
 
 ---
 
-## 🧠 Auteur
+## 🧾 Rapport final
 
-Patrick MUNIER  
-https://github.com/patrick-mun/Effet_fondateur2/tree/main
-Laboratoire de génétique, Projet DOCK6  
-Version : 1.0 ALPHA
-date : 03/04/2025
+Le pipeline peut générer un **rapport PDF** intégrant :
+- Le graphique Gamma (`frequence_allelique.png`)
+- Les statistiques de fréquence (moyenne, min, max)
+- Les arbres phylogénétiques (via Adegenet)
 
 ---
+
+## 📊 Interface Web (optionnelle)
+
+L’interface Streamlit (`dock6_app.py`) permet de :
+- Uploader les fichiers `.raw` et `.map`
+- Choisir une étape à exécuter
+- Visualiser les résultats par onglet
+- Télécharger le rapport final
+
+Lancement local :
+```bash
+streamlit run dock6_app.py
+```
+
+---
+
+## ✅ Bonnes pratiques
+
+- Vérifier la correspondance entre `.raw` et `.map`
+- Supprimer les SNPs non informatifs avec PLINK (`--maf`, `--geno`)
+- Tester d’abord le pipeline sur un sous-échantillon réduit
+
+---
+
+## 🧠 Auteurs et informations
+
+**Auteur principal** : Patrick MUNIER  
+Laboratoire de génétique – Projet DOCK6  
+Version : 1.0 ALPHA  
+Date : 03/04/2025
+
+---
+
+📚 **Besoin de plus de détails sur chaque étape ?** Consultez les modules dédiés pour une explication complète des outils utilisés dans le pipeline :
+👉 [PLINK](./module/Module_PLINK.md) | [KING](./module/Module_king.md) | [Gamma](./module/Module_gamma.md) | [R/Adegenet](./module/Module_adgenet.md)
 

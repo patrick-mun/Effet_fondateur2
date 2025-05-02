@@ -82,7 +82,8 @@ def main():
     df_gamma = pd.read_csv(gamma_txt, sep="\t")
     lengths = df_gamma["Position_cM"].values
     median_freq = df_gamma["Freq"].median()
-    result = estimate_mutation_age(lengths[:len(lengths)//2], lengths[len(lengths)//2:], median_freq)
+    nb_individus = pd.read_csv(raw_path, sep=r'\s+').shape[0]  # Correction precise du nombre d'individus
+    result = estimate_mutation_age(lengths[:len(lengths)//2], lengths[len(lengths)//2:], median_freq, n=nb_individus)
 
     with open(os.path.join(gamma_dir, "estimation_directe.txt"), "w") as f:
         if result is None or "error" in result:
