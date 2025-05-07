@@ -1,8 +1,8 @@
-# 🧬 Wiki DOCK6 – Module : R / Adegenet
+# 🧬 Wiki EFFET FONDATEUR – Module : R / Adegenet
 
 ## 📌 Contexte d'utilisation
 
-Ce module décrit **Adegenet** et les outils R associés (poppr, ape), utilisés dans le pipeline DOCK6 pour :
+Ce module décrit **Adegenet** et les outils R associés (poppr, ape), utilisés dans le pipeline EFFET FONDATEUR pour :
 
 - Réaliser une analyse de structure populationnelle (clustering DAPC)
 - Générer un arbre phylogénétique basé sur la distance génétique
@@ -49,11 +49,11 @@ Adegenet accepte :
 - `.raw` : format PLINK recodé (0/1/2)
 - `.gen` : format Genepop (optionnel)
 
-Fichier requis pour DOCK6 : `genotype_data.raw`
+Fichier requis : `genotype_data.raw`
 
 ---
 
-## 🔄 Fichiers utilisés dans le pipeline DOCK6
+## 🔄 Fichiers utilisés dans le pipeline EFFET FONDATEUR
 
 ### 📥 Fichier d’entrée :
 ```
