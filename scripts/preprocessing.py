@@ -40,6 +40,43 @@ def validate_raw_format(raw_path):
         logging.warning("Moins de 10 SNPs détectés dans le fichier .raw (attention au filtrage)")
     logging.info(f"✔ Format .raw valide ({len(snps)} SNPs détectés)")
 
+def clean_ped_pheno(path):
+    with open(path, "r") as infile:
+        lines = infile.readlines()
+
+    cleaned_lines = []
+    for line in lines:
+        parts = line.strip().split()
+        if len(parts) >= 6:
+            if parts[5] not in ["1", "2", "0"]:
+                parts[5] = "0"
+            cleaned_lines.append("\t".join(parts) + "\n")
+
+    with open(path, "w") as outfile:
+        outfile.writelines(cleaned_lines)
+    logging.info("Colonne PHENOTYPE nettoyée (1/2/0 uniquement).")
+
+def create_ped_porteurs(path_in, path_out):
+    with open(path_in, "r") as f:
+        lines = f.readlines()
+
+    modified = []
+    for line in lines:
+        parts = line.strip().split()
+        if len(parts) >= 6:
+            pheno = parts[5]
+            if pheno == "1":
+                parts[5] = "1"
+            elif pheno == "3":
+                parts[5] = "2"
+            else:
+                parts[5] = "0"
+            modified.append(" ".join(parts) + "\n")
+
+    with open(path_out, "w") as f:
+        f.writelines(modified)
+    logging.info(f"✅ Fichier .ped porteurs généré à : {path_out}")
+
 def check_outputs(file_paths, output_csv):
     results = []
     for f in file_paths:
@@ -56,6 +93,10 @@ def check_outputs(file_paths, output_csv):
         writer.writerows(results)
 
 def generate_qc_plots(output_prefix):
+    """
+    Génère les graphiques de qualité (distribution des MAF et des p-values HWE)
+    et produit un résumé statistique des résultats ALL(QT) dans un fichier CSV.
+    """
     freq_path = f"{output_prefix}/allele_frequencies.frq"
     if os.path.exists(freq_path):
         df = pd.read_csv(freq_path, sep=r'\s+')
@@ -87,24 +128,43 @@ def generate_qc_plots(output_prefix):
             plt.close()
             logging.info("Graphique HWE sauvegardé.")
 
+            # Résumé statistique des p-values HWE (ALL/QT)
+            summary = pd.DataFrame({
+                "Statistique": [
+                    "Nombre total de SNPs testés (ALL)",
+                    "SNPs avec p < 0.05",
+                    "SNPs avec p < 0.001",
+                    "SNPs avec p >= 0.05",
+                    "p-value médiane",
+                    "p-value minimale",
+                    "p-value maximale"
+                ],
+                "Valeur": [
+                    len(df_p),
+                    (df_p["P"] < 0.05).sum(),
+                    (df_p["P"] < 0.001).sum(),
+                    (df_p["P"] >= 0.05).sum(),
+                    df_p["P"].median(),
+                    df_p["P"].min(),
+                    df_p["P"].max()
+                ]
+            })
+            summary.to_csv(f"{output_prefix}/hwe_all_summary.csv", index=False)
+            logging.info("Résumé statistique HWE (ALL) sauvegardé dans hwe_all_summary.csv")
+          
+         
+
+
 def run_preprocessing(input_prefix: str, output_prefix: str, cas_file: str, temoins_file: str):
     os.makedirs(output_prefix, exist_ok=True)
     check_input_files_exist(input_prefix)
 
-    filtrage_cmd = (
-        f"plink --file {input_prefix} --maf 0.01 --geno 0.05 --mind 0.1 --hwe 1e-6 "
-        f"--recode A --out {output_prefix}/filtered_data"
-    )
-    export_ped_cmd = (
-        f"plink --file {input_prefix} --maf 0.01 --geno 0.05 --mind 0.1 --hwe 1e-6 "
-        f"--recode --out {output_prefix}/filtered_data"
-    )
-    binarisation_cmd = (
-        f"plink --file {input_prefix} --maf 0.01 --geno 0.05 --mind 0.1 --hwe 1e-6 "
-        f"--make-bed --out {output_prefix}/filtered_data"
-    )
+    filtrage_cmd = f"plink --file {input_prefix} --maf 0.01 --geno 0.05 --mind 0.1 --hwe 1e-6 --recode A --out {output_prefix}/filtered_data"
+    export_ped_cmd = f"plink --file {input_prefix} --maf 0.01 --geno 0.05 --mind 0.1 --hwe 1e-6 --recode --out {output_prefix}/filtered_data"
+    binarisation_cmd = f"plink --file {input_prefix} --maf 0.01 --geno 0.05 --mind 0.1 --hwe 1e-6 --make-bed --out {output_prefix}/filtered_data"
     freq_cmd = f"plink --file {output_prefix}/filtered_data --freq --out {output_prefix}/allele_frequencies"
-    hwe_cmd = f"plink --file {output_prefix}/filtered_data --hardy --out {output_prefix}/hwe"
+    hwe_cmd = f"plink --file {output_prefix}/filtered_data --hardy midp --out {output_prefix}/hwe"
+
     separation_cmds = [
         f"plink --file {output_prefix}/filtered_data --keep {cas_file} --recode A --out {output_prefix}/geno_cas",
         f"plink --file {output_prefix}/filtered_data --keep {temoins_file} --recode A --out {output_prefix}/geno_temoins",
@@ -118,13 +178,21 @@ def run_preprocessing(input_prefix: str, output_prefix: str, cas_file: str, temo
         for cmd in [filtrage_cmd, export_ped_cmd, binarisation_cmd, freq_cmd, hwe_cmd] + separation_cmds:
             subprocess.run(cmd, shell=True, check=True)
 
-        # ✅ Ajout de la conversion en VCF
+        clean_ped_pheno(f"{output_prefix}/filtered_data.ped")
+        create_ped_porteurs(
+            f"{output_prefix}/filtered_data.ped",
+            f"{output_prefix}/filtered_data_porteurs.ped"
+        )
+
         vcf_cmd = f"plink --bfile {output_prefix}/filtered_data --recode vcf --out {output_prefix}/filtered_data"
         subprocess.run(vcf_cmd, shell=True, check=True)
-        logging.info(f"[Preprocessing] Fichier VCF généré : {output_prefix}/filtered_data.vcf")
 
-        logging.info("Tous les fichiers préparatoires ont été générés avec succès.")
+        porteurs_cmd = f"plink --file {output_prefix}/filtered_data_porteurs --hardy midp --out {output_prefix}/hwe_porteurs"
+        subprocess.run(porteurs_cmd, shell=True, check=True)
+        logging.info("[Preprocessing] Test HWE porteurs effectué avec succès.")
+
         validate_raw_format(f"{output_prefix}/filtered_data.raw")
+
     except subprocess.CalledProcessError as e:
         logging.error(f"Erreur durant le prétraitement : {e}")
         return
@@ -139,6 +207,7 @@ def run_preprocessing(input_prefix: str, output_prefix: str, cas_file: str, temo
         f"{output_prefix}/filtered_data.vcf",
         f"{output_prefix}/allele_frequencies.frq",
         f"{output_prefix}/hwe.hwe",
+        f"{output_prefix}/hwe_porteurs.hwe",
         f"{output_prefix}/geno_cas.raw",
         f"{output_prefix}/geno_temoins.raw",
         f"{output_prefix}/geno_cas.ped",
@@ -150,7 +219,8 @@ def run_preprocessing(input_prefix: str, output_prefix: str, cas_file: str, temo
         f"{output_prefix}/geno_cas.bim",
         f"{output_prefix}/geno_temoins.bim",
         f"{output_prefix}/geno_cas.fam",
-        f"{output_prefix}/geno_temoins.fam"
+        f"{output_prefix}/geno_temoins.fam",
+        f"{output_prefix}/filtered_data_porteurs.ped"
     ]
     summary_csv = os.path.join(output_prefix, "summary_files.csv")
     check_outputs(expected_files, summary_csv)

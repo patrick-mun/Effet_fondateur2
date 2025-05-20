@@ -13,6 +13,7 @@ from scripts.reporting import generate_full_report
 from scripts.utils import safe_mkdir
 from scripts.roh_visuals import load_roh_segments, plot_roh_for_individuals
 from scripts.roh_overlap import plot_roh_overlap
+import webbrowser
 
 logging.basicConfig(level=logging.INFO)
 
@@ -82,7 +83,8 @@ def main():
     df_gamma = pd.read_csv(gamma_txt, sep="\t")
     lengths = df_gamma["Position_cM"].values
     median_freq = df_gamma["Freq"].median()
-    nb_individus = pd.read_csv(raw_path, sep=r'\s+').shape[0]  # Correction precise du nombre d'individus
+    nb_individus = pd.read_csv(raw_path, sep=r'\s+').shape[0]  # Correction précise du nombre d'individus
+
     result = estimate_mutation_age(lengths[:len(lengths)//2], lengths[len(lengths)//2:], median_freq, n=nb_individus)
 
     with open(os.path.join(gamma_dir, "estimation_directe.txt"), "w") as f:
@@ -106,8 +108,12 @@ def main():
     script_path = generate_adegenet_script(raw_path, group_file, f"{output_dir}/adegenet")
     run_adegenet_script(script_path)
 
-    # Rapport
-    generate_full_report(output_dir, "rapport_final.pdf", "rapport_final.html")
+    # Rapport HTML et PDF (FPDF)
+    html_path = os.path.join(output_dir, "rapport_final.html")
+    generate_full_report(output_dir, "rapport_final.pdf", html_path)
+   
+    html_path = os.path.abspath(html_path)
+    webbrowser.open(f"file://{html_path}")
 
 if __name__ == "__main__":
-    main()
+        main()
