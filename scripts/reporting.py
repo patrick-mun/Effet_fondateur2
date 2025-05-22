@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 from fpdf import FPDF
 from datetime import datetime
 import json
+from scripts.ld import analyse_ld_in_roh
+from scripts.ld import ld_mutation_zone_analysis
+
 
 def ascii_safe(text: str) -> str:
     """
@@ -66,6 +69,7 @@ def plot_combined_ld(ld_csv_path: str, output_fig: str):
     plt.title("Linkage Disequilibrium combiné : r² et D")
     plt.savefig(output_fig)
     plt.close()
+
 # ------------------------------------ Fin Section Figure LD ------------------------------------
 
 def generate_hwe_summary_csv(csv_path):
@@ -118,6 +122,61 @@ def load_hwe_summary_table(summary_csv):
         except Exception as e:
             return f"<p><strong>Erreur lecture summary.csv :</strong> {e}</p>"
     return "<p>Fichier R_sum__des_r_sultats_HWE.csv non trouvé.</p>"
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import os
+
+def plot_ld_graphics(ld_csv_path: str, output_dir: str):
+    """
+    Génère deux graphiques à partir d'un fichier LD :
+    1. Histogrammes comparatifs de r² et D
+    2. Courbes de tendance (binned) de r² et D selon la distance
+    """
+    if not os.path.exists(ld_csv_path):
+        print(f"[LD] Fichier introuvable : {ld_csv_path}")
+        return
+
+    df = pd.read_csv(ld_csv_path)
+
+    # Vérification et génération de la colonne "Distance"
+    if "Distance" not in df.columns:
+        if "BP_A" in df.columns and "BP_B" in df.columns:
+            df["Distance"] = abs(df["BP_B"] - df["BP_A"])
+        else:
+            print("[LD] Impossible de calculer la distance : colonnes BP_A ou BP_B absentes.")
+            return
+
+    df = df.dropna(subset=["R2", "D", "Distance"])
+
+    # 1. Histogrammes comparatifs
+    plt.figure(figsize=(10, 5))
+    plt.hist(df["R2"], bins=100, alpha=0.6, label="r²", color="skyblue")
+    plt.hist(df["D"], bins=100, alpha=0.6, label="D", color="tomato")
+    plt.xlabel("Valeur du coefficient")
+    plt.ylabel("Nombre de paires de SNPs")
+    plt.title("Distribution comparée de r² et D")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "ld_histograms.png"))
+    plt.close()
+
+    # 2. Moyenne de r² et D par bin de distance
+    df["bin"] = pd.cut(df["Distance"], bins=100)
+    grouped = df.groupby("bin", observed=False)[["R2", "D"]].mean()
+    bin_centers = [interval.mid for interval in grouped.index.categories]
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(bin_centers, grouped["R2"], label="r²", color="blue")
+    plt.plot(bin_centers, grouped["D"], label="D", color="red")
+    plt.xlabel("Distance entre SNPs (binned)")
+    plt.ylabel("Valeur moyenne")
+    plt.title("Évolution moyenne de r² et D selon la distance")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "ld_binned_trend.png"))
+    plt.close()
+
 
 # --------------------------------------------debut mise en page PDF--------------------------------------------------------
 
@@ -428,7 +487,6 @@ def generate_pdf_report(figures: dict, output_pdf: str, summary_csv: str = None,
     print(f"[Reporting] Rapport PDF sauvegardé : {output_pdf}")
 
 
-
 #----------------------------------------------fin mise en page pdf----------------------------------------------------------------------
 
 #----------------------------------------------debut mise en page html----------------------------------------------------------------------
@@ -486,7 +544,7 @@ def generate_html_report(figures: dict, output_html: str, summary_csv: str = Non
             "</table></section>"
         )
 
-    # 4. Critères PLINK et résumé des analyses
+    # 4. Critères PLINK 
     if summary_csv and os.path.exists(summary_csv):
         try:
             df_sum = pd.read_csv(summary_csv)
@@ -502,24 +560,44 @@ def generate_html_report(figures: dict, output_html: str, summary_csv: str = Non
                 f"<section id='critere'><h2>Critères de filtrage PLINK</h2>"
                 f"<table border='1' style='width:100%;'>{crit_rows}</table></section>"
             )
-            # Résumé analyses
-            comment = ''
-            cpath = os.path.join("data", "input", "complex_simulation", "resume_commentaire.json")
-            if os.path.exists(cpath):
-                comment = json.load(open(cpath)).get("Résumé des analyses", "")
-            main_rows = ''.join(
-                f"<tr><td>{r.Module}</td><td>{r.Statistique}</td><td>{r.Commentaire}</td></tr>" 
-                for r in df_sum.itertuples()
-            )
-            sections.append(
-                f"<section id='resume'><h2>Résumé des analyses HWE</h2>" +
-                (f"<p><em>{comment}</em></p>" if comment else "") +
-                f"<table border='1' style='width:100%;'>{main_rows}</table></section>"
-            )
+            
         except Exception as e:
             sections.append(f"<p>Erreur lecture summary_csv: {e}</p>")
 
-    # 5. Résumé IBD
+
+    # Résumé des analyses HWE 
+    if summary_csv and os.path.exists(summary_csv):
+        try:
+            df = pd.read_csv(summary_csv)
+            
+            # Lire le commentaire général
+            commentaire_path = os.path.join("data", "input", "complex_simulation", "resume_commentaire.json")
+            resume_commentaire = {}
+            if os.path.exists(commentaire_path):
+                with open(commentaire_path, "r", encoding="utf-8") as f:
+                    resume_commentaire = json.load(f)
+            commentaire_resume = resume_commentaire.get("Résumé des analyses", "")
+
+            # Construire les lignes du tableau
+            table_rows = ''.join(
+                f"<tr style='background-color:#{'f0f8ff' if i%2==0 else 'ffffff'};'>"
+                f"<td>{r.Module}</td><td>{r.Statistique}</td><td>{r.Commentaire}</td></tr>"
+                for i, r in enumerate(df.itertuples())
+            )
+
+            sections.append(
+                "<section id='resume'><h2>Résumé des analyses HWE</h2>" +
+                (f"<p><em>{commentaire_resume}</em></p>" if commentaire_resume else "") +
+                "<table border='1' style='width:100%;border-collapse:collapse;margin-top:1em;'>"
+                "<tr style='background:#e0f7fa;'><th>Module</th><th>Statistique</th><th>Commentaire</th></tr>"
+                f"{table_rows}</table></section>"
+            )
+        except Exception as e:
+            sections.append(f"<p><strong>Erreur lecture summary_csv :</strong> {e}</p>")
+
+
+
+    # Résumé IBD
     try:
         plink_file = os.path.join("data", "output", "complex_simulation", "ibd", "ibd_plink.genome")
         king_file = os.path.join("data", "output", "complex_simulation", "ibd", "ibd_king.kin0")
@@ -536,7 +614,7 @@ def generate_html_report(figures: dict, output_html: str, summary_csv: str = Non
             else:
                 print("[DEBUG] Colonne 'RT' absente dans ibd_plink.genome")
                 ps = pd.DataFrame(columns=['Relation', 'PLINK'])
-
+        
             # KING
             if 'Kinship' in df_kg.columns:
                 def cls(x):
@@ -610,17 +688,188 @@ def generate_html_report(figures: dict, output_html: str, summary_csv: str = Non
         sections.append(f"<p><strong>Erreur IBD :</strong> {e}</p>")
 
 
+   # Résumé visuel LD (r² et D)
+    ld_hist_rel = "ld/ld_histograms.png"
+    ld_trend_rel = "ld/ld_binned_trend.png"
+    ld_roh_rel = "ld/ld_r2_comparaison_roh.png"
 
-    # Section ROH commune : ajout de l'image roh_overlap.png
-    roh_overlap_rel = "roh/figures/roh_overlap.png"
-    roh_overlap_abs = os.path.join(os.path.dirname(output_html), roh_overlap_rel)
-    if os.path.exists(roh_overlap_abs):
-        sections.append(
-            f"<section id='roh_commune'><h2>Segments ROH - Zone commune</h2>"
-            f"<img src='{roh_overlap_rel}' alt='Segments ROH communs'></section>"
+    ld_hist_abs = os.path.join(os.path.dirname(output_html), ld_hist_rel)
+    ld_trend_abs = os.path.join(os.path.dirname(output_html), ld_trend_rel)
+    ld_roh_abs = os.path.join(os.path.dirname(output_html), ld_roh_rel)
+
+    if os.path.exists(ld_hist_abs) and os.path.exists(ld_trend_abs):
+        # Commentaire LD1 (histogrammes)
+        ld_comment_html = ""
+        ld1_path = os.path.join("data", "input", "complex_simulation", "resume_commentaire_ld1.json")
+        if os.path.exists(ld1_path):
+            try:
+                with open(ld1_path, "r", encoding="utf-8") as f:
+                    ld1_data = json.load(f)
+                    if "Analyse LD" in ld1_data:
+                        ld_comment_html = "<div style='margin-top:1em;'><h3>Interprétation des résultats LD</h3><ul>"
+                        for k, v in ld1_data["Analyse LD"].items():
+                            ld_comment_html += f"<li><strong>{k} :</strong> {v}</li>"
+                        ld_comment_html += "</ul></div>"
+            except Exception as e:
+                print(f"[DEBUG] Erreur JSON LD1 : {e}")
+
+        # Commentaire LD2 (binned trend)
+        ld_comment_html2 = ""
+        ld2_path = os.path.join("data", "input", "complex_simulation", "resume_commentaire_ld2.json")
+        if os.path.exists(ld2_path):
+            try:
+                with open(ld2_path, "r", encoding="utf-8") as f:
+                    ld2_data = json.load(f)
+                    if "Analyse LD binned" in ld2_data:
+                        ld_comment_html2 = "<div style='margin-top:1em;'><h3>Interprétation du profil LD par distance</h3><ul>"
+                        for k, v in ld2_data["Analyse LD binned"].items():
+                            ld_comment_html2 += f"<li><strong>{k} :</strong> {v}</li>"
+                        ld_comment_html2 += "</ul></div>"
+            except Exception as e:
+                print(f"[DEBUG] Erreur JSON LD2 : {e}")
+
+        # Commentaire LD vs ROH (ld_r2_comparaison_roh.png)
+        ld_roh_comment_html = ""
+        roh_ld_json = os.path.join("data", "input", "complex_simulation", "resume_commentaire_ld_roh.json")
+        if os.path.exists(roh_ld_json):
+            try:
+                with open(roh_ld_json, "r", encoding="utf-8") as f:
+                    roh_ld_data = json.load(f)
+                    if "Analyse LD vs ROH" in roh_ld_data:
+                        ld_roh_comment_html = "<div style='margin-top:1em;'><h3>Interprétation LD vs ROH</h3><ul>"
+                        for k, v in roh_ld_data["Analyse LD vs ROH"].items():
+                            ld_roh_comment_html += f"<li><strong>{k} :</strong> {v}</li>"
+                        ld_roh_comment_html += "</ul></div>"
+            except Exception as e:
+                print(f"[DEBUG] Erreur JSON LD ROH : {e}")
+
+        # Construction de la section HTML
+        html_ld_section = (
+            "<section id='ld_summary'><h2>Analyse du déséquilibre de liaison (LD)</h2>"
+            "<p>Trois visualisations complémentaires comparent les coefficients <strong>r²</strong> et <strong>D</strong> :</p>"
+            "<ul>"
+            "<li><strong>Histogramme :</strong> distribution globale de r² et D</li>"
+            "<li><strong>Courbes binned :</strong> évolution moyenne de r² et D selon la distance entre SNPs</li>"
+            "<li><strong>Comparaison dans/hors ROH :</strong> distribution de r² selon les zones d'homozygotie</li>"
+            "</ul>"
+            f"<h3>Distribution des coefficients r² et D</h3><img src='{ld_hist_rel}' alt='Histogrammes LD'>"
+            f"{ld_comment_html}"
+            f"<h3>Tendance moyenne par distance</h3><img src='{ld_trend_rel}' alt='Tendance LD binned'>"
+            f"{ld_comment_html2}"
         )
+
+        if os.path.exists(ld_roh_abs):
+            html_ld_section += (
+                f"<h3>Distribution de r² dans et hors ROH</h3><img src='{ld_roh_rel}' alt='Comparaison LD ROH'>"
+                f"{ld_roh_comment_html}"
+            )
+
+        html_ld_section += "</section>"
+        sections.append(html_ld_section)
+
     else:
-        print(f"[DEBUG] Image manquante : {roh_overlap_abs}")
+        print(f"[DEBUG] Graphiques LD manquants : {ld_hist_abs}, {ld_trend_abs}")
+
+    # Section : Comparaison r² global vs r² dans la zone de la mutation chez les cas
+    r2_global_path = os.path.join("data", "output", "complex_simulation", "ld", "ld_with_D.csv")
+    r2_cas_path = os.path.join("data", "output", "complex_simulation", "ld", "ld_cas_mutation_zone_with_D.csv")
+    compare_hist = os.path.join("data", "output", "complex_simulation", "ld", "compare_r2_mutation_zone.png")
+    compare_box = os.path.join("data", "output", "complex_simulation", "ld", "boxplot_r2_mutation_zone.png")
+
+    if os.path.exists(r2_global_path) and os.path.exists(r2_cas_path):
+        try:
+            df_global = pd.read_csv(r2_global_path)
+            df_cas = pd.read_csv(r2_cas_path)
+
+            r2_global = df_global["R2"].dropna()
+            r2_cas = df_cas["R2"].dropna()
+
+            # Histogramme
+            import matplotlib.pyplot as plt
+            plt.figure(figsize=(10, 5))
+            plt.hist(r2_global, bins=50, alpha=0.6, label="r² global", color="skyblue", density=True)
+            plt.hist(r2_cas, bins=50, alpha=0.6, label="r² atteints (±1Mb mutation)", color="salmon", density=True)
+            plt.xlabel("Valeur de r²")
+            plt.ylabel("Densité")
+            plt.title("Comparaison de la distribution du r²")
+            plt.legend()
+            plt.tight_layout()
+            plt.savefig(compare_hist)
+            plt.close()
+
+            # Boxplot
+            plt.figure(figsize=(8, 5))
+            plt.boxplot([r2_global, r2_cas], labels=["r² global", "r² atteints (mutation zone)"])
+            plt.ylabel("Valeur de r²")
+            plt.title("Comparaison des distributions de r²")
+            plt.grid(axis="y")
+            plt.tight_layout()
+            plt.savefig(compare_box)
+            plt.close()
+            
+           # Section HTML
+            html_r2_section = (
+                "<section id='compare_r2'><h2>Analyse comparative du r² global et local chez les atteints</h2>"
+                "<p>Cette section compare le déséquilibre de liaison (r²) dans l'ensemble du génome avec celui observé dans la région ±1Mb autour de la mutation chez les individus atteints.</p>"
+                f"<h3>Histogramme comparatif</h3><img src='{os.path.relpath(compare_hist, os.path.dirname(output_html))}' alt='Histogramme r² global vs atteints'>"
+            )
+
+            # 🔽 Commentaire sous histogramme
+            hist_comment_path = os.path.join("data", "input", "complex_simulation", "resume_commentaire_ld_histogramme.json")
+            if os.path.exists(hist_comment_path):
+                try:
+                    with open(hist_comment_path, "r", encoding="utf-8") as f:
+                        hist_data = json.load(f)
+                        if "Analyse LD histogramme" in hist_data:
+                            html_r2_section += "<div style='margin-top:1em;'><h3>Interprétation de l'histogramme</h3><ul>"
+                            for k, v in hist_data["Analyse LD histogramme"].items():
+                                html_r2_section += f"<li><strong>{k} :</strong> {v}</li>"
+                            html_r2_section += "</ul></div>"
+                except Exception as e:
+                    print(f"[DEBUG] Erreur lecture JSON commentaire histogramme : {e}")
+
+            # 🔽 Ajout du boxplot
+            html_r2_section += (
+                f"<h3>Boxplot comparatif</h3><img src='{os.path.relpath(compare_box, os.path.dirname(output_html))}' alt='Boxplot r² global vs mutation zone'>"
+            )
+
+            # 🔽 Commentaire sous boxplot
+            boxplot_comment_path = os.path.join("data", "input", "complex_simulation", "resume_commentaire_ld_boxplot.json")
+            if os.path.exists(boxplot_comment_path):
+                try:
+                    with open(boxplot_comment_path, "r", encoding="utf-8") as f:
+                        boxplot_data = json.load(f)
+                        if "Analyse LD boxplot" in boxplot_data:
+                            html_r2_section += "<div style='margin-top:1em;'><h3>Interprétation du boxplot</h3><ul>"
+                            for k, v in boxplot_data["Analyse LD boxplot"].items():
+                                html_r2_section += f"<li><strong>{k} :</strong> {v}</li>"
+                            html_r2_section += "</ul></div>"
+                except Exception as e:
+                    print(f"[DEBUG] Erreur lecture JSON commentaire boxplot : {e}")
+
+            html_r2_section += "</section>"
+            sections.append(html_r2_section)
+            
+        except Exception as e:
+            print(f"[DEBUG] Erreur comparaison r² global vs atteints : {e}")
+            
+        # 🔽 Conclusion et synthèse LD
+        ld_synthese_path = os.path.join("data", "input", "complex_simulation", "resume_commentaire_ld_synthese.json")
+        if os.path.exists(ld_synthese_path):
+            try:
+                with open(ld_synthese_path, "r", encoding="utf-8") as f:
+                    ld_synthese_data = json.load(f)
+                    synthese = ld_synthese_data.get("Conclusion et synthèse de la LD", {})
+                    
+                    html_synthese_section = "<section id='conclusion_ld'><h2>Conclusion et synthèse de la LD</h2>"
+                    for titre, texte in synthese.items():
+                        html_synthese_section += f"<h3>{titre}</h3><p>{texte}</p>"
+                    html_synthese_section += "</section>"
+
+                    sections.append(html_synthese_section)
+            except Exception as e:
+                print(f"[DEBUG] Erreur lecture JSON synthèse LD : {e}")
+
 
     # 7. Résumé ROH depuis roh.hom
     roh_file = os.path.join("data", "output", "complex_simulation", "roh", "roh.hom")
@@ -642,7 +891,7 @@ def generate_html_report(figures: dict, output_html: str, summary_csv: str = Non
                 )
         except Exception as e:
             sections.append(f"<p><strong>Erreur lecture roh.hom :</strong> {e}</p>")
-
+    
         #----------------------------------------------fin mise en page html----------------------------------------------------------------------
 
         html = [
@@ -650,28 +899,29 @@ def generate_html_report(figures: dict, output_html: str, summary_csv: str = Non
         "<html lang='fr'>",
         "<head><meta charset='utf-8'><title>Rapport Effet fondateur</title>"
         "<style>"
-        "body { font-family: Georgia, serif; color: #111; background: white; margin: 0; padding: 0; }"
-        "header { background: #003049; color: white; padding: 1em; text-align: center; font-size: 1.4em; }"
-        "nav { display: none; }"  # pas besoin de navigation en version imprimée
-        "section { margin: 2em auto; width: 90%; padding: 0 1em; page-break-inside: avoid; }"
-        "h1, h2 { color: #222; font-family: 'Times New Roman', serif; border-bottom: 1px solid #ccc; padding-bottom: 0.2em; }"
-        "h2 { font-size: 1.5em; margin-top: 2em; }"
-        "h3 { font-size: 1.2em; margin-top: 1.5em; }"
-        "p, li { font-size: 1em; line-height: 1.5; text-align: justify; }"
-        "table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: 0.95em; }"
-        "th, td { border: 1px solid #999; padding: 6px; text-align: center; }"
-        "th { background: #eee; }"
-        "img { display: block; margin: 1em auto; max-width: 100%; border: 1px solid #aaa; }"
-        "@media print {"
-        "  body { font-size: 12pt; }"
-        "  header, nav { display: none; }"
-        "  section { page-break-after: always; }"
-        "}"
+        "body { font-family: Arial, sans-serif; background:#f8f8f8; color:#222; margin:0; padding:0; }"
+        "header { background:#005f73; color:white; padding:1em; text-align:center; }"
+        "nav { background:#0a9396; padding:0.5em; text-align:center; }"
+        "nav a { color:white; margin:0 1em; text-decoration:none; font-weight:bold; }"
+        "nav a:hover { text-decoration:underline; }"
+        "section { padding:2em; margin:2em auto; background:white; width:80%; box-shadow:0 0 5px rgba(0,0,0,0.1); border-radius: 8px; }"
+        "h2 { font-size:1.8em; margin-bottom:0.4em; color:#003049; border-bottom:2px solid #ccc; padding-bottom:0.2em; }"
+        "h3 { font-size:1.3em; margin-top:1.5em; color:#0a9396; }"
+        "p, li { font-size:1.05em; line-height:1.6; text-align: justify; }"
+        "table { width:100%; border-collapse:collapse; margin-top:1em; }"
+        "th, td { border:1px solid #ccc; padding:0.5em; text-align:center; }"
+        "th { background:#e0f7fa; }"
+        "img { max-width:100%; margin-top:1em; border:1px solid #ddd; border-radius: 6px; }"
         "</style></head>",
         "<body>",
-        "<header><h1>Rapport Effet fondateur – Version imprimable</h1></header>",
+        "<header><h1>Rapport Effet fondateur</h1><nav>" +
+        ''.join(f"<a href='#{k}'>{k}</a>" for k in [
+            'description','mutation','familles','critere','resume','ibd'
+        ]) +
+        "</nav></header>",
     ]
     html += sections
+
 
 
     # 7. Ajout des figures
@@ -706,7 +956,7 @@ def generate_full_report(base_dir: str, output_pdf: str, output_html: str = None
     figures = {}
 
     # Fichier CSV de résumé des analyses
-    summary_csv_default = os.path.join(base_dir, "geno", "summary.csv")
+    summary_csv_default = os.path.join(base_dir, "geno", "R_sum__des_r_sultats_HWE.csv")
     if summary_csv is None:
         summary_csv = summary_csv_default
     if not os.path.exists(summary_csv):
@@ -715,10 +965,38 @@ def generate_full_report(base_dir: str, output_pdf: str, output_html: str = None
     # Graphiques de qualité (MAF, HWE)
         maf_plot = os.path.join(base_dir, "geno", "qc_maf_distribution.png")
         hwe_plot = os.path.join(base_dir, "geno", "qc_hwe_pvalues.png")
-    if os.path.exists(maf_plot):
-        figures["Distribution des MAF"] = maf_plot
-    if os.path.exists(hwe_plot):
-        figures["Distribution HWE (p-values)"] = hwe_plot
+        if os.path.exists(maf_plot):
+            figures["Distribution des MAF"] = maf_plot
+        if os.path.exists(hwe_plot):
+            figures["Distribution HWE (p-values)"] = hwe_plot
+
+    # Génération des graphiques LD
+    ld_csv = os.path.join(base_dir, "ld", "ld_with_D.csv")
+    ld_dir = os.path.join(base_dir, "ld")
+    plot_ld_graphics(ld_csv, ld_dir)
+
+    # Génération des graphiques LD
+    ld_csv = os.path.join(base_dir, "ld", "ld_with_D.csv")
+    ld_fig = os.path.join(base_dir, "ld", "ld_combined.png")
+    if os.path.exists(ld_csv):
+        plot_combined_ld(ld_csv, ld_fig)
+        analyse_ld_in_roh(
+        ld_csv_path=os.path.join(base_dir, "ld", "ld_with_D.csv"),
+        roh_file_path=os.path.join(base_dir, "roh", "roh.hom"),
+        map_file_path=os.path.join("data", "input", "complex_simulation", "genotype_data.map"),
+        fam_file_path=os.path.join(base_dir, "geno", "filtered_data.fam"),  # ← chemin ajouté
+        output_dir=os.path.join(base_dir, "ld")
+    )
+    
+       
+    
+    # Analyse LD dans la région ±1Mb autour de la mutation rsMUT (ex: position 11087401 sur chr19)
+    ld_mutation_zone_analysis(
+        plink_prefix=os.path.join(base_dir, "geno", "filtered_data"),
+        fam_path=os.path.join(base_dir, "geno", "filtered_data.fam"),
+        map_path=os.path.join(base_dir, "geno", "filtered_data.map"),
+        output_dir=os.path.join(base_dir, "ld")
+    )
 
     # ROH
     roh_plot = os.path.join(base_dir, "roh", "roh_plot.png")
@@ -728,13 +1006,7 @@ def generate_full_report(base_dir: str, output_pdf: str, output_html: str = None
     if os.path.exists(roh_overlap):
         figures["Segments ROH – Zone commune"] = roh_overlap
 
-    # LD
-    ld_csv = os.path.join(base_dir, "ld", "ld_with_D.csv")
-    ld_fig = os.path.join(base_dir, "ld", "ld_combined.png")
-    if os.path.exists(ld_csv):
-        from scripts.reporting import plot_combined_ld
-        plot_combined_ld(ld_csv, ld_fig)
-        figures["Linkage Disequilibrium (r² et D)"] = ld_fig
+    
 
     # Gamma
     gamma_fig = os.path.join(base_dir, "gamma", "gamma_plot.png")
@@ -757,5 +1029,3 @@ def generate_full_report(base_dir: str, output_pdf: str, output_html: str = None
     generate_pdf_report(figures, output_pdf)
     if output_html:
         generate_html_report(figures, output_html, summary_csv, ped_path=ped_path)
-
-
