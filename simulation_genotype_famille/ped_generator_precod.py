@@ -95,13 +95,35 @@ for f in range(nb_familles):
         "enfants_statuts": enfants_statuts
     })
 
-# Étape 6 : Définir les témoins
+# Étape 6 : Définir les témoins (sous HWE avec p défini)
+def simulate_genotype_HWE(p=0.1):
+    q = 1 - p
+    geno_type = np.random.choice(
+        ["AA", "AB", "BB"],
+        p=[p**2, 2*p*q, q**2]
+    )
+    return geno_type
+
+def simulate_temoins_under_HWE(n_temoins, snp_alleles, freq_p=0.1):
+    temoins = []
+    for i in range(n_temoins):
+        sex = 1 if i % 2 == 0 else 2
+        geno = []
+        for ref, alt in snp_alleles:
+            geno_code = simulate_genotype_HWE(freq_p)
+            if geno_code == "AA":
+                geno.append((ref, ref))
+            elif geno_code == "AB":
+                geno.append((ref, alt))
+            else:
+                geno.append((alt, alt))
+        temoins.append(("CTRL", f"CTRL_{i+1}", '0', '0', sex, 1, geno))
+    return temoins
+
+# Remplacement de la génération classique :
 nb_temoins = int(input("Combien de témoins souhaitez-vous générer ? "))
-temoins = []
-for i in range(nb_temoins):
-    geno = simulate_genotype()
-    sex = 1 if i % 2 == 0 else 2
-    temoins.append(("CTRL", f"CTRL_{i+1}", '0', '0', sex, 1, geno))
+temoins = simulate_temoins_under_HWE(nb_temoins, SNP_ALLELES, freq_p=0.1)  # Ajuste p ici si besoin
+
 
 # Étape 7 : Sélection validée de la région homozygote
 def get_validated_homozygous_region():
@@ -187,3 +209,40 @@ subprocess.run([
     "--out", "data/input/complex_simulation/genotype_data"
 ])
 print("✅ Fichiers .bed/.bim/.fam générés avec succès.")
+
+# Étape 12 : Test HWE sur les témoins avec PLINK
+print("\n🔍 Lancement du test HWE sur les témoins...")
+
+# Commande PLINK : analyse uniquement les individus avec phénotype = 1 (témoins)
+subprocess.run([
+    "plink",
+    "--bfile", "data/input/complex_simulation/genotype_data",
+    "--filter-controls",
+    "--hwe", "0.001", "midp",
+    "--hardy",
+    "--out", "data/output/complex_simulation/hwe_test_controls"
+])
+
+print("✅ Résultats HWE enregistrés dans : data/output/complex_simulation/hwe_test_controls.hwe")
+
+# Étape 13 (optionnelle) : Exclusion des SNPs en déséquilibre HWE (p < 0.001)
+import pandas as pd
+
+hwe_path = "data/output/complex_simulation/hwe_test_controls.hwe"
+if os.path.exists(hwe_path):
+    df_hwe = pd.read_csv(hwe_path, delim_whitespace=True)
+    df_hwe_all = df_hwe[df_hwe["TEST"] == "ALL"]
+    snps_to_exclude = df_hwe_all[df_hwe_all["P"] < 0.001]["SNP"]
+    exclude_path = "data/output/complex_simulation/snps_hwe_exclude.txt"
+    snps_to_exclude.to_csv(exclude_path, index=False, header=False)
+
+    # Re-filtrage PLINK sans les SNPs en déséquilibre
+    subprocess.run([
+        "plink",
+        "--bfile", "data/input/complex_simulation/genotype_data",
+        "--exclude", exclude_path,
+        "--make-bed",
+        "--out", "data/output/complex_simulation/genotype_data_HWEfiltered"
+    ])
+
+    print("✅ Fichiers filtrés HWE générés dans : data/output/complex_simulation/genotype_data_HWEfiltered.*")

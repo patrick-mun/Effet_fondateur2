@@ -499,7 +499,7 @@ def generate_html_report(figures: dict, output_html: str, summary_csv: str = Non
     - Affichage des figures
     """
     sections = []
-
+    
     # 1. Description médicale
     info_med = {}
     info_med_path = os.path.join("data", "input", "complex_simulation", "info_med.json")
@@ -870,6 +870,23 @@ def generate_html_report(figures: dict, output_html: str, summary_csv: str = Non
             except Exception as e:
                 print(f"[DEBUG] Erreur lecture JSON synthèse LD : {e}")
 
+    # 🔽 Ajout graphique de superposition ROH chez les atteints
+    roh_overlap_path = os.path.join("data", "output", "complex_simulation", "roh","figures","roh_overlap.png")
+    if os.path.exists(roh_overlap_path):
+        roh_rel_path = os.path.relpath(roh_overlap_path, os.path.dirname(output_html))
+        roh_overlap_html = (
+            "<section id='roh_overlap'>"
+            "<h2>Superposition des segments ROH chez les atteints</h2>"
+            "<p>Ce graphique visualise les segments d’homozygotie (ROH) individuels chez les personnes atteintes, "
+            "ainsi que la région commune partagée par l’ensemble d’entre eux (zone surlignée en rose). "
+            "La cohérence et le chevauchement de ces segments soutiennent l’hypothèse d’un héritage commun d’origine fondatrice.</p>"
+            f"<img src='{roh_rel_path}' alt='Segments ROH atteints' style='max-width:100%; margin-top:1em;'>"
+            "</section>"
+        )
+        sections.append(roh_overlap_html)
+    else:
+        print("[DEBUG] roh_overlap.png non trouvé – section ROH overlap non ajoutée.")
+
 
     # 7. Résumé ROH depuis roh.hom
     roh_file = os.path.join("data", "output", "complex_simulation", "roh", "roh.hom")
@@ -891,7 +908,99 @@ def generate_html_report(figures: dict, output_html: str, summary_csv: str = Non
                 )
         except Exception as e:
             sections.append(f"<p><strong>Erreur lecture roh.hom :</strong> {e}</p>")
-    
+
+        # 🔽 Section GAMMA – Estimation de l'âge de la mutation
+        gamma_summary_path = os.path.join("data", "output", "complex_simulation", "gamma", "gamma_summary.txt")
+        if os.path.exists(gamma_summary_path):
+            try:
+                with open(gamma_summary_path, "r", encoding="utf-8") as f:
+                    lines = f.readlines()
+
+                section_gamma = "<section id='gamma'><h2>Analyse Gamma – Estimation de l’âge de la mutation</h2>"
+                section_gamma += (
+                    "<p>L’analyse Gamma permet d’estimer l’âge d’une mutation en générations, en se basant sur la longueur des segments d’homozygotie (ROH) flanquant la mutation chez les individus atteints.</p>"
+                    "<ul>"
+                )
+
+                for line in lines:
+                    if line.strip():
+                        section_gamma += f"<li>{line.strip()}</li>"
+                section_gamma += "</ul>"
+
+                # Ajout commentaire d'interprétation
+                section_gamma += (
+                    "<p>Ces résultats suggèrent que la mutation pourrait être apparue dans les <strong>3 à 5 dernières générations</strong>, selon le modèle retenu. "
+                    "La forte corrélation intra-segmentaire (ρ ≈ 0.95) justifie l'utilisation du modèle corrélé dans un contexte d'homogénéité génétique.</p>"
+                    "<p>Cette estimation appuie l’hypothèse d’un effet fondateur récent dans la population étudiée.</p>"
+                    "</section>"
+                )
+
+                sections.append(section_gamma)
+
+            except Exception as e:
+                print(f"[DEBUG] Erreur lecture Gamma summary : {e}")
+
+
+        # 🔽 Intégration graphique DAPC (Adegenet)
+        dapc_img = os.path.join("data", "output", "complex_simulation", "adegenet", "dapc_plot.png")
+        if os.path.exists(dapc_img):
+            dapc_rel = os.path.relpath(dapc_img, os.path.dirname(output_html))
+            html_dapc_section = (
+                "<section id='dapc'><h2>Analyse DAPC – Structure génétique des individus</h2>"
+                "<p>La DAPC (Discriminant Analysis of Principal Components) permet de visualiser la structuration des individus "
+                "selon leurs profils génotypiques. Elle met en évidence les regroupements par familles, porteurs, atteints ou témoins, "
+                "et aide à détecter une différenciation potentielle au sein de la population analysée.</p>"
+                f"<img src='{dapc_rel}' alt='Projection DAPC' style='max-width:100%; margin-top:1em;'>"
+            )
+
+            # 🔽 Ajout commentaire DAPC depuis JSON
+            dapc_comment_path = os.path.join("data", "input", "complex_simulation", "resume_commentaire_dapc.json")
+            if os.path.exists(dapc_comment_path):
+                try:
+                    with open(dapc_comment_path, "r", encoding="utf-8") as f:
+                        dapc_data = json.load(f)
+                        dapc_html = "<div style='margin-top:1em;'><h3>Interprétation de la DAPC</h3><ul>"
+                        for titre, texte in dapc_data.get("Interprétation de la DAPC", {}).items():
+                            dapc_html += f"<li><strong>{titre} :</strong> {texte}</li>"
+                        dapc_html += "</ul></div>"
+                        html_dapc_section += dapc_html
+                except Exception as e:
+                    print(f"[DEBUG] Erreur lecture JSON DAPC : {e}")
+
+            html_dapc_section += "</section>"
+            sections.append(html_dapc_section)
+        else:
+            print("[DEBUG] Image DAPC introuvable – section DAPC non ajoutée.")
+
+    # 🔽 Conclusion générale intégrée
+    conclusion_path = os.path.join("data", "input", "complex_simulation", "resume_commentaire_conclusion_generale.json")
+    if os.path.exists(conclusion_path):
+        try:
+            with open(conclusion_path, "r", encoding="utf-8") as f:
+                conclusion_data = json.load(f)
+                general_conclusion = conclusion_data.get("Conclusion générale", {})
+
+                html_conclusion = "<section id='conclusion_generale'><h2>Conclusion générale</h2>"
+                for sous_titre, texte in general_conclusion.items():
+                    html_conclusion += f"<h3>{sous_titre}</h3><p>{texte}</p>"
+                html_conclusion += "</section>"
+
+                sections.append(html_conclusion)
+        except Exception as e:
+            print(f"[DEBUG] Erreur lecture JSON conclusion générale : {e}")
+
+        # 🔽 Signature de l'auteur
+        html_signature = (
+            "<section id='signature' style='margin-top:2em; text-align:right;'>"
+            "<h2 style='text-align:left;'>Auteur</h2>"
+            "<p><strong>Patrick MUNIER</strong><br>"
+            "Laboratoire de génétique – Projet DOCK6<br>"
+            "Version : 1.0 ALPHA<br>"
+            "Date : 03/04/2025</p>"
+            "</section>"
+        )
+        sections.append(html_signature)
+
         #----------------------------------------------fin mise en page html----------------------------------------------------------------------
 
         html = [
@@ -914,6 +1023,15 @@ def generate_html_report(figures: dict, output_html: str, summary_csv: str = Non
         "img { max-width:100%; margin-top:1em; border:1px solid #ddd; border-radius: 6px; }"
         "</style></head>",
         "<body>",
+        # 🔽 Avertissement juste après <body> et avant <header>
+        "<section id='avertissement' style='background:#fff3cd; color:#856404; border:1px solid #ffeeba; "
+        "padding:1.5em; margin:2em auto; width:80%; border-radius:8px;'>"
+        "<h2 style='color:#856404;'>Avertissement – Données simulées</h2>"
+        "<p>Cette analyse de l’effet fondateur a été réalisée à partir de données générées informatiquement. "
+        "Elle a pour unique objectif de démontrer la faisabilité et la validité du traitement bioinformatique mis en œuvre. "
+        "Les résultats présentés dans ce rapport sont issus d’un pipeline expérimental testé en conditions simulées.<br><br>"
+        "<strong>Aucune donnée ni résultat contenu dans ce rapport ne doit être utilisé à des fins de publication scientifique.</strong>"
+        "</p></section>",
         "<header><h1>Rapport Effet fondateur</h1><nav>" +
         ''.join(f"<a href='#{k}'>{k}</a>" for k in [
             'description','mutation','familles','critere','resume','ibd'
@@ -921,6 +1039,7 @@ def generate_html_report(figures: dict, output_html: str, summary_csv: str = Non
         "</nav></header>",
     ]
     html += sections
+
 
 
 
@@ -1006,23 +1125,6 @@ def generate_full_report(base_dir: str, output_pdf: str, output_html: str = None
     if os.path.exists(roh_overlap):
         figures["Segments ROH – Zone commune"] = roh_overlap
 
-    
-
-    # Gamma
-    gamma_fig = os.path.join(base_dir, "gamma", "gamma_plot.png")
-    if os.path.exists(gamma_fig):
-        figures["Analyse Gamma"] = gamma_fig
-
-    # Adegenet
-    adegenet_dapc = os.path.join(base_dir, "adegenet", "dapc_plot.png")
-    adegenet_tree = os.path.join(base_dir, "adegenet", "dapc_tree.png")
-    adegenet_hexp = os.path.join(base_dir, "adegenet", "dapc_hexp.png")
-    if os.path.exists(adegenet_dapc):
-        figures["Projection DAPC"] = adegenet_dapc
-    if os.path.exists(adegenet_tree):
-        figures["Arbre phylogénétique"] = adegenet_tree
-    if os.path.exists(adegenet_hexp):
-        figures["Hobs / Hexp"] = adegenet_hexp
 
     # Génération des rapports (HTML enrichi + PDF simple)
     ped_path = os.path.join(base_dir, "geno", "filtered_data.ped")
