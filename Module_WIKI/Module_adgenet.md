@@ -14,7 +14,7 @@ Ce module décrit **Adegenet** et les outils R associés (poppr, ape), utilisés
 
 - **🔍 Présentation d’Adegenet et des packages R associés**
 - **📁 Formats de fichiers supportés**
-- **🔄 Fichiers utilisés dans le pipeline DOCK6**
+- **🔄 Fichiers utilisés dans le pipeline EFFET Fondateur**
 - **⚙️ Script R utilisé**
 - **📊 Exemples de fichiers de sortie**
 - **🔍 Interprétation des résultats**
