@@ -29,6 +29,8 @@ Dernière mise à jour : 4 août 2026
 - Ajout de l'annotation dbSNP hg38 après sélection du chromosome, avec
   propagation depuis un export ACPA annoté et résolution des SNV par allèles.
 - Documentation de la conversion ACPA et ajout de tests unitaires dédiés.
+- Ajout dans le README d'un protocole ACPA numéroté, incluant la préparation
+  détaillée de `samples.tsv`, l'annotation, le contrôle des rapports et PLINK.
 
 ## Validations effectuées
 

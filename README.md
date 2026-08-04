@@ -107,37 +107,95 @@ data/input/complex_simulation/temoins.txt
 Les fichiers `cas.txt` et `temoins.txt` sont des fichiers PLINK `--keep` à deux
 colonnes (`FID IID`). Ils doivent être présents avant l'exécution complète.
 
-### Convertir des exports ACPA en PED/MAP
+### Protocole de conversion ACPA vers PLINK
 
-Placer un export ChAS `.txt` par individu dans un dossier dédié. Les exports
-peuvent provenir des puces CytoScan 750K Array et Accel, mais doivent utiliser
-le même build `hg38`.
+Ce protocole extrait un chromosome, attribue les rsID et produit les fichiers
+PLINK sans modifier les exports ACPA originaux. Les exports peuvent provenir
+des puces CytoScan 750K Array et Accel, mais doivent utiliser le build `hg38`.
 
-Créer d'abord un modèle de métadonnées à compléter :
+#### 1. Activer l'environnement
+
+Depuis la racine du projet :
 
 ```bash
-.venv/bin/python -m simulation_genotype_famille.acpa_to_plink \
+source .venv/bin/activate
+```
+
+#### 2. Placer et vérifier les exports ACPA
+
+Placer un export ChAS `.txt` par individu dans :
+
+```text
+data/input/complex_simulation/acpa_samples/
+```
+
+Vérifier les fichiers détectés :
+
+```bash
+find data/input/complex_simulation/acpa_samples \
+  -maxdepth 1 -type f -name '*.txt' -print
+```
+
+#### 3. Créer le fichier `samples.tsv`
+
+Créer un modèle à partir des noms de fichiers ACPA :
+
+```bash
+python -m simulation_genotype_famille.acpa_to_plink \
   --input-dir data/input/complex_simulation/acpa_samples \
   --create-metadata-template data/input/complex_simulation/samples.tsv
 ```
 
-Renseigner ensuite dans `samples.tsv` les colonnes `FID`, `IID`, `PID`, `MID`,
-`SEX`, `PHENOTYPE` et `GROUP`. Un exemple sans donnée réelle est disponible dans
-`simulation_genotype_famille/samples.example.tsv`.
+Si le fichier existe déjà, le convertisseur refuse de l'écraser. L'examiner
+avant d'envisager l'option `--force`.
 
-Valeurs PLINK attendues :
+#### 4. Modifier `samples.tsv`
 
-- `SEX` : `1` homme, `2` femme, `0` inconnu ;
-- `PHENOTYPE` : `1` témoin, `2` atteint, `-9` ou `0` inconnu ;
-- `GROUP` : notamment `ATTEINT` ou `TEMOIN` pour alimenter les listes PLINK.
-
-Lancer la conversion :
+Ouvrir le tableau, par exemple avec TextEdit :
 
 ```bash
-.venv/bin/python -m simulation_genotype_famille.acpa_to_plink \
+open -a TextEdit data/input/complex_simulation/samples.tsv
+```
+
+Conserver la ligne d'en-tête et renseigner une ligne par individu à analyser :
+
+| Colonne | Modification attendue |
+| --- | --- |
+| `FILE` | Conserver exactement le nom du fichier ACPA présent dans `acpa_samples`. |
+| `FID` | Indiquer l'identifiant familial. Les apparentés doivent partager le même `FID`. |
+| `IID` | Indiquer un identifiant individuel unique, sans espace. |
+| `PID` | Indiquer l'`IID` du père s'il est présent, sinon `0`. |
+| `MID` | Indiquer l'`IID` de la mère si elle est présente, sinon `0`. |
+| `SEX` | Utiliser `1` pour un homme, `2` pour une femme ou `0` si inconnu. |
+| `PHENOTYPE` | Utiliser `2` pour atteint, `1` pour témoin, `-9` ou `0` si inconnu. |
+| `GROUP` | Utiliser notamment `ATTEINT` ou `TEMOIN`; choisir un nom explicite pour les autres groupes. |
+
+Exemple fictif :
+
+```text
+FILE	FID	IID	PID	MID	SEX	PHENOTYPE	GROUP
+patient_01.txt	F1	PATIENT_01	0	0	1	2	ATTEINT
+patient_02.txt	F1	PATIENT_02	PATIENT_01	0	2	2	ATTEINT
+temoin_01.txt	CTRL	TEMOIN_01	0	0	1	1	TEMOIN
+```
+
+Supprimer du tableau les lignes correspondant à des fichiers qui ne doivent pas
+être analysés. Le fichier donné avec `--rsid-reference-acpa` n'a pas besoin de
+figurer dans `samples.tsv` s'il sert uniquement de référence d'annotation. Un
+autre exemple fictif est disponible dans
+`simulation_genotype_famille/samples.example.tsv`.
+
+#### 5. Lancer l'annotation du chromosome 19
+
+Le fichier `SNP_82404457_(CytoScan750K_Array).txt` contient déjà des rsID. Il
+sert de dictionnaire local `Probe Set ID + position hg38 → rsID`; ce n'est pas
+le fichier qui détermine les individus analysés.
+
+```bash
+python -m simulation_genotype_famille.acpa_to_plink \
   --input-dir data/input/complex_simulation/acpa_samples \
   --metadata data/input/complex_simulation/samples.tsv \
-  --output-prefix data/input/complex_simulation/genotype_data \
+  --output-prefix data/output/acpa_chr19/genotype_data \
   --chromosome 19 \
   --rsid-reference-acpa \
   'data/input/complex_simulation/acpa_samples/SNP_82404457_(CytoScan750K_Array).txt'
@@ -161,31 +219,58 @@ refuse d'écraser une sortie existante sans `--force`. Il ne modifie jamais les
 exports ACPA originaux : les rsID sont écrits dans les sorties PLINK et le
 fichier d'audit.
 
-Sorties générées :
+Pour conserver une analyse précédente, modifier le dossier indiqué dans
+`--output-prefix`, par exemple `data/output/acpa_chr19_analyse2/genotype_data`.
+N'utiliser `--force` que pour remplacer volontairement tous les résultats du
+dossier choisi.
+
+#### 6. Examiner les résultats d'annotation
+
+Afficher le rapport :
+
+```bash
+cat data/output/acpa_chr19/acpa_conversion_report.json
+```
+
+Vérifier en priorité `sample_count`, `output_marker_count`,
+`rsid_marker_count`, `unresolved_rsid_count` et `excluded_marker_count`.
+
+Ouvrir le tableau détaillé :
+
+```bash
+open data/output/acpa_chr19/acpa_marker_audit.tsv
+```
+
+Les fichiers générés sont :
 
 ```text
-genotype_data.ped
-genotype_data.map
-groupes.txt
-cas.txt
-temoins.txt
-acpa_conversion_report.json
-acpa_excluded_markers.tsv
-acpa_marker_audit.tsv
+data/output/acpa_chr19/genotype_data.ped
+data/output/acpa_chr19/genotype_data.map
+data/output/acpa_chr19/groupes.txt
+data/output/acpa_chr19/cas.txt
+data/output/acpa_chr19/temoins.txt
+data/output/acpa_chr19/acpa_conversion_report.json
+data/output/acpa_chr19/acpa_excluded_markers.tsv
+data/output/acpa_chr19/acpa_marker_audit.tsv
 ```
 
 Le rapport JSON résume les échantillons, appels manquants, marqueurs conservés,
 rsID résolus et exclusions. Le TSV d'audit conserve la correspondance entre
 sonde, rsID, position hg38, allèles observés et statut d'annotation.
 
-Valider ensuite les fichiers produits avec PLINK :
+#### 7. Valider les fichiers avec PLINK
 
 ```bash
 plink \
-  --file data/input/complex_simulation/genotype_data \
+  --file data/output/acpa_chr19/genotype_data \
   --make-bed \
-  --out data/input/complex_simulation/genotype_data
+  --out data/output/acpa_chr19/genotype_data_checked
 ```
+
+PLINK doit terminer sans erreur et indiquer le nombre de variants, d'individus
+et le taux global de génotypage.
+
+#### 8. Options complémentaires
 
 Les rsID sont utilisés par défaut dans le fichier MAP. Pour conserver l'union
 des sondes, désactiver l'interrogation NCBI ou fournir un VCF dbSNP local
