@@ -6,18 +6,22 @@ __pycache__/
 # Environnements virtuels
 env/
 venv/
+.venv/
 
 # Logs, caches, et fichiers système
 *.log
 *.tmp
 *.bak
+.pytest_cache/
+.coverage
+htmlcov/
 .DS_Store
 Thumbs.db
 
 # Fichiers temporaires d’éditeur
 *.swp
 *.swo
-*.~ 
+*.~
 *.orig
 
 # Dossiers de sortie volumineux

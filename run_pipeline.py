@@ -77,7 +77,7 @@ def main():
     gamma_txt = os.path.join(gamma_dir, "gamma_input.txt")
     gamma_fig = os.path.join(gamma_dir, "gamma_plot.png")
     safe_mkdir(gamma_dir)
-    prepare_gamma_input(raw_path, map_path, gamma_txt, gamma_fig, include_extreme_freqs=True)
+    prepare_gamma_input(raw_path, map_path, gamma_txt, gamma_fig, include_extreme_freqs=True, auto_confirm=True)
 
     # Estimation directe en Python
     df_gamma = pd.read_csv(gamma_txt, sep="\t")

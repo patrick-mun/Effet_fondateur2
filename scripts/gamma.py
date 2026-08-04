@@ -5,7 +5,8 @@ import logging
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def prepare_gamma_input(raw_path: str, map_path: str, output_txt: str, output_fig: str, include_extreme_freqs: bool = True):
+def prepare_gamma_input(raw_path: str, map_path: str, output_txt: str, output_fig: str, include_extreme_freqs: bool = True, auto_confirm: bool = False):
+
     """
     Prépare les fichiers d'entrée pour Gamma à partir des fichiers .raw et .map.
 
@@ -43,10 +44,14 @@ def prepare_gamma_input(raw_path: str, map_path: str, output_txt: str, output_fi
             updated_map_path = map_path.replace(".map", "_cm_updated.map")
             map_df.to_csv(updated_map_path, sep="\t", index=False, header=False)
             print(f"\n⚠️ La colonne CM a été recalculée automatiquement. Un fichier mis à jour a été enregistré ici : {updated_map_path}\n")
-            confirmation = input("Souhaitez-vous continuer avec ce fichier ? (oui/non) : ").strip().lower()
-            if confirmation != "oui":
-                print("Opération annulée par l'utilisateur.")
-                exit(1)
+            if not auto_confirm:
+                confirmation = input("Souhaitez-vous continuer avec ce fichier ? (oui/non) : ").strip().lower()
+                if confirmation != "oui":
+                    print("Opération annulée par l'utilisateur.")
+                    exit(1)
+            else:
+                print("✅ Confirmation automatique activée — fichier mis à jour utilisé.")
+
 
     except Exception as e:
         logging.error(f"Erreur lecture fichiers .raw ou .map : {e}")

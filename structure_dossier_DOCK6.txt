@@ -1,77 +1,100 @@
+structure du logiciel Effet Effet_fondateur
 
-Structure du projet : DOCK6_COMPLETE_PIPELINE
----------------------------------------------
-
-📁 data/
+EFFET_FONDATEUR2/
+├── __pycache__/
+├── .vscode/
+├── data/
+│   ├── input/                           # Fichiers .ped, .map, .raw, .vcf, groupes, cas/témoins
+│   └── output/
+│       └── complex_simulation/
+│           ├── adegenet/               # Résultats DAPC, arbre, Hobs/Hexp
+│           ├── gamma/                  # Fréquences, estimation de l’âge, figure
+│           ├── geno/                   # Fichiers filtrés PLINK (.raw/.map/.bed/.bim/.fam)
+│           ├── ibd/                    # Résultats KING & PLINK (.kin0, .genome)
+│           ├── ld/                     # LD avec r² et D (.ld, .csv, .png)
+│           ├── roh/                    # Résultats ROH (.hom, logs)
+│           ├── acpa_chr19_*.vcf/tsv    # VCF personnalisés sur acpa
+│           └── rapport_final.html      # Rapport HTML final
 │
-├── 📁 input/
-│   ├── genotype_data.bed
-│   ├── genotype_data.bim
-│   ├── genotype_data.fam
-│   ├── genotype_data.gamma_input.txt
-│   ├── genotype_data.map
-│   ├── genotype_data.ped
-│   └── genotype_data.raw
+├── Module_WIKI/                        # Documentation des outils
+│   ├── Module_adgenet.md
+│   ├── Module_gamma.md
+│   ├── Module_king.md
+│   └── Module_PLINK.md
 │
-├── 📁 output/
-│   ├── 📁 adegenet_results/
-│   ├── 📁 gamma_results/
-│   ├── 📁 ibd_results/
-│   └── 📁 roh_results/
-
-📁 scripts/
+├── scripts/                            # Scripts du pipeline (modularisé)
+│   ├── adegenet.py
+│   ├── commands_pipeline_dock6.sh
+│   ├── gamma.py
+│   ├── gamma_age_estimation.py
+│   ├── ibd.py
+│   ├── ld.py
+│   ├── preprocessing.py
+│   ├── reporting.py
+│   ├── roh.py
+│   ├── roh_overlap.py
+│   ├── roh_visuals.py
+│   ├── utils.py
+│   └── __init__.py
+│
+├── simulation_genotype_famille/       # Génération de données simulées (familiales, rsID)
+│   ├── acpa_to_vcf2.py
+│   ├── generate_rsid_list.py
+│   └── ped_generator_precod.py
+│
+├── test/                               # Tests unitaires de chaque module
 │   ├── adegenet_analysis.R
-│   └── commands_pipeline_dock6.sh
-
-📄 pipeline_dock6.py
-📄 README_DOCK6_PIPELINE.md
-
-Description :
--------------
-- Le dossier `data/input/` contient les fichiers nécessaires à l'exécution du pipeline (génotypage, carte, format PED/RAW).
-- Le dossier `data/output/` est organisé par type d’analyse :
-  - `roh_results/` : résultats PLINK sur les segments ROH
-  - `ibd_results/` : résultats KING sur la parenté
-  - `adegenet_results/` : graphiques de structure populationnelle (DAPC, arbres)
-  - `gamma_results/` : fichiers pour datation de la mutation
-- Le dossier `scripts/` contient les scripts shell ou R appelés dans le pipeline.
-- `pipeline_dock6.py` est le script principal d’analyse.
-- `README_DOCK6_PIPELINE.md` fournit la documentation d’utilisation.
-
-structure modulaire
-
-Effet_fondateur/
-├── scripts/                      # Tous les modules fonctionnels du pipeline
-│   ├── __init__.py
-│   ├── preprocessing.py         # Préparation, filtrage, .raw/.bed, groupes cas-témoins
-│   ├── roh.py                   # Analyse ROH (PLINK)
-│   ├── ibd.py                   # Analyse IBD (KING + PLINK)
-│   ├── ld.py                    # Calcul de LD (r² + D, PLINK)
-│   ├── gamma.py                 # Conversion .raw vers Gamma, exécution + graphique
-│   ├── adegenet.py              # Génération script R adegenet + arbre
-│   ├── reporting.py             # Rapport PDF + HTML avec résumé
-│   └── utils.py                 # Fonctions utilitaires (log, exécution shell, etc.)
+│   ├── test_*.py                       # Fichiers de test Python pour chaque module
+│   └── rapport_tests.html              # Rapport de test
 │
-├── tests/                       # Tous les tests unitaires
-│   ├── test_preprocessing.py
-│   ├── test_roh.py
-│   ├── test_ibd.py
-│   ├── test_ld.py
-│   ├── test_gamma.py
-│   ├── test_adegenet.py
-│   └── test_reporting.py        # à venir
-│
-├── simulate_reporting_test.py   # Générateur de tests visuels (figures + résumé)
-├── run_pipeline.py              # (à venir) Script principal pour exécuter tout le pipeline
-├── run_tests.sh                 # (à venir) Lance tous les tests unitaires
-│
-├── output/                      # Dossier de résultats (figures + .csv/.txt)
-│   ├── roh/
-│   ├── ibd/
-│   ├── ld/
-│   ├── gamma/
-│   ├── adegenet/
-│   ├── summary.csv              # Résumé des modules
-│   ├── rapport_final.pdf
-│   └── rapport_final.html
+├── run_pipeline.py                     # Script principal d’exécution du pipeline
+├── run_all_tests.sh                    # Exécution de tous les tests
+├── structure_dossier_DOCK6.txt         # Plan structurel initial
+├── vcf_to_map_and_alleles.py           # Conversion de VCF en MAP/ALLELES
+├── .gitignore
+├── README.md
 
+⚙️ Logiciels et bibliothèques utilisés
+📦 Python (>= 3.10)
+pandas
+
+numpy
+
+scipy
+
+matplotlib
+
+networkx
+
+fpdf2 (PDF, import Python : fpdf)
+
+streamlit (interface web)
+
+pytest + pytest-html (tests)
+
+subprocess (bibliothèque standard, exécution shell)
+
+logging (bibliothèque standard)
+
+📊 R
+adegenet
+
+ggplot2
+
+ape
+
+ade4
+
+poppr (si utilisé dans certains tests)
+
+🧬 Outils en ligne de commande
+PLINK v1.9+ : ROH, IBD, HWE, MAF, LD — obligatoire dans le PATH
+
+KING : estimation de parenté — obligatoire dans le PATH
+
+Rscript : exécution du module Adegenet — obligatoire dans le PATH
+
+Gamma : optionnel pour le pipeline principal, datation externe disponible via run_gamma()
+
+🐳 (en prévision)
+Docker (pour reproductibilité future, mentionné dans les objectifs)

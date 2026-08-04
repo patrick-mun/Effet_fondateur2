@@ -1,129 +1,179 @@
-# 🧬 DOCK6 Pipeline – Analyse de l’effet fondateur
+# Pipeline d'analyse de l'effet fondateur — DOCK6
 
-## 📌 Objectif du pipeline
+Ce projet analyse un possible effet fondateur autour d'une mutation du gène
+`DOCK6` à partir de données SNP au format PLINK. Il combine prétraitement,
+détection des ROH, analyses de parenté IBD, déséquilibre de liaison, estimation
+de l'âge de la mutation, structure populationnelle et génération de rapports.
 
-Le pipeline **DOCK6** automatise l’analyse génétique d’un **effet fondateur** à partir de données SNP issues de puces de génotypage. Il combine des outils éprouvés (PLINK, KING, Gamma, R/Adegenet) pour :
+## Environnement requis
 
-- Détecter les segments d’autozygotie (ROH)
-- Identifier les liens familiaux cachés (IBD)
-- Représenter la structure populationnelle
-- Estimer la date d’apparition d’une mutation
-- Générer graphiques et rapports
+### Python
 
----
+- Python 3.10 ou version plus récente (Python 3.12 recommandé sur macOS Intel)
+- dépendances déclarées dans `requirements.txt`
 
-## 📦 Dépendances et environnement
+Installation recommandée :
 
-### Langages et outils requis
-- Python ≥ 3.8
-- R (avec packages : `adegenet`, `poppr`, `ape`)
-- Binaries : `PLINK`, `KING`, `Gamma`
-
-### Modules Python
 ```bash
-pip install pandas matplotlib fpdf
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
----
+### Activer l'environnement du projet
 
-## 📁 Structure du projet
+L'environnement doit être activé dans chaque nouveau terminal avant de lancer
+les scripts Python :
 
-```
-DOCK6_PROJECT/
-├── data/
-│   ├── input/         ← Fichiers PED, MAP, RAW, BED, etc.
-│   └── output/        ← Résultats des différentes étapes
-├── scripts/           ← Scripts R et commandes shell
-├── pipeline_dock6.py  ← Script principal Python
-├── dock6_app.py       ← Interface Streamlit (optionnelle)
-└── README.md          ← Ce document
-```
-
----
-
-## 🔄 Étapes du pipeline
-
-| Étape        | Outil       | Description principale                             |
-|--------------|-------------|----------------------------------------------------|
-| ROH          | PLINK       | Détection des segments d’autozygotie               |
-| IBD          | KING        | Identification des relations de parenté            |
-| Structure    | Adegenet    | Analyse des clusters et arbres phylogénétiques     |
-| Gamma        | Gamma       | Estimation de la date d’apparition de la mutation  |
-
----
-
-## 🚀 Exécution du pipeline
-
-### Lancer toutes les étapes automatiquement
 ```bash
-python pipeline_dock6.py
+cd /Users/utilisateur/Documents/python_programme/Effet_fondateur2
+source .venv/bin/activate
 ```
 
-### Lancer une étape spécifique
+Le terminal affiche alors généralement `(.venv)` au début de la ligne. Pour
+vérifier que le bon interpréteur est utilisé :
+
 ```bash
-python pipeline_dock6.py --step roh
-python pipeline_dock6.py --step gamma --debug
+which python
+python --version
 ```
 
-Options disponibles :
-- `--step` : `roh`, `ibd`, `adegenet`, `gamma`, `all`
-- `--debug` : active le mode verbeux (logs détaillés)
-- `--resume` : option future pour relancer un run interrompu
+Le chemin affiché par `which python` doit se terminer par `.venv/bin/python`.
+Une fois l'environnement activé, les commandes peuvent être lancées simplement :
 
----
-
-## 📤 Résultats générés
-
-| Dossier              | Contenu                                               |
-|----------------------|-------------------------------------------------------|
-| `roh_results/`       | Fichiers `.hom` (segments homozygotes PLINK)          |
-| `ibd_results/`       | Table `.kin0` (parenté KING)                          |
-| `adegenet_results/`  | Arbres, graphiques DAPC, matrices de distance         |
-| `gamma_results/`     | Fichier `.txt`, graphique de fréquence, rapport PDF   |
-
----
-
-## 🧾 Rapport final
-
-Le pipeline peut générer un **rapport PDF** intégrant :
-- Le graphique Gamma (`frequence_allelique.png`)
-- Les statistiques de fréquence (moyenne, min, max)
-- Les arbres phylogénétiques (via Adegenet)
-
----
-
-## 📊 Interface Web (optionnelle)
-
-L’interface Streamlit (`dock6_app.py`) permet de :
-- Uploader les fichiers `.raw` et `.map`
-- Choisir une étape à exécuter
-- Visualiser les résultats par onglet
-- Télécharger le rapport final
-
-Lancement local :
 ```bash
-streamlit run dock6_app.py
+python run_pipeline.py
+streamlit run interface_effet_fondateur.py
+pytest test/
 ```
 
----
+Pour quitter l'environnement :
 
-## ✅ Bonnes pratiques
+```bash
+deactivate
+```
 
-- Vérifier la correspondance entre `.raw` et `.map`
-- Supprimer les SNPs non informatifs avec PLINK (`--maf`, `--geno`)
-- Tester d’abord le pipeline sur un sous-échantillon réduit
+Le projet importe directement les bibliothèques suivantes :
 
----
+- `pandas`, `numpy` et `scipy` pour les calculs ;
+- `matplotlib` pour les graphiques ;
+- `networkx` pour le réseau de parenté ;
+- `fpdf2` pour le rapport PDF ;
+- `streamlit` pour l'interface ;
+- `pytest` et `pytest-html` pour les tests.
 
-## 🧠 Auteurs et informations
+### Programmes externes
 
-**Auteur principal** : Patrick MUNIER  
-Laboratoire de génétique – Projet DOCK6  
-Version : 1.0 ALPHA  
-Date : 03/04/2025
+Les exécutables suivants doivent être accessibles depuis le `PATH` :
 
----
+- `plink` 1.9 ou compatible : filtrage, ROH, IBD, HWE et LD ;
+- `king` : estimation des relations de parenté ;
+- `Rscript` : exécution de l'analyse Adegenet.
 
-📚 **Besoin de plus de détails sur chaque étape ?** Consultez les modules dédiés pour une explication complète des outils utilisés dans le pipeline :
-👉 [PLINK](./module/Module_PLINK.md) | [KING](./module/Module_king.md) | [Gamma](./module/Module_gamma.md) | [R/Adegenet](./module/Module_adgenet.md)
+Le binaire `Gamma` est uniquement nécessaire pour utiliser la fonction
+`run_gamma()` ou l'ancien script shell. Le pipeline principal utilise
+actuellement l'estimation Python de `scripts/gamma_age_estimation.py`.
 
+Vérification rapide :
+
+```bash
+python3 --version
+plink --version
+king --version
+Rscript --version
+```
+
+### Packages R
+
+Le script Adegenet nécessite :
+
+```r
+install.packages(c("adegenet", "ggplot2", "ape", "ade4", "poppr"))
+```
+
+## Données attendues
+
+Le pipeline principal utilise actuellement ces chemins fixes :
+
+```text
+data/input/complex_simulation/genotype_data.ped
+data/input/complex_simulation/genotype_data.map
+data/input/complex_simulation/groupes.txt
+data/input/complex_simulation/cas.txt
+data/input/complex_simulation/temoins.txt
+```
+
+Les fichiers `cas.txt` et `temoins.txt` sont des fichiers PLINK `--keep` à deux
+colonnes (`FID IID`). Ils doivent être présents avant l'exécution complète.
+
+## Exécution
+
+### Pipeline complet
+
+Depuis la racine du projet :
+
+```bash
+.venv/bin/python run_pipeline.py
+```
+
+Le script exécute successivement :
+
+1. le filtrage et le contrôle qualité PLINK ;
+2. la détection et la visualisation des ROH ;
+3. les analyses IBD avec KING et PLINK ;
+4. le calcul du LD global et autour de la mutation ;
+5. la préparation des fréquences et l'estimation de l'âge de la mutation ;
+6. l'analyse DAPC avec R/Adegenet ;
+7. la génération des rapports HTML et PDF.
+
+Les résultats sont écrits dans `data/output/complex_simulation/`.
+
+Le script ne possède pas encore d'options pour exécuter une seule étape.
+
+### Interface Streamlit
+
+```bash
+.venv/bin/streamlit run interface_effet_fondateur.py
+```
+
+L'interface permet de consulter le wiki et les résultats et de lancer le
+pipeline. Le raccordement des fichiers uploadés au pipeline doit encore être
+corrigé : le pipeline continue actuellement à lire `genotype_data.ped/map`.
+
+### Tests
+
+```bash
+pytest test/
+```
+
+Pour produire le rapport HTML et l'ouvrir sur macOS :
+
+```bash
+./run_all_tests.sh
+```
+
+## Organisation
+
+```text
+run_pipeline.py                 orchestration principale
+interface_effet_fondateur.py    interface Streamlit
+scripts/                        modules d'analyse
+simulation_genotype_famille/    préparation ACPA et simulation PED/MAP
+Module_WIKI/                    documentation scientifique des outils
+data/input/                     données sources et métadonnées
+data/output/                    résultats générés
+test/                           tests automatisés
+```
+
+La description détaillée de PLINK, KING, Gamma et Adegenet se trouve dans
+`Module_WIKI/`.
+
+## État du projet
+
+Le pipeline correspond à une version alpha de recherche. Les résultats doivent
+être contrôlés avant toute interprétation biologique ou médicale. Plusieurs
+points de raccordement et de validation restent à fiabiliser avant une nouvelle
+analyse complète.
+
+Auteur principal : Patrick MUNIER — Laboratoire de génétique, projet DOCK6.
