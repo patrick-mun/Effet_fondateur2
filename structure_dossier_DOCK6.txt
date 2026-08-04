@@ -38,14 +38,18 @@ EFFET_FONDATEUR2/
 │   └── __init__.py
 │
 ├── simulation_genotype_famille/       # Génération de données simulées (familiales, rsID)
+│   ├── acpa_to_plink.py                # Conversion multi-échantillons ACPA vers PED/MAP
 │   ├── acpa_to_vcf2.py
 │   ├── generate_rsid_list.py
-│   └── ped_generator_precod.py
+│   ├── ped_generator_precod.py
+│   └── samples.example.tsv             # Modèle sans donnée réelle
 │
 ├── test/                               # Tests unitaires de chaque module
 │   ├── adegenet_analysis.R
 │   ├── test_*.py                       # Fichiers de test Python pour chaque module
 │   └── rapport_tests.html              # Rapport de test
+├── tests/                              # Nouveaux tests suivis par Git
+│   └── test_acpa_to_plink.py
 │
 ├── run_pipeline.py                     # Script principal d’exécution du pipeline
 ├── run_all_tests.sh                    # Exécution de tous les tests

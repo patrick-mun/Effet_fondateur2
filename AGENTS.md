@@ -21,7 +21,9 @@ combine PLINK, KING, Python, R/Adegenet et une estimation Gamma.
 - Pipeline : `.venv/bin/python run_pipeline.py`
 - Interface : `.venv/bin/streamlit run interface_effet_fondateur.py`
 - Tests : `.venv/bin/python -m pytest test/`
-- Conversion ACPA vers VCF :
+- Conversion multi-échantillons ACPA vers PLINK :
+  `.venv/bin/python simulation_genotype_famille/acpa_to_plink.py`
+- Conversion historique ACPA vers VCF sans génotypes individuels :
   `.venv/bin/python simulation_genotype_famille/acpa_to_vcf2.py`
 - Simulation familiale :
   `.venv/bin/python simulation_genotype_famille/ped_generator_precod.py`

@@ -24,6 +24,9 @@ Dernière mise à jour : 4 août 2026
 - Correction de l'interface pour relancer le pipeline avec `sys.executable`.
 - Correction de `run_all_tests.sh` pour utiliser `.venv`.
 - Installation et test réel de PLINK sur les données PED/MAP existantes.
+- Création du convertisseur multi-échantillons `acpa_to_plink.py` avec modèle
+  de métadonnées, contrôles QC et génération PED/MAP/groupes/cas/témoins.
+- Documentation de la conversion ACPA et ajout de tests unitaires dédiés.
 
 ## Validations effectuées
 
@@ -32,11 +35,15 @@ Dernière mise à jour : 4 août 2026
 - Imports Python principaux : réussis.
 - Packages R `adegenet`, `ggplot2`, `ape`, `ade4` et `poppr` : disponibles.
 - Test PLINK : 2 726 variants et 127 individus lus correctement.
-- Tests Python : 12 réussis, 4 défaillants.
+- Conversion temporaire des six exports ACPA réels : 2 725 marqueurs hg38,
+  aucun marqueur exclu et taux de génotypage PLINK de 98,89 %.
+- Tests du convertisseur ACPA : 4 réussis.
+- Tests Python : 16 réussis, 4 défaillants.
 
 ## Problèmes connus
 
-1. `data/input/complex_simulation/cas.txt` et `temoins.txt` sont absents.
+1. `data/input/complex_simulation/cas.txt` et `temoins.txt` restent absents tant
+   que les métadonnées réelles ne sont pas renseignées et la conversion validée.
 2. Le test Gamma appelle une confirmation interactive sans `auto_confirm=True`.
 3. Le test d'âge Gamma n'envoie pas l'argument obligatoire `n`.
 4. Deux tests de prétraitement simulent PLINK sans créer `filtered_data.ped`.
@@ -50,8 +57,8 @@ Dernière mise à jour : 4 août 2026
 
 ## Prochaines étapes recommandées
 
-1. Générer automatiquement `cas.txt` et `temoins.txt` depuis le PED et les
-   groupes, avec validation des identifiants PLINK.
+1. Compléter `samples.tsv` avec les métadonnées réelles, examiner le rapport QC
+   puis valider l'emplacement définitif des sorties avant tout remplacement.
 2. Actualiser les quatre tests défaillants et obtenir une suite entièrement
    verte.
 3. Raccorder les uploads Streamlit aux fichiers réellement consommés.
@@ -77,4 +84,3 @@ Lors d'une prochaine session, mettre à jour en priorité :
 - `Travail terminé` avec seulement les nouveaux résultats importants ;
 - `Problèmes connus` en supprimant ceux qui sont résolus ;
 - `Prochaines étapes recommandées` avec l'action suivante la plus concrète.
-

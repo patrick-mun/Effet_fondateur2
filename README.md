@@ -107,6 +107,77 @@ data/input/complex_simulation/temoins.txt
 Les fichiers `cas.txt` et `temoins.txt` sont des fichiers PLINK `--keep` à deux
 colonnes (`FID IID`). Ils doivent être présents avant l'exécution complète.
 
+### Convertir des exports ACPA en PED/MAP
+
+Placer un export ChAS `.txt` par individu dans un dossier dédié. Tous les
+exports doivent utiliser la même puce et le build `hg38`.
+
+Créer d'abord un modèle de métadonnées à compléter :
+
+```bash
+.venv/bin/python simulation_genotype_famille/acpa_to_plink.py \
+  --input-dir data/input/complex_simulation/acpa_samples \
+  --create-metadata-template data/input/complex_simulation/samples.tsv
+```
+
+Renseigner ensuite dans `samples.tsv` les colonnes `FID`, `IID`, `PID`, `MID`,
+`SEX`, `PHENOTYPE` et `GROUP`. Un exemple sans donnée réelle est disponible dans
+`simulation_genotype_famille/samples.example.tsv`.
+
+Valeurs PLINK attendues :
+
+- `SEX` : `1` homme, `2` femme, `0` inconnu ;
+- `PHENOTYPE` : `1` témoin, `2` atteint, `-9` ou `0` inconnu ;
+- `GROUP` : notamment `ATTEINT` ou `TEMOIN` pour alimenter les listes PLINK.
+
+Lancer la conversion :
+
+```bash
+.venv/bin/python simulation_genotype_famille/acpa_to_plink.py \
+  --input-dir data/input/complex_simulation/acpa_samples \
+  --metadata data/input/complex_simulation/samples.tsv \
+  --output-prefix data/input/complex_simulation/genotype_data \
+  --chromosome 19
+```
+
+Le convertisseur utilise `Probe Set ID` comme identifiant stable, les
+`Forward Strand Base Calls` comme allèles et l'intersection des sondes entre les
+échantillons. Il refuse d'écraser une sortie existante sans l'option `--force`.
+
+Sorties générées :
+
+```text
+genotype_data.ped
+genotype_data.map
+groupes.txt
+cas.txt
+temoins.txt
+acpa_conversion_report.json
+acpa_excluded_markers.tsv
+acpa_marker_audit.tsv
+```
+
+Le rapport JSON résume les échantillons, appels manquants, marqueurs conservés
+et exclusions. Le TSV d'audit conserve la correspondance entre sonde, rsID et
+position hg38.
+
+Valider ensuite les fichiers produits avec PLINK :
+
+```bash
+plink \
+  --file data/input/complex_simulation/genotype_data \
+  --make-bed \
+  --out data/input/complex_simulation/genotype_data
+```
+
+Pour conserver l'union des sondes ou préférer les rsID disponibles :
+
+```bash
+--marker-mode union --variant-id-source rsid-preferred
+```
+
+Les sondes absentes d'un échantillon sont codées `0 0` en mode `union`.
+
 ## Exécution
 
 ### Pipeline complet
