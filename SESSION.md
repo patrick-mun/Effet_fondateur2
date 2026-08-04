@@ -26,6 +26,8 @@ Dernière mise à jour : 4 août 2026
 - Installation et test réel de PLINK sur les données PED/MAP existantes.
 - Création du convertisseur multi-échantillons `acpa_to_plink.py` avec modèle
   de métadonnées, contrôles QC et génération PED/MAP/groupes/cas/témoins.
+- Ajout de l'annotation dbSNP hg38 après sélection du chromosome, avec
+  propagation depuis un export ACPA annoté et résolution des SNV par allèles.
 - Documentation de la conversion ACPA et ajout de tests unitaires dédiés.
 
 ## Validations effectuées
@@ -35,10 +37,11 @@ Dernière mise à jour : 4 août 2026
 - Imports Python principaux : réussis.
 - Packages R `adegenet`, `ggplot2`, `ape`, `ade4` et `poppr` : disponibles.
 - Test PLINK : 2 726 variants et 127 individus lus correctement.
-- Conversion temporaire des six exports ACPA réels : 2 725 marqueurs hg38,
-  aucun marqueur exclu et taux de génotypage PLINK de 98,89 %.
-- Tests du convertisseur ACPA : 4 réussis.
-- Tests Python : 16 réussis, 4 défaillants.
+- Conversion temporaire des 14 exports ACPA réels sur le chromosome 19 :
+  2 725 marqueurs, 2 725 rsID résolus, aucun rsID non résolu et validation PLINK
+  réussie avec un taux de génotypage de 98,04 %.
+- Tests du convertisseur ACPA : 8 réussis.
+- Tests Python : 20 réussis, 4 anciens tests défaillants.
 
 ## Problèmes connus
 
@@ -57,8 +60,8 @@ Dernière mise à jour : 4 août 2026
 
 ## Prochaines étapes recommandées
 
-1. Compléter `samples.tsv` avec les métadonnées réelles, examiner le rapport QC
-   puis valider l'emplacement définitif des sorties avant tout remplacement.
+1. Compléter `samples.tsv` avec les métadonnées réelles, lancer la conversion du
+   chromosome 19 puis examiner les statuts d'annotation et le rapport QC.
 2. Actualiser les quatre tests défaillants et obtenir une suite entièrement
    verte.
 3. Raccorder les uploads Streamlit aux fichiers réellement consommés.

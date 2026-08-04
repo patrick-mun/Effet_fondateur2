@@ -13,7 +13,8 @@ combine PLINK, KING, Python, R/Adegenet et une estimation Gamma.
 - Activer l'environnement avec `source .venv/bin/activate` ou appeler
   explicitement `.venv/bin/python`.
 - Installer les dépendances avec `.venv/bin/python -m pip install -r requirements.txt`.
-- Les exécutables `plink`, `king` et `Rscript` doivent être dans le `PATH`.
+- Les exécutables `plink`, `king`, `bcftools` et `Rscript` doivent être dans le
+  `PATH`.
 - `Gamma` est optionnel pour le pipeline principal actuel.
 
 ## Points d'entrée
@@ -22,7 +23,7 @@ combine PLINK, KING, Python, R/Adegenet et une estimation Gamma.
 - Interface : `.venv/bin/streamlit run interface_effet_fondateur.py`
 - Tests : `.venv/bin/python -m pytest test/`
 - Conversion multi-échantillons ACPA vers PLINK :
-  `.venv/bin/python simulation_genotype_famille/acpa_to_plink.py`
+  `.venv/bin/python -m simulation_genotype_famille.acpa_to_plink`
 - Conversion historique ACPA vers VCF sans génotypes individuels :
   `.venv/bin/python simulation_genotype_famille/acpa_to_vcf2.py`
 - Simulation familiale :

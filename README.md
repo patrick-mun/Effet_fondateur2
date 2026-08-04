@@ -109,13 +109,14 @@ colonnes (`FID IID`). Ils doivent être présents avant l'exécution complète.
 
 ### Convertir des exports ACPA en PED/MAP
 
-Placer un export ChAS `.txt` par individu dans un dossier dédié. Tous les
-exports doivent utiliser la même puce et le build `hg38`.
+Placer un export ChAS `.txt` par individu dans un dossier dédié. Les exports
+peuvent provenir des puces CytoScan 750K Array et Accel, mais doivent utiliser
+le même build `hg38`.
 
 Créer d'abord un modèle de métadonnées à compléter :
 
 ```bash
-.venv/bin/python simulation_genotype_famille/acpa_to_plink.py \
+.venv/bin/python -m simulation_genotype_famille.acpa_to_plink \
   --input-dir data/input/complex_simulation/acpa_samples \
   --create-metadata-template data/input/complex_simulation/samples.tsv
 ```
@@ -133,16 +134,32 @@ Valeurs PLINK attendues :
 Lancer la conversion :
 
 ```bash
-.venv/bin/python simulation_genotype_famille/acpa_to_plink.py \
+.venv/bin/python -m simulation_genotype_famille.acpa_to_plink \
   --input-dir data/input/complex_simulation/acpa_samples \
   --metadata data/input/complex_simulation/samples.tsv \
   --output-prefix data/input/complex_simulation/genotype_data \
-  --chromosome 19
+  --chromosome 19 \
+  --rsid-reference-acpa \
+  'data/input/complex_simulation/acpa_samples/SNP_82404457_(CytoScan750K_Array).txt'
 ```
 
-Le convertisseur utilise `Probe Set ID` comme identifiant stable, les
-`Forward Strand Base Calls` comme allèles et l'intersection des sondes entre les
-échantillons. Il refuse d'écraser une sortie existante sans l'option `--force`.
+Le traitement sélectionne d'abord le chromosome demandé, puis attribue les rsID
+aux sondes conservées. Il propage en priorité les correspondances fiables de
+l'export ACPA annoté donné avec `--rsid-reference-acpa`. Pour les positions
+restantes, `bcftools` interroge uniquement les blocs utiles du VCF officiel
+NCBI dbSNP build 157 sur GRCh38.p14. Le fichier complet de 28 Go n'est pas
+téléchargé. La source exacte utilisée est enregistrée dans le rapport JSON.
+
+À une position comportant plusieurs entrées dbSNP, seuls les SNV dont les
+allèles `REF/ALT` sont compatibles avec les `Forward Strand Base Calls` sont
+considérés. Une correspondance ambiguë ou absente conserve temporairement le
+`Probe Set ID` et est signalée dans les rapports. Ajouter `--require-rsid` pour
+exclure ces sondes au lieu de conserver leur identifiant de sonde.
+
+Le convertisseur utilise l'intersection des sondes entre les échantillons et
+refuse d'écraser une sortie existante sans `--force`. Il ne modifie jamais les
+exports ACPA originaux : les rsID sont écrits dans les sorties PLINK et le
+fichier d'audit.
 
 Sorties générées :
 
@@ -157,9 +174,9 @@ acpa_excluded_markers.tsv
 acpa_marker_audit.tsv
 ```
 
-Le rapport JSON résume les échantillons, appels manquants, marqueurs conservés
-et exclusions. Le TSV d'audit conserve la correspondance entre sonde, rsID et
-position hg38.
+Le rapport JSON résume les échantillons, appels manquants, marqueurs conservés,
+rsID résolus et exclusions. Le TSV d'audit conserve la correspondance entre
+sonde, rsID, position hg38, allèles observés et statut d'annotation.
 
 Valider ensuite les fichiers produits avec PLINK :
 
@@ -170,10 +187,14 @@ plink \
   --out data/input/complex_simulation/genotype_data
 ```
 
-Pour conserver l'union des sondes ou préférer les rsID disponibles :
+Les rsID sont utilisés par défaut dans le fichier MAP. Pour conserver l'union
+des sondes, désactiver l'interrogation NCBI ou fournir un VCF dbSNP local
+indexé :
 
 ```bash
---marker-mode union --variant-id-source rsid-preferred
+--marker-mode union
+--no-dbsnp-annotation
+--dbsnp-vcf /chemin/vers/dbsnp_grch38.vcf.gz
 ```
 
 Les sondes absentes d'un échantillon sont codées `0 0` en mode `union`.

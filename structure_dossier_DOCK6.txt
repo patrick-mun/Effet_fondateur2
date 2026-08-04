@@ -39,6 +39,7 @@ EFFET_FONDATEUR2/
 │
 ├── simulation_genotype_famille/       # Génération de données simulées (familiales, rsID)
 │   ├── acpa_to_plink.py                # Conversion multi-échantillons ACPA vers PED/MAP
+│   ├── dbsnp_annotation.py             # Attribution des rsID dbSNP hg38 par position/allèles
 │   ├── acpa_to_vcf2.py
 │   ├── generate_rsid_list.py
 │   ├── ped_generator_precod.py

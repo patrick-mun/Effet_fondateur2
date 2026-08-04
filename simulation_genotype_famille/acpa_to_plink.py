@@ -9,11 +9,18 @@ import logging
 import os
 import re
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Iterable
 
 import pandas as pd
+
+from .dbsnp_annotation import (
+    DEFAULT_DBSNP_GRCH38_VCF,
+    DbsnpAnnotationError,
+    query_dbsnp_variants,
+    select_compatible_rsid,
+)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -83,6 +90,9 @@ class OutputMarker:
     rsid: str
     chromosome: str
     position_bp: int
+    observed_alleles: frozenset[str]
+    embedded_rsids: frozenset[str]
+    annotation_status: str
 
 
 def normalize_chromosome(value: object) -> str:
@@ -314,7 +324,6 @@ def select_candidate_probes(
 def build_output_markers(
     parsed_samples: list[ParsedSample],
     candidate_probes: Iterable[str],
-    variant_id_source: str,
 ) -> tuple[list[OutputMarker], list[dict[str, str]]]:
     """Valide les marqueurs communs et construit leur ordre PLINK."""
     accepted: list[OutputMarker] = []
@@ -359,16 +368,128 @@ def build_output_markers(
         chromosome, position_bp = next(iter(coordinates))
         rsids = {call.rsid for call in calls if call.rsid}
         rsid = next(iter(rsids)) if len(rsids) == 1 else ""
-        variant_id = rsid if variant_id_source == "rsid-preferred" and rsid else probe_id
+        annotation_status = "acpa_unique" if rsid else "acpa_missing"
+        if len(rsids) > 1:
+            annotation_status = "acpa_conflict"
         accepted.append(
             OutputMarker(
                 probe_id=probe_id,
-                variant_id=variant_id,
+                variant_id=probe_id,
                 rsid=rsid,
                 chromosome=chromosome,
                 position_bp=position_bp,
+                observed_alleles=frozenset(observed_alleles),
+                embedded_rsids=frozenset(rsids),
+                annotation_status=annotation_status,
             )
         )
+
+    accepted.sort(
+        key=lambda marker: (
+            int(marker.chromosome) if marker.chromosome.isdigit() else 10_000,
+            marker.position_bp,
+            marker.probe_id,
+        )
+    )
+    return accepted, excluded
+
+
+def annotate_markers_with_dbsnp(
+    markers: list[OutputMarker],
+    chromosome: str,
+    dbsnp_vcf: str,
+    bcftools_executable: str,
+) -> list[OutputMarker]:
+    """Attribue les rsID dbSNP hg38 après la sélection du chromosome."""
+    markers_to_query = [marker for marker in markers if not marker.rsid]
+    if not markers_to_query:
+        return markers
+    try:
+        variants_by_position = query_dbsnp_variants(
+            positions=(marker.position_bp for marker in markers_to_query),
+            chromosome=chromosome,
+            vcf_source=dbsnp_vcf,
+            bcftools_executable=bcftools_executable,
+        )
+    except DbsnpAnnotationError as error:
+        raise ConversionError(str(error)) from error
+
+    annotated_markers: list[OutputMarker] = []
+    for marker in markers:
+        if marker.rsid:
+            annotated_markers.append(marker)
+            continue
+        rsid, annotation_status = select_compatible_rsid(
+            variants=variants_by_position.get(marker.position_bp, []),
+            observed_alleles=marker.observed_alleles,
+            embedded_rsids=marker.embedded_rsids,
+        )
+        annotated_markers.append(
+            replace(
+                marker,
+                rsid=rsid,
+                annotation_status=annotation_status,
+            )
+        )
+    return annotated_markers
+
+
+def apply_acpa_rsid_reference(
+    markers: list[OutputMarker], reference_path: Path, chromosome: str
+) -> list[OutputMarker]:
+    """Propage les rsID d'un export ACPA annoté vers les mêmes sondes hg38."""
+    reference_metadata = SampleMetadata(
+        file_name=reference_path.name,
+        file_path=reference_path.resolve(),
+        family_id="REFERENCE",
+        individual_id="REFERENCE",
+        paternal_id="0",
+        maternal_id="0",
+        sex="0",
+        phenotype="-9",
+        group="REFERENCE",
+    )
+    reference_sample = parse_acpa_file(reference_metadata, chromosome)
+    referenced_markers: list[OutputMarker] = []
+    for marker in markers:
+        if marker.rsid:
+            referenced_markers.append(marker)
+            continue
+        reference_call = reference_sample.markers.get(marker.probe_id)
+        if (
+            reference_call is None
+            or not reference_call.rsid
+            or reference_call.chromosome != marker.chromosome
+            or reference_call.position_bp != marker.position_bp
+        ):
+            referenced_markers.append(marker)
+            continue
+        referenced_markers.append(
+            replace(
+                marker,
+                rsid=reference_call.rsid,
+                embedded_rsids=frozenset({reference_call.rsid}),
+                annotation_status="acpa_reference",
+            )
+        )
+    return referenced_markers
+
+
+def apply_variant_identifiers(
+    markers: list[OutputMarker], variant_id_source: str
+) -> list[OutputMarker]:
+    """Utilise les rsID résolus dans MAP avec repli sûr sur la sonde."""
+    accepted = [
+        replace(
+            marker,
+            variant_id=(
+                marker.rsid
+                if variant_id_source == "rsid-preferred" and marker.rsid
+                else marker.probe_id
+            ),
+        )
+        for marker in markers
+    ]
 
     duplicate_variant_ids = {
         variant_id
@@ -387,18 +508,14 @@ def build_output_markers(
                 rsid=marker.rsid,
                 chromosome=marker.chromosome,
                 position_bp=marker.position_bp,
+                observed_alleles=marker.observed_alleles,
+                embedded_rsids=marker.embedded_rsids,
+                annotation_status=marker.annotation_status,
             )
             for marker in accepted
         ]
 
-    accepted.sort(
-        key=lambda marker: (
-            int(marker.chromosome) if marker.chromosome.isdigit() else 10_000,
-            marker.position_bp,
-            marker.probe_id,
-        )
-    )
-    return accepted, excluded
+    return accepted
 
 
 def ensure_outputs_are_available(output_paths: Iterable[Path], force: bool) -> None:
@@ -433,6 +550,8 @@ def write_conversion_outputs(
     chromosome: str,
     marker_mode: str,
     variant_id_source: str,
+    dbsnp_vcf: str | None,
+    rsid_reference_acpa: Path | None,
     force: bool,
 ) -> dict[str, object]:
     """Génère PED, MAP, groupes, listes PLINK et rapports de conversion."""
@@ -506,7 +625,10 @@ def write_conversion_outputs(
     )
     write_lines_atomic(output_paths["excluded"], excluded_lines)
 
-    audit_lines = ["probe_id\tvariant_id\trsid\tchromosome\tposition_bp\n"]
+    audit_lines = [
+        "probe_id\tvariant_id\trsid\tchromosome\tposition_bp"
+        "\tobserved_alleles\tannotation_status\n"
+    ]
     audit_lines.extend(
         "\t".join(
             [
@@ -515,6 +637,8 @@ def write_conversion_outputs(
                 marker.rsid,
                 marker.chromosome,
                 str(marker.position_bp),
+                ",".join(sorted(marker.observed_alleles)),
+                marker.annotation_status,
             ]
         )
         + "\n"
@@ -546,8 +670,17 @@ def write_conversion_outputs(
         "sample_count": len(parsed_samples),
         "marker_mode": marker_mode,
         "variant_id_source": variant_id_source,
+        "dbsnp_vcf": dbsnp_vcf,
+        "rsid_reference_acpa": (
+            str(rsid_reference_acpa.resolve()) if rsid_reference_acpa else None
+        ),
         "output_marker_count": len(output_markers),
         "excluded_marker_count": len(excluded_markers),
+        "rsid_marker_count": sum(bool(marker.rsid) for marker in output_markers),
+        "unresolved_rsid_count": sum(not marker.rsid for marker in output_markers),
+        "annotation_status_counts": dict(
+            sorted(Counter(marker.annotation_status for marker in output_markers).items())
+        ),
         "samples": sample_reports,
         "outputs": {name: str(path) for name, path in output_paths.items()},
     }
@@ -565,6 +698,10 @@ def convert_acpa_to_plink(
     chromosome: str = "19",
     marker_mode: str = "intersection",
     variant_id_source: str = "probe",
+    dbsnp_vcf: str | None = None,
+    bcftools_executable: str = "bcftools",
+    rsid_reference_acpa: Path | None = None,
+    require_rsid: bool = False,
     force: bool = False,
 ) -> dict[str, object]:
     """Convertit plusieurs exports ACPA en un jeu PLINK cohérent."""
@@ -574,8 +711,39 @@ def convert_acpa_to_plink(
     output_markers, excluded_markers = build_output_markers(
         parsed_samples,
         candidate_probes,
-        variant_id_source,
     )
+    if rsid_reference_acpa:
+        if not rsid_reference_acpa.is_file():
+            raise ConversionError(
+                f"Référence ACPA introuvable: {rsid_reference_acpa}"
+            )
+        output_markers = apply_acpa_rsid_reference(
+            markers=output_markers,
+            reference_path=rsid_reference_acpa,
+            chromosome=chromosome,
+        )
+    if dbsnp_vcf:
+        output_markers = annotate_markers_with_dbsnp(
+            markers=output_markers,
+            chromosome=chromosome,
+            dbsnp_vcf=dbsnp_vcf,
+            bcftools_executable=bcftools_executable,
+        )
+    if require_rsid:
+        markers_with_rsid = []
+        for marker in output_markers:
+            if marker.rsid:
+                markers_with_rsid.append(marker)
+            else:
+                excluded_markers.append(
+                    {
+                        "probe_id": marker.probe_id,
+                        "reason": "rsid_non_resolu",
+                        "details": marker.annotation_status,
+                    }
+                )
+        output_markers = markers_with_rsid
+    output_markers = apply_variant_identifiers(output_markers, variant_id_source)
     if not output_markers:
         raise ConversionError("Aucun marqueur valide disponible après les contrôles QC")
 
@@ -587,6 +755,8 @@ def convert_acpa_to_plink(
         chromosome=chromosome,
         marker_mode=marker_mode,
         variant_id_source=variant_id_source,
+        dbsnp_vcf=dbsnp_vcf,
+        rsid_reference_acpa=rsid_reference_acpa,
         force=force,
     )
 
@@ -639,7 +809,28 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--variant-id-source",
         choices=["probe", "rsid-preferred"],
-        default="probe",
+        default="rsid-preferred",
+    )
+    parser.add_argument(
+        "--dbsnp-vcf",
+        default=DEFAULT_DBSNP_GRCH38_VCF,
+        help="VCF dbSNP GRCh38 indexé, local ou URL NCBI officielle",
+    )
+    parser.add_argument("--bcftools", default="bcftools")
+    parser.add_argument(
+        "--rsid-reference-acpa",
+        type=Path,
+        help="Export ACPA hg38 annoté servant de référence sonde-vers-rsID",
+    )
+    parser.add_argument(
+        "--no-dbsnp-annotation",
+        action="store_true",
+        help="Désactive l'attribution automatique des rsID",
+    )
+    parser.add_argument(
+        "--require-rsid",
+        action="store_true",
+        help="Exclut les sondes sans rsID dbSNP résolu",
     )
     parser.add_argument("--create-metadata-template", type=Path)
     parser.add_argument("--force", action="store_true")
@@ -674,6 +865,10 @@ def main() -> int:
             chromosome=arguments.chromosome,
             marker_mode=arguments.marker_mode,
             variant_id_source=arguments.variant_id_source,
+            dbsnp_vcf=(None if arguments.no_dbsnp_annotation else arguments.dbsnp_vcf),
+            bcftools_executable=arguments.bcftools,
+            rsid_reference_acpa=arguments.rsid_reference_acpa,
+            require_rsid=arguments.require_rsid,
             force=arguments.force,
         )
         LOGGER.info(
