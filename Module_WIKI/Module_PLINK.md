@@ -36,7 +36,7 @@ Ce module décrit **PLINK**, un logiciel clé dans le pipeline DOCK6 pour la dé
   - Gamma (fréquences alléliques)
   - KING (détection de parenté)
 - **🧪 Intégration dans DOCK6**
-  - Étapes automatiques via `pipeline_dock6.py`
+  - Étapes automatiques via `run_pipeline.py`
 - **✅ Avantages et ⚠️ Limites**
   - Forces et précautions d'utilisation
 - **💡 Astuce**
@@ -545,7 +545,8 @@ Ces observations peuvent être renforcées par des analyses complémentaires (KI
 
 ## 🧪 Intégration dans DOCK6
 
-PLINK est exécuté automatiquement dans le script `pipeline_dock6.py` selon les étapes suivantes :
+PLINK est exécuté automatiquement dans `run_pipeline.py` selon les étapes
+suivantes :
 
 1. **Préparation** : conversion des données (`--make-bed`, `--recodeA`)
 2. **ROH** : détection d’autozygotie (`--homozyg`)

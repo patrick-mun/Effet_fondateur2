@@ -30,11 +30,13 @@ data/input/
 test/
 
 # Résultats finaux à ne pas traquer
+rapport_tests.html
 rapport_final.pdf
 rapport_final.html
 
 # Outils externes ou binaires
-King/
+/king
+/King/
 
 # Checkpoints Jupyter
 .ipynb_checkpoints/

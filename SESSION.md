@@ -33,6 +33,9 @@ Dernière mise à jour : 4 août 2026
   détaillée de `samples.tsv`, l'annotation, le contrôle des rapports et PLINK.
 - Création d'un simulateur dédié de témoins indépendants sous HWE, reproductible
   et non destructif, avec jeu combiné, listes cas/témoins et rapport de limites.
+- Suppression des artefacts versionnés et lanceurs historiques devenus
+  obsolètes : binaire KING dupliqué, ancien rapport de tests, ancien script
+  shell et plan structurel désynchronisé.
 
 ## Validations effectuées
 
@@ -82,8 +85,8 @@ Dernière mise à jour : 4 août 2026
 
 - Utiliser le nom standard `AGENTS.md` pour les instructions Codex.
 - Conserver les deux convertisseurs : ACPA vers VCF, puis VCF vers MAP/allèles.
-- Ne pas supprimer les rapports historiques, le binaire KING embarqué ou les
-  anciens scripts avant une revue dédiée.
+- Conserver les anciens convertisseurs et le simulateur familial jusqu'à
+  extraction de leur éventuelle logique de mutation encore utile.
 - Garder la PR en brouillon tant que les tests et le pipeline complet ne sont
   pas validés.
 

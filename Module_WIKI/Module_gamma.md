@@ -105,7 +105,9 @@ Ces éléments confirment ou complètent les analyses ROH et KING.
 
 ## 🧪 Intégration dans DOCK6
 
-L’étape Gamma est appelée automatiquement dans `pipeline_dock6.py` par la fonction `run_gamma()`. Elle repose sur :
+L'étape de préparation Gamma est appelée automatiquement dans `run_pipeline.py`
+via `prepare_gamma_input()`. L'estimation principale actuelle utilise ensuite
+la fonction Python `estimate_mutation_age()`. Elle repose sur :
 - Le script Python `generate_gamma_input()`
 - Le binaire `Gamma`
 
