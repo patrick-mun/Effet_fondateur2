@@ -49,6 +49,76 @@ combine PLINK, KING, Python, R/Adegenet et une estimation Gamma.
 - Mettre à jour `README.md`, `requirements.txt` et `SESSION.md` lorsque les
   commandes, dépendances ou priorités changent.
 
+## Règles de codage et maintenabilité
+
+### Nommage et structure
+
+- Utiliser des noms explicites pour les variables, fonctions, classes et
+  fichiers ; éviter les noms d'une lettre hors indices locaux évidents.
+- Conserver une langue et une terminologie cohérentes dans un même module.
+- Limiter chaque fonction à une responsabilité clairement identifiable.
+- Préférer plusieurs petites fonctions testables à une fonction monolithique.
+- Éviter la duplication et extraire les traitements réellement partagés.
+- Remplacer progressivement les chemins et paramètres codés en dur par une
+  configuration explicite, sans modifier le comportement sans validation.
+- Ajouter des annotations de types aux nouvelles fonctions et lors des
+  refactorisations ciblées, en priorité pour les chemins, tableaux et résultats.
+
+### Commentaires et documentation
+
+- Commenter le pourquoi d'une décision scientifique ou technique, pas une
+  simple traduction de ce que fait le code.
+- Supprimer les commentaires devenus faux en même temps que le code concerné.
+- Ajouter une docstring aux fonctions publiques ou complexes en précisant les
+  entrées, sorties, unités, hypothèses et erreurs possibles.
+- Documenter toute approximation biologique, statistique ou génétique à
+  proximité de son implémentation et dans la documentation adaptée.
+
+### Gestion des erreurs et débogage
+
+- Ne pas ignorer silencieusement une exception ou un code de retour externe.
+- Produire des erreurs indiquant l'étape, la commande et le fichier concernés,
+  sans exposer de donnée sensible.
+- Utiliser `logging` pour le diagnostic durable et réserver `print` aux sorties
+  utilisateur intentionnelles des scripts interactifs.
+- Retirer les traces temporaires, fichiers de diagnostic et points d'arrêt avant
+  un commit.
+- Reproduire un bug avec le plus petit jeu de données possible avant de le
+  corriger, puis vérifier la cause racine.
+
+### Tests unitaires
+
+- Ajouter ou actualiser un test ciblé pour chaque correction de bug et chaque
+  nouveau comportement testable.
+- Tester le comportement observable, les cas limites et les erreurs attendues,
+  sans dépendre des détails internes inutiles.
+- Simuler PLINK, KING, Gamma ou R dans les tests unitaires ; réserver leur
+  exécution réelle à des tests d'intégration identifiés.
+- Utiliser des dossiers temporaires et ne jamais écrire dans les données ou
+  résultats réels pendant les tests.
+- Ne pas affaiblir une assertion uniquement pour faire passer un test.
+
+### Refactoring
+
+- Séparer autant que possible le refactoring d'un changement fonctionnel.
+- Préserver le comportement existant avec des tests avant de déplacer ou
+  simplifier du code.
+- Refactoriser par petites étapes vérifiables et relancer les tests ciblés après
+  chaque étape significative.
+- Ne pas élargir une refactorisation à des modules sans rapport avec la tâche.
+
+### Calcul scientifique et reproductibilité
+
+- Nommer ou documenter les unités utilisées (`bp`, `kb`, `cM`, générations,
+  fréquences) et vérifier les conversions aux frontières des fonctions.
+- Documenter les formules, hypothèses, seuils et références des méthodes
+  statistiques avant de les modifier.
+- Fixer et enregistrer les graines aléatoires des simulations reproductibles.
+- Enregistrer les paramètres et versions d'outils nécessaires pour reproduire
+  une analyse.
+- Ne pas modifier une méthode scientifique ou son interprétation sans test,
+  comparaison avec un résultat de référence et signalement explicite.
+
 ## Validation
 
 - Commencer par `git diff --check`.
@@ -68,4 +138,3 @@ combine PLINK, KING, Python, R/Adegenet et une estimation Gamma.
   prochaine action concrète.
 - Remplacer les informations devenues fausses au lieu d'accumuler un journal
   exhaustif de toutes les conversations.
-
