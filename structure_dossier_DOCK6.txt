@@ -40,6 +40,7 @@ EFFET_FONDATEUR2/
 ├── simulation_genotype_famille/       # Génération de données simulées (familiales, rsID)
 │   ├── acpa_to_plink.py                # Conversion multi-échantillons ACPA vers PED/MAP
 │   ├── dbsnp_annotation.py             # Attribution des rsID dbSNP hg38 par position/allèles
+│   ├── simulate_unrelated_controls.py  # Simulation reproductible de témoins indépendants
 │   ├── acpa_to_vcf2.py
 │   ├── generate_rsid_list.py
 │   ├── ped_generator_precod.py
@@ -50,7 +51,8 @@ EFFET_FONDATEUR2/
 │   ├── test_*.py                       # Fichiers de test Python pour chaque module
 │   └── rapport_tests.html              # Rapport de test
 ├── tests/                              # Nouveaux tests suivis par Git
-│   └── test_acpa_to_plink.py
+│   ├── test_acpa_to_plink.py
+│   └── test_simulate_unrelated_controls.py
 │
 ├── run_pipeline.py                     # Script principal d’exécution du pipeline
 ├── run_all_tests.sh                    # Exécution de tous les tests

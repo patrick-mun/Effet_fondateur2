@@ -284,6 +284,78 @@ indexé :
 
 Les sondes absentes d'un échantillon sont codées `0 0` en mode `union`.
 
+### Simuler des témoins non apparentés
+
+Le script `simulate_unrelated_controls.py` remplace l'ancienne simulation à
+fréquence fixe. Il estime, pour chaque SNP, les fréquences alléliques et le taux
+de données manquantes dans le PED source, puis tire indépendamment les deux
+allèles de chaque témoin sous Hardy–Weinberg.
+
+Chaque témoin simulé reçoit un `FID` et un `IID` uniques, des parents `0/0`, le
+phénotype témoin `1` et le groupe `TEMOIN_SIMULE`. La graine aléatoire et toutes
+les hypothèses sont enregistrées dans un rapport JSON. Les fichiers source ne
+sont jamais modifiés.
+
+#### Simulation interactive
+
+Cette commande demande le nombre de témoins à créer :
+
+```bash
+python -m simulation_genotype_famille.simulate_unrelated_controls \
+  --source-prefix data/output/acpa_chr19/genotype_data \
+  --output-prefix \
+    data/output/acpa_chr19_avec_temoins_simules/genotype_data \
+  --seed 20260804
+```
+
+Pour fournir directement le nombre, par exemple 50 témoins :
+
+```bash
+python -m simulation_genotype_famille.simulate_unrelated_controls \
+  --source-prefix data/output/acpa_chr19/genotype_data \
+  --output-prefix \
+    data/output/acpa_chr19_avec_temoins_simules/genotype_data \
+  --n-controls 50 \
+  --seed 20260804
+```
+
+Par défaut, le PED produit contient les individus ACPA source suivis des témoins
+simulés. Ajouter `--controls-only` pour produire uniquement les témoins. Ajouter
+`--no-simulate-missingness` pour ne pas reproduire les taux de données
+manquantes observés. Comme pour le convertisseur ACPA, `--force` est requis pour
+remplacer volontairement des sorties existantes.
+
+Sorties principales :
+
+```text
+data/output/acpa_chr19_avec_temoins_simules/genotype_data.ped
+data/output/acpa_chr19_avec_temoins_simules/genotype_data.map
+data/output/acpa_chr19_avec_temoins_simules/groupes.txt
+data/output/acpa_chr19_avec_temoins_simules/cas.txt
+data/output/acpa_chr19_avec_temoins_simules/temoins.txt
+data/output/acpa_chr19_avec_temoins_simules/simulation_marker_frequencies.tsv
+data/output/acpa_chr19_avec_temoins_simules/control_simulation_report.json
+```
+
+Valider le jeu combiné avec PLINK :
+
+```bash
+plink \
+  --file data/output/acpa_chr19_avec_temoins_simules/genotype_data \
+  --make-bed \
+  --out data/output/acpa_chr19_avec_temoins_simules/genotype_data_checked
+```
+
+> **Limite scientifique importante :** ces témoins sont indépendants par
+> construction, mais les SNP sont simulés indépendamment. Ils ne reproduisent
+> donc ni le déséquilibre de liaison, ni les haplotypes, ni les ROH d'une
+> population réelle. Les fréquences sont en outre estimées sur la petite cohorte
+> familiale source, enrichie en individus atteints. Utiliser ces témoins pour
+> tester le fonctionnement du pipeline ou pour une exploration clairement
+> étiquetée, jamais comme preuve biologique d'un effet fondateur. Avec un nombre
+> limité de SNP, certaines paires indépendantes peuvent aussi dépasser
+> légèrement un seuil KING faible par fluctuation aléatoire.
+
 ## Exécution
 
 ### Pipeline complet

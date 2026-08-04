@@ -31,6 +31,8 @@ Dernière mise à jour : 4 août 2026
 - Documentation de la conversion ACPA et ajout de tests unitaires dédiés.
 - Ajout dans le README d'un protocole ACPA numéroté, incluant la préparation
   détaillée de `samples.tsv`, l'annotation, le contrôle des rapports et PLINK.
+- Création d'un simulateur dédié de témoins indépendants sous HWE, reproductible
+  et non destructif, avec jeu combiné, listes cas/témoins et rapport de limites.
 
 ## Validations effectuées
 
@@ -43,7 +45,10 @@ Dernière mise à jour : 4 août 2026
   2 725 marqueurs, 2 725 rsID résolus, aucun rsID non résolu et validation PLINK
   réussie avec un taux de génotypage de 98,04 %.
 - Tests du convertisseur ACPA : 8 réussis.
-- Tests Python : 20 réussis, 4 anciens tests défaillants.
+- Simulation temporaire de 50 témoins : 59 individus et 2 725 marqueurs lus par
+  PLINK, puis analyse KING réussie sans modification des données source.
+- Tests du simulateur de témoins : 3 réussis.
+- Tests Python : 23 réussis, 4 anciens tests défaillants.
 
 ## Problèmes connus
 
@@ -64,12 +69,14 @@ Dernière mise à jour : 4 août 2026
 
 1. Compléter `samples.tsv` avec les métadonnées réelles, lancer la conversion du
    chromosome 19 puis examiner les statuts d'annotation et le rapport QC.
-2. Actualiser les quatre tests défaillants et obtenir une suite entièrement
+2. Utiliser les témoins synthétiques uniquement pour des validations techniques
+   ou exploratoires, jamais pour conclure biologiquement sur le LD ou les ROH.
+3. Actualiser les quatre tests défaillants et obtenir une suite entièrement
    verte.
-3. Raccorder les uploads Streamlit aux fichiers réellement consommés.
-4. Revoir les entrées mathématiques de l'estimation Gamma.
-5. Exécuter le pipeline complet sur une copie contrôlée des données.
-6. Examiner le rapport produit avant de fusionner la PR.
+4. Raccorder les uploads Streamlit aux fichiers réellement consommés.
+5. Revoir les entrées mathématiques de l'estimation Gamma.
+6. Exécuter le pipeline complet sur une copie contrôlée des données.
+7. Examiner le rapport produit avant de fusionner la PR.
 
 ## Décisions à conserver
 

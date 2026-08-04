@@ -26,6 +26,8 @@ combine PLINK, KING, Python, R/Adegenet et une estimation Gamma.
   `.venv/bin/python -m simulation_genotype_famille.acpa_to_plink`
 - Conversion historique ACPA vers VCF sans génotypes individuels :
   `.venv/bin/python simulation_genotype_famille/acpa_to_vcf2.py`
+- Simulation exploratoire de témoins indépendants :
+  `.venv/bin/python -m simulation_genotype_famille.simulate_unrelated_controls`
 - Simulation familiale :
   `.venv/bin/python simulation_genotype_famille/ped_generator_precod.py`
 
