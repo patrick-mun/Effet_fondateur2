@@ -356,6 +356,131 @@ plink \
 > limité de SNP, certaines paires indépendantes peuvent aussi dépasser
 > légèrement un seuil KING faible par fluctuation aléatoire.
 
+### Injecter et documenter la mutation
+
+L'injection se fait **après** la conversion ACPA et, pour les essais actuels,
+après l'ajout des témoins simulés. Le module `inject_mutation.py` crée une copie
+du PED/MAP, insère un marqueur `rsMUT...` à sa position physique et produit les
+métadonnées destinées au rapport. Il ne modifie jamais les fichiers source.
+
+Les génotypes de mutation ne sont pas déduits du statut clinique. Chaque
+individu doit recevoir explicitement `REF/REF`, `REF/ALT`, `ALT/ALT` ou
+`MISSING`, par règle de groupe ou par fichier individuel. Cette séparation
+évite de transformer une hypothèse clinique en donnée génétique silencieuse.
+
+#### 1. Créer la fiche de mutation
+
+Copier le modèle dans les données de travail :
+
+```bash
+cp simulation_genotype_famille/mutation.example.json \
+  data/input/complex_simulation/mutation_info.json
+```
+
+Champs requis pour l'injection :
+
+- `gene` : symbole officiel du gène, par exemple `DOCK6` ;
+- `mutation_name` : nom lisible du variant ;
+- `chromosome` et `position_bp` : coordonnées génomiques ;
+- `reference_allele` et `alternate_allele` : bases du brin de référence ;
+- `assembly` : assemblage, `GRCh38` par défaut ;
+- `marker_id` : facultatif, sinon `rsMUT_<position>` est créé.
+
+Les champs `hgvs_c`, `hgvs_p`, `transcript`, `disease`, `inheritance`,
+`variant_type`, `dbsnp_id`, `clinvar_id`, `laboratory_method`, `source` et
+`notes` ne modifient pas l'analyse PLINK, mais documentent le rapport. Pour un
+variant d'épissage, `hgvs_p` peut rester vide si l'effet protéique n'est pas
+établi.
+
+> **Contrôle indispensable :** `c.1833-1G>T` décrit le variant par rapport à un
+> transcrit. Les allèles écrits dans le PED doivent, eux, correspondre au brin
+> génomique de référence de l'assemblage choisi. Il faut donc confirmer la
+> position, le transcrit et les allèles avant l'injection.
+
+#### 2. Définir les génotypes
+
+Pour une règle commune à un groupe, répéter `--group-genotype`. Exemple pour
+une hypothèse récessive à confirmer avec les résultats moléculaires :
+
+```text
+ATTEINT=ALT/ALT
+HTZ=REF/ALT
+SAINS=REF/REF
+TEMOIN_SIMULE=REF/REF
+```
+
+Pour corriger ou définir un individu séparément, copier puis compléter le
+modèle TSV :
+
+```bash
+cp simulation_genotype_famille/mutation_genotypes.example.tsv \
+  data/input/complex_simulation/mutation_genotypes.tsv
+```
+
+Le fichier comporte les colonnes `FID`, `IID` et `GENOTYPE`. Une affectation
+individuelle est prioritaire sur la règle de groupe correspondante.
+
+#### 3. Lancer l'injection
+
+Avec le jeu comprenant les 50 témoins simulés :
+
+```bash
+python -m simulation_genotype_famille.inject_mutation \
+  --source-prefix \
+    data/output/acpa_chr19_avec_temoins_simules/genotype_data \
+  --output-prefix data/output/acpa_chr19_mutation/genotype_data \
+  --mutation-config data/input/complex_simulation/mutation_info.json \
+  --groups \
+    data/output/acpa_chr19_avec_temoins_simules/groupes.txt \
+  --group-genotype ATTEINT=ALT/ALT \
+  --group-genotype HTZ=REF/ALT \
+  --group-genotype SAINS=REF/REF \
+  --group-genotype TEMOIN_SIMULE=REF/REF
+```
+
+Ajouter si nécessaire :
+
+```bash
+--individual-genotypes data/input/complex_simulation/mutation_genotypes.tsv
+```
+
+L'injecteur refuse un individu sans génotype explicite, un MAP non trié, un
+chromosome discordant et toute sortie existante. Utiliser `--force` uniquement
+pour remplacer volontairement une injection précédente.
+
+#### 4. Contrôler les sorties
+
+```text
+data/output/acpa_chr19_mutation/genotype_data.ped
+data/output/acpa_chr19_mutation/genotype_data.map
+data/output/acpa_chr19_mutation/mutation_info.json
+data/output/acpa_chr19_mutation/project_info.json
+data/output/acpa_chr19_mutation/mutation_genotype_audit.tsv
+data/output/acpa_chr19_mutation/mutation_injection_report.json
+```
+
+Le rapport JSON contient les empreintes SHA-256 des PED/MAP source et produits,
+les effectifs par génotype et l'index d'insertion. `project_info.json` reprend
+les libellés affichables par le rapport final. Vérifier ensuite :
+
+```bash
+plink \
+  --file data/output/acpa_chr19_mutation/genotype_data \
+  --make-bed \
+  --out data/output/acpa_chr19_mutation/genotype_data_checked
+
+plink \
+  --file data/output/acpa_chr19_mutation/genotype_data \
+  --mendel \
+  --out data/output/acpa_chr19_mutation/mendel_check
+```
+
+Toute erreur mendélienne au marqueur `rsMUT...` doit être résolue ou documentée
+avant le pipeline. Pour l'analyse actuelle, copier ensuite de façon contrôlée
+le PED, le MAP, `groupes.txt`, `cas.txt`, `temoins.txt` et `project_info.json`
+dans `data/input/complex_simulation/`, car `run_pipeline.py` lit encore ce
+dossier fixe.
+
 ## Exécution
 
 ### Pipeline complet
@@ -393,7 +518,7 @@ corrigé : le pipeline continue actuellement à lire `genotype_data.ped/map`.
 ### Tests
 
 ```bash
-pytest test/
+.venv/bin/python -m pytest test tests
 ```
 
 Pour produire le rapport HTML et l'ouvrir sur macOS :
@@ -408,7 +533,7 @@ Pour produire le rapport HTML et l'ouvrir sur macOS :
 run_pipeline.py                 orchestration principale
 interface_effet_fondateur.py    interface Streamlit
 scripts/                        modules d'analyse
-simulation_genotype_famille/    préparation ACPA et simulation PED/MAP
+simulation_genotype_famille/    préparation ACPA, simulation et injection
 Module_WIKI/                    documentation scientifique des outils
 data/input/                     données sources et métadonnées
 data/output/                    résultats générés

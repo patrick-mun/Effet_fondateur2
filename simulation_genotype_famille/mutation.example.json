@@ -1,0 +1,21 @@
+{
+  "gene": "DOCK6",
+  "mutation_name": "Variant familial DOCK6",
+  "chromosome": "19",
+  "position_bp": 11237780,
+  "reference_allele": "G",
+  "alternate_allele": "T",
+  "assembly": "GRCh38",
+  "marker_id": "rsMUT_11237780",
+  "hgvs_c": "c.1833-1G>T",
+  "hgvs_p": "",
+  "transcript": "NM_020812.4",
+  "disease": "Syndrome de Adams-Oliver",
+  "inheritance": "",
+  "variant_type": "variant d'épissage",
+  "dbsnp_id": "",
+  "clinvar_id": "",
+  "laboratory_method": "",
+  "source": "",
+  "notes": "Confirmer les allèles sur le brin génomique de GRCh38 avant injection."
+}

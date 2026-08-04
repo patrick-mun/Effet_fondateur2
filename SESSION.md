@@ -33,6 +33,9 @@ Dernière mise à jour : 4 août 2026
   détaillée de `samples.tsv`, l'annotation, le contrôle des rapports et PLINK.
 - Création d'un simulateur dédié de témoins indépendants sous HWE, reproductible
   et non destructif, avec jeu combiné, listes cas/témoins et rapport de limites.
+- Création d'un injecteur de mutation non destructif : insertion PED/MAP triée,
+  affectations explicites par groupe ou individu, métadonnées de rapport,
+  empreintes SHA-256 et audit complet des génotypes.
 - Suppression des artefacts versionnés et lanceurs historiques devenus
   obsolètes : binaire KING dupliqué, ancien rapport de tests, ancien script
   shell et plan structurel désynchronisé.
@@ -51,7 +54,12 @@ Dernière mise à jour : 4 août 2026
 - Simulation temporaire de 50 témoins : 59 individus et 2 725 marqueurs lus par
   PLINK, puis analyse KING réussie sans modification des données source.
 - Tests du simulateur de témoins : 3 réussis.
-- Tests Python : 23 réussis, 4 anciens tests défaillants.
+- Tests de l'injecteur de mutation : 5 réussis.
+- Tests Python : 28 réussis, 4 anciens tests défaillants.
+- Injection technique temporaire sur le jeu combiné : 59 individus, passage de
+  2 725 à 2 726 marqueurs et lecture PLINK réussie à 98,25 % de génotypage.
+- Contrôle mendélien temporaire : 10 erreurs au total, dont une au marqueur
+  injecté pour `F2/E_82303707` avec les règles de groupe d'exemple.
 
 ## Problèmes connus
 
@@ -67,11 +75,17 @@ Dernière mise à jour : 4 août 2026
    autour de la mutation.
 7. Le README et les modules Wiki peuvent encore contenir quelques descriptions
    scientifiques historiques à confronter au comportement réel.
+8. Les allèles génomiques REF/ALT de la mutation DOCK6 doivent être confirmés
+   sur GRCh38 avant une injection réelle ; la notation HGVS du transcrit ne
+   suffit pas à déterminer le brin écrit dans le PED.
+9. Les règles d'exemple produisent une incompatibilité mendélienne au marqueur
+   injecté pour `F2/E_82303707` (`*/* x T/T -> G/G`) ; utiliser le résultat
+   moléculaire individuel plutôt que le seul groupe clinique.
 
 ## Prochaines étapes recommandées
 
-1. Compléter `samples.tsv` avec les métadonnées réelles, lancer la conversion du
-   chromosome 19 puis examiner les statuts d'annotation et le rapport QC.
+1. Confirmer la position GRCh38, le transcrit et les allèles génomiques REF/ALT,
+   puis compléter `mutation_info.json` et les génotypes individuels réels.
 2. Utiliser les témoins synthétiques uniquement pour des validations techniques
    ou exploratoires, jamais pour conclure biologiquement sur le LD ou les ROH.
 3. Actualiser les quatre tests défaillants et obtenir une suite entièrement

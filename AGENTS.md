@@ -28,6 +28,8 @@ combine PLINK, KING, Python, R/Adegenet et une estimation Gamma.
   `.venv/bin/python simulation_genotype_famille/acpa_to_vcf2.py`
 - Simulation exploratoire de témoins indépendants :
   `.venv/bin/python -m simulation_genotype_famille.simulate_unrelated_controls`
+- Injection documentée de la mutation :
+  `.venv/bin/python -m simulation_genotype_famille.inject_mutation`
 - Simulation familiale :
   `.venv/bin/python simulation_genotype_famille/ped_generator_precod.py`
 
@@ -41,6 +43,9 @@ combine PLINK, KING, Python, R/Adegenet et une estimation Gamma.
   des sorties et ouvre le rapport HTML dans le navigateur.
 - Ne jamais inclure de données génétiques, jetons ou secrets dans les commits,
   les rapports de session ou les messages GitHub.
+- Ne jamais inférer automatiquement les génotypes de la mutation à partir du
+  statut clinique ou du groupe : exiger une règle explicite et conserver son
+  origine dans un audit.
 - Préserver les modifications locales existantes et inspecter `git status`
   avant toute édition ou opération Git.
 
