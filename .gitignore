@@ -6,18 +6,22 @@ __pycache__/
 # Environnements virtuels
 env/
 venv/
+.venv/
 
 # Logs, caches, et fichiers système
 *.log
 *.tmp
 *.bak
+.pytest_cache/
+.coverage
+htmlcov/
 .DS_Store
 Thumbs.db
 
 # Fichiers temporaires d’éditeur
 *.swp
 *.swo
-*.~ 
+*.~
 *.orig
 
 # Dossiers de sortie volumineux
@@ -26,11 +30,13 @@ data/input/
 test/
 
 # Résultats finaux à ne pas traquer
+rapport_tests.html
 rapport_final.pdf
 rapport_final.html
 
 # Outils externes ou binaires
-King/
+/king
+/King/
 
 # Checkpoints Jupyter
 .ipynb_checkpoints/

@@ -120,7 +120,9 @@ Dans une analyse d’effet fondateur, KING permet de :
 
 ## 🧪 Intégration dans DOCK6
 
-KING est exécuté automatiquement via le script `commands_pipeline_dock6.sh`. Les résultats sont enregistrés dans `output/ibd_results/`, analysés par les scripts Python, visualisés dans l’application Streamlit et inclus dans le rapport PDF final.
+KING est exécuté automatiquement par `run_pipeline.py` via le module
+`scripts/ibd.py`. Les résultats sont enregistrés dans le sous-dossier `ibd/`
+du dossier de sortie de l'analyse, puis intégrés aux rapports.
 
 ---
 

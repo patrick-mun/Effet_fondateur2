@@ -1,6 +1,4 @@
 # vcf_to_map_and_alleles.py
-import pandas as pd
-import os
 import gzip
 
 vcf_path = "data/input/complex_simulation/acpa_chr19_filtered.vcf.gz"

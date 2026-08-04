@@ -7,7 +7,6 @@ Chaque segment est affiché sur une même ligne horizontale, facilitant la déte
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 import logging
 
 def plot_roh_overlap(df_roh, output_path, group_file, target_group="ATTEINT"):
@@ -57,4 +56,3 @@ def plot_roh_overlap(df_roh, output_path, group_file, target_group="ATTEINT"):
 
     except Exception as e:
         logging.error(f"[ROH Overlap] Erreur lors de la génération du graphique : {e}")
-

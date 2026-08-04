@@ -123,10 +123,6 @@ def load_hwe_summary_table(summary_csv):
             return f"<p><strong>Erreur lecture summary.csv :</strong> {e}</p>"
     return "<p>Fichier R_sum__des_r_sultats_HWE.csv non trouvé.</p>"
 
-import matplotlib.pyplot as plt
-import pandas as pd
-import os
-
 def plot_ld_graphics(ld_csv_path: str, output_dir: str):
     """
     Génère deux graphiques à partir d'un fichier LD :
