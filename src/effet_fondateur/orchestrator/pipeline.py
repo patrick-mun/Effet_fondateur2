@@ -102,6 +102,23 @@ BUILD_KINSHIP_PANEL_STAGE = StageDefinition(
     ),
 )
 
+INFER_KINSHIP_STAGE = StageDefinition(
+    stage_id="07",
+    stage_name="infer_kinship",
+    module="effet_fondateur.stages.infer_kinship",
+    critical=True,
+    dependencies=("build_sample_registry", "qc_preliminary", "build_kinship_panel"),
+    required_artifact_ids=(
+        "samples_master",
+        "qc_individual_metrics",
+        "kinship_panel_bed",
+        "kinship_panel_bim",
+        "kinship_panel_fam",
+        "kinship_panel_dataset",
+    ),
+    manual_decision_id="kinship_exclusion_approval",
+)
+
 DEFAULT_STAGE_DEFINITIONS = (
     SYNTHETIC_STAGE,
     VALIDATE_SOURCES_STAGE,
@@ -110,6 +127,7 @@ DEFAULT_STAGE_DEFINITIONS = (
     PREPARE_TARGET_VARIANT_DATASET_STAGE,
     QC_PRELIMINARY_STAGE,
     BUILD_KINSHIP_PANEL_STAGE,
+    INFER_KINSHIP_STAGE,
 )
 
 

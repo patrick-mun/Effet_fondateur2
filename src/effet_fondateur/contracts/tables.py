@@ -174,7 +174,7 @@ def validate_tsv_table(
             observed_primary_keys.add(primary_key)
             rows.append(decoded_row)
 
-    if not rows:
+    if not rows and not table_contract.get("allow_empty", False):
         raise TableValidationError(f"Table TSV sans ligne de données : {table_path}")
     return ValidatedTable(
         path=table_path,

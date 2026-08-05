@@ -81,3 +81,16 @@ stages:
       residual_ld_window_variants: 100
       residual_ld_window_kb: 1000
       plink_timeout_seconds: 300
+  infer_kinship:
+    enabled: false
+    parameters:
+      king_degree: 4
+      duplicate_or_mz_min: 0.354
+      first_degree_min: 0.177
+      second_degree_min: 0.0884
+      third_degree_min: 0.0442
+      fourth_degree_min: 0.0221
+      parent_child_ibs0_max: 0.01
+      relatedness_max_degree_for_independence: 4
+      threads: 4
+      king_timeout_seconds: 300

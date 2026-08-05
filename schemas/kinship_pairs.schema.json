@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/kinship_pairs.schema.json",
+  "title": "Paires d'apparentement KING V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "PAIR_ID", "SAMPLE_ID_1", "SAMPLE_ID_2", "FID_1", "IID_1",
+      "FID_2", "IID_2", "N_SNP", "HETHET", "IBS0", "KINSHIP",
+      "INFERRED_DEGREE", "INFERRED_RELATION", "DECLARED_RELATION",
+      "PAIR_ORIGIN", "CONCORDANCE_STATUS"
+    ],
+    "null_value": "",
+    "primary_key": ["PAIR_ID"],
+    "boolean_values": {"true": true, "false": false},
+    "allow_empty": true
+  },
+  "$defs": {
+    "stableIdentifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "nonNegativeDecimal": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$"},
+    "signedDecimal": {"type": "string", "pattern": "^-?[0-9]+(\\.[0-9]+)?$"},
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "PAIR_ID", "SAMPLE_ID_1", "SAMPLE_ID_2", "FID_1", "IID_1",
+        "FID_2", "IID_2", "N_SNP", "HETHET", "IBS0", "KINSHIP",
+        "INFERRED_DEGREE", "INFERRED_RELATION", "DECLARED_RELATION",
+        "PAIR_ORIGIN", "CONCORDANCE_STATUS"
+      ],
+      "properties": {
+        "PAIR_ID": {"type": "string", "pattern": "^kinship_pair_[0-9]{6}$"},
+        "SAMPLE_ID_1": {"$ref": "#/$defs/stableIdentifier"},
+        "SAMPLE_ID_2": {"$ref": "#/$defs/stableIdentifier"},
+        "FID_1": {"$ref": "#/$defs/stableIdentifier"},
+        "IID_1": {"$ref": "#/$defs/stableIdentifier"},
+        "FID_2": {"$ref": "#/$defs/stableIdentifier"},
+        "IID_2": {"$ref": "#/$defs/stableIdentifier"},
+        "N_SNP": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "HETHET": {"$ref": "#/$defs/nonNegativeDecimal"},
+        "IBS0": {"$ref": "#/$defs/nonNegativeDecimal"},
+        "KINSHIP": {"$ref": "#/$defs/signedDecimal"},
+        "INFERRED_DEGREE": {
+          "enum": ["DUPLICATE_OR_MZ", "FIRST", "SECOND", "THIRD", "FOURTH", "UNRELATED"]
+        },
+        "INFERRED_RELATION": {
+          "enum": [
+            "DUPLICATE_OR_MZ", "PARENT_CHILD_COMPATIBLE",
+            "FIRST_DEGREE_NON_PARENT_CHILD", "SECOND_DEGREE",
+            "THIRD_DEGREE", "FOURTH_DEGREE", "UNRELATED"
+          ]
+        },
+        "DECLARED_RELATION": {"enum": ["PARENT_CHILD", "SAME_FAMILY_UNSPECIFIED", "NONE"]},
+        "PAIR_ORIGIN": {"enum": ["WITHIN_FAMILY", "BETWEEN_FAMILY"]},
+        "CONCORDANCE_STATUS": {
+          "enum": [
+            "CONCORDANT", "DISCORDANT_DEGREE", "DISCORDANT_RELATION",
+            "CRYPTIC_RELATEDNESS", "FAMILY_RELATION_UNRESOLVED", "NO_DECLARED_RELATION"
+          ]
+        }
+      }
+    }
+  }
+}

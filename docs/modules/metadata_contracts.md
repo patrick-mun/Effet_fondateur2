@@ -22,6 +22,15 @@ Les statuts cliniques et les groupes restent descriptifs. Ils ne peuvent jamais
 être utilisés comme source d'un génotype cible. Cette règle est contrôlée dans
 le schéma et dans `contracts/samples.py`.
 
+## Tables de résultats sans observation
+
+Une table TSV vide est refusée par défaut. Un schéma peut déclarer
+`x-tsv.allow_empty: true` uniquement lorsqu'une absence de ligne constitue un
+résultat scientifique valide, par exemple lorsqu'aucune paire apparentée n'est
+détectée. L'en-tête canonique reste obligatoire et le producteur doit consigner
+le nombre de lignes dans son audit ; cette option ne doit jamais masquer une
+entrée absente ou une étape incomplète.
+
 ## Répartition des modules
 
 | Module | Responsabilité |

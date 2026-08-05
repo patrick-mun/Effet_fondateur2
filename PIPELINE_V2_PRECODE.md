@@ -609,7 +609,7 @@ dépend du phasage et des longueurs haplotypiques validées, pas des ROH globaux
 | `04` | `02`, sortie du chromosome cible de `03` | critique pour les analyses du variant cible |
 | `05` | sortie genome-wide de `03` | critique |
 | `06` | `05` | critique |
-| `07` | `06` | critique et validation des exclusions |
+| `07` | `02`, `05`, `06` | critique et validation des exclusions |
 | `08` | `07` | critique pour figer une cohorte comparable |
 | `09` | `04`, `07`, `08` | critique et validation manuelle |
 | `10` | `03`, `04`, `09` | critique |
@@ -851,6 +851,10 @@ relations déclarées.
 - construction d'un graphe de parenté ;
 - proposition, sans application silencieuse, d'un ensemble indépendant maximal ;
 - stratégie de sélection tenant compte de la qualité des génotypes.
+
+La première implémentation utilise une sélection gloutonne déterministe orientée
+qualité. Elle garantit un ensemble maximal, pas nécessairement un ensemble de
+cardinalité maximum ; cette limite est inscrite dans l'audit.
 
 **Sorties** :
 
@@ -1266,7 +1270,7 @@ contient en plus `stage_inputs.json`, `stage_outputs.json`, `audit.json`,
 | `04` | `target_chromosome_base.*`, métadonnées et génotypes cibles | `target_variant.*`, `target_genotype_audit.tsv`, `mendel.tsv` | `plot_target_variant_qc.py` |
 | `05` | `genomewide_base.*`, lots et registre | `genomewide_pre_qc.*`, `sample_qc.tsv`, `variant_qc_preliminary.tsv` | `plot_genotype_qc.py` |
 | `06` | `genomewide_pre_qc.*`, paramètres pruning | `kinship_panel.*`, `pruned_variants.tsv`, `panel_coverage.tsv`, `panel_residual_ld_bins.tsv` | `plot_kinship_panel.py` |
-| `07` | `kinship_panel.*`, pedigree déclaré | `kinship_pairs.tsv`, `pedigree_concordance.tsv`, `independent_set_proposal.tsv` | `plot_kinship.py` |
+| `07` | `kinship_panel.*`, pedigree déclaré | `kinship_pairs.tsv`, `kinship_degree_summary.tsv`, `pedigree_concordance.tsv`, `independent_set_proposal.tsv` | `plot_kinship.py` |
 | `08` | panel genome-wide, résultat KING, lots et groupes descriptifs | `population_scores.tsv`, `population_eigenvalues.tsv`, `population_outliers.tsv` | `plot_population_structure.py` |
 | `09` | registre, variant cible, KING, structure, QC | `cohorts.frozen.tsv`, fichiers `keep`, `cohort_decisions.tsv` | `plot_cohorts.py` |
 | `10` | jeux de base, cohortes figées | jeux QC par cohorte, `sample_qc_final.tsv`, `variant_qc.tsv` | `plot_genotype_qc.py` |

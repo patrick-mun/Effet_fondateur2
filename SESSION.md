@@ -6,7 +6,7 @@ Dernière mise à jour : 5 août 2026
 
 - Dépôt GitHub : `patrick-mun/Effet_fondateur2`.
 - Branche active : `feature/v2-orchestrator-foundation`, avec les modifications
-  locales non committées de l'étape `06` au-dessus de la branche distante.
+  locales non committées de l'étape `07` au-dessus de la branche distante.
 - PR V2 en brouillon : `#2`, ciblant `main`.
 - PR `#1` fusionnée dans `main` le 4 août 2026.
 - Commit de fusion : `f2fec8f`.
@@ -155,6 +155,25 @@ Dernière mise à jour : 5 août 2026
   - clarification que le nombre effectif opérationnel est le nombre de marqueurs
     après pruning, pas une dimension effective statistique ;
   - aucune nouvelle dépendance : PLINK, PyYAML et jsonschema étaient déjà requis.
+- Étape V2 `07_infer_kinship` implémentée et validée sur fixtures synthétiques
+  et avec KING 2.3.2 réel dans un dossier temporaire :
+  - consommation explicite du panel indépendant de l'étape `06`, du registre
+    maître et des métriques individuelles de l'étape `05` ;
+  - exécution KING `--kinship` jusqu'au degré configuré et normalisation des
+    sorties intra-famille `.kin` et inter-familles `.kin0` ;
+  - seuils versionnés pour duplicats/jumeaux et premier à quatrième degrés,
+    avec IBS0 pour distinguer une relation compatible parent-enfant ;
+  - conservation des parents déclarés absents et des paires KING manquantes
+    comme statuts `NOT_EVALUATED`, sans les ignorer silencieusement ;
+  - séparation des relations concordantes, discordantes, familiales non
+    résolues et cryptiques ;
+  - proposition déterministe d'un ensemble indépendant maximal orienté qualité,
+    sans prétendre garantir la cardinalité maximum ;
+  - provenance de chaque exclusion proposée : KING, pedigree déclaré ou les
+    deux, sans aucune application automatique ;
+  - ajout de la décision `kinship_exclusion_approval` au manifest dès qu'une
+    exclusion ou une anomalie de pedigree requiert une revue humaine ;
+  - aucune nouvelle dépendance : KING, PyYAML et jsonschema étaient déjà requis.
 
 ## Jeux de données actuellement disponibles
 
@@ -228,10 +247,11 @@ Dernière mise à jour : 5 août 2026
 - Tests ciblés de l'étape `04` : 6 réussis.
 - Tests ciblés de l'étape `05` : 6 réussis.
 - Tests ciblés de l'étape `06` : 7 réussis.
-- Suite moderne `tests/`, incluant les étapes `01` à `06` et les contrôles de
-  maintenabilité V2 : 80 réussis.
-- Ensemble des suites Python actuelles : 92 réussis et 4 échecs historiques
-  sans rapport avec les étapes `05` et `06`.
+- Tests ciblés de l'étape `07` : 8 réussis.
+- Suite moderne `tests/`, incluant les étapes `01` à `07` et les contrôles de
+  maintenabilité V2 : 88 réussis.
+- Ensemble des suites Python actuelles : 100 réussis et 4 échecs historiques
+  sans rapport avec les étapes `05` à `07`.
 - Smoke test temporaire avec PLINK 1.9 réel : 2 individus, 23 marqueurs
   autosomiques et 2 marqueurs du chromosome cible, conversion réussie.
 - Smoke test temporaire de l'étape `04` avec PLINK 1.9 réel : 2 individus,
@@ -242,6 +262,9 @@ Dernière mise à jour : 5 août 2026
 - Smoke test temporaire de l'étape `06` avec PLINK 1.9 réel : 3 individus, 22
   marqueurs conservés, 22 autosomes couverts et LD résiduel `NOT_EVALUATED`
   faute de paire dans la fenêtre sur ce jeu minimal.
+- Smoke test temporaire de l'étape `07` avec KING 2.3.2 réel : 3 individus,
+  une relation parent-enfant déclarée auditée, une exclusion proposée sur la
+  seule base du pedigree et validation manuelle correctement requise.
 
 ## Suivi des étapes du pipeline V2
 
@@ -258,7 +281,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `04` | Variant cible | `VALIDE` | Oui | Oui | Injection explicite et smoke PLINK réel validés |
 | `05` | QC préliminaire genome-wide | `VALIDE` | Oui | Oui | Missingness technique, alertes et smoke PLINK réel validés |
 | `06` | Panel indépendant | `VALIDE` | Oui | Oui | MAF post-QC, pruning LD et smoke PLINK réel validés |
-| `07` | Apparentement et duplicats | `NON_FAIT` | Non | Non | — |
+| `07` | Apparentement et duplicats | `VALIDE` | Oui | Oui | KING, pedigree, proposition indépendante et smoke réel validés |
 | `08` | Structure populationnelle | `NON_FAIT` | Non | Non | — |
 | `09` | Gel des cohortes | `NON_FAIT` | Non | Non | Schéma préparé, script non implémenté |
 | `10` | QC final | `NON_FAIT` | Non | Non | — |
@@ -315,12 +338,12 @@ préliminaire ; elle ne remplace pas l'audit complet obligatoire après l'étape
 
 ## Priorités de la prochaine session
 
-1. Implémenter `07_infer_kinship` sur le panel indépendant validé, avec KING,
-   classification versionnée des degrés et concordance du pedigree déclaré.
+1. Implémenter `08_analyze_population_structure` sur une base indépendante
+   validée, puis projeter séparément les apparentés si la méthode le permet.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
-3. Préparer la validation manuelle des exclusions et la proposition d'un
-   ensemble indépendant maximal, sans application silencieuse.
+3. Définir le mécanisme d'approbation de `kinship_exclusion_approval` consommé
+   par les étapes `08` et `09`, sans modifier un run déjà publié.
 4. Intégrer les 66 témoins réels dans le QC genome-wide, KING, la structure et le
    gel des cohortes avant toute analyse locale.
 5. Confirmer les données moléculaires et génotypes individuels du variant DOCK6,
@@ -359,6 +382,6 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action attendue est d'implémenter `07_infer_kinship` depuis le panel indépendant
-de l'étape `06`, avec KING, pedigree déclaré et proposition d'ensemble
-indépendant soumise à validation.
+action attendue est d'implémenter `08_analyze_population_structure` depuis le
+panel de l'étape `06` et la proposition indépendante de l'étape `07`, avec une
+stratégie explicite d'estimation et de projection des apparentés.

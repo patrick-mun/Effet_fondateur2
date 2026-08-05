@@ -143,6 +143,12 @@ et le LD résiduel sont audités avant de publier le jeu destiné à KING et à 
 structure populationnelle. Son contrat est documenté dans
 `docs/modules/kinship_panel.md`.
 
+`07_infer_kinship` exécute KING sur ce panel, classe les relations jusqu'au
+degré configuré et compare explicitement les liens parent-enfant observés au
+pedigree déclaré. Elle publie une proposition d'ensemble indépendant orientée
+qualité, sans appliquer automatiquement les exclusions. Le contrat et la revue
+manuelle requise sont documentés dans `docs/modules/kinship.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est
