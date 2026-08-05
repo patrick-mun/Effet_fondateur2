@@ -71,12 +71,29 @@ PREPARE_TARGET_VARIANT_DATASET_STAGE = StageDefinition(
     blocking_manual_decision_ids=("sample_registry_approval",),
 )
 
+QC_PRELIMINARY_STAGE = StageDefinition(
+    stage_id="05",
+    stage_name="qc_preliminary",
+    module="effet_fondateur.stages.qc_preliminary",
+    critical=True,
+    dependencies=("build_sample_registry", "convert_acpa"),
+    required_artifact_ids=(
+        "samples_master",
+        "genomewide_base_bed",
+        "genomewide_base_bim",
+        "genomewide_base_fam",
+        "genomewide_base_dataset",
+    ),
+    blocking_manual_decision_ids=("sample_registry_approval",),
+)
+
 DEFAULT_STAGE_DEFINITIONS = (
     SYNTHETIC_STAGE,
     VALIDATE_SOURCES_STAGE,
     BUILD_SAMPLE_REGISTRY_STAGE,
     CONVERT_ACPA_STAGE,
     PREPARE_TARGET_VARIANT_DATASET_STAGE,
+    QC_PRELIMINARY_STAGE,
 )
 
 

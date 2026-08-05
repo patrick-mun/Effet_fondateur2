@@ -55,3 +55,14 @@ stages:
     enabled: false
     parameters:
       plink_timeout_seconds: 300
+  qc_preliminary:
+    enabled: false
+    parameters:
+      sample_missingness_max: 0.1
+      variant_missingness_max: 0.05
+      kinship_maf_alert_threshold: 0.05
+      heterozygosity_z_alert: 3.0
+      batch_missingness_delta_alert: 0.02
+      duplicate_pi_hat_alert: 0.98
+      duplicate_scan_min_polymorphic_variants: 100
+      plink_timeout_seconds: 300

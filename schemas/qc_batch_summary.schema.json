@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/qc_batch_summary.schema.json",
+  "title": "Résumé QC par lot ACPA V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "ARRAY_BATCH", "SAMPLE_COUNT", "MEAN_SAMPLE_F_MISS", "MAX_SAMPLE_F_MISS",
+      "VARIANT_COUNT", "MEAN_VARIANT_F_MISS", "MAX_VARIANT_F_MISS"
+    ],
+    "null_value": "",
+    "primary_key": ["ARRAY_BATCH"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "decimal": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$"},
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ARRAY_BATCH", "SAMPLE_COUNT", "MEAN_SAMPLE_F_MISS", "MAX_SAMPLE_F_MISS",
+        "VARIANT_COUNT", "MEAN_VARIANT_F_MISS", "MAX_VARIANT_F_MISS"
+      ],
+      "properties": {
+        "ARRAY_BATCH": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+        "SAMPLE_COUNT": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "MEAN_SAMPLE_F_MISS": {"$ref": "#/$defs/decimal"},
+        "MAX_SAMPLE_F_MISS": {"$ref": "#/$defs/decimal"},
+        "VARIANT_COUNT": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "MEAN_VARIANT_F_MISS": {"$ref": "#/$defs/decimal"},
+        "MAX_VARIANT_F_MISS": {"$ref": "#/$defs/decimal"}
+      }
+    }
+  }
+}

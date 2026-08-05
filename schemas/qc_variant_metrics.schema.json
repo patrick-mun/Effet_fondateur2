@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/qc_variant_metrics.schema.json",
+  "title": "Métriques variants du QC préliminaire V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "VARIANT_ID", "CHROMOSOME", "POSITION_BP", "A1", "A2", "N_MISS",
+      "N_GENO", "F_MISS", "MAF", "NCHROBS", "BATCH_MIN_F_MISS",
+      "BATCH_MAX_F_MISS", "BATCH_MISSINGNESS_DELTA", "QC_STATUS",
+      "EXCLUSION_CODE", "ALERT_CODES"
+    ],
+    "null_value": "",
+    "primary_key": ["VARIANT_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "stableIdentifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "decimal": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$"},
+    "nullableDecimal": {
+      "oneOf": [
+        {"$ref": "#/$defs/decimal"},
+        {"type": "null"}
+      ]
+    },
+    "nullableCode": {
+      "oneOf": [
+        {"$ref": "#/$defs/stableIdentifier"},
+        {"type": "null"}
+      ]
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "VARIANT_ID", "CHROMOSOME", "POSITION_BP", "A1", "A2", "N_MISS",
+        "N_GENO", "F_MISS", "MAF", "NCHROBS", "BATCH_MIN_F_MISS",
+        "BATCH_MAX_F_MISS", "BATCH_MISSINGNESS_DELTA", "QC_STATUS",
+        "EXCLUSION_CODE", "ALERT_CODES"
+      ],
+      "properties": {
+        "VARIANT_ID": {"$ref": "#/$defs/stableIdentifier"},
+        "CHROMOSOME": {"type": "string", "pattern": "^([1-9]|1[0-9]|2[0-2])$"},
+        "POSITION_BP": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "A1": {"type": "string", "pattern": "^(0|[ACGT]+)$"},
+        "A2": {"type": "string", "pattern": "^(0|[ACGT]+)$"},
+        "N_MISS": {"type": "string", "pattern": "^[0-9]+$"},
+        "N_GENO": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "F_MISS": {"$ref": "#/$defs/decimal"},
+        "MAF": {"$ref": "#/$defs/nullableDecimal"},
+        "NCHROBS": {"type": "string", "pattern": "^[0-9]+$"},
+        "BATCH_MIN_F_MISS": {"$ref": "#/$defs/nullableDecimal"},
+        "BATCH_MAX_F_MISS": {"$ref": "#/$defs/nullableDecimal"},
+        "BATCH_MISSINGNESS_DELTA": {"$ref": "#/$defs/nullableDecimal"},
+        "QC_STATUS": {"enum": ["PASS", "ALERT", "EXCLUDED"]},
+        "EXCLUSION_CODE": {"$ref": "#/$defs/nullableCode"},
+        "ALERT_CODES": {
+          "oneOf": [
+            {"type": "string", "pattern": "^[A-Za-z0-9._-]+(,[A-Za-z0-9._-]+)*$"},
+            {"type": "null"}
+          ]
+        }
+      }
+    }
+  }
+}

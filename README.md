@@ -129,6 +129,13 @@ variant injecté. L'absence de trio est auditée `NOT_APPLICABLE`. Cette étape 
 requiert aucun outil supplémentaire à PLINK ; son contrat est documenté dans
 `docs/modules/target_variant.md`.
 
+En parallèle, `05_qc_preliminary` consomme le jeu genome-wide de l'étape `03`.
+Elle exclut uniquement les échantillons et variants dépassant les seuils
+techniques de données manquantes. MAF, hétérozygotie, différences entre lots et
+duplicats potentiels restent des alertes ; aucun HWE n'est appliqué avant le gel
+des cohortes. Le contrat et les statuts `NOT_EVALUATED` sont documentés dans
+`docs/modules/preliminary_qc.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est

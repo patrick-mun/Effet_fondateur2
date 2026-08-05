@@ -6,7 +6,7 @@ Dernière mise à jour : 5 août 2026
 
 - Dépôt GitHub : `patrick-mun/Effet_fondateur2`.
 - Branche active : `feature/v2-orchestrator-foundation`, synchronisée avec sa
-  branche distante après publication de l'étape `04`.
+  branche distante après publication de l'étape `05`.
 - PR V2 en brouillon : `#2`, ciblant `main`.
 - PR `#1` fusionnée dans `main` le 4 août 2026.
 - Commit de fusion : `f2fec8f`.
@@ -123,6 +123,21 @@ Dernière mise à jour : 5 août 2026
   génotypes, codes d'échec, conservation des tentatives et contrôle scientifique
   sont cohérents. Limites conservées : confirmations moléculaires externes
   obligatoires et statut Mendel non applicable sans trio complet.
+- Étape V2 `05_qc_preliminary` implémentée et validée sur fixtures synthétiques
+  et avec PLINK 1.9 réel dans un dossier temporaire :
+  - dépendances directes vers le registre approuvé de l'étape `02` et le jeu
+    genome-wide de l'étape `03` ;
+  - métriques PLINK individuelles, variants, fréquences et hétérozygotie, plus
+    missingness stratifié par lot ACPA ;
+  - exclusions automatiques limitées aux seuils techniques de données
+    manquantes, matérialisées par des listes `--remove` et `--exclude` ;
+  - MAF faible, hétérozygotie extrême, différentiel entre lots et duplicats
+    potentiels conservés comme alertes sans exclusion ;
+  - absence volontaire de HWE avant le gel des cohortes et discordance de sexe
+    notée `NOT_EVALUATED` sur le jeu strictement autosomique ;
+  - scan préliminaire des duplicats conditionné par un minimum de variants
+    polymorphes, la décision finale restant réservée à l'étape `07` ;
+  - aucune nouvelle dépendance : PLINK, PyYAML et jsonschema étaient déjà requis.
 
 ## Jeux de données actuellement disponibles
 
@@ -194,14 +209,18 @@ Dernière mise à jour : 5 août 2026
   les règles de groupe d'exemple.
 - Tests ciblés de préparation des données : 16 réussis.
 - Tests ciblés de l'étape `04` : 6 réussis.
-- Suite moderne `tests/`, incluant les étapes `01` à `04` et les contrôles de
-  maintenabilité V2 : 67 réussis.
-- Ensemble des suites Python actuelles : 79 réussis et 4 échecs historiques
-  sans rapport avec l'étape `04`.
+- Tests ciblés de l'étape `05` : 6 réussis.
+- Suite moderne `tests/`, incluant les étapes `01` à `05` et les contrôles de
+  maintenabilité V2 : 73 réussis.
+- Ensemble des suites Python actuelles : 85 réussis et 4 échecs historiques
+  sans rapport avec l'étape `05`.
 - Smoke test temporaire avec PLINK 1.9 réel : 2 individus, 23 marqueurs
   autosomiques et 2 marqueurs du chromosome cible, conversion réussie.
 - Smoke test temporaire de l'étape `04` avec PLINK 1.9 réel : 2 individus,
   passage de 1 à 2 variants et Mendel `NOT_APPLICABLE` faute de trio.
+- Smoke test temporaire de l'étape `05` avec PLINK 1.9 réel : 3 individus et 22
+  variants conservés, rapports individu/variant/lot valides, aucun HWE appliqué
+  et scan de duplicats `NOT_EVALUATED` faute de 100 variants polymorphes.
 
 ## Suivi des étapes du pipeline V2
 
@@ -216,7 +235,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `02` | Métadonnées maître | `VALIDE` | Oui | Oui | Revue manuelle et reprise synthétiques validées |
 | `03` | Conversion et harmonisation ACPA | `VALIDE` | Oui | Oui | Double sortie PLINK et smoke réel validés |
 | `04` | Variant cible | `VALIDE` | Oui | Oui | Injection explicite et smoke PLINK réel validés |
-| `05` | QC préliminaire genome-wide | `NON_FAIT` | Non | Non | — |
+| `05` | QC préliminaire genome-wide | `VALIDE` | Oui | Oui | Missingness technique, alertes et smoke PLINK réel validés |
 | `06` | Panel indépendant | `NON_FAIT` | Non | Non | — |
 | `07` | Apparentement et duplicats | `NON_FAIT` | Non | Non | — |
 | `08` | Structure populationnelle | `NON_FAIT` | Non | Non | — |
@@ -272,8 +291,8 @@ préliminaire ; elle ne remplace pas l'audit complet obligatoire après l'étape
 
 ## Priorités de la prochaine session
 
-1. Implémenter `05_qc_preliminary` sur le jeu genome-wide de l'étape `03`, sans
-   filtre HWE dépendant d'une cohorte encore non gelée.
+1. Implémenter `06_build_kinship_panel` depuis le jeu pré-QC et ses alertes MAF,
+   avec pruning LD reproductible pour l'apparentement.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
 3. Migrer ensuite le QC préliminaire genome-wide et le panel indépendant de
@@ -316,6 +335,5 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action attendue est d'implémenter `05_qc_preliminary` sur le jeu genome-wide de
-l'étape `03`, en conservant le HWE pour une étape postérieure au gel des
-cohortes.
+action attendue est d'implémenter `06_build_kinship_panel` depuis le jeu pré-QC
+de l'étape `05`, avec sélection MAF et pruning LD explicitement paramétrés.

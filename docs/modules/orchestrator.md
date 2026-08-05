@@ -107,7 +107,7 @@ Le socle minimal ne fournit pas encore :
 - verrou interprocessus empêchant deux reprises simultanées ;
 - délai maximal ou protocole d'annulation des outils externes longs ;
 - cache partagé entre deux runs distincts ;
-- registre de production des étapes scientifiques `05` à `19` ;
+- registre de production des étapes scientifiques `06` à `19` ;
 - artefacts composés BED/BIM/FAM ;
 - migration de version automatique des manifests.
 
