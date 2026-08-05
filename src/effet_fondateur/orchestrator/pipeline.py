@@ -23,7 +23,16 @@ SYNTHETIC_STAGE = StageDefinition(
     dependencies=("initialize_run",),
 )
 
-DEFAULT_STAGE_DEFINITIONS = (SYNTHETIC_STAGE,)
+VALIDATE_SOURCES_STAGE = StageDefinition(
+    stage_id="01",
+    stage_name="validate_sources",
+    module="effet_fondateur.stages.validate_sources",
+    critical=True,
+    dependencies=("initialize_run",),
+    config_input_directories=("acpa_samples_dir",),
+)
+
+DEFAULT_STAGE_DEFINITIONS = (SYNTHETIC_STAGE, VALIDATE_SOURCES_STAGE)
 
 
 def _run_enabled_stages(

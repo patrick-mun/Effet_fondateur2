@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/source_qc.schema.json",
+  "title": "Contrôles des exports ACPA sources",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["SOURCE_FILE", "CHECK_ID", "STATUS", "DETAIL_CODE"],
+    "null_value": "",
+    "primary_key": ["SOURCE_FILE", "CHECK_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "stableCode": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["SOURCE_FILE", "CHECK_ID", "STATUS", "DETAIL_CODE"],
+      "properties": {
+        "SOURCE_FILE": {"type": "string", "minLength": 1},
+        "CHECK_ID": {"$ref": "#/$defs/stableCode"},
+        "STATUS": {"enum": ["PASS", "WARN", "FAIL"]},
+        "DETAIL_CODE": {"$ref": "#/$defs/stableCode"}
+      }
+    }
+  }
+}

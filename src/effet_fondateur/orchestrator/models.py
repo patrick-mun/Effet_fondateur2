@@ -14,6 +14,7 @@ class StageDefinition:
     module: str
     critical: bool = True
     dependencies: tuple[str, ...] = ()
+    config_input_directories: tuple[str, ...] = ()
 
     @property
     def directory_name(self) -> str:

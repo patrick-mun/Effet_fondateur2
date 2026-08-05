@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/source_inventory.schema.json",
+  "title": "Inventaire des exports ACPA sources",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "SOURCE_FILE",
+      "SIZE_BYTES",
+      "SHA256",
+      "ENCODING",
+      "ARRAY_TYPE",
+      "GENOMIC_BUILD",
+      "DATA_ROW_COUNT",
+      "AUTOSOMES_PRESENT",
+      "TARGET_CHROMOSOME_PRESENT",
+      "STATUS"
+    ],
+    "null_value": "",
+    "primary_key": ["SOURCE_FILE"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "SOURCE_FILE",
+        "SIZE_BYTES",
+        "SHA256",
+        "ENCODING",
+        "ARRAY_TYPE",
+        "GENOMIC_BUILD",
+        "DATA_ROW_COUNT",
+        "AUTOSOMES_PRESENT",
+        "TARGET_CHROMOSOME_PRESENT",
+        "STATUS"
+      ],
+      "properties": {
+        "SOURCE_FILE": {"type": "string", "minLength": 1},
+        "SIZE_BYTES": {"type": "string", "pattern": "^[0-9]+$"},
+        "SHA256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "ENCODING": {"const": "utf-8-sig"},
+        "ARRAY_TYPE": {"type": ["string", "null"], "minLength": 1},
+        "GENOMIC_BUILD": {"type": ["string", "null"], "minLength": 1},
+        "DATA_ROW_COUNT": {"type": "string", "pattern": "^[0-9]+$"},
+        "AUTOSOMES_PRESENT": {
+          "oneOf": [
+            {"type": "string", "pattern": "^([1-9]|1[0-9]|2[0-2])(,([1-9]|1[0-9]|2[0-2]))*$"},
+            {"type": "null"}
+          ]
+        },
+        "TARGET_CHROMOSOME_PRESENT": {"type": "boolean"},
+        "STATUS": {"enum": ["PASS", "FAIL"]}
+      }
+    }
+  }
+}

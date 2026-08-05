@@ -25,6 +25,7 @@ def build_stage_signature(
     definition: StageDefinition,
     parameters: dict[str, Any],
     config_sha256: str,
+    input_artifacts: list[dict[str, Any]] | None = None,
 ) -> str:
     """Lie le code, la configuration, les paramètres et les contrats d'E/S."""
     # Les versions de schéma font partie de la signature : un contrat modifié
@@ -35,6 +36,7 @@ def build_stage_signature(
         "module_sha256": module_sha256(definition.module),
         "parameters": parameters,
         "config_sha256": config_sha256,
+        "input_artifacts": input_artifacts or [],
         "input_schema_version": "1.0.0",
         "output_schema_version": "1.0.0",
         "audit_schema_version": "1.0.0",

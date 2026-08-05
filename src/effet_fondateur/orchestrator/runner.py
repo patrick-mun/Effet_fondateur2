@@ -12,12 +12,17 @@ from typing import Any
 from uuid import uuid4
 
 from effet_fondateur.audit import atomic_write_json, sha256_file
-from effet_fondateur.contracts import DocumentValidationError, validate_json_document
+from effet_fondateur.contracts import (
+    DocumentValidationError,
+    load_pipeline_config,
+    validate_json_document,
+)
 from effet_fondateur.orchestrator.errors import IntegrityError, StageExecutionError
 from effet_fondateur.orchestrator.integrity import (
     validate_attempt_outputs,
     validate_published_stage,
 )
+from effet_fondateur.orchestrator.inputs import resolve_stage_input_artifacts
 from effet_fondateur.orchestrator.models import StageDefinition
 from effet_fondateur.orchestrator.signatures import build_stage_signature
 from effet_fondateur.orchestrator.state import (
@@ -107,10 +112,25 @@ def _reuse_published_stage(
     manifest: dict[str, Any],
     stage_record: dict[str, Any],
     definition: StageDefinition,
+    current_signature: str,
 ) -> bool:
     """Réutilise une étape terminale uniquement si son intégrité est intacte."""
     if stage_record["state"] not in {"SUCCEEDED", "CACHED"}:
         return False
+    if stage_record["signature"] != current_signature:
+        stage_record["state"] = "FAILED"
+        stage_record["last_error_code"] = 5
+        manifest["global_status"] = "BLOCKED"
+        save_manifest(run_dir, manifest)
+        record_event(
+            run_dir,
+            definition.directory_name,
+            "stage_input_integrity_failed",
+            severity="ERROR",
+        )
+        raise IntegrityError(
+            f"Entrées modifiées depuis la publication de {definition.stage_name}."
+        )
     try:
         validate_published_stage(run_dir, definition, stage_record)
     except IntegrityError:
@@ -135,13 +155,10 @@ def _prepare_attempt(
     stage_record: dict[str, Any],
     definition: StageDefinition,
     parameters: dict[str, Any],
+    signature: str,
+    input_artifacts: list[dict[str, Any]],
 ) -> _StageAttempt:
     """Crée les entrées temporaires et publie l'état RUNNING dans le manifest."""
-    signature = build_stage_signature(
-        definition,
-        parameters,
-        manifest["config_sha256"],
-    )
     attempt_identifier = uuid4().hex
     attempt_dir = run_dir / "stages" / f".{definition.directory_name}.{attempt_identifier}.tmp"
     failed_attempt_dir = (
@@ -162,7 +179,7 @@ def _prepare_attempt(
         "attempt_number": attempt_number,
         "published_output_dir": f"stages/{definition.directory_name}",
         "parameters": parameters,
-        "artifacts": [],
+        "artifacts": input_artifacts,
     }
     validate_json_document(stage_inputs, "stage_inputs.schema.json")
     atomic_write_json(attempt_dir / "stage_inputs.json", stage_inputs)
@@ -299,8 +316,26 @@ def run_stage(
     if stage_record is None:
         stage_record = _new_stage_record(definition)
         manifest["stages"].append(stage_record)
-
-    if _reuse_published_stage(run_dir, manifest, stage_record, definition):
+        save_manifest(run_dir, manifest)
+    config = load_pipeline_config(run_dir / "config.resolved.yaml")
+    input_artifacts = resolve_stage_input_artifacts(
+        config,
+        definition,
+        manifest["config_sha256"],
+    )
+    signature = build_stage_signature(
+        definition,
+        parameters,
+        manifest["config_sha256"],
+        input_artifacts,
+    )
+    if _reuse_published_stage(
+        run_dir,
+        manifest,
+        stage_record,
+        definition,
+        signature,
+    ):
         return
     final_stage_dir = run_dir / "stages" / definition.directory_name
     if final_stage_dir.exists():
@@ -312,6 +347,8 @@ def run_stage(
         stage_record,
         definition,
         parameters,
+        signature,
+        input_artifacts,
     )
     _execute_attempt(attempt, definition, manifest["run_id"])
     _record_success(run_dir, manifest, stage_record, definition, attempt)
@@ -329,7 +366,7 @@ def run_stage_with_failure_audit(
     except StageExecutionError as error:
         manifest = load_manifest(run_dir)
         stage_record = find_stage_record(manifest, definition.stage_name)
-        if stage_record is not None and stage_record["state"] == "RUNNING":
+        if stage_record is not None and stage_record["state"] in {"PENDING", "RUNNING"}:
             _record_failure(
                 run_dir,
                 manifest,

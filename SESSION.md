@@ -11,8 +11,9 @@ Dernière mise à jour : 5 août 2026
 - PR `#1` fusionnée dans `main` le 4 août 2026.
 - Commit de fusion : `f2fec8f`.
 - Environnement : Python 3.12.13 dans `.venv`.
-- Outils disponibles : PLINK 1.9, KING, bcftools, Rscript, Gamma et packages R
-  du projet.
+- Outils disponibles et fonctionnels : PLINK 1.9, KING, bcftools, Rscript et
+  packages R du projet. Les commandes `Gamma`/`gamma` présentes dans le `PATH`
+  pointent actuellement vers un document HTML invalide et ne sont pas utilisables.
 
 ## Bilan des avancées
 
@@ -66,6 +67,16 @@ Dernière mise à jour : 5 août 2026
   guides d'extension ajoutés dans `docs/modules/`. Les limites de concurrence,
   timeout, cache inter-run et migration de manifest restent explicitement
   documentées avant production.
+- Étape V2 `01_validate_sources` implémentée et validée sur fixtures synthétiques :
+  - inventaire non destructif des exports ACPA et empreintes SHA-256 ;
+  - contrôle UTF-8, métadonnées ChAS, colonnes, lignes, assemblage, autosomes et
+    chromosome cible ;
+  - détection des noms dupliqués, sources modifiées et liens symboliques ;
+  - contrats TSV versionnés pour `source_inventory.tsv` et `source_qc.tsv` ;
+  - déclaration des sources externes dans `stage_inputs.json` et intégration de
+    leurs empreintes à la signature de reprise ;
+  - aucune lecture de génotype à des fins d'interprétation et aucune donnée
+    génétique dérivée produite.
 
 ## Jeux de données actuellement disponibles
 
@@ -136,9 +147,9 @@ Dernière mise à jour : 5 août 2026
 - Contrôle mendélien temporaire : 10 erreurs, dont une au marqueur injecté avec
   les règles de groupe d'exemple.
 - Tests ciblés de préparation des données : 16 réussis.
-- Suite moderne `tests/`, incluant les contrôles de maintenabilité V2 : 42
-  réussis.
-- Ensemble des suites Python actuelles : 54 réussis et 4 échecs historiques.
+- Suite moderne `tests/`, incluant l'étape `01` et les contrôles de
+  maintenabilité V2 : 47 réussis.
+- Ensemble des suites Python actuelles : 59 réussis et 4 échecs historiques.
 
 ## Suivi des étapes du pipeline V2
 
@@ -149,7 +160,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | Étape | Nom | Statut | Tests ciblés | Audit d'étape | Remarque |
 |---:|---|---|---|---|---|
 | `00` | Initialisation du run | `VALIDE` | Oui | Oui | Bootstrap et reprise synthétique validés |
-| `01` | Validation des sources | `NON_FAIT` | Non | Non | Prochaine étape |
+| `01` | Validation des sources | `VALIDE` | Oui | Oui | Fixtures synthétiques et reprise validées |
 | `02` | Métadonnées maître | `NON_FAIT` | Non | Non | Schéma préparé, script non implémenté |
 | `03` | Conversion et harmonisation ACPA | `NON_FAIT` | Non | Non | — |
 | `04` | Variant cible | `NON_FAIT` | Non | Non | — |
@@ -194,29 +205,30 @@ préliminaire ; elle ne remplace pas l'audit complet obligatoire après l'étape
    `genotype_data.ped/map`.
 5. La datation Gamma sépare actuellement les positions en deux moitiés au lieu
    d'utiliser des longueurs gauche/droite pertinentes autour de la mutation.
-6. Quatre tests historiques échouent encore :
+6. Les exécutables `Gamma` et `gamma` installés dans `/usr/local/bin` contiennent
+   une page HTML au lieu d'un programme exécutable. Gamma reste optionnel et ne
+   doit pas être déclaré disponible avant réinstallation et validation.
+7. Quatre tests historiques échouent encore :
    - confirmation interactive non neutralisée dans un test Gamma ;
    - argument `n` absent d'un test d'estimation d'âge ;
    - deux mocks de prétraitement ne créent pas `filtered_data.ped`.
-7. Le simulateur familial historique et les anciens convertisseurs sont encore
+8. Le simulateur familial historique et les anciens convertisseurs sont encore
    conservés tant que leur dernière logique utile n'a pas été vérifiée.
-8. Le pipeline V1 mélange calcul, visualisation et interprétation et peut lire
+9. Le pipeline V1 mélange calcul, visualisation et interprétation et peut lire
    des sorties historiques après un échec ; il ne doit pas être relancé pour
    produire un résultat scientifique avant la migration V2.
 
 ## Priorités de la prochaine session
 
-1. Implémenter l'étape `01_validate_sources` sur des fixtures synthétiques,
-   sans produire de génotype dérivé.
-2. Implémenter ensuite `02_build_sample_registry` avec revue humaine des
+1. Implémenter `02_build_sample_registry` avec revue humaine des
    génotypes cibles et de leur provenance.
-3. Migrer ensuite une conversion
+2. Migrer ensuite une conversion
    ACPA efficace produisant séparément le genome-wide et le chromosome cible.
-4. Intégrer les 66 témoins réels dans le QC genome-wide, KING, la structure et le
+3. Intégrer les 66 témoins réels dans le QC genome-wide, KING, la structure et le
    gel des cohortes avant toute analyse locale.
-5. Confirmer les données moléculaires et génotypes individuels du variant DOCK6,
+4. Confirmer les données moléculaires et génotypes individuels du variant DOCK6,
    puis valider son intégration et Mendel sur le jeu chromosome 19 définitif.
-6. Implémenter ensuite phasage, haplotype fondateur et datation avec jeux
+5. Implémenter ensuite phasage, haplotype fondateur et datation avec jeux
    synthétiques de référence avant analyse réelle.
 
 ## Décisions à conserver
@@ -249,6 +261,7 @@ source .venv/bin/activate
 git status -sb
 ```
 
-Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La première
-action attendue est de valider les contrats de métadonnées, puis d'implémenter
-`01_validate_sources` sur des fichiers synthétiques.
+Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
+action attendue est d'implémenter `02_build_sample_registry` à partir des
+contrats de métadonnées déjà validés, sans inférer de génotype depuis le statut
+clinique ou le groupe.
