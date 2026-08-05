@@ -136,6 +136,33 @@ ANALYZE_POPULATION_STRUCTURE_STAGE = StageDefinition(
     manual_decision_id="population_structure_exclusion_approval",
 )
 
+FREEZE_COHORTS_STAGE = StageDefinition(
+    stage_id="09",
+    stage_name="freeze_cohorts",
+    module="effet_fondateur.stages.freeze_cohorts",
+    critical=True,
+    dependencies=(
+        "build_sample_registry",
+        "prepare_target_variant_dataset",
+        "qc_preliminary",
+        "infer_kinship",
+        "analyze_population_structure",
+    ),
+    config_input_files=("target_variant_metadata",),
+    required_artifact_ids=(
+        "samples_master",
+        "target_genotype_audit",
+        "qc_individual_metrics",
+        "independent_set_proposal",
+        "population_scores",
+        "population_outliers",
+    ),
+    resolves_manual_decision_ids=(
+        "kinship_exclusion_approval",
+        "population_structure_exclusion_approval",
+    ),
+)
+
 DEFAULT_STAGE_DEFINITIONS = (
     SYNTHETIC_STAGE,
     VALIDATE_SOURCES_STAGE,
@@ -146,6 +173,7 @@ DEFAULT_STAGE_DEFINITIONS = (
     BUILD_KINSHIP_PANEL_STAGE,
     INFER_KINSHIP_STAGE,
     ANALYZE_POPULATION_STRUCTURE_STAGE,
+    FREEZE_COHORTS_STAGE,
 )
 
 

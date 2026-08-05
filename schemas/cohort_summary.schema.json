@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/cohort_summary.schema.json",
+  "title": "Résumé des cohortes figées V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "COHORT_ID", "CANDIDATE_COUNT", "INCLUDED_COUNT", "EXCLUDED_COUNT",
+      "INDEPENDENT_UNIT_COUNT", "REQUIRED_NONEMPTY", "COHORT_STATUS"
+    ],
+    "null_value": "",
+    "primary_key": ["COHORT_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "count": {"type": "string", "pattern": "^[0-9]+$"},
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "COHORT_ID", "CANDIDATE_COUNT", "INCLUDED_COUNT", "EXCLUDED_COUNT",
+        "INDEPENDENT_UNIT_COUNT", "REQUIRED_NONEMPTY", "COHORT_STATUS"
+      ],
+      "properties": {
+        "COHORT_ID": {
+          "enum": [
+            "controls_unrelated", "target_carriers_all",
+            "target_carriers_independent", "family_noncarriers",
+            "affected_noncarriers", "target_chromosome_all_qc",
+            "genomewide_structure_reference"
+          ]
+        },
+        "CANDIDATE_COUNT": {"$ref": "#/$defs/count"},
+        "INCLUDED_COUNT": {"$ref": "#/$defs/count"},
+        "EXCLUDED_COUNT": {"$ref": "#/$defs/count"},
+        "INDEPENDENT_UNIT_COUNT": {"$ref": "#/$defs/count"},
+        "REQUIRED_NONEMPTY": {"type": "boolean"},
+        "COHORT_STATUS": {"enum": ["POPULATED", "EMPTY_ALLOWED"]}
+      }
+    }
+  }
+}

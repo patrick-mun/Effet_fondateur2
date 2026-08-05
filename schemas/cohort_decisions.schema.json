@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/cohort_decisions.schema.json",
+  "title": "Décisions manuelles appliquées au gel des cohortes V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "MANUAL_DECISION_ID", "SAMPLE_ID", "SOURCE_STAGE", "COHORT_ID",
+      "DECISION", "REVIEW_ID", "REVIEWER_ROLE", "REVIEWED_AT",
+      "REVIEWED_ARTIFACT_SHA256"
+    ],
+    "null_value": "",
+    "primary_key": ["MANUAL_DECISION_ID", "SAMPLE_ID", "COHORT_ID"],
+    "boolean_values": {},
+    "allow_empty": true
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "MANUAL_DECISION_ID", "SAMPLE_ID", "SOURCE_STAGE", "COHORT_ID",
+        "DECISION", "REVIEW_ID", "REVIEWER_ROLE", "REVIEWED_AT",
+        "REVIEWED_ARTIFACT_SHA256"
+      ],
+      "properties": {
+        "MANUAL_DECISION_ID": {
+          "enum": ["kinship_exclusion_approval", "population_structure_exclusion_approval"]
+        },
+        "SAMPLE_ID": {"$ref": "#/$defs/identifier"},
+        "SOURCE_STAGE": {"enum": ["07_infer_kinship", "08_analyze_population_structure"]},
+        "COHORT_ID": {
+          "enum": [
+            "controls_unrelated", "target_carriers_independent",
+            "genomewide_structure_reference"
+          ]
+        },
+        "DECISION": {"const": "APPROVED_EXCLUSION"},
+        "REVIEW_ID": {"$ref": "#/$defs/identifier"},
+        "REVIEWER_ROLE": {"$ref": "#/$defs/identifier"},
+        "REVIEWED_AT": {"type": "string", "format": "date-time"},
+        "REVIEWED_ARTIFACT_SHA256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    }
+  }
+}

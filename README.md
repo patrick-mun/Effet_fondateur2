@@ -156,6 +156,12 @@ restent exploratoires et toute exclusion proposée requiert une validation
 humaine. Le modèle reproductible et ses limites sont documentés dans
 `docs/modules/population_structure.md`.
 
+`09_freeze_cohorts` transforme enfin les génotypes cibles explicites, le QC,
+l'apparentement et la structure en sept cohortes versionnées. Les exclusions
+KING ou PCA ne sont appliquées qu'après une revue liée au SHA-256 exact de
+l'artefact proposé ; le succès de l'étape résout alors les décisions manuelles
+correspondantes. Le contrat est documenté dans `docs/modules/cohort_freeze.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est

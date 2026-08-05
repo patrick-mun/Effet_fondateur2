@@ -5,8 +5,8 @@ Dernière mise à jour : 5 août 2026
 ## État du dépôt
 
 - Dépôt GitHub : `patrick-mun/Effet_fondateur2`.
-- Branche active : `feature/v2-population-structure`, avec les modifications
-  locales non committées de l'étape `08` au-dessus de `main`.
+- Branche active : `feature/v2-cohort-freeze`, avec les modifications locales
+  non committées de l'étape `09` au-dessus du commit `dc500bb` de l'étape `08`.
 - PR V2 `#2` fusionnée dans `main` le 5 août 2026.
 - PR `#1` fusionnée dans `main` le 4 août 2026.
 - Dernier commit de fusion V2 : `f87b04c`.
@@ -194,6 +194,26 @@ Dernière mise à jour : 5 août 2026
   - ajout de `population_structure_exclusion_approval` au manifest uniquement
     lorsqu'un outlier est proposé pour revue humaine ;
   - aucune référence populationnelle externe et aucune DAPC dans cette version.
+- Étape V2 `09_freeze_cohorts` implémentée et validée sur fixtures synthétiques
+  et sur une chaîne temporaire `01` à `09` avec PLINK 1.9/KING 2.3.2 réels :
+  - consommation explicite du registre, des génotypes cibles acceptés, du QC,
+    de la proposition indépendante et des résultats populationnels ;
+  - publication d'une matrice complète de sept cohortes avec une ligne par
+    individu, y compris pour chaque exclusion et sa provenance ;
+  - classification porteur/non-porteur fondée exclusivement sur le génotype
+    individuel accepté de l'étape `04`, jamais sur le statut ou le groupe ;
+  - groupes témoins déclarés explicitement par configuration, sans utilisation
+    comme source de génotype ;
+  - représentants indépendants déterministes par famille selon le QC technique,
+    avec unités explicites pour contrôles, familles porteuses et composants KING ;
+  - approbations inter-run liées au SHA-256 exact des propositions `07`/`08`,
+    avec liste complète des exclusions et date horodatée ;
+  - résolution des décisions manuelles par l'orchestrateur seulement après
+    validation et publication atomique de l'étape ; un échec les conserve ;
+  - identifiants approuvés confinés à `cohort_decisions.tsv`, classé sensible,
+    tandis que l'audit et le rapport ne publient que des comptes ;
+  - génération de sept fichiers PLINK `--keep`, dont les cohortes optionnelles
+    peuvent être vides sans ambiguïté.
 
 ## Jeux de données actuellement disponibles
 
@@ -269,10 +289,11 @@ Dernière mise à jour : 5 août 2026
 - Tests ciblés de l'étape `06` : 7 réussis.
 - Tests ciblés de l'étape `07` : 8 réussis.
 - Tests ciblés de l'étape `08` : 8 réussis.
-- Suite moderne `tests/`, incluant les étapes `01` à `08` et les contrôles de
-  maintenabilité V2 : 96 réussis.
-- Ensemble des suites Python actuelles : 108 réussis et 4 échecs historiques
-  sans rapport avec les étapes `05` à `08`.
+- Tests ciblés de l'étape `09` : 7 réussis.
+- Suite moderne `tests/`, incluant les étapes `01` à `09` et les contrôles de
+  maintenabilité V2 : 103 réussis.
+- Ensemble des suites Python actuelles : 115 réussis et 4 échecs historiques
+  sans rapport avec les étapes `05` à `09`.
 - Smoke test temporaire avec PLINK 1.9 réel : 2 individus, 23 marqueurs
   autosomiques et 2 marqueurs du chromosome cible, conversion réussie.
 - Smoke test temporaire de l'étape `04` avec PLINK 1.9 réel : 2 individus,
@@ -289,6 +310,10 @@ Dernière mise à jour : 5 août 2026
 - Smoke test temporaire de l'étape `08` avec PLINK 1.9 et KING 2.3.2 réels :
   3 individus, 22 marqueurs, 11 variants informatifs, 2 composantes calculées,
   aucun outlier et aucun fichier de dosage temporaire publié.
+- Smoke test temporaire de la chaîne `01` à `09` avec PLINK 1.9 et KING 2.3.2
+  réels : 3 individus, 7 cohortes, 2 contrôles indépendants, 1 porteur total et
+  indépendant, 3 individus dans la référence de structure et sur le chromosome
+  cible, sans décision manuelle résiduelle.
 
 ## Suivi des étapes du pipeline V2
 
@@ -307,7 +332,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `06` | Panel indépendant | `VALIDE` | Oui | Oui | MAF post-QC, pruning LD et smoke PLINK réel validés |
 | `07` | Apparentement et duplicats | `VALIDE` | Oui | Oui | KING, pedigree, proposition indépendante et smoke réel validés |
 | `08` | Structure populationnelle | `VALIDE` | Oui | Oui | PCA indépendante, projection, outliers et smoke réel validés |
-| `09` | Gel des cohortes | `NON_FAIT` | Non | Non | Schéma préparé, script non implémenté |
+| `09` | Gel des cohortes | `VALIDE` | Oui | Oui | Génotypes explicites, revues SHA, unités et fichiers keep validés |
 | `10` | QC final | `NON_FAIT` | Non | Non | — |
 | `11` | Région cible | `NON_FAIT` | Non | Non | — |
 | `12` | Phasage | `NON_FAIT` | Non | Non | Méthode à décider |
@@ -324,13 +349,21 @@ ses tests, son audit et sa documentation sont cohérents.
 | Groupe | Audit requis après | Statut | Contenu minimal |
 |---|---:|---|---|
 | `00–04` | étape `04` | `VALIDE` | architecture, contrats, sécurité, tests, audit scientifique |
-| `05–09` | étape `09` | `NON_FAIT` | QC, KING, structure, indépendance et cohortes |
+| `05–09` | étape `09` | `VALIDE` | QC, KING, structure, indépendance et cohortes |
 | `10–14` | étape `14` | `NON_FAIT` | QC final, phasage, haplotypes et datation |
 | `15–19` | étape `19` | `NON_FAIT` | analyses secondaires, figures, rapport et reproductibilité |
 
 La revue de maintenabilité du socle réalisée avant l'étape `01` est un contrôle
 préliminaire ; elle ne remplace pas l'audit complet obligatoire après l'étape
 `04`.
+
+L'audit groupé `05–09` confirme que les filtres automatiques restent limités au
+QC technique, que KING et la PCA ne produisent que des propositions, que les
+revues sont liées aux artefacts par empreinte, que les décisions ne sont
+résolues qu'après succès, que les données individuelles sont classées sensibles
+et que chaque cohorte/raison/unité reste reproductible. Aucun blocage nouveau
+n'a été identifié ; les limites scientifiques de la PCA exploratoire, de la
+sélection gloutonne et des groupes témoins configurés restent documentées.
 
 ## Problèmes connus
 
@@ -362,13 +395,14 @@ préliminaire ; elle ne remplace pas l'audit complet obligatoire après l'étape
 
 ## Priorités de la prochaine session
 
-1. Implémenter `09_freeze_cohorts` en consommant explicitement QC, génotype
-   cible, apparentement, proposition indépendante et structure populationnelle.
+1. Implémenter `10_qc_final` avec politiques distinctes pour témoins
+   indépendants, porteurs et région cible, sans filtrer silencieusement le
+   variant causal.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
-3. Définir le mécanisme d'approbation de `kinship_exclusion_approval` et
-   `population_structure_exclusion_approval` consommé par l'étape `09`, sans
-   modifier un run déjà publié.
+3. Préparer les revues réelles `kinship_exclusion_approval` et
+   `population_structure_exclusion_approval` sur un premier run, puis les lier
+   par SHA-256 dans la configuration d'un nouveau run destiné au gel.
 4. Intégrer les 66 témoins réels dans le QC genome-wide, KING, la structure et le
    gel des cohortes avant toute analyse locale.
 5. Confirmer les données moléculaires et génotypes individuels du variant DOCK6,
@@ -407,6 +441,5 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action attendue est d'implémenter `09_freeze_cohorts` avec des unités
-indépendantes explicites, des décisions d'exclusion approuvées et des fichiers
-PLINK `--keep` reproductibles.
+action attendue est d'implémenter `10_qc_final` depuis les cohortes figées et
+leurs fichiers `--keep`, avec des règles de QC propres à chaque analyse.

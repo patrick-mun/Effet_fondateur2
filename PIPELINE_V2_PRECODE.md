@@ -915,6 +915,8 @@ ainsi que projection des individus exclus potentiels.
 
 **Script cible** : `stages/freeze_cohorts.py`.
 
+**Dépendances directes** : étapes `02`, `04`, `05`, `07` et `08`.
+
 **Responsabilité** : transformer les résultats QC, KING, structure, pedigree et
 génotype cible en cohortes analytiques explicites.
 
@@ -937,7 +939,23 @@ génotype cible en cohortes analytiques explicites.
 - aucune cohorte ne se fonde implicitement sur le seul statut `ATTEINT` ;
 - chaque exclusion possède un code et une source.
 
-**Sorties** : `cohorts.frozen.tsv`, fichiers PLINK `--keep` et audit de décision.
+Le gel publie une ligne par individu et par cohorte, y compris pour les individus
+non retenus. Les cohortes indépendantes utilisent au plus un représentant par
+famille, sélectionné avec les métriques techniques de l'étape `05`. Les
+génotypes porteurs/non-porteurs proviennent exclusivement de l'audit accepté de
+l'étape `04`. Les groupes témoins sont une liste explicite de `GROUP_LABEL`
+configurée ; ils ne servent jamais à déduire le génotype cible.
+
+Une proposition d'exclusion de `07` ou `08` bloque le gel tant qu'une revue ne
+fournit pas l'identifiant de revue, le rôle du réviseur, une date horodatée,
+l'empreinte SHA-256 exacte de l'artefact relu et la liste complète des individus
+proposés. Cette revue est déclarée dans la configuration d'un nouveau run. Une
+approbation accepte les exclusions proposées ; changer les représentants exige
+un nouveau calcul amont. Les identifiants individuels restent dans la table
+sensible `cohort_decisions.tsv` et ne sont pas recopiés dans l'audit partageable.
+
+**Sorties** : `cohorts.frozen.tsv`, `cohort_summary.tsv`,
+`cohort_decisions.tsv`, sept fichiers PLINK `--keep`, rapport et audit.
 
 **Critère bloquant** : absence de génotypes cibles fiables ou impossibilité
 de définir une unité porteuse indépendante.
@@ -1290,7 +1308,7 @@ contient en plus `stage_inputs.json`, `stage_outputs.json`, `audit.json`,
 | `06` | `genomewide_pre_qc.*`, paramètres pruning | `kinship_panel.*`, `pruned_variants.tsv`, `panel_coverage.tsv`, `panel_residual_ld_bins.tsv` | `plot_kinship_panel.py` |
 | `07` | `kinship_panel.*`, pedigree déclaré | `kinship_pairs.tsv`, `kinship_degree_summary.tsv`, `pedigree_concordance.tsv`, `independent_set_proposal.tsv` | `plot_kinship.py` |
 | `08` | panel genome-wide, résultat KING, lots et groupes descriptifs | `population_scores.tsv`, `population_eigenvalues.tsv`, `population_outliers.tsv`, `population_variant_loadings.tsv` | `plot_population_structure.py` |
-| `09` | registre, variant cible, KING, structure, QC | `cohorts.frozen.tsv`, fichiers `keep`, `cohort_decisions.tsv` | `plot_cohorts.py` |
+| `09` | registre, variant cible, KING, structure, QC | `cohorts.frozen.tsv`, `cohort_summary.tsv`, fichiers `keep`, `cohort_decisions.tsv` | `plot_cohorts.py` |
 | `10` | jeux de base, cohortes figées | jeux QC par cohorte, `sample_qc_final.tsv`, `variant_qc.tsv` | `plot_genotype_qc.py` |
 | `11` | jeu du chromosome cible QC, variant cible, carte génétique | `target_region.*`, `target_genetic_map.tsv`, formats de phasage | `plot_target_map.py` |
 | `12` | région cible, pedigree, génotypes cibles | haplotypes phasés, `carrier_haplotypes.tsv`, `phasing_qc.tsv` | `plot_phasing.py` |

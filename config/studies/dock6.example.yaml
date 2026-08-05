@@ -104,3 +104,14 @@ stages:
       min_reference_call_rate: 0.95
       outlier_alpha: 0.001
       plink_timeout_seconds: 300
+  freeze_cohorts:
+    enabled: false
+    parameters:
+      control_group_labels: [TEMOIN]
+      required_nonempty_cohorts:
+        - controls_unrelated
+        - target_carriers_all
+        - target_carriers_independent
+        - target_chromosome_all_qc
+        - genomewide_structure_reference
+      decision_reviews: {}
