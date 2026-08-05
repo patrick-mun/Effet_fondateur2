@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/independent_set_proposal.schema.json",
+  "title": "Proposition d'ensemble indépendant V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "SAMPLE_ID", "FID", "IID", "COMPONENT_ID", "PROPOSED_INCLUDED",
+      "PROPOSAL_STATUS", "REPRESENTATIVE_SAMPLE_ID", "RELATION_BASIS", "F_MISS",
+      "ABS_HETEROZYGOSITY_Z", "DECISION_SOURCE", "MANUAL_VALIDATION_REQUIRED"
+    ],
+    "null_value": "",
+    "primary_key": ["SAMPLE_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "stableIdentifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "nullableIdentifier": {
+      "oneOf": [
+        {"$ref": "#/$defs/stableIdentifier"},
+        {"type": "null"}
+      ]
+    },
+    "nullableDecimal": {
+      "oneOf": [
+        {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$"},
+        {"type": "null"}
+      ]
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "SAMPLE_ID", "FID", "IID", "COMPONENT_ID", "PROPOSED_INCLUDED",
+        "PROPOSAL_STATUS", "REPRESENTATIVE_SAMPLE_ID", "RELATION_BASIS", "F_MISS",
+        "ABS_HETEROZYGOSITY_Z", "DECISION_SOURCE", "MANUAL_VALIDATION_REQUIRED"
+      ],
+      "properties": {
+        "SAMPLE_ID": {"$ref": "#/$defs/stableIdentifier"},
+        "FID": {"$ref": "#/$defs/stableIdentifier"},
+        "IID": {"$ref": "#/$defs/stableIdentifier"},
+        "COMPONENT_ID": {"type": "string", "pattern": "^kinship_component_[0-9]{6}$"},
+        "PROPOSED_INCLUDED": {"type": "boolean"},
+        "PROPOSAL_STATUS": {"enum": ["RETAIN", "EXCLUDE_RELATED"]},
+        "REPRESENTATIVE_SAMPLE_ID": {"$ref": "#/$defs/nullableIdentifier"},
+        "RELATION_BASIS": {
+          "oneOf": [
+            {"enum": ["KING_RELATEDNESS", "DECLARED_PARENT_CHILD", "KING_AND_DECLARED"]},
+            {"type": "null"}
+          ]
+        },
+        "F_MISS": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$"},
+        "ABS_HETEROZYGOSITY_Z": {"$ref": "#/$defs/nullableDecimal"},
+        "DECISION_SOURCE": {"const": "stage_07_quality_aware_greedy_maximal"},
+        "MANUAL_VALIDATION_REQUIRED": {"type": "boolean"}
+      }
+    }
+  }
+}

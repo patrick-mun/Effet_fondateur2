@@ -9,7 +9,7 @@ de l'âge de la mutation, structure populationnelle et génération de rapports.
 
 ### Python
 
-- Python 3.10 ou version plus récente (Python 3.12 recommandé sur macOS Intel)
+- Python 3.12
 - dépendances déclarées dans `requirements.txt`
 
 Installation recommandée :
@@ -19,6 +19,7 @@ python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+python -m pip install -e .
 ```
 
 ### Activer l'environnement du projet
@@ -57,11 +58,101 @@ deactivate
 Le projet importe directement les bibliothèques suivantes :
 
 - `pandas`, `numpy` et `scipy` pour les calculs ;
+- `PyYAML` et `jsonschema` pour la configuration V2 ;
 - `matplotlib` pour les graphiques ;
 - `networkx` pour le réseau de parenté ;
 - `fpdf2` pour le rapport PDF ;
 - `streamlit` pour l'interface ;
 - `pytest` et `pytest-html` pour les tests.
+
+### Configuration V2
+
+La V2 est développée parallèlement au pipeline historique. Une configuration
+peut être validée sans lire les données ni lancer d'analyse :
+
+```bash
+effet-fondateur validate-config config/pipeline.example.yaml
+effet-fondateur validate-config config/studies/dock6.example.yaml
+```
+
+Le profil DOCK6 conserve volontairement les coordonnées et allèles non confirmés
+à `null`. Leur absence bloquera les futures étapes scientifiques concernées au
+lieu de provoquer l'utilisation de valeurs supposées.
+
+Le socle de l'orchestrateur peut être exercé sans donnée génétique ni logiciel
+externe avec le profil synthétique :
+
+```bash
+effet-fondateur run \
+  --config config/testing/synthetic.example.yaml \
+  --runs-dir /tmp/effet_fondateur_runs
+```
+
+La commande affiche le dossier créé. Une reprise recalcule les empreintes avant
+de réutiliser une étape publiée :
+
+```bash
+effet-fondateur resume --run-dir /tmp/effet_fondateur_runs/<run_id>
+```
+
+Les tables maître et de cohortes peuvent être validées indépendamment :
+
+```bash
+effet-fondateur validate-samples \
+  --table metadata/samples.master.tsv \
+  --source-root data/input
+
+effet-fondateur validate-cohorts \
+  --table cohorts/cohorts.frozen.tsv \
+  --samples-master metadata/samples.master.tsv
+```
+
+Ces commandes ne produisent aucun génotype et n'affichent que le nombre de
+lignes validées. Les formats exacts sont définis dans
+`schemas/samples_master.schema.json` et `schemas/cohorts_frozen.schema.json`.
+L'étape V2 `02_build_sample_registry` recoupe aussi la table maître avec
+l'inventaire validé de l'étape `01`. Sans approbation humaine explicite dans la
+configuration du nouveau run, son audit conserve la décision
+`sample_registry_approval` en attente.
+
+Après approbation, `03_convert_acpa` lit chaque export une fois et publie deux
+jeux PLINK binaires distincts : les 22 autosomes pour les analyses genome-wide
+et le chromosome cible pour les analyses locales. Cette étape requiert PLINK,
+mais ni KING, ni R, ni Gamma. Son contrat détaillé est documenté dans
+`docs/modules/acpa.md`.
+
+`04_prepare_target_variant_dataset` consomme ensuite le jeu du chromosome cible
+sans le modifier. Elle exige une définition moléculaire confirmée et un
+génotype individuel explicite pour chaque échantillon, interdit toute inférence
+depuis le statut clinique ou le groupe, puis limite le contrôle PLINK Mendel au
+variant injecté. L'absence de trio est auditée `NOT_APPLICABLE`. Cette étape ne
+requiert aucun outil supplémentaire à PLINK ; son contrat est documenté dans
+`docs/modules/target_variant.md`.
+
+En parallèle, `05_qc_preliminary` consomme le jeu genome-wide de l'étape `03`.
+Elle exclut uniquement les échantillons et variants dépassant les seuils
+techniques de données manquantes. MAF, hétérozygotie, différences entre lots et
+duplicats potentiels restent des alertes ; aucun HWE n'est appliqué avant le gel
+des cohortes. Le contrat et les statuts `NOT_EVALUATED` sont documentés dans
+`docs/modules/preliminary_qc.md`.
+
+`06_build_kinship_panel` recalcule ensuite la MAF sur les individus conservés,
+exclut les régions complexes explicitement configurées et applique un pruning
+LD reproductible. La couverture des autosomes, la concentration des marqueurs
+et le LD résiduel sont audités avant de publier le jeu destiné à KING et à la
+structure populationnelle. Son contrat est documenté dans
+`docs/modules/kinship_panel.md`.
+
+`07_infer_kinship` exécute KING sur ce panel, classe les relations jusqu'au
+degré configuré et compare explicitement les liens parent-enfant observés au
+pedigree déclaré. Elle publie une proposition d'ensemble indépendant orientée
+qualité, sans appliquer automatiquement les exclusions. Le contrat et la revue
+manuelle requise sont documentés dans `docs/modules/kinship.md`.
+
+Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
+limites techniques actuelles sont documentées dans
+`docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est
+décrite dans `docs/modules/metadata_contracts.md`.
 
 ### Programmes externes
 

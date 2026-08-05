@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/kinship_panel_ld_bins.schema.json",
+  "title": "Distribution agrégée du LD résiduel V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["BIN_ID", "R2_LOWER_BOUND", "R2_UPPER_BOUND", "UPPER_INCLUSIVE", "PAIR_COUNT"],
+    "null_value": "",
+    "primary_key": ["BIN_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["BIN_ID", "R2_LOWER_BOUND", "R2_UPPER_BOUND", "UPPER_INCLUSIVE", "PAIR_COUNT"],
+      "properties": {
+        "BIN_ID": {"type": "string", "pattern": "^r2_bin_[0-9]{2}$"},
+        "R2_LOWER_BOUND": {"type": "string", "pattern": "^(0(\\.[0-9]+)?|0?\\.[0-9]+|1(\\.0+)?)$"},
+        "R2_UPPER_BOUND": {"type": "string", "pattern": "^(0(\\.[0-9]+)?|0?\\.[0-9]+|1(\\.0+)?)$"},
+        "UPPER_INCLUSIVE": {"type": "boolean"},
+        "PAIR_COUNT": {"type": "string", "pattern": "^[0-9]+$"}
+      }
+    }
+  }
+}

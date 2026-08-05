@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *.so
+*.egg-info/
 
 # Environnements virtuels
 env/
@@ -27,6 +28,7 @@ Thumbs.db
 # Dossiers de sortie volumineux
 data/output/
 data/input/
+data/runs/
 test/
 
 # Résultats finaux à ne pas traquer

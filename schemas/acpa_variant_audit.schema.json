@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/acpa_variant_audit.schema.json",
+  "title": "Audit des variants issus de la conversion ACPA V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "VARIANT_ID",
+      "PROBE_ID",
+      "RSID",
+      "RSID_STATUS",
+      "CHROMOSOME",
+      "POSITION_BP",
+      "OBSERVED_ALLELES",
+      "PRESENCE_COUNT",
+      "STATUS",
+      "EXCLUSION_CODE",
+      "IN_GENOMEWIDE",
+      "IN_TARGET_CHROMOSOME"
+    ],
+    "null_value": "",
+    "primary_key": ["PROBE_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "nullableString": {
+      "oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "VARIANT_ID",
+        "PROBE_ID",
+        "RSID",
+        "RSID_STATUS",
+        "CHROMOSOME",
+        "POSITION_BP",
+        "OBSERVED_ALLELES",
+        "PRESENCE_COUNT",
+        "STATUS",
+        "EXCLUSION_CODE",
+        "IN_GENOMEWIDE",
+        "IN_TARGET_CHROMOSOME"
+      ],
+      "properties": {
+        "VARIANT_ID": {"type": "string", "minLength": 1},
+        "PROBE_ID": {"type": "string", "minLength": 1},
+        "RSID": {"$ref": "#/$defs/nullableString"},
+        "RSID_STATUS": {"enum": ["resolved", "unresolved", "conflicting"]},
+        "CHROMOSOME": {"type": "string", "pattern": "^([1-9]|1[0-9]|2[0-2])$"},
+        "POSITION_BP": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "OBSERVED_ALLELES": {
+          "oneOf": [
+            {"type": "string", "pattern": "^[ACGT](,[ACGT])?$"},
+            {"type": "null"}
+          ]
+        },
+        "PRESENCE_COUNT": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "STATUS": {"enum": ["ACCEPTED", "EXCLUDED"]},
+        "EXCLUSION_CODE": {"$ref": "#/$defs/nullableString"},
+        "IN_GENOMEWIDE": {"type": "boolean"},
+        "IN_TARGET_CHROMOSOME": {"type": "boolean"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"STATUS": {"const": "ACCEPTED"}}},
+          "then": {"properties": {"EXCLUSION_CODE": {"type": "null"}}},
+          "else": {"properties": {"EXCLUSION_CODE": {"type": "string"}}}
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/stage_audit.schema.json",
+  "title": "Audit d'une étape V2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "stage_id", "stage_name", "method_id", "signature", "started_at", "completed_at", "duration_seconds", "inputs", "outputs", "parameters", "tools", "counts", "metrics", "exclusions", "warnings", "checks", "known_limits", "expected_visualizations", "manual_validation_required"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "stage_id": {"type": "string", "pattern": "^(0[0-9]|1[0-9]|T[0-9]{2})$"},
+    "stage_name": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+    "method_id": {"type": "string", "minLength": 1},
+    "signature": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "started_at": {"type": "string", "format": "date-time"},
+    "completed_at": {"type": "string", "format": "date-time"},
+    "duration_seconds": {"type": "number", "minimum": 0},
+    "inputs": {"type": "array", "items": {"type": "object"}},
+    "outputs": {"type": "array", "items": {"type": "object"}},
+    "parameters": {"type": "object"},
+    "tools": {"type": "array", "items": {"type": "object"}},
+    "counts": {"type": "object"},
+    "metrics": {"type": "object"},
+    "exclusions": {"type": "array", "items": {"type": "object"}},
+    "warnings": {"type": "array", "items": {"type": "object"}},
+    "checks": {"type": "array", "items": {"type": "object"}},
+    "known_limits": {"type": "array", "items": {"type": "string"}},
+    "expected_visualizations": {"type": "array", "items": {"type": "string"}},
+    "manual_validation_required": {"type": "boolean"}
+  }
+}

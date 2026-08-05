@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/target_variant_metadata.schema.json",
+  "title": "Définition moléculaire du variant cible V2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "assembly",
+    "gene",
+    "chromosome",
+    "position_bp",
+    "ref",
+    "alt",
+    "transcript",
+    "hgvs_c",
+    "hgvs_p",
+    "project_variant_id",
+    "rsid",
+    "reference_validation",
+    "annotation_validation"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "assembly": {"type": "string", "minLength": 1},
+    "gene": {"$ref": "#/$defs/stableIdentifier"},
+    "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+    "position_bp": {"type": "integer", "minimum": 1},
+    "ref": {"$ref": "#/$defs/allele"},
+    "alt": {"$ref": "#/$defs/allele"},
+    "transcript": {"type": "string", "minLength": 1},
+    "hgvs_c": {"type": "string", "pattern": "^c\\."},
+    "hgvs_p": {
+      "oneOf": [
+        {"type": "string", "pattern": "^p\\."},
+        {"type": "null"}
+      ]
+    },
+    "project_variant_id": {"$ref": "#/$defs/stableIdentifier"},
+    "rsid": {
+      "oneOf": [
+        {"type": "string", "pattern": "^rs[0-9]+$"},
+        {"type": "null"}
+      ]
+    },
+    "reference_validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "source_id", "confirmed_at"],
+      "properties": {
+        "status": {"const": "CONFIRMED"},
+        "source_id": {"type": "string", "minLength": 1},
+        "confirmed_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "annotation_validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "source_id", "confirmed_at"],
+      "properties": {
+        "status": {"const": "CONFIRMED"},
+        "source_id": {"type": "string", "minLength": 1},
+        "confirmed_at": {"type": "string", "format": "date-time"}
+      }
+    }
+  },
+  "$defs": {
+    "stableIdentifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "allele": {"type": "string", "pattern": "^[ACGT]+$"}
+  }
+}

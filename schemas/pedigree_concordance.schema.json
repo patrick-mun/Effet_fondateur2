@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/pedigree_concordance.schema.json",
+  "title": "Concordance pedigree et KING V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "RELATION_ID", "CHILD_SAMPLE_ID", "PARENT_ROLE", "DECLARED_PARENT_IID",
+      "PARENT_SAMPLE_ID", "INFERRED_DEGREE", "INFERRED_RELATION", "KINSHIP",
+      "IBS0", "CONCORDANCE_STATUS"
+    ],
+    "null_value": "",
+    "primary_key": ["RELATION_ID"],
+    "boolean_values": {"true": true, "false": false},
+    "allow_empty": true
+  },
+  "$defs": {
+    "stableIdentifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "nullableIdentifier": {
+      "oneOf": [
+        {"$ref": "#/$defs/stableIdentifier"},
+        {"type": "null"}
+      ]
+    },
+    "nullableDecimal": {
+      "oneOf": [
+        {"type": "string", "pattern": "^-?[0-9]+(\\.[0-9]+)?$"},
+        {"type": "null"}
+      ]
+    },
+    "nullableDegree": {
+      "oneOf": [
+        {"enum": ["DUPLICATE_OR_MZ", "FIRST", "SECOND", "THIRD", "FOURTH", "UNRELATED"]},
+        {"type": "null"}
+      ]
+    },
+    "nullableRelation": {
+      "oneOf": [
+        {
+          "enum": [
+            "DUPLICATE_OR_MZ", "PARENT_CHILD_COMPATIBLE",
+            "FIRST_DEGREE_NON_PARENT_CHILD", "SECOND_DEGREE",
+            "THIRD_DEGREE", "FOURTH_DEGREE", "UNRELATED"
+          ]
+        },
+        {"type": "null"}
+      ]
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "RELATION_ID", "CHILD_SAMPLE_ID", "PARENT_ROLE", "DECLARED_PARENT_IID",
+        "PARENT_SAMPLE_ID", "INFERRED_DEGREE", "INFERRED_RELATION", "KINSHIP",
+        "IBS0", "CONCORDANCE_STATUS"
+      ],
+      "properties": {
+        "RELATION_ID": {"type": "string", "pattern": "^pedigree_relation_[0-9]{6}$"},
+        "CHILD_SAMPLE_ID": {"$ref": "#/$defs/stableIdentifier"},
+        "PARENT_ROLE": {"enum": ["FATHER", "MOTHER"]},
+        "DECLARED_PARENT_IID": {"$ref": "#/$defs/stableIdentifier"},
+        "PARENT_SAMPLE_ID": {"$ref": "#/$defs/nullableIdentifier"},
+        "INFERRED_DEGREE": {"$ref": "#/$defs/nullableDegree"},
+        "INFERRED_RELATION": {"$ref": "#/$defs/nullableRelation"},
+        "KINSHIP": {"$ref": "#/$defs/nullableDecimal"},
+        "IBS0": {"$ref": "#/$defs/nullableDecimal"},
+        "CONCORDANCE_STATUS": {
+          "enum": [
+            "CONCORDANT", "DISCORDANT_DEGREE", "DISCORDANT_RELATION",
+            "NOT_EVALUATED_PARENT_ABSENT", "NOT_EVALUATED_KING_PAIR_MISSING"
+          ]
+        }
+      }
+    }
+  }
+}

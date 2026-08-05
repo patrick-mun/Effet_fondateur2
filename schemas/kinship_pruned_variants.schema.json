@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/kinship_pruned_variants.schema.json",
+  "title": "Audit des variants du panel d'apparentement V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "VARIANT_ID", "CHROMOSOME", "POSITION_BP", "MAF",
+      "PRELIMINARY_ALERT_CODES", "IN_COMPLEX_REGION", "PANEL_STATUS",
+      "EXCLUSION_CODE"
+    ],
+    "null_value": "",
+    "primary_key": ["VARIANT_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "stableIdentifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "nullableText": {
+      "oneOf": [
+        {"type": "string", "minLength": 1},
+        {"type": "null"}
+      ]
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "VARIANT_ID", "CHROMOSOME", "POSITION_BP", "MAF",
+        "PRELIMINARY_ALERT_CODES", "IN_COMPLEX_REGION", "PANEL_STATUS",
+        "EXCLUSION_CODE"
+      ],
+      "properties": {
+        "VARIANT_ID": {"$ref": "#/$defs/stableIdentifier"},
+        "CHROMOSOME": {"type": "string", "pattern": "^([1-9]|1[0-9]|2[0-2])$"},
+        "POSITION_BP": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "MAF": {
+          "oneOf": [
+            {"type": "string", "pattern": "^(0(\\.[0-9]+)?|0?\\.[0-9]+|1(\\.0+)?)$"},
+            {"type": "null"}
+          ]
+        },
+        "PRELIMINARY_ALERT_CODES": {"$ref": "#/$defs/nullableText"},
+        "IN_COMPLEX_REGION": {"type": "boolean"},
+        "PANEL_STATUS": {
+          "enum": [
+            "RETAINED", "EXCLUDED_LOW_MAF", "EXCLUDED_COMPLEX_REGION",
+            "EXCLUDED_LD", "EXCLUDED_MAF_UNAVAILABLE"
+          ]
+        },
+        "EXCLUSION_CODE": {"$ref": "#/$defs/nullableText"}
+      }
+    }
+  }
+}

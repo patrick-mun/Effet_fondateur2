@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/qc_individual_metrics.schema.json",
+  "title": "Métriques individuelles du QC préliminaire V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "SAMPLE_ID", "FID", "IID", "ARRAY_BATCH", "N_MISS", "N_GENO",
+      "F_MISS", "OBSERVED_HETEROZYGOSITY", "EXPECTED_HETEROZYGOSITY",
+      "INBREEDING_F", "HETEROZYGOSITY_Z", "QC_STATUS", "EXCLUSION_CODE"
+    ],
+    "null_value": "",
+    "primary_key": ["SAMPLE_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "stableIdentifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "decimal": {"type": "string", "pattern": "^-?[0-9]+(\\.[0-9]+)?$"},
+    "nullableDecimal": {
+      "oneOf": [
+        {"$ref": "#/$defs/decimal"},
+        {"type": "null"}
+      ]
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "SAMPLE_ID", "FID", "IID", "ARRAY_BATCH", "N_MISS", "N_GENO",
+        "F_MISS", "OBSERVED_HETEROZYGOSITY", "EXPECTED_HETEROZYGOSITY",
+        "INBREEDING_F", "HETEROZYGOSITY_Z", "QC_STATUS", "EXCLUSION_CODE"
+      ],
+      "properties": {
+        "SAMPLE_ID": {"$ref": "#/$defs/stableIdentifier"},
+        "FID": {"$ref": "#/$defs/stableIdentifier"},
+        "IID": {"$ref": "#/$defs/stableIdentifier"},
+        "ARRAY_BATCH": {"$ref": "#/$defs/stableIdentifier"},
+        "N_MISS": {"type": "string", "pattern": "^[0-9]+$"},
+        "N_GENO": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "F_MISS": {"$ref": "#/$defs/decimal"},
+        "OBSERVED_HETEROZYGOSITY": {"$ref": "#/$defs/nullableDecimal"},
+        "EXPECTED_HETEROZYGOSITY": {"$ref": "#/$defs/nullableDecimal"},
+        "INBREEDING_F": {"$ref": "#/$defs/nullableDecimal"},
+        "HETEROZYGOSITY_Z": {"$ref": "#/$defs/nullableDecimal"},
+        "QC_STATUS": {"enum": ["PASS", "ALERT", "EXCLUDED"]},
+        "EXCLUSION_CODE": {
+          "oneOf": [
+            {"const": "sample_missingness"},
+            {"type": "null"}
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/qc_alerts.schema.json",
+  "title": "Alertes du QC préliminaire V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "ALERT_ID", "SCOPE", "ENTITY_ID", "METRIC", "OBSERVED_VALUE",
+      "THRESHOLD", "STATUS", "REASON_CODE"
+    ],
+    "null_value": "",
+    "primary_key": ["ALERT_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "nullableText": {
+      "oneOf": [
+        {"type": "string", "minLength": 1},
+        {"type": "null"}
+      ]
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ALERT_ID", "SCOPE", "ENTITY_ID", "METRIC", "OBSERVED_VALUE",
+        "THRESHOLD", "STATUS", "REASON_CODE"
+      ],
+      "properties": {
+        "ALERT_ID": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+        "SCOPE": {"enum": ["GLOBAL", "SAMPLE", "VARIANT", "BATCH", "PAIR"]},
+        "ENTITY_ID": {"type": "string", "minLength": 1},
+        "METRIC": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+        "OBSERVED_VALUE": {"$ref": "#/$defs/nullableText"},
+        "THRESHOLD": {"$ref": "#/$defs/nullableText"},
+        "STATUS": {"enum": ["INFO", "ALERT", "EXCLUDED", "NOT_EVALUATED"]},
+        "REASON_CODE": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"}
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/target_variant_mendel.schema.json",
+  "title": "Résumé mendélien du variant cible V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["VARIANT_ID", "ERROR_COUNT", "STATUS"],
+    "null_value": "",
+    "primary_key": ["VARIANT_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["VARIANT_ID", "ERROR_COUNT", "STATUS"],
+      "properties": {
+        "VARIANT_ID": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+        "ERROR_COUNT": {"type": "string", "pattern": "^[0-9]+$"},
+        "STATUS": {"enum": ["PASS", "FAIL", "NOT_APPLICABLE"]}
+      }
+    }
+  }
+}

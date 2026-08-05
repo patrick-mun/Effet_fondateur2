@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/cohorts_frozen.schema.json",
+  "title": "Ligne de cohorts/cohorts.frozen.tsv",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "COHORT_ID",
+      "SAMPLE_ID",
+      "ROLE",
+      "INCLUDED",
+      "EXCLUSION_CODE",
+      "DECISION_SOURCE",
+      "INDEPENDENT_UNIT_ID",
+      "FAMILY_REPRESENTATIVE"
+    ],
+    "null_value": "",
+    "primary_key": ["COHORT_ID", "SAMPLE_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "stableIdentifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "nullableStableIdentifier": {
+      "oneOf": [
+        {"$ref": "#/$defs/stableIdentifier"},
+        {"type": "null"}
+      ]
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "COHORT_ID",
+        "SAMPLE_ID",
+        "ROLE",
+        "INCLUDED",
+        "EXCLUSION_CODE",
+        "DECISION_SOURCE",
+        "INDEPENDENT_UNIT_ID",
+        "FAMILY_REPRESENTATIVE"
+      ],
+      "properties": {
+        "COHORT_ID": {"$ref": "#/$defs/stableIdentifier"},
+        "SAMPLE_ID": {"$ref": "#/$defs/stableIdentifier"},
+        "ROLE": {"enum": ["CARRIER", "NON_CARRIER", "CONTROL", "RELATED", "OTHER"]},
+        "INCLUDED": {"type": "boolean"},
+        "EXCLUSION_CODE": {"$ref": "#/$defs/nullableStableIdentifier"},
+        "DECISION_SOURCE": {"$ref": "#/$defs/stableIdentifier"},
+        "INDEPENDENT_UNIT_ID": {"$ref": "#/$defs/nullableStableIdentifier"},
+        "FAMILY_REPRESENTATIVE": {"type": "boolean"}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"INCLUDED": {"const": false}},
+            "required": ["INCLUDED"]
+          },
+          "then": {
+            "properties": {"EXCLUSION_CODE": {"type": "string"}}
+          },
+          "else": {
+            "properties": {"EXCLUSION_CODE": {"type": "null"}}
+          }
+        }
+      ]
+    }
+  }
+}

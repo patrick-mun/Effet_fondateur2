@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/sample_registry_review.schema.json",
+  "title": "Revue du registre maître des échantillons",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "SAMPLE_ID",
+      "PSEUDONYM",
+      "SOURCE_INVENTORY_STATUS",
+      "TARGET_GENOTYPE_STATUS",
+      "PROVENANCE_STATUS",
+      "REVIEW_STATUS"
+    ],
+    "null_value": "",
+    "primary_key": ["SAMPLE_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "stableIdentifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "SAMPLE_ID",
+        "PSEUDONYM",
+        "SOURCE_INVENTORY_STATUS",
+        "TARGET_GENOTYPE_STATUS",
+        "PROVENANCE_STATUS",
+        "REVIEW_STATUS"
+      ],
+      "properties": {
+        "SAMPLE_ID": {"$ref": "#/$defs/stableIdentifier"},
+        "PSEUDONYM": {"type": "string", "pattern": "^P_[A-F0-9]{12}$"},
+        "SOURCE_INVENTORY_STATUS": {"const": "MATCHED"},
+        "TARGET_GENOTYPE_STATUS": {"enum": ["RECORDED", "MISSING"]},
+        "PROVENANCE_STATUS": {"enum": ["RECORDED", "NOT_APPLICABLE"]},
+        "REVIEW_STATUS": {"enum": ["PENDING", "APPROVED"]}
+      }
+    }
+  }
+}

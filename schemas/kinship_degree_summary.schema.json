@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/kinship_degree_summary.schema.json",
+  "title": "Résumé agrégé des degrés KING V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "INFERRED_DEGREE", "PAIR_COUNT", "DECLARED_PAIR_COUNT",
+      "CRYPTIC_PAIR_COUNT", "CONCORDANT_PAIR_COUNT", "DISCORDANT_PAIR_COUNT"
+    ],
+    "null_value": "",
+    "primary_key": ["INFERRED_DEGREE"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "count": {"type": "string", "pattern": "^[0-9]+$"},
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "INFERRED_DEGREE", "PAIR_COUNT", "DECLARED_PAIR_COUNT",
+        "CRYPTIC_PAIR_COUNT", "CONCORDANT_PAIR_COUNT", "DISCORDANT_PAIR_COUNT"
+      ],
+      "properties": {
+        "INFERRED_DEGREE": {
+          "enum": ["DUPLICATE_OR_MZ", "FIRST", "SECOND", "THIRD", "FOURTH", "UNRELATED"]
+        },
+        "PAIR_COUNT": {"$ref": "#/$defs/count"},
+        "DECLARED_PAIR_COUNT": {"$ref": "#/$defs/count"},
+        "CRYPTIC_PAIR_COUNT": {"$ref": "#/$defs/count"},
+        "CONCORDANT_PAIR_COUNT": {"$ref": "#/$defs/count"},
+        "DISCORDANT_PAIR_COUNT": {"$ref": "#/$defs/count"}
+      }
+    }
+  }
+}

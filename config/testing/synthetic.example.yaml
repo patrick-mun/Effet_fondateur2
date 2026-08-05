@@ -1,0 +1,45 @@
+schema_version: 1.0.0
+
+project:
+  project_id: synthetic_orchestrator_test
+  assembly: GRCh38
+
+target:
+  gene: SYNTHETIC_GENE
+  chromosome: 1
+  position_bp: 100000
+  ref: A
+  alt: G
+  transcript: SYNTHETIC_TRANSCRIPT
+  project_variant_id: synthetic_GRCh38_1_100000_A_G
+  rsid: null
+
+inputs:
+  acpa_samples_dir: null
+  sample_metadata: null
+  target_variant_metadata: null
+  target_variant_genotypes: null
+  genetic_map: null
+
+tools:
+  plink: null
+  king: null
+  bcftools: null
+  rscript: null
+  phasing_adapter: null
+  local_ibd_adapter: null
+
+policies:
+  overwrite_inputs: false
+  allow_clinical_genotype_inference: false
+  pseudonymize_figures: true
+  stop_on_critical_warning: true
+
+stages:
+  initialize_run:
+    enabled: true
+    parameters: {}
+  synthetic_stage:
+    enabled: true
+    parameters:
+      message: synthetic-orchestrator-ok
