@@ -36,8 +36,36 @@ Dernière mise à jour : 5 août 2026
   - audit TSV, rapport JSON, empreintes SHA-256 et données pour le rapport final.
 - README mis à jour avec les commandes de conversion, simulation, injection et
   validation PLINK/Mendel.
+- Revue scientifique et technique du pipeline historique réalisée : les
+  analyses KING sur le seul chromosome 19, Gamma, DAPC, ROH, LD et le reporting
+  ne doivent pas encore être utilisés pour une interprétation biologique.
+- `PIPELINE_V2_PRECODE.md` définit l'architecture cible en 20 étapes :
+  orchestrateur sans logique scientifique, contrats d'artefacts, audits
+  immuables, visualisations séparées, reprise sur échec, tests, migration et
+  structure optimale du dépôt. Cette architecture est générique pour l'étude
+  d'un variant autosomique cible ; DOCK6 sur le chromosome 19 est son premier
+  profil d'étude, pas une spécialisation du pipeline.
 
 ## Jeux de données actuellement disponibles
+
+### Témoins ACPA réels
+
+- 71 exports témoins ont été analysés avec KING sur les 22 autosomes.
+- Après QC et pruning LD, 16 233 marqueurs ont été utilisés pour l'analyse de
+  parenté.
+- Aucun apparentement du premier au troisième degré n'a été détecté ; 8 paires
+  impliquant 11 individus étaient compatibles avec un quatrième degré.
+- Une couverture minimale du réseau a conduit à exclure 5 témoins, en priorité
+  parmi ceux ayant le plus de génotypes manquants, afin de conserver la cohorte
+  indépendante maximale.
+- 66 témoins restent dans
+  `data/input/complex_simulation/acpa_samples/controls/`.
+- Les 5 témoins exclus ont été déplacés sans suppression dans
+  `data/input/complex_simulation/acpa_samples/controls_exclus_king_degree4/`.
+- Une seconde analyse KING des 66 témoins ne détecte plus aucune paire jusqu'au
+  quatrième degré.
+- Le jeu chromosome 19 combinant les 9 échantillons initiaux et ces 66 témoins
+  réels n'a pas encore été construit.
 
 ### Conversion ACPA réelle
 
@@ -81,8 +109,11 @@ Dernière mise à jour : 5 août 2026
   marqueurs.
 - Injection technique temporaire validée par PLINK : 59 individus, 2 726
   marqueurs et taux de génotypage de 98,25 %.
-- Contrôle mendélien temporaire : 10 erreurs, dont une au marqueur injecté pour
-  `F2/E_82303707` avec les règles de groupe d'exemple.
+- Analyse KING genome-wide des témoins réels : 71 individus analysés, 16 233
+  marqueurs après QC/pruning, puis 66 individus conservés sans paire détectée
+  jusqu'au quatrième degré.
+- Contrôle mendélien temporaire : 10 erreurs, dont une au marqueur injecté avec
+  les règles de groupe d'exemple.
 - Tests ciblés de préparation des données : 16 réussis.
 - Suite Python globale : 28 réussis et 4 échecs historiques.
 
@@ -91,8 +122,7 @@ Dernière mise à jour : 5 août 2026
 1. Les allèles génomiques REF/ALT de la mutation DOCK6 doivent être confirmés
    sur le brin de référence GRCh38 ; la notation HGVS du transcrit ne suffit pas.
 2. Les génotypes individuels réels de la mutation restent à renseigner. Les
-   règles de groupe d'exemple créent une incompatibilité mendélienne pour
-   `F2/E_82303707` (`*/* x T/T -> G/G`).
+   règles de groupe d'exemple créent au moins une incompatibilité mendélienne.
 3. `run_pipeline.py` utilise encore des chemins fixes dans
    `data/input/complex_simulation/` et ouvre automatiquement le rapport HTML.
 4. L'interface Streamlit écrit `user_input.ped/map`, tandis que le pipeline lit
@@ -105,23 +135,25 @@ Dernière mise à jour : 5 août 2026
    - deux mocks de prétraitement ne créent pas `filtered_data.ped`.
 7. Le simulateur familial historique et les anciens convertisseurs sont encore
    conservés tant que leur dernière logique utile n'a pas été vérifiée.
+8. Le pipeline V1 mélange calcul, visualisation et interprétation et peut lire
+   des sorties historiques après un échec ; il ne doit pas être relancé pour
+   produire un résultat scientifique avant la migration V2.
 
 ## Priorités de la prochaine session
 
-1. Intégrer les vrais témoins ACPA lorsqu'ils sont disponibles, mettre à jour
-   `samples.tsv`, puis reconstruire un jeu réel homogène du chromosome 19.
-2. Confirmer pour la mutation DOCK6 : assemblage, position, transcrit, allèles
-   génomiques REF/ALT, HGVS c., HGVS p. si connu et génotype de chaque individu.
-3. Lancer l'injecteur sur le jeu définitif, examiner
-   `mutation_genotype_audit.tsv`, puis résoudre les erreurs mendéliennes.
-4. Valider le PED/MAP injecté avec PLINK avant de remplacer de façon contrôlée
-   l'entrée historique de `data/input/complex_simulation/`.
-5. Raccorder les chemins du pipeline et de Streamlit au jeu réellement choisi,
-   sans copie manuelle ambiguë.
-6. Corriger les quatre tests historiques, puis revoir les entrées scientifiques
-   de Gamma.
-7. Exécuter le pipeline complet sur une copie contrôlée et examiner le rapport
-   avant toute interprétation biologique.
+1. Relire et valider les décisions ouvertes de `PIPELINE_V2_PRECODE.md`, en
+   particulier phasage, IBD local, carte génétique et unité porteuse indépendante.
+2. Créer les schémas du manifest, des audits, des artefacts et des métadonnées.
+3. Implémenter un orchestrateur minimal avec une étape synthétique et reprise
+   après échec, sans migrer encore les analyses scientifiques.
+4. Migrer la validation des sources, le registre des individus et une conversion
+   ACPA efficace produisant séparément le genome-wide et le chromosome cible.
+5. Intégrer les 66 témoins réels dans le QC genome-wide, KING, la structure et le
+   gel des cohortes avant toute analyse locale.
+6. Confirmer les données moléculaires et génotypes individuels du variant DOCK6,
+   puis valider son intégration et Mendel sur le jeu chromosome 19 définitif.
+7. Implémenter ensuite phasage, haplotype fondateur et datation avec jeux
+   synthétiques de référence avant analyse réelle.
 
 ## Décisions à conserver
 
@@ -134,6 +166,14 @@ Dernière mise à jour : 5 août 2026
   pipeline complet.
 - Ne pas lancer le pipeline complet sans prévenir : il écrit de nombreuses
   sorties et ouvre le navigateur.
+- Séparer les jeux genome-wide et chromosome 19 ainsi que calcul scientifique,
+  visualisation et interprétation.
+- Identifier scientifiquement chaque variant par assemblage, chromosome,
+  position, REF et ALT ; conserver les identifiants de sonde et rsID comme
+  annotations, sans exclure un marqueur uniquement parce que son rsID manque.
+- Générer chaque figure uniquement depuis des sorties et audits du run courant.
+- Archiver un script V1 seulement après cartographie de ses dépendances et
+  validation de son remplacement V2.
 
 ## Reprise rapide
 
@@ -145,6 +185,6 @@ source .venv/bin/activate
 git status -sb
 ```
 
-Lire ensuite `AGENTS.md`, ce fichier et la section de protocole correspondante
-dans `README.md`. La première décision attendue concerne l'utilisation des vrais
-témoins ACPA et la confirmation moléculaire de la mutation.
+Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La première
+action attendue est de valider les décisions ouvertes avant de créer les schémas
+et le squelette de l'orchestrateur.
