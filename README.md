@@ -95,6 +95,22 @@ de réutiliser une étape publiée :
 effet-fondateur resume --run-dir /tmp/effet_fondateur_runs/<run_id>
 ```
 
+Les futures tables maître et de cohortes peuvent être validées indépendamment :
+
+```bash
+effet-fondateur validate-samples \
+  --table metadata/samples.master.tsv \
+  --source-root data/input
+
+effet-fondateur validate-cohorts \
+  --table cohorts/cohorts.frozen.tsv \
+  --samples-master metadata/samples.master.tsv
+```
+
+Ces commandes ne produisent aucun génotype et n'affichent que le nombre de
+lignes validées. Les formats exacts sont définis dans
+`schemas/samples_master.schema.json` et `schemas/cohorts_frozen.schema.json`.
+
 ### Programmes externes
 
 Les exécutables suivants doivent être accessibles depuis le `PATH` :

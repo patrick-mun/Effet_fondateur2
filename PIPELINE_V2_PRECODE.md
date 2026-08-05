@@ -288,6 +288,18 @@ Contraintes :
 - impossibilité de remplir `TARGET_GENOTYPE` depuis `CLINICAL_STATUS` ou
   `GROUP_LABEL`.
 
+Encodage canonique V2 :
+
+- champ manquant : cellule TSV vide, jamais `NA`, `N/A`, `None` ou `-` ;
+- booléens : `true` et `false` en minuscules ;
+- `SEX` : `UNKNOWN`, `MALE`, `FEMALE` ou `NOT_APPLICABLE` ;
+- `CLINICAL_STATUS` : `AFFECTED`, `UNAFFECTED`, `UNKNOWN` ou `NOT_REPORTED` ;
+- génotype cible diploïde : `REF/ALT` non phasé ou `REF|ALT` phasé avec les
+  séquences alléliques explicites ;
+- `SOURCE_FILE` : chemin POSIX relatif au répertoire source autorisé ;
+- identifiants : caractères ASCII alphanumériques, point, tiret et soulignement,
+  sans espace.
+
 ### 6.3 Table des cohortes figées
 
 Fichier cible : `cohorts/cohorts.frozen.tsv`.
@@ -307,6 +319,11 @@ Une ligne par échantillon et par cohorte analytique :
 
 Une cohorte figée est immuable dans le run. Toute nouvelle décision crée un
 nouveau run ou une nouvelle version explicitement liée.
+
+Les rôles canoniques sont `CARRIER`, `NON_CARRIER`, `CONTROL`, `RELATED` et
+`OTHER`. Une ligne exclue (`INCLUDED=false`) exige un `EXCLUSION_CODE`; une
+ligne incluse laisse ce champ vide. `FAMILY_REPRESENTATIVE=true` exige une unité
+`INDEPENDENT_UNIT_ID` explicite.
 
 ### 6.4 Formats génétiques canoniques
 

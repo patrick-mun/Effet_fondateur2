@@ -6,7 +6,15 @@ import argparse
 from pathlib import Path
 from typing import Sequence
 
-from effet_fondateur.contracts import ConfigurationError, load_pipeline_config
+from effet_fondateur.contracts import (
+    ConfigurationError,
+    TableValidationError,
+    load_pipeline_config,
+    validate_cohorts_frozen,
+    validate_samples_master,
+    validate_tsv_table,
+)
+from effet_fondateur.contracts.samples import SAMPLES_SCHEMA_NAME
 from effet_fondateur.orchestrator import PipelineError, resume_pipeline, run_pipeline
 
 
@@ -32,6 +40,20 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Reprendre un run V2 après validation de son état.",
     )
     resume_parser.add_argument("--run-dir", type=Path, required=True)
+
+    samples_parser = subparsers.add_parser(
+        "validate-samples",
+        help="Valider une table samples.master.tsv et ses fichiers sources.",
+    )
+    samples_parser.add_argument("--table", type=Path, required=True)
+    samples_parser.add_argument("--source-root", type=Path, required=True)
+
+    cohorts_parser = subparsers.add_parser(
+        "validate-cohorts",
+        help="Valider une table cohorts.frozen.tsv contre la table maître.",
+    )
+    cohorts_parser.add_argument("--table", type=Path, required=True)
+    cohorts_parser.add_argument("--samples-master", type=Path, required=True)
     return parser
 
 
@@ -62,6 +84,33 @@ def main(arguments: Sequence[str] | None = None) -> int:
         except (ConfigurationError, PipelineError, OSError, ValueError) as error:
             parser.error(str(error))
         print(f"Run V2 repris : {run_dir}")
+        return 0
+
+    if parsed_arguments.command == "validate-samples":
+        try:
+            validated_table = validate_samples_master(
+                parsed_arguments.table,
+                parsed_arguments.source_root,
+            )
+        except TableValidationError as error:
+            parser.error(str(error))
+        print(f"Table maître valide : {validated_table.row_count} lignes")
+        return 0
+
+    if parsed_arguments.command == "validate-cohorts":
+        try:
+            samples_table = validate_tsv_table(
+                parsed_arguments.samples_master,
+                SAMPLES_SCHEMA_NAME,
+            )
+            known_sample_ids = {row["SAMPLE_ID"] for row in samples_table.rows}
+            validated_table = validate_cohorts_frozen(
+                parsed_arguments.table,
+                known_sample_ids,
+            )
+        except TableValidationError as error:
+            parser.error(str(error))
+        print(f"Cohortes valides : {validated_table.row_count} lignes")
         return 0
 
     parser.error(f"Commande inconnue : {parsed_arguments.command}")

@@ -54,6 +54,11 @@ Dernière mise à jour : 5 août 2026
   publication atomique, conservation des tentatives échouées et reprise après
   contrôle d'intégrité. Le profil `config/testing/synthetic.example.yaml`
   permet de le tester sans donnée génétique ni outil externe.
+- Contrats TSV V2 créés pour `samples.master.tsv` et `cohorts.frozen.tsv` :
+  colonnes ordonnées, valeurs canoniques, clés uniques, provenance obligatoire
+  des génotypes cibles, chemins sources confinés, cohérence parentale et motifs
+  d'exclusion. Les commandes `validate-samples` et `validate-cohorts` effectuent
+  ces contrôles sans afficher de donnée individuelle.
 
 ## Jeux de données actuellement disponibles
 
@@ -124,9 +129,9 @@ Dernière mise à jour : 5 août 2026
 - Contrôle mendélien temporaire : 10 erreurs, dont une au marqueur injecté avec
   les règles de groupe d'exemple.
 - Tests ciblés de préparation des données : 16 réussis.
-- Suite moderne `tests/`, incluant configuration et orchestration V2 : 29
+- Suite moderne `tests/`, incluant les contrats V2 de métadonnées : 40
   réussis.
-- Ensemble des suites Python actuelles : 41 réussis et 4 échecs historiques.
+- Ensemble des suites Python actuelles : 52 réussis et 4 échecs historiques.
 
 ## Problèmes connus
 
@@ -154,10 +159,11 @@ Dernière mise à jour : 5 août 2026
 
 1. Relire et valider les décisions ouvertes de `PIPELINE_V2_PRECODE.md`, en
    particulier phasage, IBD local, carte génétique et unité porteuse indépendante.
-2. Valider le socle d'orchestration V2 et ses contrats avant toute migration
-   scientifique.
-3. Créer les schémas des métadonnées maître et des cohortes figées.
-4. Migrer la validation des sources, le registre des individus et une conversion
+2. Valider le socle d'orchestration et les contrats de métadonnées V2 avant
+   toute migration scientifique.
+3. Implémenter l'étape `01_validate_sources` sur des fixtures synthétiques,
+   sans produire de génotype dérivé.
+4. Migrer ensuite le registre des individus et une conversion
    ACPA efficace produisant séparément le genome-wide et le chromosome cible.
 5. Intégrer les 66 témoins réels dans le QC genome-wide, KING, la structure et le
    gel des cohortes avant toute analyse locale.
@@ -197,5 +203,5 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La première
-action attendue est de valider le socle d'orchestration, puis de créer les
-schémas des métadonnées avant de migrer la validation des sources.
+action attendue est de valider les contrats de métadonnées, puis d'implémenter
+`01_validate_sources` sur des fichiers synthétiques.
