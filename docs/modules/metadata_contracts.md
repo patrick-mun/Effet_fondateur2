@@ -74,3 +74,32 @@ conservant les mêmes invariants de provenance et d'indépendance.
 Les études X/Y, mitochondriales, structurales ou multi-variants nécessiteront un
 nouveau contrat de génotype cible au lieu d'assouplir silencieusement le format
 diploïde autosomique actuel.
+
+## Étape 02 et approbation humaine
+
+`02_build_sample_registry` reçoit la table utilisateur canonique par
+`inputs.sample_metadata` et les artefacts `source_inventory` et `source_qc` de
+l'étape `01`. Elle refuse une source absente de l'inventaire ou affectée à
+plusieurs individus, puis publie une copie immuable `samples.master.tsv` et
+`sample_registry_review.tsv`.
+
+Sans approbation, l'étape peut réussir techniquement mais ajoute
+`sample_registry_approval` aux décisions manuelles du run. L'étape `03` reste
+alors bloquée. Une approbation doit être déclarée dans la configuration avant la
+création d'un nouveau run :
+
+```yaml
+stages:
+  build_sample_registry:
+    enabled: true
+    parameters:
+      manual_approval:
+        approved: true
+        decision_id: registry_review_001
+        reviewer_role: data_steward
+        approved_at: "2026-08-05T10:00:00Z"
+```
+
+Le contrat enregistre un identifiant de décision et un rôle, pas le nom d'une
+personne. Modifier l'approbation ou la table source exige un nouveau run ; la
+configuration résolue d'un run existant reste immuable.

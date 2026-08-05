@@ -32,7 +32,22 @@ VALIDATE_SOURCES_STAGE = StageDefinition(
     config_input_directories=("acpa_samples_dir",),
 )
 
-DEFAULT_STAGE_DEFINITIONS = (SYNTHETIC_STAGE, VALIDATE_SOURCES_STAGE)
+BUILD_SAMPLE_REGISTRY_STAGE = StageDefinition(
+    stage_id="02",
+    stage_name="build_sample_registry",
+    module="effet_fondateur.stages.build_sample_registry",
+    critical=True,
+    dependencies=("validate_sources",),
+    config_input_files=("sample_metadata",),
+    required_artifact_ids=("source_inventory", "source_qc"),
+    manual_decision_id="sample_registry_approval",
+)
+
+DEFAULT_STAGE_DEFINITIONS = (
+    SYNTHETIC_STAGE,
+    VALIDATE_SOURCES_STAGE,
+    BUILD_SAMPLE_REGISTRY_STAGE,
+)
 
 
 def _run_enabled_stages(

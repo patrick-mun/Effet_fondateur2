@@ -78,6 +78,21 @@ def test_samples_master_rejects_duplicate_plink_identifier(tmp_path: Path) -> No
         validate_samples_master(table_path, source_root)
 
 
+def test_samples_master_rejects_source_assigned_to_multiple_samples(
+    tmp_path: Path,
+) -> None:
+    table_path = tmp_path / "samples.master.tsv"
+    source_root = tmp_path / "sources"
+    write_valid_samples(table_path, source_root)
+    table_path.write_text(
+        table_path.read_text(encoding="utf-8").replace("child.txt", "parent.txt"),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(TableValidationError, match="plusieurs individus"):
+        validate_samples_master(table_path, source_root)
+
+
 def test_samples_master_rejects_missing_source(tmp_path: Path) -> None:
     table_path = tmp_path / "samples.master.tsv"
     source_root = tmp_path / "sources"

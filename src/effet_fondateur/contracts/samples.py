@@ -40,6 +40,7 @@ def validate_samples_master(
     validated_table = validate_tsv_table(table_path, SAMPLES_SCHEMA_NAME)
     sample_ids: set[str] = set()
     plink_ids: set[tuple[str, str]] = set()
+    source_files: set[str] = set()
     rows_by_plink_id = {
         (row["FID"], row["IID"]): row for row in validated_table.rows
     }
@@ -54,6 +55,11 @@ def validate_samples_master(
             raise TableValidationError("Couple FID + IID dupliqué dans la table maître.")
         plink_ids.add(plink_id)
 
+        if row["SOURCE_FILE"] in source_files:
+            raise TableValidationError(
+                "SOURCE_FILE est assigné à plusieurs individus dans la table maître."
+            )
+        source_files.add(row["SOURCE_FILE"])
         _validate_source_file(row["SOURCE_FILE"], source_root)
         genotype_source = row["TARGET_GENOTYPE_SOURCE"]
         # Cette défense reste dans le code en plus du schéma : une future

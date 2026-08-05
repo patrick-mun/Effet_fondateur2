@@ -95,7 +95,7 @@ de réutiliser une étape publiée :
 effet-fondateur resume --run-dir /tmp/effet_fondateur_runs/<run_id>
 ```
 
-Les futures tables maître et de cohortes peuvent être validées indépendamment :
+Les tables maître et de cohortes peuvent être validées indépendamment :
 
 ```bash
 effet-fondateur validate-samples \
@@ -110,6 +110,10 @@ effet-fondateur validate-cohorts \
 Ces commandes ne produisent aucun génotype et n'affichent que le nombre de
 lignes validées. Les formats exacts sont définis dans
 `schemas/samples_master.schema.json` et `schemas/cohorts_frozen.schema.json`.
+L'étape V2 `02_build_sample_registry` recoupe aussi la table maître avec
+l'inventaire validé de l'étape `01`. Sans approbation humaine explicite dans la
+configuration du nouveau run, son audit conserve la décision
+`sample_registry_approval` en attente.
 
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans

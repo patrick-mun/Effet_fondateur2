@@ -15,6 +15,9 @@ class StageDefinition:
     critical: bool = True
     dependencies: tuple[str, ...] = ()
     config_input_directories: tuple[str, ...] = ()
+    config_input_files: tuple[str, ...] = ()
+    required_artifact_ids: tuple[str, ...] = ()
+    manual_decision_id: str | None = None
 
     @property
     def directory_name(self) -> str:

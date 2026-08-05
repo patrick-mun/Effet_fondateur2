@@ -11,7 +11,7 @@ from time import monotonic
 from typing import Any
 from uuid import uuid4
 
-from effet_fondateur.audit import atomic_write_json, sha256_file
+from effet_fondateur.audit import atomic_write_json, read_json, sha256_file
 from effet_fondateur.contracts import (
     DocumentValidationError,
     load_pipeline_config,
@@ -287,6 +287,7 @@ def _record_success(
     attempt: _StageAttempt,
 ) -> None:
     """Enregistre les empreintes de provenance après publication atomique."""
+    audit = read_json(attempt.final_stage_dir / "audit.json")
     stage_record.update(
         {
             "state": "SUCCEEDED",
@@ -300,6 +301,13 @@ def _record_success(
             "last_error_code": None,
         }
     )
+    if definition.manual_decision_id is not None:
+        decisions = manifest["manual_decisions_required"]
+        if audit["manual_validation_required"]:
+            if definition.manual_decision_id not in decisions:
+                decisions.append(definition.manual_decision_id)
+        elif definition.manual_decision_id in decisions:
+            decisions.remove(definition.manual_decision_id)
     save_manifest(run_dir, manifest)
     record_event(run_dir, definition.directory_name, "stage_succeeded")
 
@@ -311,17 +319,18 @@ def run_stage(
 ) -> None:
     """Orchestre une tentative sans exécuter de logique scientifique en interne."""
     manifest = load_manifest(run_dir)
-    _validate_dependencies(manifest, definition)
     stage_record = find_stage_record(manifest, definition.stage_name)
     if stage_record is None:
         stage_record = _new_stage_record(definition)
         manifest["stages"].append(stage_record)
         save_manifest(run_dir, manifest)
+    _validate_dependencies(manifest, definition)
     config = load_pipeline_config(run_dir / "config.resolved.yaml")
     input_artifacts = resolve_stage_input_artifacts(
         config,
         definition,
         manifest["config_sha256"],
+        run_dir,
     )
     signature = build_stage_signature(
         definition,

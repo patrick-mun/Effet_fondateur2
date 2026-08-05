@@ -77,6 +77,19 @@ Dernière mise à jour : 5 août 2026
     leurs empreintes à la signature de reprise ;
   - aucune lecture de génotype à des fins d'interprétation et aucune donnée
     génétique dérivée produite.
+- Étape V2 `02_build_sample_registry` implémentée et validée sur fixtures
+  synthétiques :
+  - consommation explicite de `source_inventory.tsv`, `source_qc.tsv` et de la
+    table utilisateur déclarée par `inputs.sample_metadata` ;
+  - validation du contrat `samples.master.tsv`, des identifiants, filiations,
+    sources uniques et provenances de génotypes cibles ;
+  - refus explicite des génotypes provenant du statut clinique ou du groupe ;
+  - pseudonymes déterministes et table `sample_registry_review.tsv` sensible ;
+  - approbation humaine versionnée facultative dans la configuration ; sans
+    approbation, le run conserve `sample_registry_approval` comme décision en
+    attente ;
+  - blocage de la reprise si la table utilisateur ou un artefact dépendant a été
+    modifié ; aucune nouvelle dépendance logicielle ajoutée.
 
 ## Jeux de données actuellement disponibles
 
@@ -147,9 +160,9 @@ Dernière mise à jour : 5 août 2026
 - Contrôle mendélien temporaire : 10 erreurs, dont une au marqueur injecté avec
   les règles de groupe d'exemple.
 - Tests ciblés de préparation des données : 16 réussis.
-- Suite moderne `tests/`, incluant l'étape `01` et les contrôles de
-  maintenabilité V2 : 47 réussis.
-- Ensemble des suites Python actuelles : 59 réussis et 4 échecs historiques.
+- Suite moderne `tests/`, incluant les étapes `01` et `02` et les contrôles de
+  maintenabilité V2 : 54 réussis.
+- Ensemble des suites Python actuelles : 66 réussis et 4 échecs historiques.
 
 ## Suivi des étapes du pipeline V2
 
@@ -161,7 +174,7 @@ ses tests, son audit et sa documentation sont cohérents.
 |---:|---|---|---|---|---|
 | `00` | Initialisation du run | `VALIDE` | Oui | Oui | Bootstrap et reprise synthétique validés |
 | `01` | Validation des sources | `VALIDE` | Oui | Oui | Fixtures synthétiques et reprise validées |
-| `02` | Métadonnées maître | `NON_FAIT` | Non | Non | Schéma préparé, script non implémenté |
+| `02` | Métadonnées maître | `VALIDE` | Oui | Oui | Revue manuelle et reprise synthétiques validées |
 | `03` | Conversion et harmonisation ACPA | `NON_FAIT` | Non | Non | — |
 | `04` | Variant cible | `NON_FAIT` | Non | Non | — |
 | `05` | QC préliminaire genome-wide | `NON_FAIT` | Non | Non | — |
@@ -220,15 +233,16 @@ préliminaire ; elle ne remplace pas l'audit complet obligatoire après l'étape
 
 ## Priorités de la prochaine session
 
-1. Implémenter `02_build_sample_registry` avec revue humaine des
-   génotypes cibles et de leur provenance.
-2. Migrer ensuite une conversion
-   ACPA efficace produisant séparément le genome-wide et le chromosome cible.
-3. Intégrer les 66 témoins réels dans le QC genome-wide, KING, la structure et le
+1. Implémenter `03_convert_acpa` avec une lecture efficace produisant
+   séparément le genome-wide et le chromosome cible.
+2. Préparer la table maître réelle et son approbation humaine sans déduire les
+   génotypes cibles du statut clinique ou du groupe.
+3. Migrer ensuite le QC préliminaire et le panel indépendant de marqueurs.
+4. Intégrer les 66 témoins réels dans le QC genome-wide, KING, la structure et le
    gel des cohortes avant toute analyse locale.
-4. Confirmer les données moléculaires et génotypes individuels du variant DOCK6,
+5. Confirmer les données moléculaires et génotypes individuels du variant DOCK6,
    puis valider son intégration et Mendel sur le jeu chromosome 19 définitif.
-5. Implémenter ensuite phasage, haplotype fondateur et datation avec jeux
+6. Implémenter ensuite phasage, haplotype fondateur et datation avec jeux
    synthétiques de référence avant analyse réelle.
 
 ## Décisions à conserver
@@ -262,6 +276,6 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action attendue est d'implémenter `02_build_sample_registry` à partir des
-contrats de métadonnées déjà validés, sans inférer de génotype depuis le statut
-clinique ou le groupe.
+action attendue est d'implémenter `03_convert_acpa` en consommant uniquement les
+sources validées de l'étape `01` et le registre approuvé de l'étape `02`, avec
+deux artefacts génétiques distincts pour le genome-wide et le chromosome cible.

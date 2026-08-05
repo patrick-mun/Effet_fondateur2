@@ -28,6 +28,7 @@ Les invariants suivants doivent rester vrais :
 | `runner.py` | gérer le cycle d'une tentative et le sous-processus |
 | `signatures.py` | calculer la signature déterministe d'une étape |
 | `integrity.py` | contrôler chemins, documents et empreintes |
+| `inputs.py` | déclarer les sources externes et artefacts dépendants |
 | `state.py` | lire et écrire le manifest et le journal |
 | `models.py` | définir les objets stables partagés |
 
@@ -39,8 +40,8 @@ sous-processus.
 
 1. Le pipeline vérifie l'empreinte de `config.resolved.yaml`.
 2. Le catalogue refuse les noms, identifiants ou dépendances incohérents.
-3. Le runner vérifie l'état des dépendances.
-4. La signature lie code, paramètres, configuration et versions de contrats.
+3. Le runner vérifie l'état des dépendances et résout leurs artefacts requis.
+4. La signature lie code, paramètres, entrées, configuration et contrats.
 5. Le runner crée un dossier temporaire et `stage_inputs.json`.
 6. Le script d'étape produit ses artefacts, `stage_outputs.json` et `audit.json`.
 7. `integrity.py` vérifie l'identité, les chemins et toutes les empreintes.
@@ -62,7 +63,7 @@ L'ajout d'une étape ne doit pas nécessiter de modifier `runner.py`.
 5. Produire `stage_outputs.json`, `audit.json` et `checksums.sha256`.
 6. Retourner un code V2 documenté ; ne jamais ignorer un outil externe en échec.
 7. Ajouter une `StageDefinition` au catalogue de production avec un ID unique,
-   ses dépendances et sa criticité.
+   ses dépendances, entrées configurées, artefacts requis et sa criticité.
 8. Ajouter la section de configuration et ses paramètres versionnés.
 9. Ajouter des tests unitaires avec outils externes simulés.
 10. Ajouter au moins un test d'intégration synthétique du contrat complet.
@@ -100,7 +101,7 @@ Le socle minimal ne fournit pas encore :
 - verrou interprocessus empêchant deux reprises simultanées ;
 - délai maximal ou protocole d'annulation des outils externes longs ;
 - cache partagé entre deux runs distincts ;
-- registre de production des étapes scientifiques `01` à `19` ;
+- registre de production des étapes scientifiques `03` à `19` ;
 - artefacts composés BED/BIM/FAM ;
 - migration de version automatique des manifests.
 
