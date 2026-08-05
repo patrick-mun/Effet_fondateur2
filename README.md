@@ -111,6 +111,11 @@ Ces commandes ne produisent aucun génotype et n'affichent que le nombre de
 lignes validées. Les formats exacts sont définis dans
 `schemas/samples_master.schema.json` et `schemas/cohorts_frozen.schema.json`.
 
+Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
+limites techniques actuelles sont documentées dans
+`docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est
+décrite dans `docs/modules/metadata_contracts.md`.
+
 ### Programmes externes
 
 Les exécutables suivants doivent être accessibles depuis le `PATH` :

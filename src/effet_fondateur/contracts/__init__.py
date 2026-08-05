@@ -1,5 +1,6 @@
 """Contrats de configuration et d'artefacts du pipeline V2."""
 
+from .artifacts import build_file_artifact
 from .cohorts import validate_cohorts_frozen
 from .configuration import ConfigurationError, load_pipeline_config
 from .documents import DocumentValidationError, validate_json_document
@@ -11,6 +12,7 @@ __all__ = [
     "DocumentValidationError",
     "TableValidationError",
     "ValidatedTable",
+    "build_file_artifact",
     "load_pipeline_config",
     "validate_cohorts_frozen",
     "validate_json_document",

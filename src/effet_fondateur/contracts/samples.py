@@ -16,6 +16,7 @@ FORBIDDEN_GENOTYPE_SOURCES = {"clinical_status", "group_label"}
 
 
 def _validate_source_file(source_file: str, source_root: Path) -> None:
+    """Confine une source déclarée sous la racine autorisée, liens inclus."""
     declared_path = PurePosixPath(source_file)
     if (
         declared_path.is_absolute()
@@ -55,6 +56,8 @@ def validate_samples_master(
 
         _validate_source_file(row["SOURCE_FILE"], source_root)
         genotype_source = row["TARGET_GENOTYPE_SOURCE"]
+        # Cette défense reste dans le code en plus du schéma : une future
+        # extension du vocabulaire ne doit jamais réintroduire cette inférence.
         if (
             genotype_source is not None
             and genotype_source.casefold() in FORBIDDEN_GENOTYPE_SOURCES

@@ -6,10 +6,14 @@ import argparse
 import json
 from pathlib import Path, PurePosixPath
 from time import monotonic
-from typing import Any, Sequence
+from typing import Sequence
 
-from effet_fondateur.audit import atomic_write_json, read_json, sha256_file
-from effet_fondateur.contracts import DocumentValidationError, validate_json_document
+from effet_fondateur.audit import atomic_write_json, read_json
+from effet_fondateur.contracts import (
+    DocumentValidationError,
+    build_file_artifact,
+    validate_json_document,
+)
 from effet_fondateur.orchestrator.state import utc_now
 
 
@@ -18,29 +22,6 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--stage-inputs", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     return parser
-
-
-def _artifact(
-    stage_inputs: dict[str, Any], output_dir: Path, filename: str
-) -> dict[str, Any]:
-    published_path = str(
-        PurePosixPath(stage_inputs["published_output_dir"]) / filename
-    )
-    return {
-        "artifact_id": "synthetic_result",
-        "artifact_type": "synthetic_json",
-        "path": published_path,
-        "media_type": "application/json",
-        "schema_name": None,
-        "schema_version": None,
-        "sha256": sha256_file(output_dir / filename),
-        "producer_stage": f"{stage_inputs['stage_id']}_{stage_inputs['stage_name']}",
-        "producer_signature": stage_inputs["signature"],
-        "assembly": None,
-        "sample_set_id": None,
-        "variant_set_id": None,
-        "sensitivity": "internal",
-    }
 
 
 def execute(stage_inputs_path: Path, output_dir: Path) -> int:
@@ -60,7 +41,18 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         "message": str(parameters.get("message", "synthetic-stage-ok")),
     }
     atomic_write_json(output_dir / "synthetic_result.json", result)
-    artifact = _artifact(stage_inputs, output_dir, "synthetic_result.json")
+    artifact = build_file_artifact(
+        physical_path=output_dir / "synthetic_result.json",
+        published_path=str(
+            PurePosixPath(stage_inputs["published_output_dir"])
+            / "synthetic_result.json"
+        ),
+        artifact_id="synthetic_result",
+        artifact_type="synthetic_json",
+        media_type="application/json",
+        producer_stage=f"{stage_inputs['stage_id']}_{stage_inputs['stage_name']}",
+        producer_signature=stage_inputs["signature"],
+    )
     stage_outputs = {
         "schema_version": "1.0.0",
         "run_id": stage_inputs["run_id"],

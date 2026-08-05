@@ -2,21 +2,24 @@
 
 from __future__ import annotations
 
-import hashlib
-import importlib.util
-import json
 import os
 import subprocess
 import sys
-from pathlib import Path, PurePosixPath
+from dataclasses import dataclass
+from pathlib import Path
 from time import monotonic
 from typing import Any
 from uuid import uuid4
 
-from effet_fondateur.audit import atomic_write_json, read_json, sha256_file
+from effet_fondateur.audit import atomic_write_json, sha256_file
 from effet_fondateur.contracts import DocumentValidationError, validate_json_document
 from effet_fondateur.orchestrator.errors import IntegrityError, StageExecutionError
+from effet_fondateur.orchestrator.integrity import (
+    validate_attempt_outputs,
+    validate_published_stage,
+)
 from effet_fondateur.orchestrator.models import StageDefinition
+from effet_fondateur.orchestrator.signatures import build_stage_signature
 from effet_fondateur.orchestrator.state import (
     find_stage_record,
     load_manifest,
@@ -26,30 +29,15 @@ from effet_fondateur.orchestrator.state import (
 )
 
 
-def _module_sha256(module_name: str) -> str:
-    module_specification = importlib.util.find_spec(module_name)
-    if module_specification is None or module_specification.origin is None:
-        raise StageExecutionError(f"Module d'étape introuvable : {module_name}", 2)
-    return sha256_file(Path(module_specification.origin))
+@dataclass(frozen=True)
+class _StageAttempt:
+    """Chemins et signature immuables d'une tentative d'étape."""
 
-
-def _stage_signature(
-    definition: StageDefinition,
-    parameters: dict[str, Any],
-    config_sha256: str,
-) -> str:
-    signature_payload = {
-        "stage_id": definition.stage_id,
-        "stage_name": definition.stage_name,
-        "module_sha256": _module_sha256(definition.module),
-        "parameters": parameters,
-        "config_sha256": config_sha256,
-        "input_schema_version": "1.0.0",
-        "output_schema_version": "1.0.0",
-        "audit_schema_version": "1.0.0",
-    }
-    serialized_payload = json.dumps(signature_payload, sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(serialized_payload.encode("utf-8")).hexdigest()
+    signature: str
+    attempt_dir: Path
+    failed_attempt_dir: Path
+    final_stage_dir: Path
+    started_clock: float
 
 
 def _new_stage_record(definition: StageDefinition) -> dict[str, Any]:
@@ -90,114 +78,6 @@ def _validate_dependencies(
         )
 
 
-def _artifact_path_in_attempt(
-    artifact_path: str,
-    published_stage_dir: PurePosixPath,
-    attempt_dir: Path,
-) -> Path:
-    declared_path = PurePosixPath(artifact_path)
-    try:
-        relative_path = declared_path.relative_to(published_stage_dir)
-    except ValueError as error:
-        raise IntegrityError(
-            f"Artefact déclaré hors du dossier d'étape : {artifact_path}"
-        ) from error
-    if not relative_path.parts or ".." in relative_path.parts:
-        raise IntegrityError(f"Chemin d'artefact non sûr : {artifact_path}")
-    return attempt_dir.joinpath(*relative_path.parts)
-
-
-def _validate_attempt_outputs(
-    attempt_dir: Path,
-    definition: StageDefinition,
-    run_id: str,
-    signature: str,
-) -> dict[str, Any]:
-    stage_outputs = read_json(attempt_dir / "stage_outputs.json")
-    validate_json_document(stage_outputs, "stage_outputs.schema.json")
-    expected_values = {
-        "run_id": run_id,
-        "stage_id": definition.stage_id,
-        "stage_name": definition.stage_name,
-        "signature": signature,
-    }
-    for field, expected_value in expected_values.items():
-        if stage_outputs[field] != expected_value:
-            raise IntegrityError(
-                f"Sortie incohérente pour {definition.stage_name}, champ {field}."
-            )
-
-    published_stage_dir = PurePosixPath("stages") / definition.directory_name
-    artifact_ids: set[str] = set()
-    for artifact in stage_outputs["artifacts"]:
-        if artifact["artifact_id"] in artifact_ids:
-            raise IntegrityError(
-                f"Identifiant d'artefact dupliqué : {artifact['artifact_id']}"
-            )
-        artifact_ids.add(artifact["artifact_id"])
-        artifact_path = _artifact_path_in_attempt(
-            artifact["path"], published_stage_dir, attempt_dir
-        )
-        if not artifact_path.is_file():
-            raise IntegrityError(f"Artefact annoncé mais absent : {artifact['path']}")
-        if sha256_file(artifact_path) != artifact["sha256"]:
-            raise IntegrityError(f"Empreinte invalide : {artifact['path']}")
-
-    audit = read_json(attempt_dir / "audit.json")
-    validate_json_document(audit, "stage_audit.schema.json")
-    for field, expected_value in expected_values.items():
-        if audit[field] != expected_value:
-            raise IntegrityError(
-                f"Audit incohérent pour {definition.stage_name}, champ {field}."
-            )
-    return stage_outputs
-
-
-def validate_published_stage(
-    run_dir: Path,
-    definition: StageDefinition,
-    stage_record: dict[str, Any],
-) -> None:
-    """Recalcule les empreintes d'une étape publiée avant toute réutilisation."""
-    stage_dir = run_dir / "stages" / definition.directory_name
-    stage_outputs_path = stage_dir / "stage_outputs.json"
-    audit_path = stage_dir / "audit.json"
-    if sha256_file(stage_outputs_path) != stage_record["stage_outputs_sha256"]:
-        raise IntegrityError(f"Descripteur de sorties modifié : {stage_outputs_path}")
-    if sha256_file(audit_path) != stage_record["audit_sha256"]:
-        raise IntegrityError(f"Audit d'étape modifié : {audit_path}")
-
-    stage_outputs = read_json(stage_outputs_path)
-    validate_json_document(stage_outputs, "stage_outputs.schema.json")
-    expected_values = {
-        "run_id": load_manifest(run_dir)["run_id"],
-        "stage_id": definition.stage_id,
-        "stage_name": definition.stage_name,
-        "signature": stage_record["signature"],
-    }
-    for field, expected_value in expected_values.items():
-        if stage_outputs[field] != expected_value:
-            raise IntegrityError(
-                f"Sortie publiée incohérente pour {definition.stage_name}, champ {field}."
-            )
-    published_stage_dir = PurePosixPath("stages") / definition.directory_name
-    for artifact in stage_outputs["artifacts"]:
-        artifact_path = _artifact_path_in_attempt(
-            artifact["path"], published_stage_dir, stage_dir
-        )
-        if not artifact_path.is_file():
-            raise IntegrityError(f"Artefact publié absent : {artifact['path']}")
-        if sha256_file(artifact_path) != artifact["sha256"]:
-            raise IntegrityError(f"Artefact publié modifié : {artifact['path']}")
-    audit = read_json(audit_path)
-    validate_json_document(audit, "stage_audit.schema.json")
-    for field, expected_value in expected_values.items():
-        if audit[field] != expected_value:
-            raise IntegrityError(
-                f"Audit publié incohérent pour {definition.stage_name}, champ {field}."
-            )
-
-
 def _record_failure(
     run_dir: Path,
     manifest: dict[str, Any],
@@ -206,6 +86,7 @@ def _record_failure(
     return_code: int,
     started_clock: float,
 ) -> None:
+    """Place une étape en échec sans recopier de sortie sensible au manifest."""
     stage_record["state"] = "FAILED"
     stage_record["completed_at"] = utc_now()
     stage_record["duration_seconds"] = monotonic() - started_clock
@@ -221,54 +102,64 @@ def _record_failure(
     )
 
 
-def run_stage(
+def _reuse_published_stage(
     run_dir: Path,
+    manifest: dict[str, Any],
+    stage_record: dict[str, Any],
+    definition: StageDefinition,
+) -> bool:
+    """Réutilise une étape terminale uniquement si son intégrité est intacte."""
+    if stage_record["state"] not in {"SUCCEEDED", "CACHED"}:
+        return False
+    try:
+        validate_published_stage(run_dir, definition, stage_record)
+    except IntegrityError:
+        stage_record["state"] = "FAILED"
+        stage_record["last_error_code"] = 5
+        manifest["global_status"] = "BLOCKED"
+        save_manifest(run_dir, manifest)
+        record_event(
+            run_dir,
+            definition.directory_name,
+            "published_artifact_integrity_failed",
+            severity="ERROR",
+        )
+        raise
+    record_event(run_dir, definition.directory_name, "stage_reused")
+    return True
+
+
+def _prepare_attempt(
+    run_dir: Path,
+    manifest: dict[str, Any],
+    stage_record: dict[str, Any],
     definition: StageDefinition,
     parameters: dict[str, Any],
-) -> None:
-    """Lance une étape en sous-processus puis publie uniquement des sorties valides."""
-    manifest = load_manifest(run_dir)
-    _validate_dependencies(manifest, definition)
-    stage_record = find_stage_record(manifest, definition.stage_name)
-    if stage_record is None:
-        stage_record = _new_stage_record(definition)
-        manifest["stages"].append(stage_record)
-
-    final_stage_dir = run_dir / "stages" / definition.directory_name
-    if stage_record["state"] in {"SUCCEEDED", "CACHED"}:
-        try:
-            validate_published_stage(run_dir, definition, stage_record)
-        except IntegrityError:
-            stage_record["state"] = "FAILED"
-            stage_record["last_error_code"] = 5
-            manifest["global_status"] = "BLOCKED"
-            save_manifest(run_dir, manifest)
-            record_event(
-                run_dir,
-                definition.directory_name,
-                "published_artifact_integrity_failed",
-                severity="ERROR",
-            )
-            raise
-        record_event(run_dir, definition.directory_name, "stage_reused")
-        return
-    if final_stage_dir.exists():
-        raise IntegrityError(f"Dossier publié inattendu : {final_stage_dir}")
-
-    signature = _stage_signature(definition, parameters, manifest["config_sha256"])
+) -> _StageAttempt:
+    """Crée les entrées temporaires et publie l'état RUNNING dans le manifest."""
+    signature = build_stage_signature(
+        definition,
+        parameters,
+        manifest["config_sha256"],
+    )
     attempt_identifier = uuid4().hex
     attempt_dir = run_dir / "stages" / f".{definition.directory_name}.{attempt_identifier}.tmp"
     failed_attempt_dir = (
-        run_dir / "stages" / "attempts" / f"{definition.directory_name}.{attempt_identifier}.failed"
+        run_dir
+        / "stages"
+        / "attempts"
+        / f"{definition.directory_name}.{attempt_identifier}.failed"
     )
+    final_stage_dir = run_dir / "stages" / definition.directory_name
     attempt_dir.mkdir(parents=True)
+    attempt_number = stage_record["attempt_count"] + 1
     stage_inputs = {
         "schema_version": "1.0.0",
         "run_id": manifest["run_id"],
         "stage_id": definition.stage_id,
         "stage_name": definition.stage_name,
         "signature": signature,
-        "attempt_number": stage_record["attempt_count"] + 1,
+        "attempt_number": attempt_number,
         "published_output_dir": f"stages/{definition.directory_name}",
         "parameters": parameters,
         "artifacts": [],
@@ -287,38 +178,49 @@ def run_stage(
             "audit_path": None,
             "audit_sha256": None,
             "stage_outputs_sha256": None,
-            "attempt_count": stage_record["attempt_count"] + 1,
+            "attempt_count": attempt_number,
             "last_error_code": None,
         }
     )
     manifest["global_status"] = "INCOMPLETE"
     save_manifest(run_dir, manifest)
     record_event(run_dir, definition.directory_name, "stage_started")
+    return _StageAttempt(
+        signature=signature,
+        attempt_dir=attempt_dir,
+        failed_attempt_dir=failed_attempt_dir,
+        final_stage_dir=final_stage_dir,
+        started_clock=started_clock,
+    )
 
+
+def _execute_attempt(
+    attempt: _StageAttempt,
+    definition: StageDefinition,
+    run_id: str,
+) -> None:
+    """Lance le sous-processus, valide ses sorties et publie son dossier."""
     command = [
         sys.executable,
         "-m",
         definition.module,
         "--stage-inputs",
-        str(attempt_dir / "stage_inputs.json"),
+        str(attempt.attempt_dir / "stage_inputs.json"),
         "--output-dir",
-        str(attempt_dir),
+        str(attempt.attempt_dir),
     ]
     atomic_write_json(
-        attempt_dir / "command.json",
+        attempt.attempt_dir / "command.json",
         {
             "schema_version": "1.0.0",
             "executable": Path(sys.executable).name,
             "module": definition.module,
-            "arguments": [
-                "--stage-inputs",
-                "stage_inputs.json",
-                "--output-dir",
-                ".",
-            ],
+            "arguments": ["--stage-inputs", "stage_inputs.json", "--output-dir", "."],
             "shell": False,
         },
     )
+    # Le descripteur publié masque les chemins absolus de la machine, tandis que
+    # la commande réelle conserve des arguments séparés et n'utilise jamais un shell.
     try:
         completed_process = subprocess.run(
             command,
@@ -326,11 +228,13 @@ def run_stage(
             check=False,
             text=True,
         )
-        (attempt_dir / "stdout.log").write_text(
-            completed_process.stdout, encoding="utf-8"
+        (attempt.attempt_dir / "stdout.log").write_text(
+            completed_process.stdout,
+            encoding="utf-8",
         )
-        (attempt_dir / "stderr.log").write_text(
-            completed_process.stderr, encoding="utf-8"
+        (attempt.attempt_dir / "stderr.log").write_text(
+            completed_process.stderr,
+            encoding="utf-8",
         )
         if completed_process.returncode != 0:
             raise StageExecutionError(
@@ -338,39 +242,79 @@ def run_stage(
                 f"(code {completed_process.returncode}).",
                 completed_process.returncode,
             )
-        _validate_attempt_outputs(
-            attempt_dir,
+        validate_attempt_outputs(
+            attempt.attempt_dir,
             definition,
-            manifest["run_id"],
-            signature,
+            run_id,
+            attempt.signature,
         )
-        os.replace(attempt_dir, final_stage_dir)
+        os.replace(attempt.attempt_dir, attempt.final_stage_dir)
     except (DocumentValidationError, IntegrityError, OSError, ValueError) as error:
         raise StageExecutionError(
-            f"Sorties invalides pour l'étape {definition.stage_name} : {error}", 5
+            f"Sorties invalides pour l'étape {definition.stage_name} : {error}",
+            5,
         ) from error
-    except StageExecutionError:
-        raise
     finally:
-        if attempt_dir.exists():
-            failed_attempt_dir.parent.mkdir(parents=True, exist_ok=True)
-            os.replace(attempt_dir, failed_attempt_dir)
+        # Une tentative invalide n'est jamais publiée, mais ses journaux restent
+        # disponibles pour expliquer l'échec et préparer une reprise identique.
+        if attempt.attempt_dir.exists():
+            attempt.failed_attempt_dir.parent.mkdir(parents=True, exist_ok=True)
+            os.replace(attempt.attempt_dir, attempt.failed_attempt_dir)
 
+
+def _record_success(
+    run_dir: Path,
+    manifest: dict[str, Any],
+    stage_record: dict[str, Any],
+    definition: StageDefinition,
+    attempt: _StageAttempt,
+) -> None:
+    """Enregistre les empreintes de provenance après publication atomique."""
     stage_record.update(
         {
             "state": "SUCCEEDED",
             "completed_at": utc_now(),
-            "duration_seconds": monotonic() - started_clock,
+            "duration_seconds": monotonic() - attempt.started_clock,
             "audit_path": f"stages/{definition.directory_name}/audit.json",
-            "audit_sha256": sha256_file(final_stage_dir / "audit.json"),
+            "audit_sha256": sha256_file(attempt.final_stage_dir / "audit.json"),
             "stage_outputs_sha256": sha256_file(
-                final_stage_dir / "stage_outputs.json"
+                attempt.final_stage_dir / "stage_outputs.json"
             ),
             "last_error_code": None,
         }
     )
     save_manifest(run_dir, manifest)
     record_event(run_dir, definition.directory_name, "stage_succeeded")
+
+
+def run_stage(
+    run_dir: Path,
+    definition: StageDefinition,
+    parameters: dict[str, Any],
+) -> None:
+    """Orchestre une tentative sans exécuter de logique scientifique en interne."""
+    manifest = load_manifest(run_dir)
+    _validate_dependencies(manifest, definition)
+    stage_record = find_stage_record(manifest, definition.stage_name)
+    if stage_record is None:
+        stage_record = _new_stage_record(definition)
+        manifest["stages"].append(stage_record)
+
+    if _reuse_published_stage(run_dir, manifest, stage_record, definition):
+        return
+    final_stage_dir = run_dir / "stages" / definition.directory_name
+    if final_stage_dir.exists():
+        raise IntegrityError(f"Dossier publié inattendu : {final_stage_dir}")
+
+    attempt = _prepare_attempt(
+        run_dir,
+        manifest,
+        stage_record,
+        definition,
+        parameters,
+    )
+    _execute_attempt(attempt, definition, manifest["run_id"])
+    _record_success(run_dir, manifest, stage_record, definition, attempt)
 
 
 def run_stage_with_failure_audit(

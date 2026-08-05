@@ -5,6 +5,9 @@ import pytest
 import yaml
 
 from effet_fondateur.orchestrator import IntegrityError, StageExecutionError
+from effet_fondateur.orchestrator.catalog import build_stage_catalog
+from effet_fondateur.orchestrator.errors import PipelineError
+from effet_fondateur.orchestrator.models import StageDefinition
 from effet_fondateur.orchestrator.pipeline import resume_pipeline, run_pipeline
 
 
@@ -152,3 +155,27 @@ def test_resume_blocks_modified_stage_audit(tmp_path: Path) -> None:
 
     with pytest.raises(IntegrityError, match="Audit d'étape modifié"):
         resume_pipeline(run_dir)
+
+
+def test_stage_catalog_rejects_duplicate_names() -> None:
+    definitions = (
+        StageDefinition("T01", "duplicate", "module.one"),
+        StageDefinition("T02", "duplicate", "module.two"),
+    )
+
+    with pytest.raises(PipelineError, match="nom d'étape dupliqué"):
+        build_stage_catalog(definitions)
+
+
+def test_stage_catalog_rejects_unknown_dependency() -> None:
+    definitions = (
+        StageDefinition(
+            "T01",
+            "dependent_stage",
+            "module.one",
+            dependencies=("missing_stage",),
+        ),
+    )
+
+    with pytest.raises(PipelineError, match="Dépendance inconnue"):
+        build_stage_catalog(definitions)

@@ -59,6 +59,12 @@ Dernière mise à jour : 5 août 2026
   des génotypes cibles, chemins sources confinés, cohérence parentale et motifs
   d'exclusion. Les commandes `validate-samples` et `validate-cohorts` effectuent
   ces contrôles sans afficher de donnée individuelle.
+- Revue de maintenabilité V2 réalisée après lecture du code : séparation du
+  runner en modules de catalogue, signature, intégrité et environnement ;
+  centralisation des descripteurs d'artefacts ; commentaires de décision et
+  guides d'extension ajoutés dans `docs/modules/`. Les limites de concurrence,
+  timeout, cache inter-run et migration de manifest restent explicitement
+  documentées avant production.
 
 ## Jeux de données actuellement disponibles
 
@@ -129,9 +135,9 @@ Dernière mise à jour : 5 août 2026
 - Contrôle mendélien temporaire : 10 erreurs, dont une au marqueur injecté avec
   les règles de groupe d'exemple.
 - Tests ciblés de préparation des données : 16 réussis.
-- Suite moderne `tests/`, incluant les contrats V2 de métadonnées : 40
+- Suite moderne `tests/`, incluant les contrôles de maintenabilité V2 : 42
   réussis.
-- Ensemble des suites Python actuelles : 52 réussis et 4 échecs historiques.
+- Ensemble des suites Python actuelles : 54 réussis et 4 échecs historiques.
 
 ## Problèmes connus
 

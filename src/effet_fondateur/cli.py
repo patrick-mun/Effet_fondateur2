@@ -19,6 +19,7 @@ from effet_fondateur.orchestrator import PipelineError, resume_pipeline, run_pip
 
 
 def _build_parser() -> argparse.ArgumentParser:
+    """Déclare les commandes sans exécuter ni charger de donnée scientifique."""
     parser = argparse.ArgumentParser(prog="effet-fondateur")
     subparsers = parser.add_subparsers(dest="command", required=True)
 

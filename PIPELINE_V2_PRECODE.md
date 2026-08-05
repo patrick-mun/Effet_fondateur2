@@ -1528,7 +1528,11 @@ Effet_fondateur2/
 │       │   ├── __init__.py
 │       │   ├── pipeline.py
 │       │   ├── dag.py
+│       │   ├── catalog.py
 │       │   ├── runner.py
+│       │   ├── signatures.py
+│       │   ├── integrity.py
+│       │   ├── environment.py
 │       │   ├── state.py
 │       │   ├── cache.py
 │       │   └── recovery.py
@@ -1541,6 +1545,9 @@ Effet_fondateur2/
 │       ├── contracts/
 │       │   ├── __init__.py
 │       │   ├── configuration.py
+│       │   ├── documents.py
+│       │   ├── tables.py
+│       │   ├── artifacts.py
 │       │   ├── samples.py
 │       │   ├── cohorts.py
 │       │   ├── genetics.py

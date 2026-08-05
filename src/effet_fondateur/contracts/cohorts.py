@@ -33,6 +33,8 @@ def validate_cohorts_frozen(
                 "Une cohorte référence un SAMPLE_ID absent de la table maître."
             )
         if row["FAMILY_REPRESENTATIVE"] and row["INDEPENDENT_UNIT_ID"] is None:
+            # Le représentant familial n'est utile analytiquement que si toutes
+            # les étapes peuvent retrouver l'unité indépendante correspondante.
             raise TableValidationError(
                 "FAMILY_REPRESENTATIVE exige un INDEPENDENT_UNIT_ID."
             )

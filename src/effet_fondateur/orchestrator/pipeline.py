@@ -7,6 +7,7 @@ from typing import Iterable
 
 from effet_fondateur.audit import sha256_file
 from effet_fondateur.contracts import load_pipeline_config
+from effet_fondateur.orchestrator.catalog import build_stage_catalog
 from effet_fondateur.orchestrator.errors import IntegrityError, PipelineError
 from effet_fondateur.orchestrator.models import StageDefinition
 from effet_fondateur.orchestrator.runner import run_stage_with_failure_audit
@@ -25,18 +26,15 @@ SYNTHETIC_STAGE = StageDefinition(
 DEFAULT_STAGE_DEFINITIONS = (SYNTHETIC_STAGE,)
 
 
-def _definitions_by_name(
-    definitions: Iterable[StageDefinition],
-) -> dict[str, StageDefinition]:
-    return {definition.stage_name: definition for definition in definitions}
-
-
 def _run_enabled_stages(
     run_dir: Path,
     definitions: Iterable[StageDefinition],
 ) -> None:
+    """Exécute les étapes activées après contrôle du catalogue et du run."""
     resolved_config_path = run_dir / "config.resolved.yaml"
     manifest = load_manifest(run_dir)
+    # Une reprise doit être strictement identique. Tout changement de paramètre
+    # scientifique exige un nouveau run au lieu de réécrire son histoire.
     if sha256_file(resolved_config_path) != manifest["config_sha256"]:
         manifest["global_status"] = "BLOCKED"
         save_manifest(run_dir, manifest)
@@ -44,7 +42,7 @@ def _run_enabled_stages(
             f"La configuration résolue a été modifiée dans le run : {resolved_config_path}"
         )
     config = load_pipeline_config(resolved_config_path)
-    definitions_by_name = _definitions_by_name(definitions)
+    definitions_by_name = build_stage_catalog(definitions)
     for stage_name, stage_config in config["stages"].items():
         if stage_name == "initialize_run" or not stage_config["enabled"]:
             continue

@@ -35,6 +35,7 @@ class ValidatedTable:
 
 
 def _load_table_schema(schema_name: str, schemas_dir: Path) -> dict[str, Any]:
+    """Charge un schéma possédant les extensions tabulaires V2 attendues."""
     schema_path = schemas_dir / schema_name
     try:
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
@@ -50,6 +51,7 @@ def _load_table_schema(schema_name: str, schemas_dir: Path) -> dict[str, Any]:
 def _resolve_property_schema(
     property_schema: dict[str, Any], schema: dict[str, Any]
 ) -> dict[str, Any]:
+    """Résout les références locales nécessaires au décodage des cellules."""
     reference = property_schema.get("$ref")
     if reference is None:
         return property_schema
@@ -86,6 +88,7 @@ def _decode_value(
     boolean_values: dict[str, bool],
     schema: dict[str, Any],
 ) -> Any:
+    """Convertit uniquement les valeurs dont le type est explicite dans le schéma."""
     column_schema = _resolve_property_schema(column_schema, schema)
     if raw_value == null_value and _allows_null(column_schema):
         return None
@@ -155,6 +158,8 @@ def validate_tsv_table(
             )
             if errors:
                 first_error = errors[0]
+                # La valeur individuelle n'est volontairement pas recopiée dans
+                # l'erreur : ligne, colonne et contrainte suffisent au diagnostic.
                 raise TableValidationError(
                     f"Ligne {line_number}, colonne {_validation_column(first_error)} : "
                     f"contrainte {first_error.validator} non satisfaite."

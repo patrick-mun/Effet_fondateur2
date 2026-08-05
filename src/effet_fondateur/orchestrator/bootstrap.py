@@ -5,10 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import platform
-import shutil
-import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from time import monotonic
@@ -19,16 +15,13 @@ import yaml
 
 from effet_fondateur import __version__
 from effet_fondateur.audit import atomic_write_json, sha256_file
-from effet_fondateur.contracts import load_pipeline_config, validate_json_document
+from effet_fondateur.contracts import (
+    build_file_artifact,
+    load_pipeline_config,
+    validate_json_document,
+)
+from effet_fondateur.orchestrator.environment import build_environment
 from effet_fondateur.orchestrator.state import record_event, utc_now
-
-
-TOOL_VERSION_ARGUMENTS = {
-    "plink": ("--version",),
-    "king": ("--version",),
-    "bcftools": ("--version",),
-    "rscript": ("--version",),
-}
 
 
 def _canonical_sha256(document: dict[str, Any]) -> str:
@@ -36,127 +29,14 @@ def _canonical_sha256(document: dict[str, Any]) -> str:
     return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
 
-def _capture_tool(command_name: str | None, tool_key: str) -> dict[str, Any]:
-    if command_name is None:
-        return {"configured": None, "available": False, "version": None}
-    resolved_path = shutil.which(command_name)
-    if resolved_path is None:
-        return {"configured": command_name, "available": False, "version": None}
-
-    version = None
-    arguments = TOOL_VERSION_ARGUMENTS.get(tool_key, ("--version",))
-    try:
-        completed_process = subprocess.run(
-            [resolved_path, *arguments],
-            capture_output=True,
-            check=False,
-            text=True,
-            timeout=5,
-        )
-        version_output = completed_process.stdout.strip() or completed_process.stderr.strip()
-        if version_output:
-            version = version_output.splitlines()[0][:500]
-    except (OSError, subprocess.TimeoutExpired):
-        version = None
-    return {"configured": command_name, "available": True, "version": version}
-
-
-def _build_environment(config: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "schema_version": "1.0.0",
-        "python": {
-            "version": platform.python_version(),
-            "implementation": platform.python_implementation(),
-            "executable": Path(sys.executable).name,
-        },
-        "platform": {
-            "system": platform.system(),
-            "release": platform.release(),
-            "machine": platform.machine(),
-        },
-        "pipeline_version": __version__,
-        "tools": {
-            tool_key: _capture_tool(command_name, tool_key)
-            for tool_key, command_name in config["tools"].items()
-        },
-    }
-
-
 def _new_run_id(project_id: str) -> str:
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%SZ")
     return f"{timestamp}_{project_id}_{uuid4().hex[:8]}"
 
 
-def _artifact(
-    run_dir: Path,
-    relative_path: str,
-    artifact_id: str,
-    artifact_type: str,
-    signature: str,
-) -> dict[str, Any]:
+def _build_initialization_summary(config: dict[str, Any]) -> dict[str, Any]:
+    """Résume uniquement la complétude technique, sans valeur moléculaire."""
     return {
-        "artifact_id": artifact_id,
-        "artifact_type": artifact_type,
-        "path": relative_path,
-        "media_type": "application/json",
-        "schema_name": None,
-        "schema_version": None,
-        "sha256": sha256_file(run_dir / relative_path),
-        "producer_stage": "00_initialize_run",
-        "producer_signature": signature,
-        "assembly": None,
-        "sample_set_id": None,
-        "variant_set_id": None,
-        "sensitivity": "internal",
-    }
-
-
-def initialize_run(config_path: Path, runs_dir: Path) -> Path:
-    """Valide la configuration et publie atomiquement un nouveau run audité."""
-    started_at = utc_now()
-    started_clock = monotonic()
-    config = load_pipeline_config(config_path)
-    run_id = _new_run_id(config["project"]["project_id"])
-    final_run_dir = runs_dir / run_id
-    temporary_run_dir = runs_dir / f".{run_id}.{uuid4().hex}.tmp"
-    stage_relative_dir = "stages/00_initialize_run"
-    stage_dir = temporary_run_dir / stage_relative_dir
-
-    if final_run_dir.exists():
-        raise FileExistsError(f"Le run existe déjà : {final_run_dir}")
-
-    stage_dir.mkdir(parents=True)
-    resolved_config_path = temporary_run_dir / "config.resolved.yaml"
-    resolved_config_path.write_text(
-        yaml.safe_dump(config, allow_unicode=True, sort_keys=False),
-        encoding="utf-8",
-    )
-    config_sha256 = sha256_file(resolved_config_path)
-    signature = _canonical_sha256(
-        {
-            "method_id": "initialize_run_v1",
-            "config_sha256": config_sha256,
-            "pipeline_version": __version__,
-        }
-    )
-
-    stage_inputs = {
-        "schema_version": "1.0.0",
-        "run_id": run_id,
-        "stage_id": "00",
-        "stage_name": "initialize_run",
-        "signature": signature,
-        "attempt_number": 1,
-        "published_output_dir": stage_relative_dir,
-        "parameters": {},
-        "artifacts": [],
-    }
-    validate_json_document(stage_inputs, "stage_inputs.schema.json")
-    atomic_write_json(stage_dir / "stage_inputs.json", stage_inputs)
-
-    environment = _build_environment(config)
-    atomic_write_json(temporary_run_dir / "environment.json", environment)
-    summary = {
         "schema_version": "1.0.0",
         "project_id": config["project"]["project_id"],
         "assembly": config["project"]["assembly"],
@@ -168,28 +48,20 @@ def initialize_run(config_path: Path, runs_dir: Path) -> Path:
             for field in ("chromosome", "position_bp", "ref", "alt", "project_variant_id")
         ),
     }
-    atomic_write_json(stage_dir / "initialization_summary.json", summary)
-    summary_artifact = _artifact(
-        temporary_run_dir,
-        f"{stage_relative_dir}/initialization_summary.json",
-        "initialization_summary",
-        "initialization_summary",
-        signature,
-    )
-    stage_outputs = {
-        "schema_version": "1.0.0",
-        "run_id": run_id,
-        "stage_id": "00",
-        "stage_name": "initialize_run",
-        "signature": signature,
-        "artifacts": [summary_artifact],
-    }
-    validate_json_document(stage_outputs, "stage_outputs.schema.json")
-    atomic_write_json(stage_dir / "stage_outputs.json", stage_outputs)
 
-    completed_at = utc_now()
-    duration_seconds = monotonic() - started_clock
-    audit = {
+
+def _build_initialization_audit(
+    run_id: str,
+    signature: str,
+    started_at: str,
+    completed_at: str,
+    duration_seconds: float,
+    config_sha256: str,
+    summary: dict[str, Any],
+    summary_artifact: dict[str, Any],
+) -> dict[str, Any]:
+    """Construit l'audit non sensible de l'étape de bootstrap."""
+    return {
         "schema_version": "1.0.0",
         "run_id": run_id,
         "stage_id": "00",
@@ -212,14 +84,22 @@ def initialize_run(config_path: Path, runs_dir: Path) -> Path:
         "expected_visualizations": [],
         "manual_validation_required": not summary["target_definition_complete"],
     }
-    validate_json_document(audit, "stage_audit.schema.json")
-    atomic_write_json(stage_dir / "audit.json", audit)
-    (stage_dir / "checksums.sha256").write_text(
-        f"{summary_artifact['sha256']}  initialization_summary.json\n",
-        encoding="utf-8",
-    )
 
-    manifest = {
+
+def _build_initial_manifest(
+    config: dict[str, Any],
+    run_id: str,
+    signature: str,
+    started_at: str,
+    completed_at: str,
+    duration_seconds: float,
+    config_sha256: str,
+    stage_relative_dir: str,
+    stage_dir: Path,
+    target_definition_complete: bool,
+) -> dict[str, Any]:
+    """Construit l'état initial sans créer de dépendance circulaire d'empreinte."""
+    return {
         "schema_version": "1.0.0",
         "run_id": run_id,
         "project_id": config["project"]["project_id"],
@@ -247,11 +127,133 @@ def initialize_run(config_path: Path, runs_dir: Path) -> Path:
             }
         ],
         "manual_decisions_required": (
-            ["target_variant_definition"]
-            if not summary["target_definition_complete"]
-            else []
+            [] if target_definition_complete else ["target_variant_definition"]
         ),
     }
+
+
+def _write_bootstrap_documents(
+    config: dict[str, Any],
+    run_id: str,
+    temporary_run_dir: Path,
+    stage_dir: Path,
+    stage_relative_dir: str,
+) -> tuple[str, str, dict[str, Any], dict[str, Any]]:
+    """Écrit configuration, environnement et contrats de sortie de l'étape `00`."""
+    resolved_config_path = temporary_run_dir / "config.resolved.yaml"
+    resolved_config_path.write_text(
+        yaml.safe_dump(config, allow_unicode=True, sort_keys=False),
+        encoding="utf-8",
+    )
+    config_sha256 = sha256_file(resolved_config_path)
+    signature = _canonical_sha256(
+        {
+            "method_id": "initialize_run_v1",
+            "config_sha256": config_sha256,
+            "pipeline_version": __version__,
+        }
+    )
+    stage_inputs = {
+        "schema_version": "1.0.0",
+        "run_id": run_id,
+        "stage_id": "00",
+        "stage_name": "initialize_run",
+        "signature": signature,
+        "attempt_number": 1,
+        "published_output_dir": stage_relative_dir,
+        "parameters": {},
+        "artifacts": [],
+    }
+    validate_json_document(stage_inputs, "stage_inputs.schema.json")
+    atomic_write_json(stage_dir / "stage_inputs.json", stage_inputs)
+    atomic_write_json(temporary_run_dir / "environment.json", build_environment(config))
+
+    summary = _build_initialization_summary(config)
+    atomic_write_json(stage_dir / "initialization_summary.json", summary)
+    summary_artifact = build_file_artifact(
+        physical_path=stage_dir / "initialization_summary.json",
+        published_path=f"{stage_relative_dir}/initialization_summary.json",
+        artifact_id="initialization_summary",
+        artifact_type="initialization_summary",
+        media_type="application/json",
+        producer_stage="00_initialize_run",
+        producer_signature=signature,
+    )
+    stage_outputs = {
+        "schema_version": "1.0.0",
+        "run_id": run_id,
+        "stage_id": "00",
+        "stage_name": "initialize_run",
+        "signature": signature,
+        "artifacts": [summary_artifact],
+    }
+    validate_json_document(stage_outputs, "stage_outputs.schema.json")
+    atomic_write_json(stage_dir / "stage_outputs.json", stage_outputs)
+    return config_sha256, signature, summary, summary_artifact
+
+
+def initialize_run(config_path: Path, runs_dir: Path) -> Path:
+    """Crée le run `00` ou lève une erreur avant toute publication partielle.
+
+    La configuration est copiée et empreintée, l'environnement est inventorié,
+    puis le dossier temporaire complet est renommé vers son chemin définitif.
+    """
+    started_at = utc_now()
+    started_clock = monotonic()
+    config = load_pipeline_config(config_path)
+    run_id = _new_run_id(config["project"]["project_id"])
+    final_run_dir = runs_dir / run_id
+    temporary_run_dir = runs_dir / f".{run_id}.{uuid4().hex}.tmp"
+    stage_relative_dir = "stages/00_initialize_run"
+    stage_dir = temporary_run_dir / stage_relative_dir
+
+    if final_run_dir.exists():
+        raise FileExistsError(f"Le run existe déjà : {final_run_dir}")
+
+    # Le run entier est construit hors de son chemin final : aucune autre
+    # commande ne peut observer un bootstrap partiellement écrit.
+    stage_dir.mkdir(parents=True)
+    config_sha256, signature, summary, summary_artifact = _write_bootstrap_documents(
+        config,
+        run_id,
+        temporary_run_dir,
+        stage_dir,
+        stage_relative_dir,
+    )
+
+    completed_at = utc_now()
+    duration_seconds = monotonic() - started_clock
+    audit = _build_initialization_audit(
+        run_id=run_id,
+        signature=signature,
+        started_at=started_at,
+        completed_at=completed_at,
+        duration_seconds=duration_seconds,
+        config_sha256=config_sha256,
+        summary=summary,
+        summary_artifact=summary_artifact,
+    )
+    validate_json_document(audit, "stage_audit.schema.json")
+    atomic_write_json(stage_dir / "audit.json", audit)
+    (stage_dir / "checksums.sha256").write_text(
+        f"{summary_artifact['sha256']}  initialization_summary.json\n",
+        encoding="utf-8",
+    )
+
+    # Le manifest empreinte audit et sorties, mais jamais lui-même. Cela évite
+    # une dépendance circulaire tout en protégeant la provenance publiée.
+    manifest = _build_initial_manifest(
+        config=config,
+        run_id=run_id,
+        signature=signature,
+        started_at=started_at,
+        completed_at=completed_at,
+        duration_seconds=duration_seconds,
+        config_sha256=config_sha256,
+        stage_relative_dir=stage_relative_dir,
+        stage_dir=stage_dir,
+        target_definition_complete=summary["target_definition_complete"],
+    )
     validate_json_document(manifest, "run_manifest.schema.json")
     atomic_write_json(temporary_run_dir / "manifest.json", manifest)
     (temporary_run_dir / "events.jsonl").touch()
