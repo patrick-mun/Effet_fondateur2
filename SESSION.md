@@ -6,7 +6,7 @@ Dernière mise à jour : 5 août 2026
 
 - Dépôt GitHub : `patrick-mun/Effet_fondateur2`.
 - Branche active : `feature/v2-orchestrator-foundation`, synchronisée avec sa
-  branche distante.
+  branche distante après publication de l'étape `04`.
 - PR V2 en brouillon : `#2`, ciblant `main`.
 - PR `#1` fusionnée dans `main` le 4 août 2026.
 - Commit de fusion : `f2fec8f`.
@@ -104,6 +104,25 @@ Dernière mise à jour : 5 août 2026
     QC par échantillon et chromosome, empreintes et rapport de conversion ;
   - échecs, timeouts ou sorties PLINK invalides rapportés avec le code V2 `3` ;
   - aucune nouvelle dépendance : PLINK était déjà requis et disponible.
+- Étape V2 `04_prepare_target_variant_dataset` implémentée et validée sur
+  fixtures synthétiques et avec PLINK 1.9 réel dans un dossier temporaire :
+  - dépendances directes explicites vers le registre approuvé de l'étape `02`
+    et le jeu chromosome cible de l'étape `03` ;
+  - contrats versionnés pour la définition moléculaire confirmée, les génotypes
+    individuels, leur audit et le résumé Mendel ;
+  - couverture exacte de tous les échantillons, cohérence avec le registre et
+    refus des sources dérivées du statut clinique ou du groupe ;
+  - injection dans une copie, contrôle de la coordonnée et des allèles, puis
+    comparaison des empreintes BED/BIM/FAM avant et après ;
+  - contrôle PLINK Mendel limité au variant cible, bloquant avec le code V2 `4`
+    en cas d'erreur et noté `NOT_APPLICABLE` lorsqu'aucun trio n'est évaluable ;
+  - échec externe PLINK rapporté avec le code V2 `3` et tentative non publiée
+    conservée pour diagnostic ;
+  - aucune nouvelle dépendance : PyYAML, jsonschema et PLINK étaient déjà requis.
+- Audit qualité du groupe `00–04` réalisé : architecture, contrats, sécurité des
+  génotypes, codes d'échec, conservation des tentatives et contrôle scientifique
+  sont cohérents. Limites conservées : confirmations moléculaires externes
+  obligatoires et statut Mendel non applicable sans trio complet.
 
 ## Jeux de données actuellement disponibles
 
@@ -174,11 +193,15 @@ Dernière mise à jour : 5 août 2026
 - Contrôle mendélien temporaire : 10 erreurs, dont une au marqueur injecté avec
   les règles de groupe d'exemple.
 - Tests ciblés de préparation des données : 16 réussis.
-- Suite moderne `tests/`, incluant les étapes `01` à `03` et les contrôles de
-  maintenabilité V2 : 61 réussis.
-- Ensemble des suites Python actuelles : 73 réussis et 4 échecs historiques.
+- Tests ciblés de l'étape `04` : 6 réussis.
+- Suite moderne `tests/`, incluant les étapes `01` à `04` et les contrôles de
+  maintenabilité V2 : 67 réussis.
+- Ensemble des suites Python actuelles : 79 réussis et 4 échecs historiques
+  sans rapport avec l'étape `04`.
 - Smoke test temporaire avec PLINK 1.9 réel : 2 individus, 23 marqueurs
   autosomiques et 2 marqueurs du chromosome cible, conversion réussie.
+- Smoke test temporaire de l'étape `04` avec PLINK 1.9 réel : 2 individus,
+  passage de 1 à 2 variants et Mendel `NOT_APPLICABLE` faute de trio.
 
 ## Suivi des étapes du pipeline V2
 
@@ -192,7 +215,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `01` | Validation des sources | `VALIDE` | Oui | Oui | Fixtures synthétiques et reprise validées |
 | `02` | Métadonnées maître | `VALIDE` | Oui | Oui | Revue manuelle et reprise synthétiques validées |
 | `03` | Conversion et harmonisation ACPA | `VALIDE` | Oui | Oui | Double sortie PLINK et smoke réel validés |
-| `04` | Variant cible | `NON_FAIT` | Non | Non | — |
+| `04` | Variant cible | `VALIDE` | Oui | Oui | Injection explicite et smoke PLINK réel validés |
 | `05` | QC préliminaire genome-wide | `NON_FAIT` | Non | Non | — |
 | `06` | Panel indépendant | `NON_FAIT` | Non | Non | — |
 | `07` | Apparentement et duplicats | `NON_FAIT` | Non | Non | — |
@@ -213,7 +236,7 @@ ses tests, son audit et sa documentation sont cohérents.
 
 | Groupe | Audit requis après | Statut | Contenu minimal |
 |---|---:|---|---|
-| `00–04` | étape `04` | `NON_FAIT` | architecture, contrats, sécurité, tests, audit scientifique |
+| `00–04` | étape `04` | `VALIDE` | architecture, contrats, sécurité, tests, audit scientifique |
 | `05–09` | étape `09` | `NON_FAIT` | QC, KING, structure, indépendance et cohortes |
 | `10–14` | étape `14` | `NON_FAIT` | QC final, phasage, haplotypes et datation |
 | `15–19` | étape `19` | `NON_FAIT` | analyses secondaires, figures, rapport et reproductibilité |
@@ -249,8 +272,8 @@ préliminaire ; elle ne remplace pas l'audit complet obligatoire après l'étape
 
 ## Priorités de la prochaine session
 
-1. Implémenter `04_prepare_target_variant_dataset` sur des copies synthétiques,
-   avec validation moléculaire et contrôle mendélien simulé.
+1. Implémenter `05_qc_preliminary` sur le jeu genome-wide de l'étape `03`, sans
+   filtre HWE dépendant d'une cohorte encore non gelée.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
 3. Migrer ensuite le QC préliminaire genome-wide et le panel indépendant de
@@ -293,7 +316,6 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action attendue est d'implémenter `04_prepare_target_variant_dataset` en
-consommant le jeu du chromosome cible de l'étape `03`, les métadonnées
-moléculaires confirmées et uniquement des génotypes individuels explicitement
-documentés.
+action attendue est d'implémenter `05_qc_preliminary` sur le jeu genome-wide de
+l'étape `03`, en conservant le HWE pour une étape postérieure au gel des
+cohortes.

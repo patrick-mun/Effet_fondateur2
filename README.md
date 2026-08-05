@@ -121,6 +121,14 @@ et le chromosome cible pour les analyses locales. Cette étape requiert PLINK,
 mais ni KING, ni R, ni Gamma. Son contrat détaillé est documenté dans
 `docs/modules/acpa.md`.
 
+`04_prepare_target_variant_dataset` consomme ensuite le jeu du chromosome cible
+sans le modifier. Elle exige une définition moléculaire confirmée et un
+génotype individuel explicite pour chaque échantillon, interdit toute inférence
+depuis le statut clinique ou le groupe, puis limite le contrôle PLINK Mendel au
+variant injecté. L'absence de trio est auditée `NOT_APPLICABLE`. Cette étape ne
+requiert aucun outil supplémentaire à PLINK ; son contrat est documenté dans
+`docs/modules/target_variant.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est

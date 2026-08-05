@@ -73,9 +73,10 @@ est volontaire : une configuration ne doit pas pouvoir importer arbitrairement
 du code Python.
 
 Une étape peut déclarer `blocking_manual_decision_ids`. Le runner refuse alors
-son lancement tant que le manifest contient l'une de ces décisions. L'étape
-`03_convert_acpa` utilise ce mécanisme pour exiger l'approbation du registre
-maître avant toute conversion génétique.
+son lancement tant que le manifest contient l'une de ces décisions. Les étapes
+`03_convert_acpa` et `04_prepare_target_variant_dataset` utilisent ce mécanisme
+pour exiger l'approbation du registre maître avant toute transformation
+génétique.
 
 ## Modifier un contrat
 
@@ -106,7 +107,7 @@ Le socle minimal ne fournit pas encore :
 - verrou interprocessus empêchant deux reprises simultanées ;
 - délai maximal ou protocole d'annulation des outils externes longs ;
 - cache partagé entre deux runs distincts ;
-- registre de production des étapes scientifiques `04` à `19` ;
+- registre de production des étapes scientifiques `05` à `19` ;
 - artefacts composés BED/BIM/FAM ;
 - migration de version automatique des manifests.
 

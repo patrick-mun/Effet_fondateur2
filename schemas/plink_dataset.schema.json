@@ -35,8 +35,8 @@
     "sample_count": {"type": "integer", "minimum": 1},
     "variant_count": {"type": "integer", "minimum": 1},
     "marker_mode": {"enum": ["intersection", "union"]},
-    "source_format": {"const": "ChAS_ACPA"},
-    "allele_orientation": {"const": "forward_strand_calls"},
+    "source_format": {"enum": ["ChAS_ACPA", "ChAS_ACPA_PLUS_EXPLICIT_TARGET"]},
+    "allele_orientation": {"enum": ["forward_strand_calls", "mixed_forward_and_reference"]},
     "files": {
       "type": "object",
       "additionalProperties": false,

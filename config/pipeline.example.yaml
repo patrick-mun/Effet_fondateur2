@@ -51,3 +51,7 @@ stages:
     enabled: false
     parameters:
       marker_mode: intersection
+  prepare_target_variant_dataset:
+    enabled: false
+    parameters:
+      plink_timeout_seconds: 300

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/target_variant_genotypes.schema.json",
+  "title": "Génotypes individuels explicites du variant cible V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["SAMPLE_ID", "GENOTYPE", "GENOTYPE_SOURCE", "MEASUREMENT_METHOD"],
+    "null_value": "",
+    "primary_key": ["SAMPLE_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "stableIdentifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["SAMPLE_ID", "GENOTYPE", "GENOTYPE_SOURCE", "MEASUREMENT_METHOD"],
+      "properties": {
+        "SAMPLE_ID": {"$ref": "#/$defs/stableIdentifier"},
+        "GENOTYPE": {"type": "string", "pattern": "^[ACGT]+[/|][ACGT]+$"},
+        "GENOTYPE_SOURCE": {"$ref": "#/$defs/stableIdentifier"},
+        "MEASUREMENT_METHOD": {"$ref": "#/$defs/stableIdentifier"}
+      }
+    }
+  }
+}
