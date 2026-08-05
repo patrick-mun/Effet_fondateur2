@@ -5,8 +5,9 @@ Dernière mise à jour : 5 août 2026
 ## État du dépôt
 
 - Dépôt GitHub : `patrick-mun/Effet_fondateur2`.
-- Branche active : `main`, synchronisée avec `origin/main` avant cette mise à
-  jour.
+- Branche active : `feature/v2-orchestrator-foundation`, synchronisée avec sa
+  branche distante.
+- PR V2 en brouillon : `#2`, ciblant `main`.
 - PR `#1` fusionnée dans `main` le 4 août 2026.
 - Commit de fusion : `f2fec8f`.
 - Environnement : Python 3.12.13 dans `.venv`.
@@ -139,6 +140,48 @@ Dernière mise à jour : 5 août 2026
   réussis.
 - Ensemble des suites Python actuelles : 54 réussis et 4 échecs historiques.
 
+## Suivi des étapes du pipeline V2
+
+Statuts autorisés : `NON_FAIT`, `EN_COURS`, `FAIT_A_VALIDER`, `VALIDE` et
+`BLOQUE`. Une étape est `VALIDE` uniquement lorsque son script, ses contrats,
+ses tests, son audit et sa documentation sont cohérents.
+
+| Étape | Nom | Statut | Tests ciblés | Audit d'étape | Remarque |
+|---:|---|---|---|---|---|
+| `00` | Initialisation du run | `VALIDE` | Oui | Oui | Bootstrap et reprise synthétique validés |
+| `01` | Validation des sources | `NON_FAIT` | Non | Non | Prochaine étape |
+| `02` | Métadonnées maître | `NON_FAIT` | Non | Non | Schéma préparé, script non implémenté |
+| `03` | Conversion et harmonisation ACPA | `NON_FAIT` | Non | Non | — |
+| `04` | Variant cible | `NON_FAIT` | Non | Non | — |
+| `05` | QC préliminaire genome-wide | `NON_FAIT` | Non | Non | — |
+| `06` | Panel indépendant | `NON_FAIT` | Non | Non | — |
+| `07` | Apparentement et duplicats | `NON_FAIT` | Non | Non | — |
+| `08` | Structure populationnelle | `NON_FAIT` | Non | Non | — |
+| `09` | Gel des cohortes | `NON_FAIT` | Non | Non | Schéma préparé, script non implémenté |
+| `10` | QC final | `NON_FAIT` | Non | Non | — |
+| `11` | Région cible | `NON_FAIT` | Non | Non | — |
+| `12` | Phasage | `NON_FAIT` | Non | Non | Méthode à décider |
+| `13` | Haplotype fondateur et IBD local | `NON_FAIT` | Non | Non | Méthode à décider |
+| `14` | Datation du variant | `NON_FAIT` | Non | Non | Méthodes à valider |
+| `15` | LD local secondaire | `NON_FAIT` | Non | Non | Exploratoire par défaut |
+| `16` | ROH secondaire | `NON_FAIT` | Non | Non | Exploratoire par défaut |
+| `17` | Analyses de sensibilité | `NON_FAIT` | Non | Non | — |
+| `18` | Visualisations consolidées | `NON_FAIT` | Non | Non | — |
+| `19` | Rapport et revue finale | `NON_FAIT` | Non | Non | — |
+
+### Audits qualité par groupe de cinq étapes
+
+| Groupe | Audit requis après | Statut | Contenu minimal |
+|---|---:|---|---|
+| `00–04` | étape `04` | `NON_FAIT` | architecture, contrats, sécurité, tests, audit scientifique |
+| `05–09` | étape `09` | `NON_FAIT` | QC, KING, structure, indépendance et cohortes |
+| `10–14` | étape `14` | `NON_FAIT` | QC final, phasage, haplotypes et datation |
+| `15–19` | étape `19` | `NON_FAIT` | analyses secondaires, figures, rapport et reproductibilité |
+
+La revue de maintenabilité du socle réalisée avant l'étape `01` est un contrôle
+préliminaire ; elle ne remplace pas l'audit complet obligatoire après l'étape
+`04`.
+
 ## Problèmes connus
 
 1. Les allèles génomiques REF/ALT de la mutation DOCK6 doivent être confirmés
@@ -163,19 +206,17 @@ Dernière mise à jour : 5 août 2026
 
 ## Priorités de la prochaine session
 
-1. Relire et valider les décisions ouvertes de `PIPELINE_V2_PRECODE.md`, en
-   particulier phasage, IBD local, carte génétique et unité porteuse indépendante.
-2. Valider le socle d'orchestration et les contrats de métadonnées V2 avant
-   toute migration scientifique.
-3. Implémenter l'étape `01_validate_sources` sur des fixtures synthétiques,
+1. Implémenter l'étape `01_validate_sources` sur des fixtures synthétiques,
    sans produire de génotype dérivé.
-4. Migrer ensuite le registre des individus et une conversion
+2. Implémenter ensuite `02_build_sample_registry` avec revue humaine des
+   génotypes cibles et de leur provenance.
+3. Migrer ensuite une conversion
    ACPA efficace produisant séparément le genome-wide et le chromosome cible.
-5. Intégrer les 66 témoins réels dans le QC genome-wide, KING, la structure et le
+4. Intégrer les 66 témoins réels dans le QC genome-wide, KING, la structure et le
    gel des cohortes avant toute analyse locale.
-6. Confirmer les données moléculaires et génotypes individuels du variant DOCK6,
+5. Confirmer les données moléculaires et génotypes individuels du variant DOCK6,
    puis valider son intégration et Mendel sur le jeu chromosome 19 définitif.
-7. Implémenter ensuite phasage, haplotype fondateur et datation avec jeux
+6. Implémenter ensuite phasage, haplotype fondateur et datation avec jeux
    synthétiques de référence avant analyse réelle.
 
 ## Décisions à conserver
