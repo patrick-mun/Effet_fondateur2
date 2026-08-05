@@ -27,6 +27,15 @@ def test_dock6_profile_accepts_unconfirmed_target_fields() -> None:
     assert config["target"]["position_bp"] is None
 
 
+def test_synthetic_orchestrator_profile_is_valid() -> None:
+    config = load_pipeline_config(
+        REPOSITORY_ROOT / "config" / "testing" / "synthetic.example.yaml"
+    )
+
+    assert config["stages"]["synthetic_stage"]["enabled"] is True
+    assert all(command is None for command in config["tools"].values())
+
+
 def test_unknown_configuration_key_is_rejected(tmp_path: Path) -> None:
     config_path = tmp_path / "invalid.yaml"
     config_path.write_text(

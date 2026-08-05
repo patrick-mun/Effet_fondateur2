@@ -487,6 +487,11 @@ remplace jamais la vérification des coordonnées et des allèles.
 `manifest.json` représente l'état courant du run. Il est réécrit de façon
 atomique par l'orchestrateur uniquement.
 
+Le manifest est un état de contrôle, pas un artefact qui se référence lui-même.
+Il conserve les empreintes de `audit.json` et `stage_outputs.json` de chaque
+étape ; sa propre intégrité repose sur l'écriture atomique et le journal
+append-only, ce qui évite toute dépendance circulaire d'empreinte.
+
 Contenu minimal :
 
 - identifiant du run ;
@@ -634,7 +639,9 @@ du run.
 6. écrire la configuration résolue ;
 7. initialiser `manifest.json` et `events.jsonl`.
 
-**Sorties** : environnement, configuration résolue et manifest initial.
+**Sorties de contrôle du run** : environnement, configuration résolue et
+manifest initial. Ces documents racine sont administrés par l'orchestrateur.
+L'artefact propre à l'étape est un résumé d'initialisation non sensible.
 
 **Critères bloquants** : configuration invalide, source absente, assemblage non
 déclaré ou outil requis par une étape activée indisponible.
@@ -1689,3 +1696,8 @@ Effet_fondateur2/
 12. construire le nouveau rapport ;
 13. établir la carte de remplacement des scripts V1 ;
 14. archiver les scripts inutiles après validation du run synthétique V2.
+
+L'étape technique `T00_synthetic_stage` peut être utilisée pendant la mise en
+œuvre pour tester les contrats, les échecs et la reprise sans donnée génétique.
+Elle n'appartient pas au DAG scientifique `00`–`19` et doit rester désactivée
+dans les profils d'étude réels.

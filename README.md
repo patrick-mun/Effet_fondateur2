@@ -79,6 +79,22 @@ Le profil DOCK6 conserve volontairement les coordonnées et allèles non confirm
 à `null`. Leur absence bloquera les futures étapes scientifiques concernées au
 lieu de provoquer l'utilisation de valeurs supposées.
 
+Le socle de l'orchestrateur peut être exercé sans donnée génétique ni logiciel
+externe avec le profil synthétique :
+
+```bash
+effet-fondateur run \
+  --config config/testing/synthetic.example.yaml \
+  --runs-dir /tmp/effet_fondateur_runs
+```
+
+La commande affiche le dossier créé. Une reprise recalcule les empreintes avant
+de réutiliser une étape publiée :
+
+```bash
+effet-fondateur resume --run-dir /tmp/effet_fondateur_runs/<run_id>
+```
+
 ### Programmes externes
 
 Les exécutables suivants doivent être accessibles depuis le `PATH` :
