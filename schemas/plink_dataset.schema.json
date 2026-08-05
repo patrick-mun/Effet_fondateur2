@@ -36,7 +36,12 @@
     "variant_count": {"type": "integer", "minimum": 1},
     "marker_mode": {"enum": ["intersection", "union"]},
     "source_format": {
-      "enum": ["ChAS_ACPA", "ChAS_ACPA_PLUS_EXPLICIT_TARGET", "PLINK_PRELIMINARY_QC"]
+      "enum": [
+        "ChAS_ACPA",
+        "ChAS_ACPA_PLUS_EXPLICIT_TARGET",
+        "PLINK_PRELIMINARY_QC",
+        "PLINK_KINSHIP_PANEL"
+      ]
     },
     "allele_orientation": {"enum": ["forward_strand_calls", "mixed_forward_and_reference"]},
     "files": {

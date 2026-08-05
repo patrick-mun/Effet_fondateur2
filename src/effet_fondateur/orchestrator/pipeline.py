@@ -87,6 +87,21 @@ QC_PRELIMINARY_STAGE = StageDefinition(
     blocking_manual_decision_ids=("sample_registry_approval",),
 )
 
+BUILD_KINSHIP_PANEL_STAGE = StageDefinition(
+    stage_id="06",
+    stage_name="build_kinship_panel",
+    module="effet_fondateur.stages.build_kinship_panel",
+    critical=True,
+    dependencies=("qc_preliminary",),
+    required_artifact_ids=(
+        "genomewide_pre_qc_bed",
+        "genomewide_pre_qc_bim",
+        "genomewide_pre_qc_fam",
+        "genomewide_pre_qc_dataset",
+        "qc_variant_metrics",
+    ),
+)
+
 DEFAULT_STAGE_DEFINITIONS = (
     SYNTHETIC_STAGE,
     VALIDATE_SOURCES_STAGE,
@@ -94,6 +109,7 @@ DEFAULT_STAGE_DEFINITIONS = (
     CONVERT_ACPA_STAGE,
     PREPARE_TARGET_VARIANT_DATASET_STAGE,
     QC_PRELIMINARY_STAGE,
+    BUILD_KINSHIP_PANEL_STAGE,
 )
 
 

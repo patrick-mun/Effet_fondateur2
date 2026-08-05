@@ -820,17 +820,19 @@ et à la structure populationnelle.
 
 1. exclure chromosomes sexuels et mitochondrie ;
 2. appliquer les critères techniques préliminaires ;
-3. exclure les régions complexes configurées si la méthode l'exige ;
-4. appliquer un pruning LD documenté ;
-5. vérifier la couverture des 22 autosomes ;
-6. calculer le nombre effectif de marqueurs et leur répartition ;
-7. publier un BED/BIM/FAM dédié, distinct du jeu du chromosome cible.
+3. recalculer la MAF après les exclusions individuelles techniques ;
+4. exclure les régions complexes configurées si la méthode l'exige ;
+5. appliquer un pruning LD documenté ;
+6. vérifier la couverture des 22 autosomes ;
+7. calculer le nombre opérationnel de marqueurs et leur répartition ;
+8. publier un BED/BIM/FAM dédié, distinct du jeu du chromosome cible.
 
 **Critère bloquant** : couverture insuffisante ou concentration excessive des
 marqueurs dans une faible partie du génome.
 
 **Visualisations** : marqueurs conservés par chromosome, distances entre
-marqueurs et distribution du LD résiduel.
+marqueurs et distribution agrégée du LD résiduel. L'absence de paire évaluable
+est notée `NOT_EVALUATED`.
 
 ### Étape 07 — Apparentement, duplicats et concordance du pedigree
 
@@ -1263,7 +1265,7 @@ contient en plus `stage_inputs.json`, `stage_outputs.json`, `audit.json`,
 | `03` | exports ACPA validés, `samples.master.tsv` | `genomewide_base.*`, `target_chromosome_base.*`, `sample_alignment.tsv`, audits variants | `plot_genotype_qc.py` |
 | `04` | `target_chromosome_base.*`, métadonnées et génotypes cibles | `target_variant.*`, `target_genotype_audit.tsv`, `mendel.tsv` | `plot_target_variant_qc.py` |
 | `05` | `genomewide_base.*`, lots et registre | `genomewide_pre_qc.*`, `sample_qc.tsv`, `variant_qc_preliminary.tsv` | `plot_genotype_qc.py` |
-| `06` | `genomewide_pre_qc.*`, paramètres pruning | `kinship_panel.*`, `pruned_variants.tsv`, `panel_coverage.tsv` | `plot_kinship_panel.py` |
+| `06` | `genomewide_pre_qc.*`, paramètres pruning | `kinship_panel.*`, `pruned_variants.tsv`, `panel_coverage.tsv`, `panel_residual_ld_bins.tsv` | `plot_kinship_panel.py` |
 | `07` | `kinship_panel.*`, pedigree déclaré | `kinship_pairs.tsv`, `pedigree_concordance.tsv`, `independent_set_proposal.tsv` | `plot_kinship.py` |
 | `08` | panel genome-wide, résultat KING, lots et groupes descriptifs | `population_scores.tsv`, `population_eigenvalues.tsv`, `population_outliers.tsv` | `plot_population_structure.py` |
 | `09` | registre, variant cible, KING, structure, QC | `cohorts.frozen.tsv`, fichiers `keep`, `cohort_decisions.tsv` | `plot_cohorts.py` |

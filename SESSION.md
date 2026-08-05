@@ -5,8 +5,8 @@ Dernière mise à jour : 5 août 2026
 ## État du dépôt
 
 - Dépôt GitHub : `patrick-mun/Effet_fondateur2`.
-- Branche active : `feature/v2-orchestrator-foundation`, synchronisée avec sa
-  branche distante après publication de l'étape `05`.
+- Branche active : `feature/v2-orchestrator-foundation`, avec les modifications
+  locales non committées de l'étape `06` au-dessus de la branche distante.
 - PR V2 en brouillon : `#2`, ciblant `main`.
 - PR `#1` fusionnée dans `main` le 4 août 2026.
 - Commit de fusion : `f2fec8f`.
@@ -138,6 +138,23 @@ Dernière mise à jour : 5 août 2026
   - scan préliminaire des duplicats conditionné par un minimum de variants
     polymorphes, la décision finale restant réservée à l'étape `07` ;
   - aucune nouvelle dépendance : PLINK, PyYAML et jsonschema étaient déjà requis.
+- Étape V2 `06_build_kinship_panel` implémentée et validée sur fixtures
+  synthétiques et avec PLINK 1.9 réel dans un dossier temporaire :
+  - consommation exclusive du jeu `genomewide_pre_qc` et des métriques variants
+    de l'étape `05`, avec contrôle des empreintes et des ensembles ;
+  - recalcul de la MAF après les exclusions individuelles techniques, sans
+    appliquer aveuglément les alertes préliminaires ;
+  - exclusion auditée des faibles MAF et des régions complexes explicitement
+    configurées, puis pruning PLINK `--indep-pairwise` paramétré ;
+  - publication d'un BED/BIM/FAM distinct pour KING et la structure, sans
+    modification de l'ordre ni de l'ensemble des individus ;
+  - audit de chaque variant, couverture des 22 autosomes, distances entre
+    marqueurs et distribution agrégée du LD résiduel ;
+  - blocage avec le code V2 `4` si le panel est trop petit, déséquilibré ou ne
+    couvre pas les autosomes requis ; échec PLINK rapporté avec le code `3` ;
+  - clarification que le nombre effectif opérationnel est le nombre de marqueurs
+    après pruning, pas une dimension effective statistique ;
+  - aucune nouvelle dépendance : PLINK, PyYAML et jsonschema étaient déjà requis.
 
 ## Jeux de données actuellement disponibles
 
@@ -210,10 +227,11 @@ Dernière mise à jour : 5 août 2026
 - Tests ciblés de préparation des données : 16 réussis.
 - Tests ciblés de l'étape `04` : 6 réussis.
 - Tests ciblés de l'étape `05` : 6 réussis.
-- Suite moderne `tests/`, incluant les étapes `01` à `05` et les contrôles de
-  maintenabilité V2 : 73 réussis.
-- Ensemble des suites Python actuelles : 85 réussis et 4 échecs historiques
-  sans rapport avec l'étape `05`.
+- Tests ciblés de l'étape `06` : 7 réussis.
+- Suite moderne `tests/`, incluant les étapes `01` à `06` et les contrôles de
+  maintenabilité V2 : 80 réussis.
+- Ensemble des suites Python actuelles : 92 réussis et 4 échecs historiques
+  sans rapport avec les étapes `05` et `06`.
 - Smoke test temporaire avec PLINK 1.9 réel : 2 individus, 23 marqueurs
   autosomiques et 2 marqueurs du chromosome cible, conversion réussie.
 - Smoke test temporaire de l'étape `04` avec PLINK 1.9 réel : 2 individus,
@@ -221,6 +239,9 @@ Dernière mise à jour : 5 août 2026
 - Smoke test temporaire de l'étape `05` avec PLINK 1.9 réel : 3 individus et 22
   variants conservés, rapports individu/variant/lot valides, aucun HWE appliqué
   et scan de duplicats `NOT_EVALUATED` faute de 100 variants polymorphes.
+- Smoke test temporaire de l'étape `06` avec PLINK 1.9 réel : 3 individus, 22
+  marqueurs conservés, 22 autosomes couverts et LD résiduel `NOT_EVALUATED`
+  faute de paire dans la fenêtre sur ce jeu minimal.
 
 ## Suivi des étapes du pipeline V2
 
@@ -236,7 +257,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `03` | Conversion et harmonisation ACPA | `VALIDE` | Oui | Oui | Double sortie PLINK et smoke réel validés |
 | `04` | Variant cible | `VALIDE` | Oui | Oui | Injection explicite et smoke PLINK réel validés |
 | `05` | QC préliminaire genome-wide | `VALIDE` | Oui | Oui | Missingness technique, alertes et smoke PLINK réel validés |
-| `06` | Panel indépendant | `NON_FAIT` | Non | Non | — |
+| `06` | Panel indépendant | `VALIDE` | Oui | Oui | MAF post-QC, pruning LD et smoke PLINK réel validés |
 | `07` | Apparentement et duplicats | `NON_FAIT` | Non | Non | — |
 | `08` | Structure populationnelle | `NON_FAIT` | Non | Non | — |
 | `09` | Gel des cohortes | `NON_FAIT` | Non | Non | Schéma préparé, script non implémenté |
@@ -288,15 +309,18 @@ préliminaire ; elle ne remplace pas l'audit complet obligatoire après l'étape
 9. Le pipeline V1 mélange calcul, visualisation et interprétation et peut lire
    des sorties historiques après un échec ; il ne doit pas être relancé pour
    produire un résultat scientifique avant la migration V2.
+10. La signature d'étape lie le module, la configuration et les artefacts, mais
+    pas encore l'empreinte du binaire externe ni celle des modules partagés ; ce
+    durcissement transversal reste requis avant un usage de production.
 
 ## Priorités de la prochaine session
 
-1. Implémenter `06_build_kinship_panel` depuis le jeu pré-QC et ses alertes MAF,
-   avec pruning LD reproductible pour l'apparentement.
+1. Implémenter `07_infer_kinship` sur le panel indépendant validé, avec KING,
+   classification versionnée des degrés et concordance du pedigree déclaré.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
-3. Migrer ensuite le QC préliminaire genome-wide et le panel indépendant de
-   marqueurs.
+3. Préparer la validation manuelle des exclusions et la proposition d'un
+   ensemble indépendant maximal, sans application silencieuse.
 4. Intégrer les 66 témoins réels dans le QC genome-wide, KING, la structure et le
    gel des cohortes avant toute analyse locale.
 5. Confirmer les données moléculaires et génotypes individuels du variant DOCK6,
@@ -335,5 +359,6 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action attendue est d'implémenter `06_build_kinship_panel` depuis le jeu pré-QC
-de l'étape `05`, avec sélection MAF et pruning LD explicitement paramétrés.
+action attendue est d'implémenter `07_infer_kinship` depuis le panel indépendant
+de l'étape `06`, avec KING, pedigree déclaré et proposition d'ensemble
+indépendant soumise à validation.

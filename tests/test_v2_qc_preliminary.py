@@ -33,6 +33,8 @@ def write_fake_plink(
     exclude_variant: bool = False,
     duplicate_pair: bool = False,
     fail_qc: bool = False,
+    fail_kinship_panel: bool = False,
+    ld_prune_variant: str | None = None,
 ) -> None:
     script = f'''#!{sys.executable}
 import pathlib
@@ -64,6 +66,34 @@ elif "--genome" in sys.argv:
     if {duplicate_pair!r}:
         content += "F1 I1 F3 I3 0.995\\n"
     output_prefix.with_suffix(".genome").write_text(content)
+elif "--indep-pairwise" in sys.argv:
+    if {fail_kinship_panel!r}:
+        raise SystemExit(8)
+    extract_path = pathlib.Path(sys.argv[sys.argv.index("--extract") + 1])
+    variants = [line.strip() for line in extract_path.read_text().splitlines() if line]
+    pruned = [variant for variant in variants if variant == {ld_prune_variant!r}]
+    retained = [variant for variant in variants if variant not in pruned]
+    output_prefix.with_suffix(".prune.in").write_text("".join(variant + "\\n" for variant in retained))
+    output_prefix.with_suffix(".prune.out").write_text("".join(variant + "\\n" for variant in pruned))
+elif "--r2" in sys.argv:
+    base_prefix = pathlib.Path(sys.argv[sys.argv.index("--bfile") + 1])
+    variants = [line.split() for line in base_prefix.with_suffix(".bim").read_text().splitlines() if line]
+    lines = ["CHR_A BP_A SNP_A CHR_B BP_B SNP_B R2\\n"]
+    if len(variants) >= 4:
+        lines.append(f"{{variants[0][0]}} {{variants[0][3]}} {{variants[0][1]}} {{variants[1][0]}} {{variants[1][3]}} {{variants[1][1]}} 0.04\\n")
+        lines.append(f"{{variants[2][0]}} {{variants[2][3]}} {{variants[2][1]}} {{variants[3][0]}} {{variants[3][3]}} {{variants[3][1]}} 0.16\\n")
+    output_prefix.with_suffix(".ld").write_text("".join(lines))
+elif "--freq" in sys.argv and "--missing" not in sys.argv:
+    if {fail_kinship_panel!r}:
+        raise SystemExit(8)
+    base_prefix = pathlib.Path(sys.argv[sys.argv.index("--bfile") + 1])
+    fam_rows = [line.split() for line in base_prefix.with_suffix(".fam").read_text().splitlines() if line]
+    variants = [line.split() for line in base_prefix.with_suffix(".bim").read_text().splitlines() if line]
+    lines = ["CHR SNP A1 A2 MAF NCHROBS\\n"]
+    for variant in variants:
+        maf = 0.01 if variant[1] == "probe_1" else 0.2
+        lines.append(f"{{variant[0]}} {{variant[1]}} A G {{maf}} {{2 * len(fam_rows)}}\\n")
+    output_prefix.with_suffix(".frq").write_text("".join(lines))
 elif "--make-bed" in sys.argv and "--bfile" in sys.argv:
     base_prefix = pathlib.Path(sys.argv[sys.argv.index("--bfile") + 1])
     fam_rows = [line for line in base_prefix.with_suffix(".fam").read_text().splitlines() if line]
@@ -76,6 +106,10 @@ elif "--make-bed" in sys.argv and "--bfile" in sys.argv:
         exclude_path = pathlib.Path(sys.argv[sys.argv.index("--exclude") + 1])
         excluded = {{line.strip() for line in exclude_path.read_text().splitlines() if line}}
         bim_rows = [line for line in bim_rows if line.split()[1] not in excluded]
+    if "--extract" in sys.argv:
+        extract_path = pathlib.Path(sys.argv[sys.argv.index("--extract") + 1])
+        retained = {{line.strip() for line in extract_path.read_text().splitlines() if line}}
+        bim_rows = [line for line in bim_rows if line.split()[1] in retained]
     output_prefix.with_suffix(".fam").write_text("".join(line + "\\n" for line in fam_rows))
     output_prefix.with_suffix(".bim").write_text("".join(line + "\\n" for line in bim_rows))
     output_prefix.with_suffix(".bed").write_bytes(b"\\x6c\\x1b\\x01")
@@ -169,6 +203,10 @@ def prepare_inputs(
     duplicate_pair: bool = False,
     fail_qc: bool = False,
     duplicate_scan_minimum: int = 100,
+    enable_kinship_panel: bool = False,
+    fail_kinship_panel: bool = False,
+    ld_prune_variant: str | None = None,
+    kinship_parameters: dict[str, object] | None = None,
 ) -> tuple[Path, Path, Path]:
     source_dir = tmp_path / "sources"
     for sample_index in range(1, 4):
@@ -185,6 +223,8 @@ def prepare_inputs(
         exclude_variant=exclude_variant,
         duplicate_pair=duplicate_pair,
         fail_qc=fail_qc,
+        fail_kinship_panel=fail_kinship_panel,
+        ld_prune_variant=ld_prune_variant,
     )
     config = yaml.safe_load(
         (REPOSITORY_ROOT / "config" / "pipeline.example.yaml").read_text(
@@ -224,6 +264,25 @@ def prepare_inputs(
             "plink_timeout_seconds": 30,
         },
     }
+    if enable_kinship_panel:
+        config["stages"]["build_kinship_panel"] = {
+            "enabled": True,
+            "parameters": kinship_parameters
+            or {
+                "maf_min": 0,
+                "ld_window_variants": 50,
+                "ld_step_variants": 5,
+                "ld_r2_max": 0.2,
+                "required_autosomes": list(range(1, 23)),
+                "min_markers_per_autosome": 1,
+                "min_total_markers": 22,
+                "max_autosome_marker_fraction": 0.1,
+                "excluded_regions": [],
+                "residual_ld_window_variants": 100,
+                "residual_ld_window_kb": 1000,
+                "plink_timeout_seconds": 30,
+            },
+        }
     config_path = tmp_path / "config.yaml"
     config_path.write_text(
         yaml.safe_dump(config, allow_unicode=True, sort_keys=False),
@@ -249,6 +308,27 @@ def test_qc_preliminary_filters_only_missingness_failures(tmp_path: Path) -> Non
     assert report["excluded_variant_count"] == 1
     assert report["hwe_filter_applied"] is False
     assert "--hwe" not in command_audit_path.read_text(encoding="utf-8")
+    stage_outputs = json.loads(
+        (stage_dir / "stage_outputs.json").read_text(encoding="utf-8")
+    )
+    artifacts = {
+        artifact["artifact_id"]: artifact for artifact in stage_outputs["artifacts"]
+    }
+    base_descriptor = json.loads(
+        (
+            run_dir
+            / "stages"
+            / "03_convert_acpa"
+            / "genomewide_base.dataset.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert (
+        artifacts["qc_variant_metrics"]["variant_set_id"]
+        == base_descriptor["variant_set_id"]
+    )
+    assert artifacts["genomewide_pre_qc_bim"]["variant_set_id"].startswith(
+        "preqc_variants_"
+    )
 
 
 def test_qc_preliminary_records_maf_batch_and_non_evaluable_checks(
@@ -319,3 +399,184 @@ def test_plink_qc_failure_uses_external_tool_return_code(tmp_path: Path) -> None
         run_pipeline(config_path, runs_dir)
 
     assert error.value.return_code == 3
+
+
+def test_build_kinship_panel_publishes_autosomal_ld_pruned_dataset(
+    tmp_path: Path,
+) -> None:
+    config_path, runs_dir, command_audit_path = prepare_inputs(
+        tmp_path, enable_kinship_panel=True
+    )
+
+    run_dir = run_pipeline(config_path, runs_dir)
+
+    stage_dir = run_dir / "stages" / "06_build_kinship_panel"
+    descriptor = json.loads(
+        (stage_dir / "kinship_panel.dataset.json").read_text(encoding="utf-8")
+    )
+    report = json.loads(
+        (stage_dir / "kinship_panel_report.json").read_text(encoding="utf-8")
+    )
+    assert descriptor["source_format"] == "PLINK_KINSHIP_PANEL"
+    assert descriptor["variant_count"] == 22
+    assert report["covered_autosome_count"] == 22
+    assert report["residual_ld"]["pair_count"] == 2
+    commands = command_audit_path.read_text(encoding="utf-8")
+    assert "--indep-pairwise 50 5 0.2" in commands
+    assert "--ld-window-r2 0" in commands
+
+
+def test_kinship_panel_recalculates_maf_and_audits_all_exclusions(
+    tmp_path: Path,
+) -> None:
+    parameters = {
+        "maf_min": 0.05,
+        "ld_window_variants": 20,
+        "ld_step_variants": 2,
+        "ld_r2_max": 0.1,
+        "required_autosomes": list(range(4, 23)),
+        "min_markers_per_autosome": 1,
+        "min_total_markers": 19,
+        "max_autosome_marker_fraction": 0.1,
+        "excluded_regions": [
+            {
+                "region_id": "synthetic_complex_region",
+                "chromosome": 2,
+                "start_bp": 150,
+                "end_bp": 250,
+            }
+        ],
+        "residual_ld_window_variants": 50,
+        "residual_ld_window_kb": 500,
+        "plink_timeout_seconds": 30,
+    }
+    config_path, runs_dir, _ = prepare_inputs(
+        tmp_path,
+        enable_kinship_panel=True,
+        ld_prune_variant="probe_3",
+        kinship_parameters=parameters,
+    )
+
+    run_dir = run_pipeline(config_path, runs_dir)
+
+    stage_dir = run_dir / "stages" / "06_build_kinship_panel"
+    with (stage_dir / "pruned_variants.tsv").open(encoding="utf-8") as file:
+        rows = {row["VARIANT_ID"]: row for row in csv.DictReader(file, delimiter="\t")}
+    assert rows["probe_1"]["PANEL_STATUS"] == "EXCLUDED_LOW_MAF"
+    assert rows["probe_1"]["PRELIMINARY_ALERT_CODES"] == "low_maf_for_kinship"
+    assert rows["probe_2"]["PANEL_STATUS"] == "EXCLUDED_COMPLEX_REGION"
+    assert rows["probe_3"]["PANEL_STATUS"] == "EXCLUDED_LD"
+    assert len((stage_dir / "kinship_panel.bim").read_text().splitlines()) == 19
+
+
+def test_kinship_panel_insufficient_coverage_is_scientific_block(
+    tmp_path: Path,
+) -> None:
+    parameters = {
+        "maf_min": 0,
+        "ld_window_variants": 50,
+        "ld_step_variants": 5,
+        "ld_r2_max": 0.2,
+        "required_autosomes": list(range(1, 23)),
+        "min_markers_per_autosome": 1,
+        "min_total_markers": 23,
+        "max_autosome_marker_fraction": 0.1,
+        "excluded_regions": [],
+        "residual_ld_window_variants": 100,
+        "residual_ld_window_kb": 1000,
+        "plink_timeout_seconds": 30,
+    }
+    config_path, runs_dir, _ = prepare_inputs(
+        tmp_path, enable_kinship_panel=True, kinship_parameters=parameters
+    )
+
+    with pytest.raises(StageExecutionError) as error:
+        run_pipeline(config_path, runs_dir)
+
+    assert error.value.return_code == 4
+
+
+def test_kinship_panel_plink_failure_uses_external_tool_code(tmp_path: Path) -> None:
+    config_path, runs_dir, _ = prepare_inputs(
+        tmp_path, enable_kinship_panel=True, fail_kinship_panel=True
+    )
+
+    with pytest.raises(StageExecutionError) as error:
+        run_pipeline(config_path, runs_dir)
+
+    assert error.value.return_code == 3
+
+
+def test_kinship_panel_missing_required_autosome_is_scientific_block(
+    tmp_path: Path,
+) -> None:
+    parameters = {
+        "maf_min": 0,
+        "ld_window_variants": 50,
+        "ld_step_variants": 5,
+        "ld_r2_max": 0.2,
+        "required_autosomes": list(range(1, 23)),
+        "min_markers_per_autosome": 1,
+        "min_total_markers": 21,
+        "max_autosome_marker_fraction": 0.1,
+        "excluded_regions": [],
+        "residual_ld_window_variants": 100,
+        "residual_ld_window_kb": 1000,
+        "plink_timeout_seconds": 30,
+    }
+    config_path, runs_dir, _ = prepare_inputs(
+        tmp_path,
+        enable_kinship_panel=True,
+        ld_prune_variant="probe_1",
+        kinship_parameters=parameters,
+    )
+
+    with pytest.raises(StageExecutionError) as error:
+        run_pipeline(config_path, runs_dir)
+
+    assert error.value.return_code == 4
+
+
+def test_kinship_panel_invalid_pruning_window_uses_input_error_code(
+    tmp_path: Path,
+) -> None:
+    config_path, runs_dir, _ = prepare_inputs(tmp_path, enable_kinship_panel=True)
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    config["stages"]["build_kinship_panel"]["parameters"]["ld_window_variants"] = 5
+    config["stages"]["build_kinship_panel"]["parameters"]["ld_step_variants"] = 10
+    config_path.write_text(
+        yaml.safe_dump(config, allow_unicode=True, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(StageExecutionError) as error:
+        run_pipeline(config_path, runs_dir)
+
+    assert error.value.return_code == 2
+
+
+def test_kinship_panel_excessive_chromosome_concentration_is_blocking(
+    tmp_path: Path,
+) -> None:
+    parameters = {
+        "maf_min": 0,
+        "ld_window_variants": 50,
+        "ld_step_variants": 5,
+        "ld_r2_max": 0.2,
+        "required_autosomes": list(range(1, 23)),
+        "min_markers_per_autosome": 1,
+        "min_total_markers": 22,
+        "max_autosome_marker_fraction": 0.04,
+        "excluded_regions": [],
+        "residual_ld_window_variants": 100,
+        "residual_ld_window_kb": 1000,
+        "plink_timeout_seconds": 30,
+    }
+    config_path, runs_dir, _ = prepare_inputs(
+        tmp_path, enable_kinship_panel=True, kinship_parameters=parameters
+    )
+
+    with pytest.raises(StageExecutionError) as error:
+        run_pipeline(config_path, runs_dir)
+
+    assert error.value.return_code == 4

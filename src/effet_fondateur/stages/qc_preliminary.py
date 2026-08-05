@@ -1110,8 +1110,8 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
                 schema_name=schema_name,
                 schema_version="1.0.0" if schema_name else None,
                 assembly=base_descriptor["assembly"],
-                sample_set_id=sample_set_id,
-                variant_set_id=variant_set_id,
+                sample_set_id=base_descriptor["sample_set_id"],
+                variant_set_id=base_descriptor["variant_set_id"],
                 sensitivity="sensitive_genetic",
             )
         )

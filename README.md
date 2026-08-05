@@ -136,6 +136,13 @@ duplicats potentiels restent des alertes ; aucun HWE n'est appliqué avant le ge
 des cohortes. Le contrat et les statuts `NOT_EVALUATED` sont documentés dans
 `docs/modules/preliminary_qc.md`.
 
+`06_build_kinship_panel` recalcule ensuite la MAF sur les individus conservés,
+exclut les régions complexes explicitement configurées et applique un pruning
+LD reproductible. La couverture des autosomes, la concentration des marqueurs
+et le LD résiduel sont audités avant de publier le jeu destiné à KING et à la
+structure populationnelle. Son contrat est documenté dans
+`docs/modules/kinship_panel.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est
