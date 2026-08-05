@@ -1,0 +1,41 @@
+schema_version: 1.0.0
+
+project:
+  project_id: founder_effect_study
+  assembly: GRCh38
+
+target:
+  gene: GENE_EXAMPLE
+  chromosome: 1
+  position_bp: 100000
+  ref: A
+  alt: G
+  transcript: TRANSCRIPT_EXAMPLE
+  project_variant_id: target_GRCh38_1_100000_A_G
+  rsid: null
+
+inputs:
+  acpa_samples_dir: data/input/acpa_samples
+  sample_metadata: data/input/metadata/samples.tsv
+  target_variant_metadata: data/input/target_variant/variant.yaml
+  target_variant_genotypes: data/input/target_variant/genotypes.tsv
+  genetic_map: data/input/reference/genetic_map.tsv
+
+tools:
+  plink: plink
+  king: king
+  bcftools: bcftools
+  rscript: Rscript
+  phasing_adapter: null
+  local_ibd_adapter: null
+
+policies:
+  overwrite_inputs: false
+  allow_clinical_genotype_inference: false
+  pseudonymize_figures: true
+  stop_on_critical_warning: true
+
+stages:
+  initialize_run:
+    enabled: true
+    parameters: {}

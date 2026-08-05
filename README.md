@@ -9,7 +9,7 @@ de l'âge de la mutation, structure populationnelle et génération de rapports.
 
 ### Python
 
-- Python 3.10 ou version plus récente (Python 3.12 recommandé sur macOS Intel)
+- Python 3.12
 - dépendances déclarées dans `requirements.txt`
 
 Installation recommandée :
@@ -19,6 +19,7 @@ python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+python -m pip install -e .
 ```
 
 ### Activer l'environnement du projet
@@ -57,11 +58,26 @@ deactivate
 Le projet importe directement les bibliothèques suivantes :
 
 - `pandas`, `numpy` et `scipy` pour les calculs ;
+- `PyYAML` et `jsonschema` pour la configuration V2 ;
 - `matplotlib` pour les graphiques ;
 - `networkx` pour le réseau de parenté ;
 - `fpdf2` pour le rapport PDF ;
 - `streamlit` pour l'interface ;
 - `pytest` et `pytest-html` pour les tests.
+
+### Configuration V2
+
+La V2 est développée parallèlement au pipeline historique. Une configuration
+peut être validée sans lire les données ni lancer d'analyse :
+
+```bash
+effet-fondateur validate-config config/pipeline.example.yaml
+effet-fondateur validate-config config/studies/dock6.example.yaml
+```
+
+Le profil DOCK6 conserve volontairement les coordonnées et allèles non confirmés
+à `null`. Leur absence bloquera les futures étapes scientifiques concernées au
+lieu de provoquer l'utilisation de valeurs supposées.
 
 ### Programmes externes
 

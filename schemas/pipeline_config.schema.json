@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/pipeline_config.schema.json",
+  "title": "Configuration du pipeline Effet fondateur V2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "project", "target", "inputs", "tools", "policies", "stages"],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_id", "assembly"],
+      "properties": {
+        "project_id": {
+          "$ref": "#/$defs/stableIdentifier"
+        },
+        "assembly": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gene", "chromosome", "position_bp", "ref", "alt", "transcript", "project_variant_id", "rsid"],
+      "properties": {
+        "gene": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "chromosome": {
+          "oneOf": [
+            {"type": "integer", "minimum": 1, "maximum": 22},
+            {"type": "null"}
+          ]
+        },
+        "position_bp": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "ref": {
+          "$ref": "#/$defs/nullableAllele"
+        },
+        "alt": {
+          "$ref": "#/$defs/nullableAllele"
+        },
+        "transcript": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "project_variant_id": {
+          "oneOf": [
+            {"$ref": "#/$defs/stableIdentifier"},
+            {"type": "null"}
+          ]
+        },
+        "rsid": {
+          "oneOf": [
+            {"type": "string", "pattern": "^rs[0-9]+$"},
+            {"type": "null"}
+          ]
+        }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["acpa_samples_dir", "sample_metadata", "target_variant_metadata", "target_variant_genotypes", "genetic_map"],
+      "properties": {
+        "acpa_samples_dir": {"$ref": "#/$defs/pathOrNull"},
+        "sample_metadata": {"$ref": "#/$defs/pathOrNull"},
+        "target_variant_metadata": {"$ref": "#/$defs/pathOrNull"},
+        "target_variant_genotypes": {"$ref": "#/$defs/pathOrNull"},
+        "genetic_map": {"$ref": "#/$defs/pathOrNull"}
+      }
+    },
+    "tools": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plink", "king", "bcftools", "rscript", "phasing_adapter", "local_ibd_adapter"],
+      "properties": {
+        "plink": {"$ref": "#/$defs/commandName"},
+        "king": {"$ref": "#/$defs/commandName"},
+        "bcftools": {"$ref": "#/$defs/commandName"},
+        "rscript": {"$ref": "#/$defs/commandName"},
+        "phasing_adapter": {"$ref": "#/$defs/commandName"},
+        "local_ibd_adapter": {"$ref": "#/$defs/commandName"}
+      }
+    },
+    "policies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["overwrite_inputs", "allow_clinical_genotype_inference", "pseudonymize_figures", "stop_on_critical_warning"],
+      "properties": {
+        "overwrite_inputs": {"const": false},
+        "allow_clinical_genotype_inference": {"const": false},
+        "pseudonymize_figures": {"type": "boolean"},
+        "stop_on_critical_warning": {"type": "boolean"}
+      }
+    },
+    "stages": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["enabled", "parameters"],
+        "properties": {
+          "enabled": {"type": "boolean"},
+          "parameters": {"type": "object"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "stableIdentifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "nullableAllele": {
+      "oneOf": [
+        {"type": "string", "pattern": "^[ACGTN]+$"},
+        {"type": "null"}
+      ]
+    },
+    "pathOrNull": {
+      "oneOf": [
+        {"type": "string", "minLength": 1},
+        {"type": "null"}
+      ]
+    },
+    "commandName": {
+      "oneOf": [
+        {"type": "string", "minLength": 1},
+        {"type": "null"}
+      ]
+    }
+  }
+}

@@ -45,6 +45,10 @@ Dernière mise à jour : 5 août 2026
   structure optimale du dépôt. Cette architecture est générique pour l'étude
   d'un variant autosomique cible ; DOCK6 sur le chromosome 19 est son premier
   profil d'étude, pas une spécialisation du pipeline.
+- Premier socle V2 créé : paquet Python sous `src/`, schéma JSON strict de la
+  configuration, exemples générique et DOCK6, commande `validate-config` et
+  tests ciblés. Les champs moléculaires DOCK6 inconnus restent explicitement à
+  `null` et les politiques interdisent l'inférence clinique des génotypes.
 
 ## Jeux de données actuellement disponibles
 

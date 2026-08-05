@@ -1,0 +1,41 @@
+schema_version: 1.0.0
+
+project:
+  project_id: dock6_reunion_founder_effect
+  assembly: GRCh38
+
+target:
+  gene: DOCK6
+  chromosome: 19
+  position_bp: null
+  ref: null
+  alt: null
+  transcript: null
+  project_variant_id: null
+  rsid: null
+
+inputs:
+  acpa_samples_dir: data/input/complex_simulation/acpa_samples
+  sample_metadata: null
+  target_variant_metadata: null
+  target_variant_genotypes: null
+  genetic_map: null
+
+tools:
+  plink: plink
+  king: king
+  bcftools: bcftools
+  rscript: Rscript
+  phasing_adapter: null
+  local_ibd_adapter: null
+
+policies:
+  overwrite_inputs: false
+  allow_clinical_genotype_inference: false
+  pseudonymize_figures: true
+  stop_on_critical_warning: true
+
+stages:
+  initialize_run:
+    enabled: true
+    parameters: {}
