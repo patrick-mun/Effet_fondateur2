@@ -119,6 +119,23 @@ INFER_KINSHIP_STAGE = StageDefinition(
     manual_decision_id="kinship_exclusion_approval",
 )
 
+ANALYZE_POPULATION_STRUCTURE_STAGE = StageDefinition(
+    stage_id="08",
+    stage_name="analyze_population_structure",
+    module="effet_fondateur.stages.analyze_population_structure",
+    critical=True,
+    dependencies=("build_sample_registry", "build_kinship_panel", "infer_kinship"),
+    required_artifact_ids=(
+        "samples_master",
+        "kinship_panel_bed",
+        "kinship_panel_bim",
+        "kinship_panel_fam",
+        "kinship_panel_dataset",
+        "independent_set_proposal",
+    ),
+    manual_decision_id="population_structure_exclusion_approval",
+)
+
 DEFAULT_STAGE_DEFINITIONS = (
     SYNTHETIC_STAGE,
     VALIDATE_SOURCES_STAGE,
@@ -128,6 +145,7 @@ DEFAULT_STAGE_DEFINITIONS = (
     QC_PRELIMINARY_STAGE,
     BUILD_KINSHIP_PANEL_STAGE,
     INFER_KINSHIP_STAGE,
+    ANALYZE_POPULATION_STRUCTURE_STAGE,
 )
 
 

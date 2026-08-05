@@ -94,3 +94,13 @@ stages:
       relatedness_max_degree_for_independence: 4
       threads: 4
       king_timeout_seconds: 300
+  analyze_population_structure:
+    enabled: false
+    parameters:
+      requested_components: 10
+      outlier_components: 5
+      min_reference_samples: 3
+      min_informative_variants: 100
+      min_reference_call_rate: 0.95
+      outlier_alpha: 0.001
+      plink_timeout_seconds: 300

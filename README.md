@@ -149,6 +149,13 @@ pedigree déclaré. Elle publie une proposition d'ensemble indépendant orienté
 qualité, sans appliquer automatiquement les exclusions. Le contrat et la revue
 manuelle requise sont documentés dans `docs/modules/kinship.md`.
 
+`08_analyze_population_structure` ajuste ensuite une PCA sur les seuls
+individus proposés comme indépendants à l'étape `07`, puis projette les
+apparentés sans leur permettre de déterminer les axes. Les métriques d'outliers
+restent exploratoires et toute exclusion proposée requiert une validation
+humaine. Le modèle reproductible et ses limites sont documentés dans
+`docs/modules/population_structure.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est

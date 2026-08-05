@@ -874,21 +874,39 @@ coefficients et tableau de concordance.
 
 **Script cible** : `stages/analyze_population_structure.py`.
 
+**Dépendances directes** : étapes `02`, `06` et `07`.
+
 **Responsabilité** : détecter les axes de structure et les individus aberrants
 sur le panel genome-wide indépendant.
 
 **Stratégie** :
 
-- estimer les axes sur une base aussi indépendante que possible ;
-- ne pas laisser plusieurs membres d'une même famille déterminer les axes ;
-- projeter ensuite les apparentés si nécessaire ;
-- documenter les références externes si elles sont introduites ;
+- exporter temporairement les dosages du panel `06` avec PLINK ;
+- estimer les axes uniquement sur les individus `PROPOSED_INCLUDED=true` de la
+  proposition indépendante `07` ;
+- centrer chaque dosage sur `2p` et le réduire par
+  `sqrt(2p(1-p))`, avec `p` estimé dans cette référence ;
+- imputer les génotypes manquants par `2p`, soit zéro après standardisation ;
+- exclure du modèle les variants monomorphes ou insuffisamment appelés dans la
+  référence, avec un code explicite ;
+- ajuster la PCA par SVD, orienter chaque axe de façon déterministe et projeter
+  ensuite tous les individus apparentés sans recalculer les axes ;
+- publier fréquences, écarts-types et loadings nécessaires à la reproduction de
+  la projection ;
+- documenter qu'aucune référence externe n'est introduite dans cette version ;
 - distinguer PCA exploratoire et décision d'exclusion ;
 - réserver la DAPC à une question définie, avec génotypes correctement encodés,
   nombre de composantes validé et contrôle du surapprentissage.
 
-**Sorties** : coordonnées, variance expliquée, métriques d'outliers et décisions
-proposées.
+La métrique d'outlier est la somme des carrés des scores divisés par leur valeur
+propre sur les premiers axes configurés. Sa p-value du chi-deux est une
+approximation exploratoire, pas un critère clinique ou une exclusion automatique.
+
+**Sorties** : `population_scores.tsv`, `population_eigenvalues.tsv`,
+`population_outliers.tsv`, `population_variant_loadings.tsv`, rapport et audit.
+
+**Critère bloquant** : référence indépendante trop petite, nombre de variants
+informatifs insuffisant ou rang PCA nul.
 
 **Visualisations** : scree plot, PCA pseudonymisée par cohorte, lot et famille,
 ainsi que projection des individus exclus potentiels.
@@ -1271,7 +1289,7 @@ contient en plus `stage_inputs.json`, `stage_outputs.json`, `audit.json`,
 | `05` | `genomewide_base.*`, lots et registre | `genomewide_pre_qc.*`, `sample_qc.tsv`, `variant_qc_preliminary.tsv` | `plot_genotype_qc.py` |
 | `06` | `genomewide_pre_qc.*`, paramètres pruning | `kinship_panel.*`, `pruned_variants.tsv`, `panel_coverage.tsv`, `panel_residual_ld_bins.tsv` | `plot_kinship_panel.py` |
 | `07` | `kinship_panel.*`, pedigree déclaré | `kinship_pairs.tsv`, `kinship_degree_summary.tsv`, `pedigree_concordance.tsv`, `independent_set_proposal.tsv` | `plot_kinship.py` |
-| `08` | panel genome-wide, résultat KING, lots et groupes descriptifs | `population_scores.tsv`, `population_eigenvalues.tsv`, `population_outliers.tsv` | `plot_population_structure.py` |
+| `08` | panel genome-wide, résultat KING, lots et groupes descriptifs | `population_scores.tsv`, `population_eigenvalues.tsv`, `population_outliers.tsv`, `population_variant_loadings.tsv` | `plot_population_structure.py` |
 | `09` | registre, variant cible, KING, structure, QC | `cohorts.frozen.tsv`, fichiers `keep`, `cohort_decisions.tsv` | `plot_cohorts.py` |
 | `10` | jeux de base, cohortes figées | jeux QC par cohorte, `sample_qc_final.tsv`, `variant_qc.tsv` | `plot_genotype_qc.py` |
 | `11` | jeu du chromosome cible QC, variant cible, carte génétique | `target_region.*`, `target_genetic_map.tsv`, formats de phasage | `plot_target_map.py` |

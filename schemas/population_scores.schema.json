@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/population_scores.schema.json",
+  "title": "Coordonnées de structure populationnelle V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "SAMPLE_ID", "SAMPLE_SET_ID", "FID", "IID", "FAMILY_ID",
+      "GROUP_LABEL", "ARRAY_BATCH", "REFERENCE_INCLUDED", "PROJECTED",
+      "PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8", "PC9", "PC10",
+      "OUTLIER_STATUS", "OUTLIER_REASON"
+    ],
+    "null_value": "",
+    "primary_key": ["SAMPLE_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "nullableIdentifier": {"oneOf": [{"$ref": "#/$defs/identifier"}, {"type": "null"}]},
+    "nullableDecimal": {
+      "oneOf": [
+        {"type": "string", "pattern": "^-?[0-9]+(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"},
+        {"type": "null"}
+      ]
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "SAMPLE_ID", "SAMPLE_SET_ID", "FID", "IID", "FAMILY_ID",
+        "GROUP_LABEL", "ARRAY_BATCH", "REFERENCE_INCLUDED", "PROJECTED",
+        "PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8", "PC9", "PC10",
+        "OUTLIER_STATUS", "OUTLIER_REASON"
+      ],
+      "properties": {
+        "SAMPLE_ID": {"$ref": "#/$defs/identifier"},
+        "SAMPLE_SET_ID": {"$ref": "#/$defs/identifier"},
+        "FID": {"$ref": "#/$defs/identifier"},
+        "IID": {"$ref": "#/$defs/identifier"},
+        "FAMILY_ID": {"$ref": "#/$defs/identifier"},
+        "GROUP_LABEL": {"$ref": "#/$defs/identifier"},
+        "ARRAY_BATCH": {"$ref": "#/$defs/nullableIdentifier"},
+        "REFERENCE_INCLUDED": {"type": "boolean"},
+        "PROJECTED": {"type": "boolean"},
+        "PC1": {"$ref": "#/$defs/nullableDecimal"},
+        "PC2": {"$ref": "#/$defs/nullableDecimal"},
+        "PC3": {"$ref": "#/$defs/nullableDecimal"},
+        "PC4": {"$ref": "#/$defs/nullableDecimal"},
+        "PC5": {"$ref": "#/$defs/nullableDecimal"},
+        "PC6": {"$ref": "#/$defs/nullableDecimal"},
+        "PC7": {"$ref": "#/$defs/nullableDecimal"},
+        "PC8": {"$ref": "#/$defs/nullableDecimal"},
+        "PC9": {"$ref": "#/$defs/nullableDecimal"},
+        "PC10": {"$ref": "#/$defs/nullableDecimal"},
+        "OUTLIER_STATUS": {"enum": ["INLIER", "OUTLIER"]},
+        "OUTLIER_REASON": {
+          "oneOf": [{"const": "MULTIVARIATE_PC_DISTANCE"}, {"type": "null"}]
+        }
+      }
+    }
+  }
+}

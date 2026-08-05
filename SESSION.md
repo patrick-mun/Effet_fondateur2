@@ -5,11 +5,11 @@ Dernière mise à jour : 5 août 2026
 ## État du dépôt
 
 - Dépôt GitHub : `patrick-mun/Effet_fondateur2`.
-- Branche active : `feature/v2-orchestrator-foundation`, avec les modifications
-  locales non committées de l'étape `07` au-dessus de la branche distante.
-- PR V2 en brouillon : `#2`, ciblant `main`.
+- Branche active : `feature/v2-population-structure`, avec les modifications
+  locales non committées de l'étape `08` au-dessus de `main`.
+- PR V2 `#2` fusionnée dans `main` le 5 août 2026.
 - PR `#1` fusionnée dans `main` le 4 août 2026.
-- Commit de fusion : `f2fec8f`.
+- Dernier commit de fusion V2 : `f87b04c`.
 - Environnement : Python 3.12.13 dans `.venv`.
 - Outils disponibles et fonctionnels : PLINK 1.9, KING, bcftools, Rscript et
   packages R du projet. Les commandes `Gamma`/`gamma` présentes dans le `PATH`
@@ -174,6 +174,26 @@ Dernière mise à jour : 5 août 2026
   - ajout de la décision `kinship_exclusion_approval` au manifest dès qu'une
     exclusion ou une anomalie de pedigree requiert une revue humaine ;
   - aucune nouvelle dépendance : KING, PyYAML et jsonschema étaient déjà requis.
+- Étape V2 `08_analyze_population_structure` implémentée et validée sur fixtures
+  synthétiques et avec PLINK 1.9/KING 2.3.2 réels dans un dossier temporaire :
+  - consommation du panel `06`, du registre maître et de la proposition
+    indépendante `07`, avec contrôle des empreintes et ensembles d'individus ;
+  - export temporaire des dosages A1 par PLINK, sans publication du `.raw` ;
+  - estimation des fréquences, centrage et réduction exclusivement sur les
+    individus proposés indépendants, avec imputation des manquants à `2p` ;
+  - exclusion auditée du modèle des variants monomorphes ou insuffisamment
+    appelés dans la référence ;
+  - PCA par SVD avec signe déterministe et projection séparée de tous les
+    apparentés, qui ne peuvent pas modifier les axes ni les scores de référence ;
+  - publication des scores, valeurs propres, métriques exploratoires d'outlier,
+    fréquences, échelles et loadings nécessaires à la reproduction ;
+  - distinction explicite entre l'ensemble complet projeté et l'identifiant de
+    la référence indépendante ayant servi à ajuster le modèle ;
+  - approximation du chi-deux réservée au signalement exploratoire, sans
+    exclusion automatique ni interprétation clinique ou d'ascendance ;
+  - ajout de `population_structure_exclusion_approval` au manifest uniquement
+    lorsqu'un outlier est proposé pour revue humaine ;
+  - aucune référence populationnelle externe et aucune DAPC dans cette version.
 
 ## Jeux de données actuellement disponibles
 
@@ -248,10 +268,11 @@ Dernière mise à jour : 5 août 2026
 - Tests ciblés de l'étape `05` : 6 réussis.
 - Tests ciblés de l'étape `06` : 7 réussis.
 - Tests ciblés de l'étape `07` : 8 réussis.
-- Suite moderne `tests/`, incluant les étapes `01` à `07` et les contrôles de
-  maintenabilité V2 : 88 réussis.
-- Ensemble des suites Python actuelles : 100 réussis et 4 échecs historiques
-  sans rapport avec les étapes `05` à `07`.
+- Tests ciblés de l'étape `08` : 8 réussis.
+- Suite moderne `tests/`, incluant les étapes `01` à `08` et les contrôles de
+  maintenabilité V2 : 96 réussis.
+- Ensemble des suites Python actuelles : 108 réussis et 4 échecs historiques
+  sans rapport avec les étapes `05` à `08`.
 - Smoke test temporaire avec PLINK 1.9 réel : 2 individus, 23 marqueurs
   autosomiques et 2 marqueurs du chromosome cible, conversion réussie.
 - Smoke test temporaire de l'étape `04` avec PLINK 1.9 réel : 2 individus,
@@ -265,6 +286,9 @@ Dernière mise à jour : 5 août 2026
 - Smoke test temporaire de l'étape `07` avec KING 2.3.2 réel : 3 individus,
   une relation parent-enfant déclarée auditée, une exclusion proposée sur la
   seule base du pedigree et validation manuelle correctement requise.
+- Smoke test temporaire de l'étape `08` avec PLINK 1.9 et KING 2.3.2 réels :
+  3 individus, 22 marqueurs, 11 variants informatifs, 2 composantes calculées,
+  aucun outlier et aucun fichier de dosage temporaire publié.
 
 ## Suivi des étapes du pipeline V2
 
@@ -282,7 +306,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `05` | QC préliminaire genome-wide | `VALIDE` | Oui | Oui | Missingness technique, alertes et smoke PLINK réel validés |
 | `06` | Panel indépendant | `VALIDE` | Oui | Oui | MAF post-QC, pruning LD et smoke PLINK réel validés |
 | `07` | Apparentement et duplicats | `VALIDE` | Oui | Oui | KING, pedigree, proposition indépendante et smoke réel validés |
-| `08` | Structure populationnelle | `NON_FAIT` | Non | Non | — |
+| `08` | Structure populationnelle | `VALIDE` | Oui | Oui | PCA indépendante, projection, outliers et smoke réel validés |
 | `09` | Gel des cohortes | `NON_FAIT` | Non | Non | Schéma préparé, script non implémenté |
 | `10` | QC final | `NON_FAIT` | Non | Non | — |
 | `11` | Région cible | `NON_FAIT` | Non | Non | — |
@@ -338,12 +362,13 @@ préliminaire ; elle ne remplace pas l'audit complet obligatoire après l'étape
 
 ## Priorités de la prochaine session
 
-1. Implémenter `08_analyze_population_structure` sur une base indépendante
-   validée, puis projeter séparément les apparentés si la méthode le permet.
+1. Implémenter `09_freeze_cohorts` en consommant explicitement QC, génotype
+   cible, apparentement, proposition indépendante et structure populationnelle.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
-3. Définir le mécanisme d'approbation de `kinship_exclusion_approval` consommé
-   par les étapes `08` et `09`, sans modifier un run déjà publié.
+3. Définir le mécanisme d'approbation de `kinship_exclusion_approval` et
+   `population_structure_exclusion_approval` consommé par l'étape `09`, sans
+   modifier un run déjà publié.
 4. Intégrer les 66 témoins réels dans le QC genome-wide, KING, la structure et le
    gel des cohortes avant toute analyse locale.
 5. Confirmer les données moléculaires et génotypes individuels du variant DOCK6,
@@ -382,6 +407,6 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action attendue est d'implémenter `08_analyze_population_structure` depuis le
-panel de l'étape `06` et la proposition indépendante de l'étape `07`, avec une
-stratégie explicite d'estimation et de projection des apparentés.
+action attendue est d'implémenter `09_freeze_cohorts` avec des unités
+indépendantes explicites, des décisions d'exclusion approuvées et des fichiers
+PLINK `--keep` reproductibles.
