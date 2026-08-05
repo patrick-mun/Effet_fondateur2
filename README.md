@@ -115,6 +115,12 @@ l'inventaire validé de l'étape `01`. Sans approbation humaine explicite dans l
 configuration du nouveau run, son audit conserve la décision
 `sample_registry_approval` en attente.
 
+Après approbation, `03_convert_acpa` lit chaque export une fois et publie deux
+jeux PLINK binaires distincts : les 22 autosomes pour les analyses genome-wide
+et le chromosome cible pour les analyses locales. Cette étape requiert PLINK,
+mais ni KING, ni R, ni Gamma. Son contrat détaillé est documenté dans
+`docs/modules/acpa.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est

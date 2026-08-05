@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/plink_dataset.schema.json",
+  "title": "Descripteur d'un jeu PLINK V2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "dataset_id",
+    "assembly",
+    "scope",
+    "target_chromosome",
+    "sample_set_id",
+    "variant_set_id",
+    "sample_count",
+    "variant_count",
+    "marker_mode",
+    "source_format",
+    "allele_orientation",
+    "files"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "dataset_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "assembly": {"type": "string", "minLength": 1},
+    "scope": {"enum": ["autosomal_genomewide", "target_chromosome"]},
+    "target_chromosome": {
+      "oneOf": [
+        {"type": "integer", "minimum": 1, "maximum": 22},
+        {"type": "null"}
+      ]
+    },
+    "sample_set_id": {"type": "string", "minLength": 1},
+    "variant_set_id": {"type": "string", "minLength": 1},
+    "sample_count": {"type": "integer", "minimum": 1},
+    "variant_count": {"type": "integer", "minimum": 1},
+    "marker_mode": {"enum": ["intersection", "union"]},
+    "source_format": {"const": "ChAS_ACPA"},
+    "allele_orientation": {"const": "forward_strand_calls"},
+    "files": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bed", "bim", "fam"],
+      "properties": {
+        "bed": {"$ref": "#/$defs/file"},
+        "bim": {"$ref": "#/$defs/file"},
+        "fam": {"$ref": "#/$defs/file"}
+      }
+    }
+  },
+  "$defs": {
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "sha256"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    }
+  }
+}

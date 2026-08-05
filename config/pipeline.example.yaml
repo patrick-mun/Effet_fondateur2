@@ -47,3 +47,7 @@ stages:
   build_sample_registry:
     enabled: false
     parameters: {}
+  convert_acpa:
+    enabled: false
+    parameters:
+      marker_mode: intersection

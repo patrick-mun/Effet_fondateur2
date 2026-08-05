@@ -18,6 +18,7 @@ class StageDefinition:
     config_input_files: tuple[str, ...] = ()
     required_artifact_ids: tuple[str, ...] = ()
     manual_decision_id: str | None = None
+    blocking_manual_decision_ids: tuple[str, ...] = ()
 
     @property
     def directory_name(self) -> str:

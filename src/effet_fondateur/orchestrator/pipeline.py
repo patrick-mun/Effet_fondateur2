@@ -43,10 +43,22 @@ BUILD_SAMPLE_REGISTRY_STAGE = StageDefinition(
     manual_decision_id="sample_registry_approval",
 )
 
+CONVERT_ACPA_STAGE = StageDefinition(
+    stage_id="03",
+    stage_name="convert_acpa",
+    module="effet_fondateur.stages.convert_acpa",
+    critical=True,
+    dependencies=("build_sample_registry",),
+    config_input_directories=("acpa_samples_dir",),
+    required_artifact_ids=("samples_master",),
+    blocking_manual_decision_ids=("sample_registry_approval",),
+)
+
 DEFAULT_STAGE_DEFINITIONS = (
     SYNTHETIC_STAGE,
     VALIDATE_SOURCES_STAGE,
     BUILD_SAMPLE_REGISTRY_STAGE,
+    CONVERT_ACPA_STAGE,
 )
 
 

@@ -81,6 +81,16 @@ def _validate_dependencies(
             f"{', '.join(invalid_dependencies)}",
             4,
         )
+    unresolved_decisions = sorted(
+        set(definition.blocking_manual_decision_ids)
+        & set(manifest["manual_decisions_required"])
+    )
+    if unresolved_decisions:
+        raise StageExecutionError(
+            f"Étape {definition.stage_name} bloquée par les décisions manuelles : "
+            f"{', '.join(unresolved_decisions)}",
+            4,
+        )
 
 
 def _record_failure(

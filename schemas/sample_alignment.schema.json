@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/sample_alignment.schema.json",
+  "title": "Alignement des échantillons dans les jeux PLINK V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "ROW_INDEX",
+      "SAMPLE_ID",
+      "FID",
+      "IID",
+      "SOURCE_FILE",
+      "INVALID_GENOTYPE_COUNT",
+      "SKIPPED_ROW_COUNT"
+    ],
+    "null_value": "",
+    "primary_key": ["SAMPLE_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "stableIdentifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "nonNegativeInteger": {"type": "string", "pattern": "^[0-9]+$"},
+    "positiveInteger": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ROW_INDEX",
+        "SAMPLE_ID",
+        "FID",
+        "IID",
+        "SOURCE_FILE",
+        "INVALID_GENOTYPE_COUNT",
+        "SKIPPED_ROW_COUNT"
+      ],
+      "properties": {
+        "ROW_INDEX": {"$ref": "#/$defs/positiveInteger"},
+        "SAMPLE_ID": {"$ref": "#/$defs/stableIdentifier"},
+        "FID": {"$ref": "#/$defs/stableIdentifier"},
+        "IID": {"$ref": "#/$defs/stableIdentifier"},
+        "SOURCE_FILE": {"type": "string", "minLength": 1},
+        "INVALID_GENOTYPE_COUNT": {"$ref": "#/$defs/nonNegativeInteger"},
+        "SKIPPED_ROW_COUNT": {"$ref": "#/$defs/nonNegativeInteger"}
+      }
+    }
+  }
+}

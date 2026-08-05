@@ -90,6 +90,20 @@ Dernière mise à jour : 5 août 2026
     attente ;
   - blocage de la reprise si la table utilisateur ou un artefact dépendant a été
     modifié ; aucune nouvelle dépendance logicielle ajoutée.
+- Étape V2 `03_convert_acpa` implémentée et validée sur fixtures synthétiques et
+  avec un smoke test PLINK 1.9 réel dans un dossier temporaire :
+  - blocage tant que `sample_registry_approval` reste en attente ;
+  - lecture unique de chaque export ACPA référencé, puis alignement depuis des
+    spools temporaires supprimés après validation ;
+  - production distincte de `genomewide_base.bed/.bim/.fam` sur les 22
+    autosomes et de `target_chromosome_base.bed/.bim/.fam` ;
+  - politiques `intersection` et `union`, génotypes invalides convertis en
+    manquants, conflits de coordonnées et variants multialléliques exclus ;
+  - rsID absents ou conflictuels audités sans exclusion automatique ;
+  - descripteurs de jeux PLINK, alignement des échantillons, audit des variants,
+    QC par échantillon et chromosome, empreintes et rapport de conversion ;
+  - échecs, timeouts ou sorties PLINK invalides rapportés avec le code V2 `3` ;
+  - aucune nouvelle dépendance : PLINK était déjà requis et disponible.
 
 ## Jeux de données actuellement disponibles
 
@@ -160,9 +174,11 @@ Dernière mise à jour : 5 août 2026
 - Contrôle mendélien temporaire : 10 erreurs, dont une au marqueur injecté avec
   les règles de groupe d'exemple.
 - Tests ciblés de préparation des données : 16 réussis.
-- Suite moderne `tests/`, incluant les étapes `01` et `02` et les contrôles de
-  maintenabilité V2 : 54 réussis.
-- Ensemble des suites Python actuelles : 66 réussis et 4 échecs historiques.
+- Suite moderne `tests/`, incluant les étapes `01` à `03` et les contrôles de
+  maintenabilité V2 : 61 réussis.
+- Ensemble des suites Python actuelles : 73 réussis et 4 échecs historiques.
+- Smoke test temporaire avec PLINK 1.9 réel : 2 individus, 23 marqueurs
+  autosomiques et 2 marqueurs du chromosome cible, conversion réussie.
 
 ## Suivi des étapes du pipeline V2
 
@@ -175,7 +191,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `00` | Initialisation du run | `VALIDE` | Oui | Oui | Bootstrap et reprise synthétique validés |
 | `01` | Validation des sources | `VALIDE` | Oui | Oui | Fixtures synthétiques et reprise validées |
 | `02` | Métadonnées maître | `VALIDE` | Oui | Oui | Revue manuelle et reprise synthétiques validées |
-| `03` | Conversion et harmonisation ACPA | `NON_FAIT` | Non | Non | — |
+| `03` | Conversion et harmonisation ACPA | `VALIDE` | Oui | Oui | Double sortie PLINK et smoke réel validés |
 | `04` | Variant cible | `NON_FAIT` | Non | Non | — |
 | `05` | QC préliminaire genome-wide | `NON_FAIT` | Non | Non | — |
 | `06` | Panel indépendant | `NON_FAIT` | Non | Non | — |
@@ -233,11 +249,12 @@ préliminaire ; elle ne remplace pas l'audit complet obligatoire après l'étape
 
 ## Priorités de la prochaine session
 
-1. Implémenter `03_convert_acpa` avec une lecture efficace produisant
-   séparément le genome-wide et le chromosome cible.
+1. Implémenter `04_prepare_target_variant_dataset` sur des copies synthétiques,
+   avec validation moléculaire et contrôle mendélien simulé.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
-3. Migrer ensuite le QC préliminaire et le panel indépendant de marqueurs.
+3. Migrer ensuite le QC préliminaire genome-wide et le panel indépendant de
+   marqueurs.
 4. Intégrer les 66 témoins réels dans le QC genome-wide, KING, la structure et le
    gel des cohortes avant toute analyse locale.
 5. Confirmer les données moléculaires et génotypes individuels du variant DOCK6,
@@ -276,6 +293,7 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action attendue est d'implémenter `03_convert_acpa` en consommant uniquement les
-sources validées de l'étape `01` et le registre approuvé de l'étape `02`, avec
-deux artefacts génétiques distincts pour le genome-wide et le chromosome cible.
+action attendue est d'implémenter `04_prepare_target_variant_dataset` en
+consommant le jeu du chromosome cible de l'étape `03`, les métadonnées
+moléculaires confirmées et uniquement des génotypes individuels explicitement
+documentés.
