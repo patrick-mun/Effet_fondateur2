@@ -140,6 +140,10 @@ if arguments[0] == "query" and "--format" in arguments:
         raise SystemExit(0)
     format_text = arguments[arguments.index("--format") + 1]
     input_name = pathlib.Path(arguments[-1]).name
+    if format_text == "%ID\\\\t%POS[\\\\t%GT]\\\\n" and input_name == "target.phased.bcf":
+        print("probe_19\\t1900\\t1|0\\t0|0\\t0|0")
+        print("target_GRCh38_1_100000_A_G\\t100000\\t1|0\\t0|0\\t0|0")
+        raise SystemExit(0)
     if "%GT" in format_text and input_name == "study.shapeit5.vcf.gz":
         print("chr19\\t1900\\trs19\\tA\\tG\\t0/1\\t0/0\\t0/0")
         print("chr19\\t100000\\ttarget_GRCh38_1_100000_A_G\\tA\\tG\\t0/1\\t0/0\\t0/0")
@@ -488,3 +492,46 @@ def test_stage_12_7_requires_manual_review_for_low_carrier_confidence(
         "target_variant_absent_from_reference",
         "carrier_phase_unreliable",
     }
+
+
+def test_stage_13_publishes_insufficient_result_without_claiming_ibd(
+    tmp_path: Path,
+) -> None:
+    config_path, runs_dir = _prepare_phase_inputs(tmp_path)
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    config["stages"]["infer_founder_haplotype"] = {
+        "enabled": True,
+        "parameters": {
+            "segment_method": "target_centered_exact_ibs_v1",
+            "minimum_independent_carriers": 2,
+            "minimum_flank_markers": 1,
+            "bcftools_timeout_seconds": 30,
+        },
+    }
+    config_path.write_text(
+        yaml.safe_dump(config, allow_unicode=True, sort_keys=False), encoding="utf-8"
+    )
+
+    run_dir = run_pipeline(config_path, runs_dir)
+
+    stage_dir = run_dir / "stages" / "13_infer_founder_haplotype"
+    summary = json.loads(
+        (stage_dir / "founder" / "founder_analysis_summary.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    audit = json.loads((stage_dir / "audit.json").read_text(encoding="utf-8"))
+    assert summary["status"] == "INSUFFICIENT_CARRIERS"
+    assert summary["interpretation"] == "NO_FOUNDER_CONCLUSION"
+    assert summary["ibd_claimed"] is False
+    assert audit["metrics"]["ibd_claimed"] is False
+    assert audit["manual_validation_required"] is True
+
+    resume_pipeline(run_dir)
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    stage_record = next(
+        stage for stage in manifest["stages"]
+        if stage["stage_name"] == "infer_founder_haplotype"
+    )
+    assert stage_record["state"] == "SUCCEEDED"
+    assert stage_record["attempt_count"] == 1

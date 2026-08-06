@@ -48,6 +48,12 @@ def test_generic_example_is_valid() -> None:
     assert config["stages"]["phase_target_region"]["parameters"][
         "minimum_phase_confidence"
     ] == 0.9
+    assert config["stages"]["infer_founder_haplotype"]["parameters"] == {
+        "segment_method": "target_centered_exact_ibs_v1",
+        "minimum_independent_carriers": 3,
+        "minimum_flank_markers": 2,
+        "bcftools_timeout_seconds": 300,
+    }
 
 
 def test_dock6_profile_accepts_unconfirmed_target_fields() -> None:

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/founder_analysis_summary.schema.json",
+  "title": "Résumé de l'analyse IBS fondatrice",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "method_id", "interpretation", "status", "selected_carrier_count", "excluded_carrier_count", "background_haplotype_count", "matching_background_haplotype_count", "minimum_independent_carriers", "minimum_flank_markers", "ibd_claimed"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"}, "method_id": {"const": "target_centered_exact_ibs_v1"},
+    "interpretation": {"enum": ["IBS_SHARED_CANDIDATE", "NO_FOUNDER_CONCLUSION"]},
+    "status": {"enum": ["SUPPORTED_IBS_CANDIDATE", "INSUFFICIENT_CARRIERS", "INSUFFICIENT_INFORMATIVE_MARKERS"]},
+    "selected_carrier_count": {"type": "integer", "minimum": 0}, "excluded_carrier_count": {"type": "integer", "minimum": 0},
+    "background_haplotype_count": {"type": "integer", "minimum": 0}, "matching_background_haplotype_count": {"type": "integer", "minimum": 0},
+    "minimum_independent_carriers": {"type": "integer", "minimum": 2}, "minimum_flank_markers": {"type": "integer", "minimum": 1},
+    "ibd_claimed": {"const": false}
+  }
+}

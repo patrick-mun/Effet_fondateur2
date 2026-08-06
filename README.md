@@ -225,6 +225,16 @@ les résultats aux manifestes `12.5–12.6`, publie atomiquement le résumé fin
 déclare les visualisations pseudonymisées attendues à l'étape 18. Le contrat est
 documenté dans `docs/modules/phasing_qc.md`.
 
+L'étape `13_infer_founder_haplotype` applique ensuite la méthode conservatrice
+`target_centered_exact_ibs_v1` aux chromosomes porteurs fiables des unités
+indépendantes. Elle s'étend depuis la cible jusqu'au premier allèle manquant ou
+discordant, publie les limites en bp et cM, une matrice pairwise, le consensus
+et l'audit allélique, puis mesure la signature hors mutation chez les témoins
+et non-porteurs. Trois unités et deux marqueurs par flanc sont requis par défaut.
+Le résultat reste un candidat **IBS** compatible avec un ancêtre commun et ne
+constitue jamais une preuve **IBD** sans méthode IBD externe validée. Le contrat
+est documenté dans `docs/modules/founder_haplotype.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est

@@ -230,6 +230,28 @@ PHASE_TARGET_REGION_STAGE = StageDefinition(
     ),
 )
 
+INFER_FOUNDER_HAPLOTYPE_STAGE = StageDefinition(
+    stage_id="13",
+    stage_name="infer_founder_haplotype",
+    module="effet_fondateur.stages.infer_founder_haplotype",
+    critical=True,
+    dependencies=(
+        "build_sample_registry",
+        "freeze_cohorts",
+        "prepare_target_region",
+        "phase_target_region",
+    ),
+    config_input_files=(),
+    required_artifact_ids=(
+        "shapeit5_final_bcf",
+        "shapeit5_final_index",
+        "carrier_haplotypes",
+        "target_genetic_map",
+        "cohorts_frozen",
+        "samples_master",
+    ),
+)
+
 DEFAULT_STAGE_DEFINITIONS = (
     SYNTHETIC_STAGE,
     VALIDATE_SOURCES_STAGE,
@@ -244,6 +266,7 @@ DEFAULT_STAGE_DEFINITIONS = (
     QC_FINAL_STAGE,
     PREPARE_TARGET_REGION_STAGE,
     PHASE_TARGET_REGION_STAGE,
+    INFER_FOUNDER_HAPLOTYPE_STAGE,
 )
 
 

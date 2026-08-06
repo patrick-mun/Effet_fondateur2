@@ -1120,6 +1120,21 @@ phase incertaine, avec pseudonymes.
 **Responsabilité** : tester l'existence d'un segment ancestral partagé autour de
 du variant cible et mesurer ses limites.
 
+**Contrat retenu** : la méthode primaire `target_centered_exact_ibs_v1` compare
+les haplotypes porteurs fiables d'unités indépendantes dans le BCF final phasé.
+Elle part du variant cible et s'étend de chaque côté tant que tous les chromosomes
+porteurs ont un allèle appelé identique ; le premier manque ou la première
+discordance arrête le segment. Les limites sont reportées en bp et en distances
+cM depuis la cible. Par défaut, trois unités indépendantes et deux marqueurs
+informatifs sur chaque flanc sont requis. Le résultat est nommé
+`IBS_SHARED_CANDIDATE` : en l'absence d'un adaptateur IBD local séparément validé
+sur des données assez denses, il ne constitue jamais une preuve IBD. Le variant
+cible est retiré de la signature mesurée chez les témoins et non-porteurs afin
+d'éviter une comparaison trivialement déterminée par leur statut mutationnel.
+Les porteurs de phase non fiable et les homozygotes cibles sont conservés dans
+l'audit mais exclus de l'estimation à un chromosome par unité. Toute insuffisance
+d'effectif ou de marqueurs produit `NO_FOUNDER_CONCLUSION` et impose une revue.
+
 **Traitements** :
 
 1. sélectionner uniquement les chromosomes porteurs validés ;
@@ -1129,7 +1144,8 @@ du variant cible et mesurer ses limites.
 5. mesurer pour chaque unité indépendante la limite gauche et droite ;
 6. convertir les limites en bp et cM ;
 7. comparer la fréquence du segment chez témoins et non-porteurs ;
-8. calculer un intervalle partagé central et ses variantes de sensibilité ;
+8. calculer un intervalle partagé central et les segments pairwise nécessaires
+   aux variantes de sensibilité ;
 9. signaler les marqueurs informatifs insuffisants ;
 10. ne pas conclure à un fondateur unique si plusieurs haplotypes porteurs
     incompatibles sont observés.

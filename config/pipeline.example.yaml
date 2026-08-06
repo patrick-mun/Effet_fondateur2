@@ -158,3 +158,10 @@ stages:
       shapeit5_seed: 15052011
       shapeit5_effective_size: 15000
       minimum_phase_confidence: 0.9
+  infer_founder_haplotype:
+    enabled: false
+    parameters:
+      segment_method: target_centered_exact_ibs_v1
+      minimum_independent_carriers: 3
+      minimum_flank_markers: 2
+      bcftools_timeout_seconds: 300

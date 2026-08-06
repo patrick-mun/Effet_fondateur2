@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/founder_discordances.schema.json",
+  "title": "Audit allélique des chromosomes porteurs",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["VARIANT_ID", "POSITION_BP", "POSITION_CM", "SIDE", "CARRIER_ALLELES", "CALLED_CARRIER_COUNT", "DISTINCT_ALLELE_COUNT", "MARKER_STATUS"],
+    "null_value": "", "primary_key": ["VARIANT_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "integer": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+    "count": {"type": "string", "pattern": "^[0-9]+$"},
+    "decimal": {"type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$"},
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["VARIANT_ID", "POSITION_BP", "POSITION_CM", "SIDE", "CARRIER_ALLELES", "CALLED_CARRIER_COUNT", "DISTINCT_ALLELE_COUNT", "MARKER_STATUS"],
+      "properties": {
+        "VARIANT_ID": {"type": "string", "minLength": 1}, "POSITION_BP": {"$ref": "#/$defs/integer"}, "POSITION_CM": {"$ref": "#/$defs/decimal"},
+        "SIDE": {"enum": ["LEFT", "TARGET", "RIGHT"]}, "CARRIER_ALLELES": {"type": "string"},
+        "CALLED_CARRIER_COUNT": {"$ref": "#/$defs/count"}, "DISTINCT_ALLELE_COUNT": {"$ref": "#/$defs/count"},
+        "MARKER_STATUS": {"enum": ["CONCORDANT", "DISCORDANT", "MISSING"]}
+      }
+    }
+  }
+}

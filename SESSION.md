@@ -5,8 +5,8 @@ Dernière mise à jour : 6 août 2026
 ## État du dépôt
 
 - Dépôt GitHub : `patrick-mun/Effet_fondateur2`.
-- Branche active : `feature/v2-shapeit5-contract`, avec les modifications
-  locales de `12.3` au-dessus du commit `c333eac` qui valide `12.2`.
+- Branche active : `feature/v2-shapeit5-contract`, avec l'étape `13` validée
+  localement au-dessus du commit `ab4e65e` qui clôt l'étape `12`.
 - PR V2 `#2` fusionnée dans `main` le 5 août 2026.
 - PR `#1` fusionnée dans `main` le 4 août 2026.
 - Dernier commit de fusion V2 : `f87b04c`.
@@ -473,6 +473,13 @@ Dernière mise à jour : 6 août 2026
   200 variants communs, 201 variants finaux, 60 individus et un porteur `H1`
   correctement comptabilisés ; le warning PP faible est conservé et le résumé
   final exige une revue manuelle.
+- Étape `13` implémentée avec la méthode conservatrice
+  `target_centered_exact_ibs_v1` : sélection des unités porteuses indépendantes,
+  limites exactes en bp/cM, consensus et matrice pairwise, fréquence de fond
+  hors mutation, exclusions explicites et distinction IBS/IBD. Les tests
+  synthétiques couvrent un candidat partagé, l'effectif insuffisant,
+  l'orchestration et la reprise ; aucune analyse des données réelles n'a été
+  lancée.
 
 ## Suivi des étapes du pipeline V2
 
@@ -495,7 +502,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `10` | QC final | `VALIDE` | Oui | Oui | Trois politiques, exception cible et smoke réel validés |
 | `11` | Région cible | `VALIDE` | Oui | Oui | Carte GRCh38 bornée, cM monotones et smoke réel validés |
 | `12` | Référence phasée et phasage | `VALIDE` | Oui | Oui | `12.0–12.7` validées, QC final et smoke réel inclus |
-| `13` | Haplotype fondateur et IBD local | `NON_FAIT` | Non | Non | Méthode à décider |
+| `13` | Haplotype fondateur et IBD local | `VALIDE` | Oui | Oui | IBS exact centré cible, aucune revendication IBD |
 | `14` | Datation du variant | `NON_FAIT` | Non | Non | Méthodes à valider |
 | `15` | LD local secondaire | `NON_FAIT` | Non | Non | Exploratoire par défaut |
 | `16` | ROH secondaire | `NON_FAIT` | Non | Non | Exploratoire par défaut |
@@ -578,8 +585,8 @@ sélection gloutonne et des groupes témoins configurés restent documentées.
 
 ## Priorités de la prochaine session
 
-1. Définir puis réaliser l'étape `13` : méthode d'haplotype fondateur et d'IBD
-   local, distinction IBS/IBD, limites gauche/droite et critères de conclusion.
+1. Définir puis réaliser l'étape `14` depuis les longueurs gauche/droite validées
+   de l'étape `13`, sans reprendre la séparation historique de Gamma.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
 3. Préparer les revues réelles `kinship_exclusion_approval` et
@@ -589,8 +596,8 @@ sélection gloutonne et des groupes témoins configurés restent documentées.
    gel des cohortes avant toute analyse locale.
 5. Confirmer les données moléculaires et génotypes individuels du variant DOCK6,
    puis valider son intégration et Mendel sur le jeu chromosome 19 définitif.
-6. Implémenter ensuite phasage, haplotype fondateur et datation avec jeux
-   synthétiques de référence avant analyse réelle.
+6. Valider ensuite la datation avec des jeux synthétiques de référence avant
+   toute analyse réelle.
 
 ## Décisions à conserver
 
@@ -630,5 +637,5 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action attendue est l'étape `13` : figer la méthode d'haplotype fondateur et
-d'IBD local avant toute implémentation ou analyse des données réelles.
+action attendue est de figer la méthode de datation de l'étape `14` avant toute
+analyse des données réelles.
