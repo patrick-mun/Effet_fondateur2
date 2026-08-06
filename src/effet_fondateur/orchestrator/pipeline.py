@@ -213,11 +213,15 @@ PHASE_TARGET_REGION_STAGE = StageDefinition(
     stage_name="phase_target_region",
     module="effet_fondateur.stages.phase_target_region",
     critical=True,
-    dependencies=("prepare_target_region",),
+    dependencies=("build_sample_registry", "prepare_target_region"),
     config_input_files=("target_variant_metadata", "reference_panel_catalog"),
     required_artifact_ids=(
         "target_region_bim",
+        "target_region_bed",
+        "target_region_fam",
+        "target_genetic_map",
         "phasing_input_manifest",
+        "samples_master",
     ),
 )
 

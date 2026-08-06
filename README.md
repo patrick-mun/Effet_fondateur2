@@ -204,6 +204,14 @@ unique, les collisions et le variant cible absent du panel. Le contrat exige
 des représentations GRCh38 déjà minimales et n'utilise pas de FASTA. Il est
 documenté dans `docs/modules/reference_harmonization.md`.
 
+La sous-étape `12.5` construit enfin le VCF d'étude bgzip/indexé, la carte au
+format SHAPEIT et le pedigree fondé sur les identifiants maître. Elle conserve
+le variant cible pour `phase_rare` lorsqu'il est absent de la référence, impose
+le REF canonique avec PLINK puis revalide l'ordre des individus et tous les
+REF/ALT avec bcftools. Elle publie les tables d'audit et un manifeste sans
+lancer SHAPEIT5. Le contrat est documenté dans
+`docs/modules/shapeit5_inputs.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est

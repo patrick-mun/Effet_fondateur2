@@ -301,6 +301,17 @@ Dernière mise à jour : 6 août 2026
     déjà être minimales et toute évolution de cette méthode sera distincte ;
   - complétion autorisée d'un allèle PLINK `0` uniquement depuis une
     correspondance de référence unique, sans inférer de génotype individuel.
+- Sous-étape V2 `12.5` implémentée et validée sans lancement de SHAPEIT5 :
+  - sélection auditée des variants communs et conservation obligatoire du
+    variant cible comme `COMMON_TARGET` ou `RARE_TARGET` ;
+  - export PLINK du VCF d'étude avec les `SAMPLE_ID` maître, REF canonique imposé
+    par `--a2-allele`, puis revalidation bcftools de l'ordre et des REF/ALT ;
+  - carte SHAPEIT `pos/chr/cM`, pedigree trio/duo sans en-tête avec `NA` pour un
+    parent absent et fichier vide autorisé lorsqu'aucun parent n'est présent ;
+  - VCF bgzip/indexé, tables de sélection et de correspondance des individus,
+    manifeste lié aux empreintes et publication atomique ;
+  - intégration orchestrée, audit, codes de retour, reprise stricte et délai
+    externe configurable, sans exécuter `phase_common` ni `phase_rare`.
 
 ## Jeux de données actuellement disponibles
 
@@ -377,8 +388,8 @@ Dernière mise à jour : 6 août 2026
 - Tests ciblés de l'étape `07` : 8 réussis.
 - Tests ciblés de l'étape `08` : 8 réussis.
 - Tests ciblés de l'étape `09` : 7 réussis.
-- Suite moderne `tests/`, incluant les étapes `01` à `12.4` et les contrôles de
-  maintenabilité V2 : 155 réussis.
+- Suite moderne `tests/`, incluant les étapes `01` à `12.5` et les contrôles de
+  maintenabilité V2 : 156 réussis.
 - Contrôle ciblé final de la fenêtre, du cache, du catalogue, de la
   configuration, de l'orchestrateur et de SHAPEIT5 : 45 réussis.
 - Dernière exécution combinée antérieure des suites modernes et historiques :
@@ -425,6 +436,10 @@ Dernière mise à jour : 6 août 2026
 - Smoke réel `12.4` avec bcftools 1.21 : 2 variants de référence phasés,
   3 variants d'étude, 2 correspondances canoniques, décomposition, filtrage,
   index tabix et publication temporaire valides.
+- Smoke réel `12.5` avec PLINK 1.9 et bcftools 1.21 : 3 individus, dont un trio,
+  2 variants, renommage vers les identifiants maître, REF/ALT canoniques et
+  index tabix valides ; la complétion d'un REF PLINK `0` par `--a2-allele` est
+  également validée sur une sortie temporaire.
 
 ## Suivi des étapes du pipeline V2
 
@@ -446,7 +461,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `09` | Gel des cohortes | `VALIDE` | Oui | Oui | Génotypes explicites, revues SHA, unités et fichiers keep validés |
 | `10` | QC final | `VALIDE` | Oui | Oui | Trois politiques, exception cible et smoke réel validés |
 | `11` | Région cible | `VALIDE` | Oui | Oui | Carte GRCh38 bornée, cM monotones et smoke réel validés |
-| `12` | Référence phasée et phasage | `EN_COURS` | Partiels | Non | `12.0–12.3` validées, panel complet par défaut |
+| `12` | Référence phasée et phasage | `EN_COURS` | Partiels | Oui | `12.0–12.5` validées, entrées SHAPEIT5 prêtes |
 | `13` | Haplotype fondateur et IBD local | `NON_FAIT` | Non | Non | Méthode à décider |
 | `14` | Datation du variant | `NON_FAIT` | Non | Non | Méthodes à valider |
 | `15` | LD local secondaire | `NON_FAIT` | Non | Non | Exploratoire par défaut |
@@ -469,7 +484,7 @@ phasée ; les sous-populations sont réservées aux analyses de sensibilité.
 | `12.2` | Télécharger ou réutiliser le cache immuable | `VALIDE` | Verrou, publication atomique, reprise, MD5/SHA-256, lecture seule et hors ligne validés |
 | `12.3` | Extraire la fenêtre de référence avec tous les échantillons | `VALIDE` | VCF régional bgzip/indexé, génotypes phasés et assemblage concordant |
 | `12.4` | Normaliser et harmoniser référence/ACPA | `VALIDE` | Étape orchestrée, schémas, reprise, codes V2, smoke bcftools réel et décision sans FASTA validés |
-| `12.5` | Construire les entrées étude, pedigree et référence | `NON_FAIT` | Variant cible conservé même absent du panel, ordre et individus concordants |
+| `12.5` | Construire les entrées étude, pedigree et référence | `VALIDE` | VCF/index, carte, pedigree, cible rare, ordre/identités, schémas, reprise et smoke réel validés |
 | `12.6` | Exécuter l'adaptateur et attribuer le chromosome porteur | `NON_FAIT` | Phase, transmissions, confiance, erreurs externes et zones non fiables auditées |
 | `12.7` | Publier le QC, les haplotypes et le smoke test | `NON_FAIT` | Fixtures synthétiques, reprise cache, test réel temporaire et audit complet |
 
@@ -530,8 +545,8 @@ sélection gloutonne et des groupes témoins configurés restent documentées.
 
 ## Priorités de la prochaine session
 
-1. Réaliser `12.5` : construire les entrées étude, le pedigree et la référence
-   SHAPEIT5 en conservant le variant cible lorsqu'il est absent du panel.
+1. Réaliser `12.6` : exécuter `phase_common` puis `phase_rare`, contrôler les
+   transmissions et attribuer le chromosome porteur avec une confiance auditée.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
 3. Préparer les revues réelles `kinship_exclusion_approval` et
@@ -582,5 +597,5 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action attendue est `12.5` : construire les entrées étude, pedigree et référence
-à partir des artefacts harmonisés de `12.4`, sans lancer encore SHAPEIT5.
+action attendue est `12.6` : consommer le manifeste et les entrées validées de
+`12.5`, exécuter l'adaptateur SHAPEIT5 et attribuer le chromosome porteur.

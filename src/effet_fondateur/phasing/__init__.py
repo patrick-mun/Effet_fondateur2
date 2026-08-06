@@ -1,5 +1,12 @@
 """Adaptateurs de phasage supportés par le pipeline V2."""
 
+from effet_fondateur.phasing.inputs import (
+    PreparedShapeit5Inputs,
+    Shapeit5InputBlockError,
+    Shapeit5InputError,
+    Shapeit5InputExternalError,
+    build_shapeit5_inputs,
+)
 from effet_fondateur.phasing.shapeit5 import (
     SHAPEIT5_CONTRACT,
     Shapeit5AdapterConfig,
@@ -12,12 +19,17 @@ from effet_fondateur.phasing.shapeit5 import (
 )
 
 __all__ = [
+    "PreparedShapeit5Inputs",
     "SHAPEIT5_CONTRACT",
+    "Shapeit5InputBlockError",
+    "Shapeit5InputError",
+    "Shapeit5InputExternalError",
     "Shapeit5AdapterConfig",
     "Shapeit5ContractError",
     "Shapeit5Probe",
     "build_phase_common_command",
     "build_phase_rare_command",
+    "build_shapeit5_inputs",
     "parse_shapeit5_adapter_config",
     "probe_shapeit5",
 ]

@@ -35,7 +35,7 @@ Le contrat exige :
 
 La carte est obligatoire même si SHAPEIT5 sait utiliser une approximation de
 `1 cM/Mb` lorsqu'elle manque. Cette approximation reste interdite par le
-pipeline. Les étapes `12.1–12.5` devront vérifier l'assemblage, les allèles, les
+pipeline. Les étapes `12.1–12.5` vérifient l'assemblage, les allèles, les
 index, les individus et les régions avant de construire ces commandes.
 
 ## Configuration
@@ -56,8 +56,9 @@ elles sont disponibles après `conda activate effet-fondateur-shapeit5`.
 
 Cette sous-étape ne télécharge aucune référence, ne convertit pas PLINK en BCF et
 ne lance aucun phasage. Le catalogue 1000 Genomes, le cache, l'harmonisation et
-les fichiers de pedigree seront implémentés dans `12.1–12.5`. L'exécution et le
-QC scientifique relèvent de `12.6–12.7`.
+les fichiers de pedigree sont implémentés dans `12.1–12.5`. L'exécution et le
+QC scientifique relèvent de `12.6–12.7`. Le contrat concret des entrées est
+décrit dans `docs/modules/shapeit5_inputs.md`.
 
 Références officielles :
 

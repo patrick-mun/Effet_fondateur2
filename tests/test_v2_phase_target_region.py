@@ -94,6 +94,10 @@ if arguments[:2] == ["view", "--header-only"]:
     print('##FORMAT=<ID=GT,Number=1,Type=String,Description="Phased genotypes">')
     raise SystemExit(0)
 if arguments[:2] == ["query", "--list-samples"]:
+    sample_sidecar = pathlib.Path(arguments[-1] + ".samples")
+    if sample_sidecar.is_file():
+        print(sample_sidecar.read_text(), end="")
+        raise SystemExit(0)
     for sample_index in range(1, 3203):
         print(f"HG{{sample_index:05d}}")
     raise SystemExit(0)
@@ -115,9 +119,53 @@ if arguments[0] == "view" and "--types" in arguments:
     pathlib.Path(arguments[arguments.index("--output") + 1]).write_bytes(b"harmonized vcf")
     raise SystemExit(0)
 if arguments[0] == "query" and "--format" in arguments:
+    variant_sidecar = pathlib.Path(arguments[-1] + ".variants")
+    if variant_sidecar.is_file():
+        print(variant_sidecar.read_text(), end="")
+        pathlib.Path(arguments[-1] + ".samples").unlink()
+        variant_sidecar.unlink()
+        raise SystemExit(0)
     print("chr19\\t1900\\trs19\\tA\\tG")
     raise SystemExit(0)
 raise SystemExit(9)
+'''
+    path.write_text(script, encoding="utf-8")
+    path.chmod(0o755)
+
+
+def _write_shapeit5_plink(path: Path, delegated_plink: Path) -> None:
+    script = f'''#!{sys.executable}
+import os
+import pathlib
+import sys
+
+arguments = sys.argv[1:]
+if arguments == ["--version"]:
+    print("PLINK v1.90 synthetic")
+    raise SystemExit(0)
+output_prefix = pathlib.Path(arguments[arguments.index("--out") + 1]) if "--out" in arguments else None
+if output_prefix is None or output_prefix.name != "study.shapeit5":
+    os.execv({str(delegated_plink)!r}, [{str(delegated_plink)!r}, *arguments])
+base_prefix = pathlib.Path(arguments[arguments.index("--bfile") + 1])
+selected_ids = set(pathlib.Path(arguments[arguments.index("--extract") + 1]).read_text().split())
+update_rows = [line.split() for line in pathlib.Path(arguments[arguments.index("--update-ids") + 1]).read_text().splitlines()]
+reference_rows = [line.split() for line in pathlib.Path(arguments[arguments.index("--a2-allele") + 1]).read_text().splitlines()]
+reference_by_id = {{row[1]: row[0] for row in reference_rows}}
+variants = [
+    row for row in (line.split() for line in base_prefix.with_suffix(".bim").read_text().splitlines())
+    if row[1] in selected_ids
+]
+output_vcf = pathlib.Path(str(output_prefix) + ".vcf.gz")
+output_vcf.write_bytes(b"synthetic study vcf")
+pathlib.Path(str(output_vcf) + ".samples").write_text(
+    "".join(row[2] + "\\n" for row in update_rows)
+)
+pathlib.Path(str(output_vcf) + ".variants").write_text(
+    "".join(
+        f"chr{{row[0]}}\\t{{row[3]}}\\t{{row[1]}}\\t{{reference_by_id[row[1]]}}\\t{{row[4] if row[5] == reference_by_id[row[1]] else row[5]}}\\n"
+        for row in variants
+    )
+)
 '''
     path.write_text(script, encoding="utf-8")
     path.chmod(0o755)
@@ -138,8 +186,11 @@ def _prepare_phase_inputs(tmp_path: Path) -> tuple[Path, Path]:
     _write_synthetic_catalog(catalog_path, contents)
     _populate_cache(catalog_path, cache_dir, contents)
     _write_fake_bcftools(bcftools_path)
+    shapeit5_plink_path = tmp_path / "shapeit5_plink"
+    _write_shapeit5_plink(shapeit5_plink_path, Path(config["tools"]["plink"]))
     config["inputs"]["reference_panel_catalog"] = str(catalog_path)
     config["tools"]["bcftools"] = str(bcftools_path)
+    config["tools"]["plink"] = str(shapeit5_plink_path)
     config["stages"]["phase_target_region"] = {
         "enabled": True,
         "parameters": {
@@ -152,6 +203,7 @@ def _prepare_phase_inputs(tmp_path: Path) -> tuple[Path, Path]:
             "reference_extract_timeout_seconds": 30,
             "reference_extract_threads": 1,
             "minimum_common_variants": 1,
+            "shapeit5_input_timeout_seconds": 30,
         },
     }
     config_path.write_text(
@@ -182,6 +234,13 @@ def test_stage_12_publishes_reference_and_harmonization_then_reuses(
         "harmonized_reference_index",
         "variant_harmonization",
         "reference_harmonization_manifest",
+        "shapeit5_study_vcf",
+        "shapeit5_study_index",
+        "shapeit5_genetic_map",
+        "shapeit5_pedigree",
+        "shapeit5_variant_selection",
+        "shapeit5_sample_mapping",
+        "shapeit5_inputs_manifest",
     }
     rows = _read_tsv(stage_dir / "reference_harmonization" / "variant_harmonization.tsv")
     assert rows[0]["HARMONIZATION_STATUS"] == "MATCHED_DIRECT"
@@ -198,6 +257,24 @@ def test_stage_12_publishes_reference_and_harmonization_then_reuses(
     ]
     assert audit["warnings"] == [
         {"code": "target_variant_absent_from_reference", "count": 1}
+    ]
+    shapeit5_manifest = json.loads(
+        (stage_dir / "shapeit5_inputs" / "shapeit5_inputs_manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert shapeit5_manifest["sample_count"] == 3
+    assert shapeit5_manifest["study_variant_count"] == 2
+    assert shapeit5_manifest["common_variant_count"] == 1
+    assert shapeit5_manifest["pedigree_record_count"] == 0
+    assert shapeit5_manifest["target_variant_role"] == "RARE_TARGET"
+    sample_rows = _read_tsv(
+        stage_dir / "shapeit5_inputs" / "shapeit5_sample_mapping.tsv"
+    )
+    assert [row["VCF_SAMPLE_ID"] for row in sample_rows] == [
+        "sample_1",
+        "sample_2",
+        "sample_3",
     ]
 
     resume_pipeline(run_dir)

@@ -1067,6 +1067,17 @@ FASTA ni correction automatique de gauche-alignement n'est ajoutée à ce
 contrat. Un allèle PLINK `0` peut seulement être complété depuis une
 correspondance publique unique, sans modifier ni inférer les génotypes.
 
+**Contrat retenu en 12.5** : VCF d'étude bgzip/indexé utilisant les `SAMPLE_ID`
+maître, REF canonique imposé avec `--a2-allele`, puis contrôle bcftools de
+l'ordre des individus et de chaque identité `CHROM/POS/ID/REF/ALT`. Les variants
+communs alimentent `phase_common`; le variant cible est conservé comme
+`RARE_TARGET` lorsqu'il est absent du panel. La carte SHAPEIT contient
+`pos/chr/cM`. Le pedigree sans en-tête contient `enfant père mère`, emploie les
+mêmes identifiants que le VCF et utilise `NA` pour un parent absent. Un pedigree
+vide est valide et devra conduire `12.6` à omettre son argument. Les fichiers,
+versions d'outils, effectifs, régions et empreintes sont liés dans un manifeste
+publié atomiquement. SHAPEIT5 n'est pas lancé à cette sous-étape.
+
 **Traitements** :
 
 - phasage pedigree-aware lorsque disponible ;

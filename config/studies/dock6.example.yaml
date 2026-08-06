@@ -152,3 +152,4 @@ stages:
       reference_extract_timeout_seconds: 7200
       reference_extract_threads: 1
       minimum_common_variants: 1
+      shapeit5_input_timeout_seconds: 300

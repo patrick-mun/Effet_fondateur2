@@ -1,4 +1,4 @@
-"""Étape 12.1–12.4 : référence publique, fenêtre et harmonisation ACPA."""
+"""Étape 12.1–12.5 : référence, harmonisation et entrées SHAPEIT5."""
 
 from __future__ import annotations
 
@@ -20,6 +20,13 @@ from effet_fondateur.contracts import (
     validate_tsv_table,
 )
 from effet_fondateur.orchestrator.state import utc_now
+from effet_fondateur.phasing import (
+    PreparedShapeit5Inputs,
+    Shapeit5InputBlockError,
+    Shapeit5InputError,
+    Shapeit5InputExternalError,
+    build_shapeit5_inputs,
+)
 from effet_fondateur.references import (
     ExtractedReferenceWindow,
     HarmonizedReferenceWindow,
@@ -114,6 +121,9 @@ def _parameters(parameters: dict[str, Any]) -> dict[str, Any]:
         ),
         "minimum_common_variants": _positive_integer(
             parameters, "minimum_common_variants", 1
+        ),
+        "shapeit5_input_timeout_seconds": _positive_number(
+            parameters, "shapeit5_input_timeout_seconds", 300
         ),
     }
 
@@ -308,8 +318,91 @@ def _output_artifacts(
     ]
 
 
+def _shapeit5_input_artifacts(
+    stage_inputs: dict[str, Any],
+    output_dir: Path,
+    prepared: PreparedShapeit5Inputs,
+    assembly: str,
+    sample_set_id: str,
+    variant_set_id: str,
+) -> list[dict[str, Any]]:
+    specifications = (
+        (
+            "shapeit5_study_vcf",
+            "shapeit5_study_vcf",
+            prepared.study_vcf_path,
+            "application/gzip",
+            None,
+        ),
+        (
+            "shapeit5_study_index",
+            "shapeit5_study_index",
+            prepared.study_index_path,
+            "application/octet-stream",
+            None,
+        ),
+        (
+            "shapeit5_genetic_map",
+            "shapeit5_genetic_map",
+            prepared.genetic_map_path,
+            "application/gzip",
+            None,
+        ),
+        (
+            "shapeit5_pedigree",
+            "shapeit5_pedigree",
+            prepared.pedigree_path,
+            "text/tab-separated-values",
+            None,
+        ),
+        (
+            "shapeit5_variant_selection",
+            "shapeit5_variant_selection",
+            prepared.variant_selection_path,
+            "text/tab-separated-values",
+            "shapeit5_variant_selection.schema.json",
+        ),
+        (
+            "shapeit5_sample_mapping",
+            "shapeit5_sample_mapping",
+            prepared.sample_mapping_path,
+            "text/tab-separated-values",
+            "shapeit5_sample_mapping.schema.json",
+        ),
+        (
+            "shapeit5_inputs_manifest",
+            "shapeit5_inputs_manifest",
+            prepared.manifest_path,
+            "application/json",
+            "shapeit5_inputs_manifest.schema.json",
+        ),
+    )
+    return [
+        _artifact(
+            physical_path=physical_path,
+            relative_path=physical_path.relative_to(output_dir),
+            stage_inputs=stage_inputs,
+            artifact_id=artifact_id,
+            artifact_type=artifact_type,
+            media_type=media_type,
+            schema_name=schema_name,
+            assembly=assembly,
+            sample_set_id=sample_set_id,
+            variant_set_id=variant_set_id,
+            sensitivity="sensitive_genetic",
+        )
+        for (
+            artifact_id,
+            artifact_type,
+            physical_path,
+            media_type,
+            schema_name,
+        ) in specifications
+    ]
+
+
 def execute(stage_inputs_path: Path, output_dir: Path) -> int:
-    """Prépare et harmonise la référence publique sans lancer SHAPEIT5."""
+    """Prépare la référence et les entrées validées sans lancer SHAPEIT5."""
     started_at = utc_now()
     started_clock = monotonic()
     stage_inputs = read_json(stage_inputs_path)
@@ -321,7 +414,11 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         "config_input_target_variant_metadata",
         "config_input_reference_panel_catalog",
         "target_region_bim",
+        "target_region_bed",
+        "target_region_fam",
+        "target_genetic_map",
         "phasing_input_manifest",
+        "samples_master",
     )
     input_artifacts = {
         artifact_id: _artifact_by_id(stage_inputs, artifact_id)
@@ -395,6 +492,25 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
     reference_variant_set_id = (
         f"reference_variants_{harmonization_manifest['files']['vcf']['sha256'][:16]}"
     )
+    prepared_shapeit5 = build_shapeit5_inputs(
+        study_bed_path=paths["target_region_bed"],
+        study_bim_path=paths["target_region_bim"],
+        study_fam_path=paths["target_region_fam"],
+        phasing_manifest_path=paths["phasing_input_manifest"],
+        target_genetic_map_path=paths["target_genetic_map"],
+        samples_master_path=paths["samples_master"],
+        target_metadata_path=paths["config_input_target_variant_metadata"],
+        harmonization_path=harmonized.harmonization_path,
+        harmonization_manifest_path=harmonized.manifest_path,
+        reference_vcf_path=harmonized.vcf_path,
+        reference_index_path=harmonized.index_path,
+        reference_variant_set_id=reference_variant_set_id,
+        stage_root=output_dir,
+        output_dir=output_dir / "shapeit5_inputs",
+        plink_command=config["tools"]["plink"],
+        bcftools_command=bcftools_command,
+        timeout_seconds=parameters["shapeit5_input_timeout_seconds"],
+    )
     output_artifacts = _output_artifacts(
         stage_inputs,
         output_dir,
@@ -405,6 +521,17 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         reference_variant_set_id,
         phasing_manifest["sample_set_id"],
         phasing_manifest["variant_set_id"],
+    )
+    shapeit5_manifest = read_json(prepared_shapeit5.manifest_path)
+    output_artifacts.extend(
+        _shapeit5_input_artifacts(
+            stage_inputs,
+            output_dir,
+            prepared_shapeit5,
+            assembly,
+            phasing_manifest["sample_set_id"],
+            shapeit5_manifest["study_variant_set_id"],
+        )
     )
     stage_outputs = {
         "schema_version": "1.0.0",
@@ -421,7 +548,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         "run_id": stage_inputs["run_id"],
         "stage_id": stage_inputs["stage_id"],
         "stage_name": stage_inputs["stage_name"],
-        "method_id": "canonical_coordinate_allele_harmonization_v1",
+        "method_id": "reference_and_shapeit5_input_preparation_v1",
         "signature": stage_inputs["signature"],
         "started_at": started_at,
         "completed_at": utc_now(),
@@ -434,7 +561,12 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
                 "tool": "bcftools",
                 "configured": bcftools_command,
                 "version": harmonization_manifest["tool"]["version"],
-            }
+            },
+            {
+                "tool": "plink",
+                "configured": config["tools"]["plink"],
+                "version": shapeit5_manifest["tools"]["plink"],
+            },
         ],
         "counts": {
             "reference_samples": harmonization_manifest["sample_count"],
@@ -443,6 +575,8 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             "study_variants": harmonized.study_variant_count,
             "common_variants": harmonized.common_variant_count,
             "harmonization_statuses": dict(sorted(status_counts.items())),
+            "shapeit5_study_variants": prepared_shapeit5.study_variant_count,
+            "shapeit5_pedigree_records": prepared_shapeit5.pedigree_record_count,
         },
         "metrics": {
             "panel_id": resolved.panel_id,
@@ -454,6 +588,8 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             "target_variant_status": harmonization_manifest["checks"][
                 "target_variant"
             ],
+            "shapeit5_target_role": shapeit5_manifest["target_variant_role"],
+            "shapeit5_input_region": shapeit5_manifest["input_region"],
         },
         "exclusions": [
             {
@@ -480,11 +616,14 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             {"check": "sample_set_and_order", "status": "PASS"},
             {"check": "canonical_variant_identity", "status": "PASS"},
             {"check": "target_variant", "status": "PASS"},
+            {"check": "shapeit5_sample_identity_and_order", "status": "PASS"},
+            {"check": "shapeit5_pedigree_identity", "status": "PASS"},
+            {"check": "shapeit5_inputs", "status": "PASS"},
         ],
         "known_limits": [
             "Aucun gauche-alignement dépendant d'une FASTA n'est effectué ; les entrées GRCh38 doivent déjà utiliser une représentation minimale.",
             "Aucune correction automatique de brin n'est autorisée.",
-            "Cette étape ne construit pas encore le VCF d'étude et ne lance pas SHAPEIT5.",
+            "Cette étape construit les entrées validées mais ne lance pas SHAPEIT5.",
         ],
         "expected_visualizations": [],
         "manual_validation_required": False,
@@ -504,7 +643,15 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
 
 def _classify_error(error: Exception) -> int:
     message = str(error)
-    if isinstance(error, (PhaseTargetRegionBlockError, ReferenceWindowIntegrityError, ReferenceHarmonizationIntegrityError)):
+    if isinstance(
+        error,
+        (
+            PhaseTargetRegionBlockError,
+            ReferenceWindowIntegrityError,
+            ReferenceHarmonizationIntegrityError,
+            Shapeit5InputBlockError,
+        ),
+    ):
         return 4
     if isinstance(error, ReferenceCacheIntegrityError):
         return 4
@@ -512,11 +659,24 @@ def _classify_error(error: Exception) -> int:
         return 3
     if isinstance(error, (ReferenceWindowError, ReferenceHarmonizationError)) and message.startswith("bcftools_"):
         return 3
+    if isinstance(error, Shapeit5InputExternalError):
+        return 3
     if isinstance(error, ReferenceCacheError):
         if message.startswith("reference_download_") or message.endswith("lock_timeout"):
             return 3
         return 2
-    if isinstance(error, (PhaseTargetRegionInputError, ReferenceCatalogError, DocumentValidationError, OSError, ValueError, json.JSONDecodeError)):
+    if isinstance(
+        error,
+        (
+            PhaseTargetRegionInputError,
+            Shapeit5InputError,
+            ReferenceCatalogError,
+            DocumentValidationError,
+            OSError,
+            ValueError,
+            json.JSONDecodeError,
+        ),
+    ):
         return 2
     return 5
 
