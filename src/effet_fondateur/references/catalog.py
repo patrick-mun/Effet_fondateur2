@@ -79,8 +79,12 @@ def _validate_official_url(url: str, base_url: str, field: str) -> None:
     if (
         parsed_url.scheme != "https"
         or parsed_url.hostname != OFFICIAL_REFERENCE_HOST
+        or parsed_url.username is not None
+        or parsed_url.password is not None
         or parsed_base.scheme != "https"
         or parsed_base.hostname != OFFICIAL_REFERENCE_HOST
+        or parsed_base.username is not None
+        or parsed_base.password is not None
         or not parsed_url.path.startswith(parsed_base.path.rstrip("/") + "/")
         or parsed_url.query
         or parsed_url.fragment

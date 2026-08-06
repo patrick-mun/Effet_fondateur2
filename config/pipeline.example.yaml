@@ -144,3 +144,8 @@ stages:
     enabled: false
     parameters:
       reference_panel_id: 1kg_3202_high_coverage_20220422
+      reference_cache_dir: data/cache/references
+      reference_cache_offline: false
+      reference_lock_timeout_seconds: 60
+      reference_download_timeout_seconds: 7200
+      reference_download_chunk_size: 1048576

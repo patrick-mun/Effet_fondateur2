@@ -29,6 +29,7 @@ Thumbs.db
 data/output/
 data/input/
 data/runs/
+data/cache/
 test/
 
 # Résultats finaux à ne pas traquer

@@ -6,7 +6,7 @@ Dernière mise à jour : 6 août 2026
 
 - Dépôt GitHub : `patrick-mun/Effet_fondateur2`.
 - Branche active : `feature/v2-shapeit5-contract`, avec les modifications
-  locales de `12.1` au-dessus du commit `1612cc6` qui valide `12.0`.
+  locales de `12.2` au-dessus du commit `44e528e` qui valide `12.1`.
 - PR V2 `#2` fusionnée dans `main` le 5 août 2026.
 - PR `#1` fusionnée dans `main` le 4 août 2026.
 - Dernier commit de fusion V2 : `f87b04c`.
@@ -264,6 +264,17 @@ Dernière mise à jour : 6 août 2026
   - URL et SHA-256 du README et du manifeste épinglés, avec MD5 fournisseur du
     VCF et de son index pour chaque autosome ;
   - aucun VCF de référence téléchargé et aucune donnée privée transmise.
+- Sous-étape V2 `12.2` implémentée et validée sans téléchargement du VCF 1000G :
+  - cache partagé adressé par catalogue, panel, release, assemblage, chromosome,
+    URL et empreintes attendues ;
+  - verrou `flock`, écriture temporaire sur le même système de fichiers et
+    publication par renommage atomique ;
+  - MD5 fournisseur vérifié pour VCF/index, SHA-256 épinglé pour README/manifeste
+    et SHA-256 local recalculé pour les quatre fichiers ;
+  - entrées publiées en lecture seule et intégralement revérifiées avant chaque
+    réutilisation, sans remplacement automatique d'une corruption ;
+  - reprise des seuls dossiers temporaires interrompus et mode hors ligne
+    bloquant un cache absent sans appel réseau.
 
 ## Jeux de données actuellement disponibles
 
@@ -341,7 +352,9 @@ Dernière mise à jour : 6 août 2026
 - Tests ciblés de l'étape `08` : 8 réussis.
 - Tests ciblés de l'étape `09` : 7 réussis.
 - Suite moderne `tests/`, incluant les étapes `01` à `11`, les contrats
-  `12.0–12.1` et les contrôles de maintenabilité V2 : 132 réussis.
+  `12.0–12.2` et les contrôles de maintenabilité V2 : 140 réussis.
+- Contrôle ciblé final du cache, du catalogue, de la configuration, de
+  l'orchestrateur et de SHAPEIT5 après durcissement numérique : 39 réussis.
 - Dernière exécution combinée antérieure des suites modernes et historiques :
   129 réussis et 4 échecs historiques sans rapport avec les étapes `05` à `11` ;
   la suite historique n'a pas été relancée pour `12.0`.
@@ -379,6 +392,8 @@ Dernière mise à jour : 6 août 2026
 - Smoke métadonnées `12.1` contre le serveur EBI : les 44 MD5 des VCF/index des
   22 autosomes et les deux SHA-256 du manifeste et du README correspondent au
   catalogue local.
+- Smoke réseau `12.2` : le téléchargeur Python HTTPS a acquis le manifeste EBI
+  de 5 092 octets et validé son SHA-256 épinglé, sans télécharger aucun VCF.
 
 ## Suivi des étapes du pipeline V2
 
@@ -400,7 +415,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `09` | Gel des cohortes | `VALIDE` | Oui | Oui | Génotypes explicites, revues SHA, unités et fichiers keep validés |
 | `10` | QC final | `VALIDE` | Oui | Oui | Trois politiques, exception cible et smoke réel validés |
 | `11` | Région cible | `VALIDE` | Oui | Oui | Carte GRCh38 bornée, cM monotones et smoke réel validés |
-| `12` | Référence phasée et phasage | `EN_COURS` | Partiels | Non | `12.0–12.1` validées, panel complet par défaut |
+| `12` | Référence phasée et phasage | `EN_COURS` | Partiels | Non | `12.0–12.2` validées, panel complet par défaut |
 | `13` | Haplotype fondateur et IBD local | `NON_FAIT` | Non | Non | Méthode à décider |
 | `14` | Datation du variant | `NON_FAIT` | Non | Non | Méthodes à valider |
 | `15` | LD local secondaire | `NON_FAIT` | Non | Non | Exploratoire par défaut |
@@ -420,7 +435,7 @@ phasée ; les sous-populations sont réservées aux analyses de sensibilité.
 |---:|---|---|---|
 | `12.0` | Figer le contrat et choisir l'adaptateur de phasage | `VALIDE` | SHAPEIT5 5.1.1, MIT, GRCh38, pedigree, formats, paramètres et sonde réelle validés |
 | `12.1` | Résoudre le panel depuis un catalogue versionné | `VALIDE` | 1000G GRCh38, 3 202 échantillons, 22 autosomes, README, manifeste et MD5 validés |
-| `12.2` | Télécharger ou réutiliser le cache immuable | `NON_FAIT` | Verrou, téléchargement atomique, MD5 officiel, SHA-256 local et mode hors ligne |
+| `12.2` | Télécharger ou réutiliser le cache immuable | `VALIDE` | Verrou, publication atomique, reprise, MD5/SHA-256, lecture seule et hors ligne validés |
 | `12.3` | Extraire la fenêtre de référence avec tous les échantillons | `NON_FAIT` | VCF régional bgzip/indexé, génotypes phasés et assemblage concordant |
 | `12.4` | Normaliser et harmoniser référence/ACPA | `NON_FAIT` | Correspondance assemblage+chromosome+position+REF+ALT et ambiguïtés explicites |
 | `12.5` | Construire les entrées étude, pedigree et référence | `NON_FAIT` | Variant cible conservé même absent du panel, ordre et individus concordants |
@@ -484,9 +499,9 @@ sélection gloutonne et des groupes témoins configurés restent documentées.
 
 ## Priorités de la prochaine session
 
-1. Réaliser `12.2–12.4` : créer le cache immuable de références, extraire le
-   panel complet puis harmoniser ses variants avec les marqueurs ACPA avant tout
-   lancement de phasage.
+1. Réaliser `12.3–12.4` : extraire du cache la fenêtre du panel complet puis
+   harmoniser ses variants avec les marqueurs ACPA avant tout lancement de
+   phasage.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
 3. Préparer les revues réelles `kinship_exclusion_approval` et
@@ -537,5 +552,5 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action attendue est `12.2` : implémenter le téléchargement atomique, la reprise,
-les contrôles MD5/SHA-256 et le cache immuable du panel public.
+action attendue est `12.3` : extraire une fenêtre bgzip/indexée depuis le panel
+mis en cache, conserver les 3 202 échantillons et vérifier phase et assemblage.

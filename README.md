@@ -186,6 +186,11 @@ GRCh38 depuis un catalogue local couvrant les 22 autosomes et contenant les MD5
 officiels des VCF et index. Elle ne télécharge encore aucun fichier. Le contrat
 est documenté dans `docs/modules/reference_panel.md`.
 
+La sous-étape `12.2` fournit un cache partagé verrouillé, atomique et immuable.
+Elle vérifie les MD5 fournisseur et les SHA-256 locaux, prend en charge un mode
+hors ligne et bloque toute entrée publiée corrompue. Son fonctionnement est
+documenté dans `docs/modules/reference_cache.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est

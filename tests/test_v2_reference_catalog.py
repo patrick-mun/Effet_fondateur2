@@ -129,3 +129,16 @@ def test_catalog_rejects_nonofficial_host(tmp_path: Path) -> None:
 
     with pytest.raises(ReferenceCatalogError, match="unapproved_url"):
         load_reference_catalog(catalog_path)
+
+
+def test_catalog_rejects_embedded_url_credentials(tmp_path: Path) -> None:
+    def add_credentials(catalog: dict) -> None:
+        panel = catalog["panels"][0]
+        panel["base_url"] = panel["base_url"].replace(
+            "https://", "https://user:password@"
+        )
+
+    catalog_path = write_modified_catalog(tmp_path, add_credentials)
+
+    with pytest.raises(ReferenceCatalogError, match="unapproved_url"):
+        load_reference_catalog(catalog_path)

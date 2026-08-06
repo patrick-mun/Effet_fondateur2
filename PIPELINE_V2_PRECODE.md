@@ -1041,6 +1041,13 @@ par défaut. Le catalogue local versionné couvre les 22 autosomes, épingle le
 README et le manifeste fournisseur, puis expose les MD5 officiels du VCF et de
 son index sans effectuer de téléchargement.
 
+**Cache retenu en 12.2** : entrée adressée par les identifiants et empreintes de
+la référence, verrou inter-processus, téléchargement dans un dossier temporaire,
+contrôles MD5/SHA-256 puis renommage atomique. Une entrée publiée est en lecture
+seule et intégralement revérifiée avant réutilisation. Le mode hors ligne bloque
+un cache absent sans accès réseau ; une corruption bloque sans remplacement
+automatique.
+
 **Traitements** :
 
 - phasage pedigree-aware lorsque disponible ;
