@@ -6,7 +6,7 @@ Dernière mise à jour : 6 août 2026
 
 - Dépôt GitHub : `patrick-mun/Effet_fondateur2`.
 - Branche active : `feature/v2-final-qc`, avec les modifications locales de
-  l'étape `10` au-dessus du commit `e96483c` de l'étape `09`.
+  l'étape `11` au-dessus du commit `80a6645` de l'étape `10`.
 - PR V2 `#2` fusionnée dans `main` le 5 août 2026.
 - PR `#1` fusionnée dans `main` le 4 août 2026.
 - Dernier commit de fusion V2 : `f87b04c`.
@@ -226,6 +226,21 @@ Dernière mise à jour : 6 août 2026
   - alertes de lot descriptives sans exclusion automatique ;
   - nouveaux identifiants déterministes d'échantillons et variants pour chaque
     jeu BED/BIM/FAM final, avec descripteurs et empreintes.
+- Étape V2 `11_prepare_target_region` implémentée et validée sur fixtures
+  synthétiques et sur une chaîne temporaire `01` à `11` avec PLINK 1.9/KING
+  2.3.2 réels :
+  - extraction PLINK d'une fenêtre physique gauche/droite configurable depuis
+    le jeu local final de l'étape `10`, sans modifier les individus ;
+  - carte TSV à identifiant unique, assemblage explicite, positions bp
+    strictement croissantes et positions cM monotones ;
+  - interpolation décimale uniquement entre deux ancres dont l'écart respecte
+    le maximum configuré, sans extrapolation ni approximation `1 Mb = 1 cM` ;
+  - contrôle des coordonnées, allèles, doublons, ordre et présence du variant
+    cible avant publication ;
+  - écriture des cM validés dans le BIM régional et publication de
+    `target_genetic_map.tsv` ;
+  - manifest générique `PLINK_BED_BIM_FAM_WITH_CM`, sans imposer prématurément
+    l'adaptateur de phasage de l'étape `12`.
 
 ## Jeux de données actuellement disponibles
 
@@ -302,10 +317,10 @@ Dernière mise à jour : 6 août 2026
 - Tests ciblés de l'étape `07` : 8 réussis.
 - Tests ciblés de l'étape `08` : 8 réussis.
 - Tests ciblés de l'étape `09` : 7 réussis.
-- Suite moderne `tests/`, incluant les étapes `01` à `09` et les contrôles de
+- Suite moderne `tests/`, incluant les étapes `01` à `11` et les contrôles de
   maintenabilité V2 : 103 réussis.
-- Ensemble des suites Python actuelles : 121 réussis et 4 échecs historiques
-  sans rapport avec les étapes `05` à `10`.
+- Ensemble des suites Python actuelles : 129 réussis et 4 échecs historiques
+  sans rapport avec les étapes `05` à `11`.
 - Smoke test temporaire avec PLINK 1.9 réel : 2 individus, 23 marqueurs
   autosomiques et 2 marqueurs du chromosome cible, conversion réussie.
 - Smoke test temporaire de l'étape `04` avec PLINK 1.9 réel : 2 individus,
@@ -330,6 +345,10 @@ Dernière mise à jour : 6 août 2026
   réels : jeux finaux de 2 individus/11 variants chez les témoins, 1/22 chez le
   porteur indépendant et 3/2 sur le chromosome cible ; aucun individu exclu et
   variant cible conservé sans exception sur cette fixture.
+- Smoke test temporaire de la chaîne `01` à `11` avec PLINK 1.9 et KING 2.3.2
+  réels : région de 3 individus et 2 variants, une position de carte exacte,
+  une position interpolée, variant cible en deuxième position et manifest de
+  phasage valide.
 
 ## Suivi des étapes du pipeline V2
 
@@ -350,7 +369,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `08` | Structure populationnelle | `VALIDE` | Oui | Oui | PCA indépendante, projection, outliers et smoke réel validés |
 | `09` | Gel des cohortes | `VALIDE` | Oui | Oui | Génotypes explicites, revues SHA, unités et fichiers keep validés |
 | `10` | QC final | `VALIDE` | Oui | Oui | Trois politiques, exception cible et smoke réel validés |
-| `11` | Région cible | `NON_FAIT` | Non | Non | — |
+| `11` | Région cible | `VALIDE` | Oui | Oui | Carte GRCh38 bornée, cM monotones et smoke réel validés |
 | `12` | Phasage | `NON_FAIT` | Non | Non | Méthode à décider |
 | `13` | Haplotype fondateur et IBD local | `NON_FAIT` | Non | Non | Méthode à décider |
 | `14` | Datation du variant | `NON_FAIT` | Non | Non | Méthodes à valider |
@@ -411,9 +430,9 @@ sélection gloutonne et des groupes témoins configurés restent documentées.
 
 ## Priorités de la prochaine session
 
-1. Implémenter `11_prepare_target_region` depuis
-   `target_chromosome_all_qc`, avec fenêtre physique configurable, carte
-   génétique GRCh38 explicite, interpolation contrôlée et ordre des variants.
+1. Décider puis implémenter l'adaptateur de phasage de l'étape `12`, avec
+   compatibilité GRCh38, prise en charge du pedigree et stratégie de référence
+   explicitement documentées.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
 3. Préparer les revues réelles `kinship_exclusion_approval` et
@@ -457,5 +476,5 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action attendue est d'implémenter `11_prepare_target_region` depuis le jeu local
-final, avec une carte génétique GRCh38 explicite et contrôlée.
+action attendue est de décider l'outil et le contrat scientifique de
+`12_phase_target_region` avant toute implémentation du phasage.

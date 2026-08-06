@@ -127,3 +127,11 @@ stages:
       target_region_maf_min: 0.01
       batch_missingness_delta_alert: 0.02
       plink_timeout_seconds: 300
+  prepare_target_region:
+    enabled: false
+    parameters:
+      window_left_bp: 5000000
+      window_right_bp: 5000000
+      max_interpolation_gap_bp: 5000000
+      min_region_variants: 2
+      plink_timeout_seconds: 300

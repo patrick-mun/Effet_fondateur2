@@ -192,6 +192,22 @@ QC_FINAL_STAGE = StageDefinition(
     ),
 )
 
+PREPARE_TARGET_REGION_STAGE = StageDefinition(
+    stage_id="11",
+    stage_name="prepare_target_region",
+    module="effet_fondateur.stages.prepare_target_region",
+    critical=True,
+    dependencies=("prepare_target_variant_dataset", "qc_final"),
+    config_input_files=("target_variant_metadata", "genetic_map"),
+    required_artifact_ids=(
+        "target_chromosome_all_qc_bed",
+        "target_chromosome_all_qc_bim",
+        "target_chromosome_all_qc_fam",
+        "target_chromosome_all_qc_dataset",
+        "variant_qc_final",
+    ),
+)
+
 DEFAULT_STAGE_DEFINITIONS = (
     SYNTHETIC_STAGE,
     VALIDATE_SOURCES_STAGE,
@@ -204,6 +220,7 @@ DEFAULT_STAGE_DEFINITIONS = (
     ANALYZE_POPULATION_STRUCTURE_STAGE,
     FREEZE_COHORTS_STAGE,
     QC_FINAL_STAGE,
+    PREPARE_TARGET_REGION_STAGE,
 )
 
 

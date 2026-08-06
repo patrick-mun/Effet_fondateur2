@@ -168,6 +168,13 @@ Le HWE est réservé aux témoins, les lots restent descriptifs et le variant
 cible est conservé avec une exception auditée lorsqu'il échoue un filtre
 standard. Le contrat est documenté dans `docs/modules/final_qc.md`.
 
+`11_prepare_target_region` extrait ensuite une fenêtre configurable autour du
+variant cible et interpole les positions cM uniquement entre les ancres d'une
+carte génétique correspondant à l'assemblage. Elle interdit l'extrapolation et
+l'approximation `1 Mb = 1 cM`, contrôle l'ordre, les doublons et les allèles,
+puis publie un manifest PLINK neutre pour l'adaptateur de phasage. Le contrat
+est documenté dans `docs/modules/target_region.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est

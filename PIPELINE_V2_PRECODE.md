@@ -1009,6 +1009,15 @@ et les analyses locales.
 **Interdiction** : remplacer une carte génétique absente par `1 Mb = 1 cM` en
 mode production.
 
+**Contrat implémenté** : carte TSV à identifiant unique et assemblage explicite,
+positions physiques strictement croissantes, cM monotones, interpolation
+uniquement entre deux ancres séparées d'au plus le seuil configuré, sans
+extrapolation. Le jeu PLINK régional reçoit les cM validés et un manifest
+`PLINK_BED_BIM_FAM_WITH_CM` indépendant du futur outil de phasage.
+
+**Sorties** : `target_region.bed/.bim/.fam`, descripteur versionné,
+`target_genetic_map.tsv`, `phasing_input_manifest.json`, rapport et audit.
+
 **Visualisations** : densité physique et génétique, taux de recombinaison local
 et position du variant cible.
 
@@ -1316,7 +1325,7 @@ contient en plus `stage_inputs.json`, `stage_outputs.json`, `audit.json`,
 | `07` | `kinship_panel.*`, pedigree déclaré | `kinship_pairs.tsv`, `kinship_degree_summary.tsv`, `pedigree_concordance.tsv`, `independent_set_proposal.tsv` | `plot_kinship.py` |
 | `08` | panel genome-wide, résultat KING, lots et groupes descriptifs | `population_scores.tsv`, `population_eigenvalues.tsv`, `population_outliers.tsv`, `population_variant_loadings.tsv` | `plot_population_structure.py` |
 | `09` | registre, variant cible, KING, structure, QC | `cohorts.frozen.tsv`, `cohort_summary.tsv`, fichiers `keep`, `cohort_decisions.tsv` | `plot_cohorts.py` |
-| `10` | jeux de base, cohortes figées | jeux QC par cohorte, `sample_qc_final.tsv`, `variant_qc.tsv` | `plot_genotype_qc.py` |
+| `10` | jeux de base, cohortes figées | jeux QC par cohorte, `sample_qc_final.tsv`, `variant_qc_final.tsv` | `plot_genotype_qc.py` |
 | `11` | jeu du chromosome cible QC, variant cible, carte génétique | `target_region.*`, `target_genetic_map.tsv`, formats de phasage | `plot_target_map.py` |
 | `12` | région cible, pedigree, génotypes cibles | haplotypes phasés, `carrier_haplotypes.tsv`, `phasing_qc.tsv` | `plot_phasing.py` |
 | `13` | haplotypes phasés, porteurs indépendants, témoins | `founder_segments.tsv`, `founder_consensus.tsv`, matrice de partage | `plot_founder_haplotypes.py` |
