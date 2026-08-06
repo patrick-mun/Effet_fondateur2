@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/reference_panel_catalog.schema.json",
+  "title": "Catalogue versionné des panels de référence phasés",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "catalog_id", "panels"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "catalog_id": {"$ref": "#/$defs/identifier"},
+    "panels": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/panel"}
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "md5": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{32}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "chromosome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chromosome", "vcf_md5", "index_md5"],
+      "properties": {
+        "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+        "vcf_md5": {"$ref": "#/$defs/md5"},
+        "index_md5": {"$ref": "#/$defs/md5"}
+      }
+    },
+    "panel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "panel_id",
+        "provider",
+        "release_id",
+        "assembly",
+        "sample_count",
+        "sample_scope",
+        "population_scope",
+        "phased",
+        "variant_classes",
+        "base_url",
+        "readme_url",
+        "readme_sha256",
+        "manifest_url",
+        "manifest_sha256",
+        "vcf_filename_template",
+        "index_filename_template",
+        "chromosomes"
+      ],
+      "properties": {
+        "panel_id": {"$ref": "#/$defs/identifier"},
+        "provider": {"const": "IGSR_1000_GENOMES"},
+        "release_id": {"$ref": "#/$defs/identifier"},
+        "assembly": {"const": "GRCh38"},
+        "sample_count": {"const": 3202},
+        "sample_scope": {"const": "ALL_RELEASE_SAMPLES"},
+        "population_scope": {"const": "ALL_AVAILABLE_1KGP_POPULATIONS"},
+        "phased": {"const": true},
+        "variant_classes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["SNV", "INDEL", "SV"]}
+        },
+        "base_url": {"type": "string", "format": "uri", "pattern": "^https://"},
+        "readme_url": {"type": "string", "format": "uri", "pattern": "^https://"},
+        "readme_sha256": {"$ref": "#/$defs/sha256"},
+        "manifest_url": {"type": "string", "format": "uri", "pattern": "^https://"},
+        "manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "vcf_filename_template": {"type": "string", "pattern": "^[^/]+\\{chromosome\\}[^/]+\\.vcf\\.gz$"},
+        "index_filename_template": {"type": "string", "pattern": "^[^/]+\\{chromosome\\}[^/]+\\.vcf\\.gz\\.tbi$"},
+        "chromosomes": {
+          "type": "array",
+          "minItems": 22,
+          "maxItems": 22,
+          "items": {"$ref": "#/$defs/chromosome"}
+        }
+      }
+    }
+  }
+}

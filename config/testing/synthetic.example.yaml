@@ -20,6 +20,7 @@ inputs:
   target_variant_metadata: null
   target_variant_genotypes: null
   genetic_map: null
+  reference_panel_catalog: null
 
 tools:
   plink: null

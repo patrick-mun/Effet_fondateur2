@@ -20,6 +20,7 @@ inputs:
   target_variant_metadata: null
   target_variant_genotypes: null
   genetic_map: null
+  reference_panel_catalog: config/references/1000g_high_coverage_grch38_phased.json
 
 tools:
   plink: plink
@@ -139,3 +140,7 @@ stages:
       max_interpolation_gap_bp: 5000000
       min_region_variants: 2
       plink_timeout_seconds: 300
+  phase_target_region:
+    enabled: false
+    parameters:
+      reference_panel_id: 1kg_3202_high_coverage_20220422

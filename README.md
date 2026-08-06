@@ -181,6 +181,11 @@ conserver et phaser les variants rares propres à l'étude, dont la cible si ell
 est absente du panel. Les formats, paramètres et limites sont documentés dans
 `docs/modules/phasing.md`.
 
+La sous-étape `12.1` résout ensuite le panel haute couverture 1000 Genomes
+GRCh38 depuis un catalogue local couvrant les 22 autosomes et contenant les MD5
+officiels des VCF et index. Elle ne télécharge encore aucun fichier. Le contrat
+est documenté dans `docs/modules/reference_panel.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est

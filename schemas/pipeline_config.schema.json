@@ -69,13 +69,14 @@
     "inputs": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["acpa_samples_dir", "sample_metadata", "target_variant_metadata", "target_variant_genotypes", "genetic_map"],
+      "required": ["acpa_samples_dir", "sample_metadata", "target_variant_metadata", "target_variant_genotypes", "genetic_map", "reference_panel_catalog"],
       "properties": {
         "acpa_samples_dir": {"$ref": "#/$defs/pathOrNull"},
         "sample_metadata": {"$ref": "#/$defs/pathOrNull"},
         "target_variant_metadata": {"$ref": "#/$defs/pathOrNull"},
         "target_variant_genotypes": {"$ref": "#/$defs/pathOrNull"},
-        "genetic_map": {"$ref": "#/$defs/pathOrNull"}
+        "genetic_map": {"$ref": "#/$defs/pathOrNull"},
+        "reference_panel_catalog": {"$ref": "#/$defs/pathOrNull"}
       }
     },
     "tools": {

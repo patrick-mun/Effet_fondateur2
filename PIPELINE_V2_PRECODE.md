@@ -1034,6 +1034,13 @@ génétique obligatoire et pedigree enfant-père-mère pris en charge. Le scaffo
 commun est produit par `phase_common`, puis les variants rares ou absents du
 panel sont traités par `phase_rare` afin de ne pas perdre le variant cible.
 
+**Catalogue retenu en 12.1** : panel
+`1kg_3202_high_coverage_20220422`, release phasée SNV/INDEL/SV de `3 202`
+échantillons 1000 Genomes sur GRCh38, toutes populations et tous échantillons
+par défaut. Le catalogue local versionné couvre les 22 autosomes, épingle le
+README et le manifeste fournisseur, puis expose les MD5 officiels du VCF et de
+son index sans effectuer de téléchargement.
+
 **Traitements** :
 
 - phasage pedigree-aware lorsque disponible ;

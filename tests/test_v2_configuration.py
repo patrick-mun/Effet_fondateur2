@@ -15,6 +15,12 @@ def test_generic_example_is_valid() -> None:
     assert config["schema_version"] == "1.0.0"
     assert config["target"]["project_variant_id"] == "target_GRCh38_1_100000_A_G"
     assert config["target"]["rsid"] is None
+    assert config["inputs"]["reference_panel_catalog"] == (
+        "config/references/1000g_high_coverage_grch38_phased.json"
+    )
+    assert config["stages"]["phase_target_region"]["parameters"][
+        "reference_panel_id"
+    ] == "1kg_3202_high_coverage_20220422"
 
 
 def test_dock6_profile_accepts_unconfirmed_target_fields() -> None:

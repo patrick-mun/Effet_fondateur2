@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0.0",
+  "catalog_id": "public_phased_reference_panels_v1",
+  "panels": [
+    {
+      "panel_id": "1kg_3202_high_coverage_20220422",
+      "provider": "IGSR_1000_GENOMES",
+      "release_id": "20220422_3202_phased_SNV_INDEL_SV",
+      "assembly": "GRCh38",
+      "sample_count": 3202,
+      "sample_scope": "ALL_RELEASE_SAMPLES",
+      "population_scope": "ALL_AVAILABLE_1KGP_POPULATIONS",
+      "phased": true,
+      "variant_classes": ["SNV", "INDEL", "SV"],
+      "base_url": "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/working/20220422_3202_phased_SNV_INDEL_SV",
+      "readme_url": "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/working/20220422_3202_phased_SNV_INDEL_SV/README_1kGP_phased_panel_110722.pdf",
+      "readme_sha256": "bbc6b3fe5d30b9b9a999ec600d88d15e9135078ca56c2e1dcc6d12d1f44dda13",
+      "manifest_url": "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/working/20220422_3202_phased_SNV_INDEL_SV/20220804_manifest.txt",
+      "manifest_sha256": "71366add1f73a5a3283b8d89d5253f0b5b6e963032eb4a7e1862c19228c4579d",
+      "vcf_filename_template": "1kGP_high_coverage_Illumina.chr{chromosome}.filtered.SNV_INDEL_SV_phased_panel.vcf.gz",
+      "index_filename_template": "1kGP_high_coverage_Illumina.chr{chromosome}.filtered.SNV_INDEL_SV_phased_panel.vcf.gz.tbi",
+      "chromosomes": [
+        {"chromosome": 1, "vcf_md5": "589762a43c412a34ff2dd76b009f06c6", "index_md5": "66b57b31dbce68f65ec2db64856bb266"},
+        {"chromosome": 2, "vcf_md5": "0f00e90423da451798a87c037a440669", "index_md5": "266321223ca7175d14472c2cd90e9640"},
+        {"chromosome": 3, "vcf_md5": "e13293cc80e060d731a0f3ce453168a1", "index_md5": "139688baa3807bf080db42bd179a9288"},
+        {"chromosome": 4, "vcf_md5": "637cb88918fb8816cefb893f2422fe6e", "index_md5": "187fde704eed33f4b6d77ccb424dfbf8"},
+        {"chromosome": 5, "vcf_md5": "662dd03be57e9239eb693917edcce3fe", "index_md5": "54f202bec0e4c2190245e4c5611d8f45"},
+        {"chromosome": 6, "vcf_md5": "cc120eac122f422e7022817ba944acea", "index_md5": "463c5d983b6f74a506f599bcec63e1a0"},
+        {"chromosome": 7, "vcf_md5": "58a1da5c2cc6b3662f952887a54d187e", "index_md5": "21d1ff903a660a35ae517e3e7595e223"},
+        {"chromosome": 8, "vcf_md5": "9c7359e9bd06a923fa7a2daa55dd2a82", "index_md5": "ddc5df59bc46ed4c03814e12cdaa16e6"},
+        {"chromosome": 9, "vcf_md5": "c6832a28e977dafb9613b3d4f9a941df", "index_md5": "243cd3d9440dc06a29a32c464886de56"},
+        {"chromosome": 10, "vcf_md5": "1f0666ceb4818bc60936013a9e64473c", "index_md5": "000c37d8b7f1f11b8d0d856260dd3363"},
+        {"chromosome": 11, "vcf_md5": "76e53c142f60f7305cc0c0380f02326a", "index_md5": "4bd52a938ed0fbdf7c8592c584047185"},
+        {"chromosome": 12, "vcf_md5": "7609c8f8b1116d51357bbcb3f3c8b194", "index_md5": "3ad53aa6309fbe51bae7a0108b71c99c"},
+        {"chromosome": 13, "vcf_md5": "d6b1dbeaa98f375824172ad28b9d0c34", "index_md5": "3bcd8fcb840bead776c77c8ae8665afc"},
+        {"chromosome": 14, "vcf_md5": "daac8b8431cd8eb360e86f709361dfa7", "index_md5": "acbc4f9d801ac3bcca24f36644633acb"},
+        {"chromosome": 15, "vcf_md5": "b24a888029664f0f7a3b2bf8dffe00d1", "index_md5": "c113e556b87ad2346c1e7f90b03d1af1"},
+        {"chromosome": 16, "vcf_md5": "4566018235a48c73b449c7d888427fd8", "index_md5": "b21320e7acdfea15da5e934dec346ef2"},
+        {"chromosome": 17, "vcf_md5": "bdebafdef3fbbcf3a60ef114aa9ff362", "index_md5": "b08ee190c1eeb9ce36cdd17445e19d41"},
+        {"chromosome": 18, "vcf_md5": "64440c87109e9d12222300912e71cff2", "index_md5": "a539c1808b37148165202c913bec0874"},
+        {"chromosome": 19, "vcf_md5": "cf5c060fbcc0fcd2fa089f27fd6ac78e", "index_md5": "f70b288343a7d5cc40124b672fd2727f"},
+        {"chromosome": 20, "vcf_md5": "34a9a5dbfb285e7eb9d1f2881953014b", "index_md5": "59a2ff0c589ca6b78f45a17304f2117e"},
+        {"chromosome": 21, "vcf_md5": "1eb1f48bf5608d3abacf5047c8889456", "index_md5": "e4ba5aab9882c7d8b34455db121d836b"},
+        {"chromosome": 22, "vcf_md5": "a2653cc7a1c8d03a96ca4f14d0fabdd2", "index_md5": "33a3d517ba4d93fe40fd6db4b78329a7"}
+      ]
+    }
+  ]
+}
