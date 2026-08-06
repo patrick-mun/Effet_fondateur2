@@ -27,6 +27,12 @@ def test_generic_example_is_valid() -> None:
     assert config["stages"]["phase_target_region"]["parameters"][
         "reference_cache_offline"
     ] is False
+    assert config["stages"]["phase_target_region"]["parameters"][
+        "reference_extract_timeout_seconds"
+    ] == 7200
+    assert config["stages"]["phase_target_region"]["parameters"][
+        "reference_extract_threads"
+    ] == 1
 
 
 def test_dock6_profile_accepts_unconfirmed_target_fields() -> None:

@@ -191,6 +191,11 @@ Elle vérifie les MD5 fournisseur et les SHA-256 locaux, prend en charge un mode
 hors ligne et bloque toute entrée publiée corrompue. Son fonctionnement est
 documenté dans `docs/modules/reference_cache.md`.
 
+La sous-étape `12.3` extrait ensuite une fenêtre bgzip/indexée sans filtrer les
+échantillons du panel. Elle vérifie l'effectif et l'ordre complets, le contig
+GRCh38 et l'absence de génotypes appelés non phasés avant publication atomique.
+Son contrat est documenté dans `docs/modules/reference_window.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est

@@ -15,6 +15,12 @@ from effet_fondateur.references.cache import (
     ReferenceCacheOfflineMiss,
     cache_reference_panel,
 )
+from effet_fondateur.references.window import (
+    ExtractedReferenceWindow,
+    ReferenceWindowError,
+    ReferenceWindowIntegrityError,
+    extract_reference_window,
+)
 
 __all__ = [
     "DEFAULT_REFERENCE_CATALOG_PATH",
@@ -25,7 +31,11 @@ __all__ = [
     "ReferenceCacheOfflineMiss",
     "ReferenceCatalogError",
     "ResolvedReferencePanel",
+    "ExtractedReferenceWindow",
+    "ReferenceWindowError",
+    "ReferenceWindowIntegrityError",
     "load_reference_catalog",
     "cache_reference_panel",
+    "extract_reference_window",
     "resolve_reference_panel",
 ]

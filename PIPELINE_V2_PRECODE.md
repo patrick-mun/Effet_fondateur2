@@ -1048,6 +1048,13 @@ seule et intégralement revérifiée avant réutilisation. Le mode hors ligne bl
 un cache absent sans accès réseau ; une corruption bloque sans remplacement
 automatique.
 
+**Extraction retenue en 12.3** : fenêtre `chrN:START-END` produite par
+`bcftools` depuis le cache immuable, en conservant exactement tous les
+échantillons dans leur ordre source. Les longueurs de contig GRCh38, le champ
+`GT`, l'effectif, l'index tabix, le nombre de variants et l'absence de génotypes
+appelés non phasés sont contrôlés avant une publication atomique. Le manifeste
+lie la sortie à la release et aux empreintes précises du cache.
+
 **Traitements** :
 
 - phasage pedigree-aware lorsque disponible ;
