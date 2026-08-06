@@ -151,3 +151,4 @@ stages:
       reference_download_chunk_size: 1048576
       reference_extract_timeout_seconds: 7200
       reference_extract_threads: 1
+      minimum_common_variants: 1

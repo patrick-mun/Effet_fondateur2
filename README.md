@@ -196,6 +196,14 @@ La sous-étape `12.3` extrait ensuite une fenêtre bgzip/indexée sans filtrer l
 GRCh38 et l'absence de génotypes appelés non phasés avant publication atomique.
 Son contrat est documenté dans `docs/modules/reference_window.md`.
 
+La sous-étape `12.4`, désormais intégrée à `12_phase_target_region`, décompose
+les SNV/indels bialléliques puis harmonise les marqueurs ACPA avec la référence
+par assemblage, chromosome, position, REF et ALT. Elle audite les inversions
+A1/A2, les allèles PLINK manquants complétés depuis une correspondance publique
+unique, les collisions et le variant cible absent du panel. Le contrat exige
+des représentations GRCh38 déjà minimales et n'utilise pas de FASTA. Il est
+documenté dans `docs/modules/reference_harmonization.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est
@@ -207,6 +215,7 @@ Les exécutables suivants doivent être accessibles depuis le `PATH` :
 
 - `plink` 1.9 ou compatible : filtrage, ROH, IBD, HWE et LD ;
 - `king` : estimation des relations de parenté ;
+- `bcftools` : cache, extraction et harmonisation de la référence phasée ;
 - `Rscript` : exécution de l'analyse Adegenet.
 
 Le binaire `Gamma` est uniquement nécessaire pour utiliser la fonction
@@ -219,6 +228,7 @@ Vérification rapide :
 python3 --version
 plink --version
 king --version
+bcftools --version
 Rscript --version
 ```
 

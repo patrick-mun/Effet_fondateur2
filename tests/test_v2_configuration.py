@@ -33,6 +33,9 @@ def test_generic_example_is_valid() -> None:
     assert config["stages"]["phase_target_region"]["parameters"][
         "reference_extract_threads"
     ] == 1
+    assert config["stages"]["phase_target_region"]["parameters"][
+        "minimum_common_variants"
+    ] == 1
 
 
 def test_dock6_profile_accepts_unconfirmed_target_fields() -> None:

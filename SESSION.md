@@ -284,7 +284,7 @@ Dernière mise à jour : 6 août 2026
     appelés non phasés ;
   - revalidation des empreintes du cache avant lecture et publication atomique
     d'un manifeste liant la fenêtre à la release et aux fichiers sources.
-- Sous-étape V2 `12.4` commencée avec un premier contrat testable sans phasage :
+- Sous-étape V2 `12.4` implémentée et validée sans lancement de SHAPEIT5 :
   - décomposition biallélique des SNV/indels de la fenêtre de référence ;
   - jointure des marqueurs ACPA par assemblage, chromosome, position, REF et ALT,
     sans utiliser rsID ni identifiant de sonde comme clé scientifique ;
@@ -295,6 +295,12 @@ Dernière mise à jour : 6 août 2026
   - conservation autorisée du variant cible absent du panel pour `phase_rare` ;
   - publication atomique d'une référence harmonisée, de son index, de la table
     d'audit et d'un manifeste lié par SHA-256 aux entrées `11` et `12.3`.
+  - intégration à l'étape orchestrée `12_phase_target_region`, avec artefacts
+    `12.3` et `12.4` séparés, audit V2, codes de retour et reprise stricte ;
+  - décision de ne pas ajouter de FASTA : les représentations GRCh38 doivent
+    déjà être minimales et toute évolution de cette méthode sera distincte ;
+  - complétion autorisée d'un allèle PLINK `0` uniquement depuis une
+    correspondance de référence unique, sans inférer de génotype individuel.
 
 ## Jeux de données actuellement disponibles
 
@@ -371,8 +377,8 @@ Dernière mise à jour : 6 août 2026
 - Tests ciblés de l'étape `07` : 8 réussis.
 - Tests ciblés de l'étape `08` : 8 réussis.
 - Tests ciblés de l'étape `09` : 7 réussis.
-- Suite moderne `tests/`, incluant les étapes `01` à `11`, les contrats
-  `12.0–12.4` et les contrôles de maintenabilité V2 : 152 réussis.
+- Suite moderne `tests/`, incluant les étapes `01` à `12.4` et les contrôles de
+  maintenabilité V2 : 155 réussis.
 - Contrôle ciblé final de la fenêtre, du cache, du catalogue, de la
   configuration, de l'orchestrateur et de SHAPEIT5 : 45 réussis.
 - Dernière exécution combinée antérieure des suites modernes et historiques :
@@ -416,6 +422,9 @@ Dernière mise à jour : 6 août 2026
   de 5 092 octets et validé son SHA-256 épinglé, sans télécharger aucun VCF.
 - Smoke réel `12.3` avec bcftools 1.21 : VCF bgzip temporaire de 2 échantillons
   et 2 variants phasés, extraction régionale, index tabix et manifeste valides.
+- Smoke réel `12.4` avec bcftools 1.21 : 2 variants de référence phasés,
+  3 variants d'étude, 2 correspondances canoniques, décomposition, filtrage,
+  index tabix et publication temporaire valides.
 
 ## Suivi des étapes du pipeline V2
 
@@ -459,7 +468,7 @@ phasée ; les sous-populations sont réservées aux analyses de sensibilité.
 | `12.1` | Résoudre le panel depuis un catalogue versionné | `VALIDE` | 1000G GRCh38, 3 202 échantillons, 22 autosomes, README, manifeste et MD5 validés |
 | `12.2` | Télécharger ou réutiliser le cache immuable | `VALIDE` | Verrou, publication atomique, reprise, MD5/SHA-256, lecture seule et hors ligne validés |
 | `12.3` | Extraire la fenêtre de référence avec tous les échantillons | `VALIDE` | VCF régional bgzip/indexé, génotypes phasés et assemblage concordant |
-| `12.4` | Normaliser et harmoniser référence/ACPA | `EN_COURS` | Premier contrat, schémas et tests unitaires en place ; smoke bcftools réel et intégration d'étape restent à faire |
+| `12.4` | Normaliser et harmoniser référence/ACPA | `VALIDE` | Étape orchestrée, schémas, reprise, codes V2, smoke bcftools réel et décision sans FASTA validés |
 | `12.5` | Construire les entrées étude, pedigree et référence | `NON_FAIT` | Variant cible conservé même absent du panel, ordre et individus concordants |
 | `12.6` | Exécuter l'adaptateur et attribuer le chromosome porteur | `NON_FAIT` | Phase, transmissions, confiance, erreurs externes et zones non fiables auditées |
 | `12.7` | Publier le QC, les haplotypes et le smoke test | `NON_FAIT` | Fixtures synthétiques, reprise cache, test réel temporaire et audit complet |
@@ -521,8 +530,8 @@ sélection gloutonne et des groupes témoins configurés restent documentées.
 
 ## Priorités de la prochaine session
 
-1. Terminer `12.4` : réaliser un smoke bcftools réel, intégrer ses artefacts à
-   l'étape `12` et valider la reprise avant tout lancement de phasage.
+1. Réaliser `12.5` : construire les entrées étude, le pedigree et la référence
+   SHAPEIT5 en conservant le variant cible lorsqu'il est absent du panel.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
 3. Préparer les revues réelles `kinship_exclusion_approval` et
@@ -573,5 +582,5 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action attendue est `12.4` : normaliser et harmoniser la fenêtre de référence
-avec les marqueurs ACPA par assemblage, chromosome, position, REF et ALT.
+action attendue est `12.5` : construire les entrées étude, pedigree et référence
+à partir des artefacts harmonisés de `12.4`, sans lancer encore SHAPEIT5.

@@ -76,8 +76,8 @@ class _StudyVariant:
     variant_id: str
     chromosome: int
     position_bp: int
-    allele_1: str
-    allele_2: str
+    allele_1: str | None
+    allele_2: str | None
 
 
 @dataclass(frozen=True)
@@ -230,12 +230,17 @@ def _load_study_variants(path: Path) -> list[_StudyVariant]:
             raise ReferenceHarmonizationIntegrityError(
                 "study_bim_coordinate_invalid"
             ) from error
-        normalized_alleles = (allele_1.upper(), allele_2.upper())
+        normalized_alleles = tuple(
+            None if allele == "0" else allele.upper()
+            for allele in (allele_1, allele_2)
+        )
+        called_alleles = [allele for allele in normalized_alleles if allele is not None]
         if (
             not variant_id
             or position_bp <= 0
-            or any(DNA_ALLELE.fullmatch(allele) is None for allele in normalized_alleles)
-            or normalized_alleles[0] == normalized_alleles[1]
+            or not called_alleles
+            or any(DNA_ALLELE.fullmatch(allele) is None for allele in called_alleles)
+            or (len(called_alleles) == 2 and called_alleles[0] == called_alleles[1])
         ):
             raise ReferenceHarmonizationIntegrityError("study_bim_variant_invalid")
         variants.append(
@@ -397,21 +402,32 @@ def _row_for_variant(
     assembly: str,
     target_variant_id: str,
 ) -> dict[str, Any]:
-    study_alleles = frozenset((study.allele_1, study.allele_2))
+    called_alleles = frozenset(
+        allele for allele in (study.allele_1, study.allele_2) if allele is not None
+    )
+    complete_study_definition = len(called_alleles) == 2
     exact = [
         candidate
         for candidate in candidates
-        if frozenset((candidate.ref, candidate.alt)) == study_alleles
+        if (
+            frozenset((candidate.ref, candidate.alt)) == called_alleles
+            if complete_study_definition
+            else called_alleles.issubset((candidate.ref, candidate.alt))
+        )
     ]
     detail_code: str | None = None
     matched: _ReferenceVariant | None = None
     if len(exact) == 1:
         matched = exact[0]
-        status = (
-            "MATCHED_DIRECT"
-            if (study.allele_1, study.allele_2) == (matched.ref, matched.alt)
-            else "MATCHED_SWAPPED"
-        )
+        if not complete_study_definition:
+            status = "MATCHED_REFERENCE_COMPLETED"
+            detail_code = "MISSING_PLINK_ALLELE_COMPLETED_FROM_UNIQUE_REFERENCE"
+        else:
+            status = (
+                "MATCHED_DIRECT"
+                if (study.allele_1, study.allele_2) == (matched.ref, matched.alt)
+                else "MATCHED_SWAPPED"
+            )
         eligible = True
     elif len(exact) > 1:
         status = "AMBIGUOUS_REFERENCE_MATCH"
@@ -420,12 +436,21 @@ def _row_for_variant(
     elif not candidates:
         status = "STUDY_ONLY"
         eligible = False
-        detail_code = "NO_REFERENCE_VARIANT_AT_POSITION"
+        detail_code = (
+            "INCOMPLETE_STUDY_ALLELES_WITHOUT_REFERENCE"
+            if not complete_study_definition
+            else "NO_REFERENCE_VARIANT_AT_POSITION"
+        )
     else:
         status = "ALLELE_MISMATCH"
         eligible = False
         reference_pairs = [frozenset((candidate.ref, candidate.alt)) for candidate in candidates]
-        if _complement_pair(study.allele_1, study.allele_2) in reference_pairs:
+        if (
+            complete_study_definition
+            and study.allele_1 is not None
+            and study.allele_2 is not None
+            and _complement_pair(study.allele_1, study.allele_2) in reference_pairs
+        ):
             detail_code = "STRAND_COMPLEMENT_NOT_APPLIED"
         else:
             detail_code = "REFERENCE_POSITION_WITH_DIFFERENT_ALLELES"
@@ -707,6 +732,7 @@ def harmonize_reference_window(
         if target_row["HARMONIZATION_STATUS"] not in {
             "MATCHED_DIRECT",
             "MATCHED_SWAPPED",
+            "MATCHED_REFERENCE_COMPLETED",
             "STUDY_ONLY",
         }:
             raise ReferenceHarmonizationIntegrityError(

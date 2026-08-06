@@ -263,6 +263,34 @@ def test_marks_duplicate_study_mapping_as_ineligible(tmp_path: Path) -> None:
     assert result.common_variant_count == 1
 
 
+def test_completes_missing_plink_allele_from_unique_reference(tmp_path: Path) -> None:
+    reference = _reference_window(tmp_path)
+    bim_path, phasing_manifest_path, target_metadata_path = _study_inputs(
+        tmp_path,
+        [
+            "19\tmonomorphic_probe\t0.1\t1100\tA\t0",
+            "19\tprobe_common\t0.2\t1200\tC\tT",
+            "19\ttarget_variant\t0.3\t1500\tG\tA",
+        ],
+    )
+
+    result = harmonize_reference_window(
+        reference,
+        bim_path,
+        phasing_manifest_path,
+        target_metadata_path,
+        tmp_path / "harmonized",
+        command_runner=FakeBcftools(),
+    )
+
+    first_row = _read_rows(result.harmonization_path)[0]
+    assert first_row["STUDY_A2"] == ""
+    assert first_row["REFERENCE_REF"] == "A"
+    assert first_row["REFERENCE_ALT"] == "G"
+    assert first_row["HARMONIZATION_STATUS"] == "MATCHED_REFERENCE_COMPLETED"
+    assert first_row["COMMON_PHASE_ELIGIBLE"] == "true"
+
+
 def test_blocks_target_allele_collision_without_publishing(tmp_path: Path) -> None:
     reference = _reference_window(tmp_path)
     bim_path, phasing_manifest_path, target_metadata_path = _study_inputs(tmp_path)

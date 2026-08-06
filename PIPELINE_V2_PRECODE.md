@@ -1055,13 +1055,17 @@ automatique.
 appelés non phasés sont contrôlés avant une publication atomique. Le manifeste
 lie la sortie à la release et aux empreintes précises du cache.
 
-**Premier contrat de 12.4** : décomposition biallélique des SNV/indels de la
+**Contrat retenu en 12.4** : décomposition biallélique des SNV/indels de la
 référence, conservation stricte des échantillons et harmonisation de chaque
 marqueur ACPA par assemblage, chromosome, position, REF et ALT. Les inversions
 A1/A2 sont auditées, les corrections de brin ne sont jamais automatiques, les
 collisions entre sondes restent explicites et le variant cible peut rester
 spécifique à l'étude pour `phase_rare`. Une représentation non minimale ou une
 ambiguïté touchant le variant cible bloque avant SHAPEIT5.
+Les entrées GRCh38 doivent déjà utiliser une représentation minimale : aucune
+FASTA ni correction automatique de gauche-alignement n'est ajoutée à ce
+contrat. Un allèle PLINK `0` peut seulement être complété depuis une
+correspondance publique unique, sans modifier ni inférer les génotypes.
 
 **Traitements** :
 

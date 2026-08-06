@@ -20,10 +20,11 @@ bloquants. Tous les échantillons de la référence et leur ordre doivent être
 strictement conservés, l'index tabix est interrogé et les génotypes appelés
 doivent rester phasés.
 
-Aucun gauche-alignement dépendant d'une séquence FASTA n'est inventé. Le contrat
-exige donc déjà des coordonnées et allèles minimaux dans le panel GRCh38. Une
-future acquisition de FASTA devra passer par un catalogue et un cache immuables
-avant d'autoriser une normalisation dépendante de cette séquence.
+Aucun gauche-alignement dépendant d'une séquence FASTA n'est effectué. La
+décision de projet pour ce contrat est d'exiger des coordonnées et allèles déjà
+minimaux sur GRCh38. Une normalisation avec FASTA constituerait une évolution de
+méthode séparée, avec catalogue, cache, comparaison de référence et nouveaux
+tests scientifiques ; elle ne bloque pas `12.4`.
 
 ## Statuts d'harmonisation
 
@@ -31,12 +32,16 @@ Une ligne de `variant_harmonization.tsv` est produite dans l'ordre du BIM :
 
 - `MATCHED_DIRECT` : A1/A2 correspondent à REF/ALT ;
 - `MATCHED_SWAPPED` : A1/A2 correspondent à ALT/REF ;
+- `MATCHED_REFERENCE_COMPLETED` : un allèle PLINK vaut `0` et l'allèle manquant
+  est défini par une seule correspondance de référence possible ;
 - `STUDY_ONLY` : aucun variant de référence à cette position ;
 - `ALLELE_MISMATCH` : position commune, allèles différents ;
 - `AMBIGUOUS_REFERENCE_MATCH` : plusieurs enregistrements de référence possibles ;
 - `DUPLICATE_STUDY_MATCH` : plusieurs marqueurs ACPA visent la même clé canonique.
 
-Seuls `MATCHED_DIRECT` et `MATCHED_SWAPPED` sont éligibles au scaffold commun.
+Les trois statuts `MATCHED_*` sont éligibles au scaffold commun. La complétion
+concerne uniquement la définition REF/ALT du marqueur, jamais un génotype
+individuel.
 Une complémentation de brin n'est jamais appliquée automatiquement : elle est
 signalée par `STRAND_COMPLEMENT_NOT_APPLIED`. Cette règle repose sur le contrat
 amont `forward_strand_calls` et empêche une résolution silencieuse des SNP
@@ -56,7 +61,23 @@ La publication atomique contient :
   paramètres scientifiques et SHA-256 des deux chaînes d'entrée.
 
 Une sortie existante n'est jamais remplacée. Toute modification du VCF, de son
-index ou du manifeste `12.3` bloque avant la publication. Le BIM et le manifeste
-de phasage sont validés ensemble et leurs SHA-256 sont enregistrés ; leur
-comparaison aux descripteurs d'artefacts amont sera ajoutée lors de l'intégration
-de cette fonction à l'étape `12`.
+index ou du manifeste `12.3` bloque avant la publication. L'étape orchestrée
+`12_phase_target_region` compare aussi le BIM, le manifeste de phasage, les
+métadonnées cible et le catalogue à leurs descripteurs d'artefacts amont.
+
+Elle publie séparément les trois artefacts de fenêtre `12.3` et les quatre
+artefacts harmonisés `12.4`, puis les référence dans `stage_outputs.json`,
+`audit.json` et `checksums.sha256`. Une reprise ne les réutilise qu'après
+recalcul des signatures et empreintes.
+
+Paramètre scientifique :
+
+```yaml
+phase_target_region:
+  parameters:
+    minimum_common_variants: 1
+```
+
+Une valeur de production plus exigeante devra être justifiée selon la densité
+de la puce et les besoins de SHAPEIT5 ; `1` sert uniquement aux fixtures
+minimales et ne constitue pas un seuil biologique validé.
