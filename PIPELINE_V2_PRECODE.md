@@ -975,8 +975,15 @@ d'exclusion du variant cible ou d'un signal potentiellement causal.
 **Jeu local cible** : conservation forcée et auditée du variant cible, même s'il
 échoue un filtre exploratoire standard ; toute exception est enregistrée.
 
-**Sorties** : jeux finaux versionnés par cohorte et matrices de concordance des
-variants.
+**Ordre des traitements** : extraction par le fichier `--keep` figé, calcul du
+missingness individuel, exclusion explicite des individus, recalcul des
+métriques variant, exclusion explicite des variants puis publication. Les
+différences de lot restent descriptives et ne provoquent aucune exclusion.
+
+**Sorties** : trois jeux BED/BIM/FAM finaux avec descripteurs versionnés,
+`sample_qc_final.tsv`, `variant_qc_final.tsv`, `batch_qc_final.tsv`, rapport et
+audit. L'exception du variant cible conserve les filtres échoués sans transformer
+le génotype en mesure fiable.
 
 **Visualisations** : HWE chez témoins, MAF par cohorte, missingness comparative
 et densité locale finale.

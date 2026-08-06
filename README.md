@@ -162,6 +162,12 @@ KING ou PCA ne sont appliquées qu'après une revue liée au SHA-256 exact de
 l'artefact proposé ; le succès de l'étape résout alors les décisions manuelles
 correspondantes. Le contrat est documenté dans `docs/modules/cohort_freeze.md`.
 
+`10_qc_final` repart des fichiers `--keep` figés et publie trois jeux PLINK
+versionnés : témoins indépendants, porteurs indépendants et chromosome cible.
+Le HWE est réservé aux témoins, les lots restent descriptifs et le variant
+cible est conservé avec une exception auditée lorsqu'il échoue un filtre
+standard. Le contrat est documenté dans `docs/modules/final_qc.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est

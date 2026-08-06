@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/batch_qc_final.schema.json",
+  "title": "QC final par lot et cohorte V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "DATASET_ID", "COHORT_ID", "ARRAY_BATCH", "SAMPLE_COUNT",
+      "MEAN_F_MISS", "BATCH_DELTA_FROM_BEST", "QC_STATUS", "ALERT_CODE"
+    ],
+    "null_value": "",
+    "primary_key": ["DATASET_ID", "ARRAY_BATCH"],
+    "boolean_values": {}
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "decimal": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"},
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "DATASET_ID", "COHORT_ID", "ARRAY_BATCH", "SAMPLE_COUNT",
+        "MEAN_F_MISS", "BATCH_DELTA_FROM_BEST", "QC_STATUS", "ALERT_CODE"
+      ],
+      "properties": {
+        "DATASET_ID": {"$ref": "#/$defs/identifier"},
+        "COHORT_ID": {"$ref": "#/$defs/identifier"},
+        "ARRAY_BATCH": {"$ref": "#/$defs/identifier"},
+        "SAMPLE_COUNT": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "MEAN_F_MISS": {"$ref": "#/$defs/decimal"},
+        "BATCH_DELTA_FROM_BEST": {"$ref": "#/$defs/decimal"},
+        "QC_STATUS": {"enum": ["PASS", "ALERT"]},
+        "ALERT_CODE": {
+          "oneOf": [{"const": "batch_missingness_delta"}, {"type": "null"}]
+        }
+      }
+    }
+  }
+}

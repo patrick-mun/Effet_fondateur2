@@ -1,12 +1,12 @@
 # Suivi de session
 
-Dernière mise à jour : 5 août 2026
+Dernière mise à jour : 6 août 2026
 
 ## État du dépôt
 
 - Dépôt GitHub : `patrick-mun/Effet_fondateur2`.
-- Branche active : `feature/v2-cohort-freeze`, avec les modifications locales
-  non committées de l'étape `09` au-dessus du commit `dc500bb` de l'étape `08`.
+- Branche active : `feature/v2-final-qc`, avec les modifications locales de
+  l'étape `10` au-dessus du commit `e96483c` de l'étape `09`.
 - PR V2 `#2` fusionnée dans `main` le 5 août 2026.
 - PR `#1` fusionnée dans `main` le 4 août 2026.
 - Dernier commit de fusion V2 : `f87b04c`.
@@ -214,6 +214,18 @@ Dernière mise à jour : 5 août 2026
     tandis que l'audit et le rapport ne publient que des comptes ;
   - génération de sept fichiers PLINK `--keep`, dont les cohortes optionnelles
     peuvent être vides sans ambiguïté.
+- Étape V2 `10_qc_final` implémentée et validée sur fixtures synthétiques et sur
+  une chaîne temporaire `01` à `10` avec PLINK 1.9/KING 2.3.2 réels :
+  - publication séparée de jeux finaux pour les témoins indépendants, les
+    porteurs indépendants et tous les individus du chromosome cible ;
+  - exclusion individuelle sur missingness avant recalcul des métriques variant ;
+  - HWE et MAF appliqués uniquement aux témoins, sans HWE ni filtre MAF chez
+    les porteurs indépendants ;
+  - MAF locale et missingness variant sur le chromosome cible, avec conservation
+    forcée et auditée du variant cible lorsqu'un seuil standard échoue ;
+  - alertes de lot descriptives sans exclusion automatique ;
+  - nouveaux identifiants déterministes d'échantillons et variants pour chaque
+    jeu BED/BIM/FAM final, avec descripteurs et empreintes.
 
 ## Jeux de données actuellement disponibles
 
@@ -292,8 +304,8 @@ Dernière mise à jour : 5 août 2026
 - Tests ciblés de l'étape `09` : 7 réussis.
 - Suite moderne `tests/`, incluant les étapes `01` à `09` et les contrôles de
   maintenabilité V2 : 103 réussis.
-- Ensemble des suites Python actuelles : 115 réussis et 4 échecs historiques
-  sans rapport avec les étapes `05` à `09`.
+- Ensemble des suites Python actuelles : 121 réussis et 4 échecs historiques
+  sans rapport avec les étapes `05` à `10`.
 - Smoke test temporaire avec PLINK 1.9 réel : 2 individus, 23 marqueurs
   autosomiques et 2 marqueurs du chromosome cible, conversion réussie.
 - Smoke test temporaire de l'étape `04` avec PLINK 1.9 réel : 2 individus,
@@ -314,6 +326,10 @@ Dernière mise à jour : 5 août 2026
   réels : 3 individus, 7 cohortes, 2 contrôles indépendants, 1 porteur total et
   indépendant, 3 individus dans la référence de structure et sur le chromosome
   cible, sans décision manuelle résiduelle.
+- Smoke test temporaire de la chaîne `01` à `10` avec PLINK 1.9 et KING 2.3.2
+  réels : jeux finaux de 2 individus/11 variants chez les témoins, 1/22 chez le
+  porteur indépendant et 3/2 sur le chromosome cible ; aucun individu exclu et
+  variant cible conservé sans exception sur cette fixture.
 
 ## Suivi des étapes du pipeline V2
 
@@ -333,7 +349,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `07` | Apparentement et duplicats | `VALIDE` | Oui | Oui | KING, pedigree, proposition indépendante et smoke réel validés |
 | `08` | Structure populationnelle | `VALIDE` | Oui | Oui | PCA indépendante, projection, outliers et smoke réel validés |
 | `09` | Gel des cohortes | `VALIDE` | Oui | Oui | Génotypes explicites, revues SHA, unités et fichiers keep validés |
-| `10` | QC final | `NON_FAIT` | Non | Non | — |
+| `10` | QC final | `VALIDE` | Oui | Oui | Trois politiques, exception cible et smoke réel validés |
 | `11` | Région cible | `NON_FAIT` | Non | Non | — |
 | `12` | Phasage | `NON_FAIT` | Non | Non | Méthode à décider |
 | `13` | Haplotype fondateur et IBD local | `NON_FAIT` | Non | Non | Méthode à décider |
@@ -395,9 +411,9 @@ sélection gloutonne et des groupes témoins configurés restent documentées.
 
 ## Priorités de la prochaine session
 
-1. Implémenter `10_qc_final` avec politiques distinctes pour témoins
-   indépendants, porteurs et région cible, sans filtrer silencieusement le
-   variant causal.
+1. Implémenter `11_prepare_target_region` depuis
+   `target_chromosome_all_qc`, avec fenêtre physique configurable, carte
+   génétique GRCh38 explicite, interpolation contrôlée et ordre des variants.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
 3. Préparer les revues réelles `kinship_exclusion_approval` et
@@ -441,5 +457,5 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action attendue est d'implémenter `10_qc_final` depuis les cohortes figées et
-leurs fichiers `--keep`, avec des règles de QC propres à chaque analyse.
+action attendue est d'implémenter `11_prepare_target_region` depuis le jeu local
+final, avec une carte génétique GRCh38 explicite et contrôlée.

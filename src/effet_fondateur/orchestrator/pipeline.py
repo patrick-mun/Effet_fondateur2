@@ -163,6 +163,35 @@ FREEZE_COHORTS_STAGE = StageDefinition(
     ),
 )
 
+QC_FINAL_STAGE = StageDefinition(
+    stage_id="10",
+    stage_name="qc_final",
+    module="effet_fondateur.stages.qc_final",
+    critical=True,
+    dependencies=(
+        "build_sample_registry",
+        "prepare_target_variant_dataset",
+        "qc_preliminary",
+        "freeze_cohorts",
+    ),
+    config_input_files=("target_variant_metadata",),
+    required_artifact_ids=(
+        "samples_master",
+        "genomewide_pre_qc_bed",
+        "genomewide_pre_qc_bim",
+        "genomewide_pre_qc_fam",
+        "genomewide_pre_qc_dataset",
+        "target_variant_bed",
+        "target_variant_bim",
+        "target_variant_fam",
+        "target_variant_dataset",
+        "cohorts_frozen",
+        "cohort_keep_controls_unrelated",
+        "cohort_keep_target_carriers_independent",
+        "cohort_keep_target_chromosome_all_qc",
+    ),
+)
+
 DEFAULT_STAGE_DEFINITIONS = (
     SYNTHETIC_STAGE,
     VALIDATE_SOURCES_STAGE,
@@ -174,6 +203,7 @@ DEFAULT_STAGE_DEFINITIONS = (
     INFER_KINSHIP_STAGE,
     ANALYZE_POPULATION_STRUCTURE_STAGE,
     FREEZE_COHORTS_STAGE,
+    QC_FINAL_STAGE,
 )
 
 

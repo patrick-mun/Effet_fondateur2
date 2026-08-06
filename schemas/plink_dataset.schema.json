@@ -40,7 +40,8 @@
         "ChAS_ACPA",
         "ChAS_ACPA_PLUS_EXPLICIT_TARGET",
         "PLINK_PRELIMINARY_QC",
-        "PLINK_KINSHIP_PANEL"
+        "PLINK_KINSHIP_PANEL",
+        "PLINK_FINAL_QC"
       ]
     },
     "allele_orientation": {"enum": ["forward_strand_calls", "mixed_forward_and_reference"]},

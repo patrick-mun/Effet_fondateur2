@@ -115,3 +115,15 @@ stages:
         - target_chromosome_all_qc
         - genomewide_structure_reference
       decision_reviews: {}
+  qc_final:
+    enabled: false
+    parameters:
+      sample_missingness_max: 0.1
+      controls_variant_missingness_max: 0.05
+      controls_maf_min: 0.05
+      controls_hwe_p_min: 1.0e-6
+      carriers_variant_missingness_max: 0.05
+      target_region_variant_missingness_max: 0.05
+      target_region_maf_min: 0.01
+      batch_missingness_delta_alert: 0.02
+      plink_timeout_seconds: 300
