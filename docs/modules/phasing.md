@@ -60,7 +60,8 @@ les fichiers de pedigree sont implémentés dans `12.1–12.5`. L'exécution et
 l'attribution du chromosome porteur sont implémentées dans `12.6`; la
 publication consolidée du QC relève de `12.7`. Les contrats concrets sont
 décrits dans `docs/modules/shapeit5_inputs.md` et
-`docs/modules/shapeit5_execution.md`.
+`docs/modules/shapeit5_execution.md`. La clôture est décrite dans
+`docs/modules/phasing_qc.md`.
 
 Références officielles :
 

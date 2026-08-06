@@ -79,7 +79,7 @@ def _populate_cache(catalog_path: Path, cache_dir: Path, contents: dict[str, byt
     cache_reference_panel(resolved, cache_dir, downloader=downloader)
 
 
-def _write_fake_bcftools(path: Path) -> None:
+def _write_fake_bcftools(path: Path, target_confidence: float = 0.95) -> None:
     script = f'''#!{sys.executable}
 import pathlib
 import shutil
@@ -149,7 +149,7 @@ if arguments[0] == "query" and "--format" in arguments:
         raise SystemExit(0)
     if "%PP" in format_text and input_name == "target.phased.bcf":
         print("chr19\\t1900\\trs19\\tA\\tG\\t1|0\\t.\\t0|0\\t.\\t0|0\\t.")
-        print("chr19\\t100000\\ttarget_GRCh38_1_100000_A_G\\tA\\tG\\t1|0\\t0.95\\t0|0\\t.\\t0|0\\t.")
+        print("chr19\\t100000\\ttarget_GRCh38_1_100000_A_G\\tA\\tG\\t1|0\\t{target_confidence}\\t0|0\\t.\\t0|0\\t.")
         raise SystemExit(0)
     variant_sidecar = pathlib.Path(arguments[-1] + ".variants")
     if variant_sidecar.is_file():
@@ -225,7 +225,9 @@ else:
     path.chmod(0o755)
 
 
-def _prepare_phase_inputs(tmp_path: Path) -> tuple[Path, Path]:
+def _prepare_phase_inputs(
+    tmp_path: Path, *, target_confidence: float = 0.95
+) -> tuple[Path, Path]:
     config_path, runs_dir = prepare_target_region_inputs(tmp_path)
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     contents = {
@@ -239,7 +241,7 @@ def _prepare_phase_inputs(tmp_path: Path) -> tuple[Path, Path]:
     bcftools_path = tmp_path / "bcftools"
     _write_synthetic_catalog(catalog_path, contents)
     _populate_cache(catalog_path, cache_dir, contents)
-    _write_fake_bcftools(bcftools_path)
+    _write_fake_bcftools(bcftools_path, target_confidence)
     shapeit5_plink_path = tmp_path / "shapeit5_plink"
     _write_shapeit5_plink(shapeit5_plink_path, Path(config["tools"]["plink"]))
     common_path = tmp_path / "SHAPEIT5_phase_common"
@@ -320,6 +322,9 @@ def test_stage_12_publishes_reference_and_harmonization_then_reuses(
         "phasing_transmissions",
         "phasing_unreliable_regions",
         "shapeit5_phasing_manifest",
+        "phasing_qc",
+        "carrier_haplotype_summary",
+        "phase_target_region_summary",
     }
     rows = _read_tsv(stage_dir / "reference_harmonization" / "variant_harmonization.tsv")
     assert rows[0]["HARMONIZATION_STATUS"] == "MATCHED_DIRECT"
@@ -369,6 +374,27 @@ def test_stage_12_publishes_reference_and_harmonization_then_reuses(
     )
     assert phasing_manifest["carrier_count"] == 1
     assert phasing_manifest["reliable_carrier_count"] == 1
+    qc_rows = _read_tsv(stage_dir / "phasing_qc" / "phasing_qc.tsv")
+    assert len(qc_rows) == 12
+    assert qc_rows[-1]["CHECK_ID"] == "carrier_phase_confidence"
+    assert qc_rows[-1]["STATUS"] == "PASS"
+    summary = json.loads(
+        (stage_dir / "phasing_qc" / "phase_target_region_summary.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert summary["haplotype_counts"] == {
+        "NONE": 2,
+        "H1": 1,
+        "H2": 0,
+        "BOTH": 0,
+    }
+    assert summary["manual_validation_required"] is False
+    assert audit["expected_visualizations"] == [
+        "plot_phasing_haplotypes",
+        "plot_phasing_transmissions",
+        "plot_phasing_confidence",
+    ]
 
     resume_pipeline(run_dir)
 
@@ -431,3 +457,34 @@ def test_stage_12_error_mapping_uses_standard_codes(monkeypatch, tmp_path: Path)
 
     monkeypatch.setattr(phase_target_region, "execute", raise_input)
     assert phase_target_region.main(arguments) == 2
+
+
+def test_stage_12_7_requires_manual_review_for_low_carrier_confidence(
+    tmp_path: Path,
+) -> None:
+    config_path, runs_dir = _prepare_phase_inputs(
+        tmp_path, target_confidence=0.7
+    )
+
+    run_dir = run_pipeline(config_path, runs_dir)
+
+    stage_dir = run_dir / "stages" / "12_phase_target_region"
+    audit = json.loads((stage_dir / "audit.json").read_text(encoding="utf-8"))
+    summary = json.loads(
+        (stage_dir / "phasing_qc" / "phase_target_region_summary.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    qc_rows = _read_tsv(stage_dir / "phasing_qc" / "phasing_qc.tsv")
+    confidence_qc = next(
+        row for row in qc_rows if row["CHECK_ID"] == "carrier_phase_confidence"
+    )
+    assert confidence_qc["STATUS"] == "WARN"
+    assert confidence_qc["DETAIL_CODE"] == "carrier_phase_unreliable"
+    assert summary["unreliable_carrier_count"] == 1
+    assert summary["manual_validation_required"] is True
+    assert audit["manual_validation_required"] is True
+    assert {warning["code"] for warning in audit["warnings"]} == {
+        "target_variant_absent_from_reference",
+        "carrier_phase_unreliable",
+    }

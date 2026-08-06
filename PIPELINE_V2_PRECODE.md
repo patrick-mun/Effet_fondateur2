@@ -1088,6 +1088,15 @@ pas, mais rend l'attribution non fiable, crée une zone d'alerte et impose une
 revue manuelle. Les transmissions trio/duo restent explicites sans inventer une
 origine parentale ambiguë.
 
+**Contrat retenu en 12.7** : consolidation sans recalcul de douze contrôles
+versionnés couvrant intégrité, `AC/AN`, nombres de variants, ordre des individus,
+préservation des génotypes, cible, Mendel, transmissions et confiance. Les
+effectifs `NONE/H1/H2/BOTH` sont publiés sans identifiant individuel. Un warning
+de confiance est conservé dans le résumé final et impose une revue manuelle.
+Les deux manifestes sources et toutes les sorties sont liés par SHA-256, puis le
+dossier QC est publié atomiquement. Les visualisations pseudonymisées sont
+déclarées mais restent produites à l'étape 18.
+
 **Traitements** :
 
 - phasage pedigree-aware lorsque disponible ;

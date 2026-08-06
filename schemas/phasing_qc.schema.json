@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/phasing_qc.schema.json",
+  "title": "QC consolidé du phasage cible",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["CHECK_ORDER", "CHECK_ID", "SCOPE", "STATUS", "OBSERVED_VALUE", "EXPECTED_VALUE", "DETAIL_CODE"],
+    "null_value": "",
+    "primary_key": ["CHECK_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "stableIdentifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "nullableText": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]},
+    "nullableIdentifier": {"oneOf": [{"$ref": "#/$defs/stableIdentifier"}, {"type": "null"}]},
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["CHECK_ORDER", "CHECK_ID", "SCOPE", "STATUS", "OBSERVED_VALUE", "EXPECTED_VALUE", "DETAIL_CODE"],
+      "properties": {
+        "CHECK_ORDER": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "CHECK_ID": {"$ref": "#/$defs/stableIdentifier"},
+        "SCOPE": {"enum": ["INPUT", "COMMON_PHASE", "RARE_PHASE", "TARGET", "PEDIGREE", "CONFIDENCE"]},
+        "STATUS": {"enum": ["PASS", "WARN", "NOT_APPLICABLE"]},
+        "OBSERVED_VALUE": {"type": "string", "minLength": 1},
+        "EXPECTED_VALUE": {"$ref": "#/$defs/nullableText"},
+        "DETAIL_CODE": {"$ref": "#/$defs/nullableIdentifier"}
+      }
+    }
+  }
+}

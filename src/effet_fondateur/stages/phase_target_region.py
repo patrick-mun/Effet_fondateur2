@@ -1,4 +1,4 @@
-"""Étape 12.1–12.6 : préparation, phasage et attribution du chromosome porteur."""
+"""Étape 12 complète : référence, phasage, porteurs et QC consolidé."""
 
 from __future__ import annotations
 
@@ -22,6 +22,8 @@ from effet_fondateur.contracts import (
 from effet_fondateur.orchestrator.state import utc_now
 from effet_fondateur.phasing import (
     PreparedShapeit5Inputs,
+    PublishedPhasingQc,
+    PhasingPublicationError,
     Shapeit5ExecutionBlockError,
     Shapeit5ExecutionError,
     Shapeit5ExecutionExternalError,
@@ -31,6 +33,7 @@ from effet_fondateur.phasing import (
     Shapeit5InputExternalError,
     build_shapeit5_inputs,
     parse_shapeit5_adapter_config,
+    publish_phasing_qc,
     run_shapeit5_phasing,
 )
 from effet_fondateur.references import (
@@ -456,6 +459,28 @@ def _shapeit5_phasing_artifacts(
     ]
 
 
+def _phasing_qc_artifacts(
+    stage_inputs: dict[str, Any], output_dir: Path, published: PublishedPhasingQc,
+    assembly: str, sample_set_id: str, variant_set_id: str,
+) -> list[dict[str, Any]]:
+    specifications = (
+        ("phasing_qc", published.qc_path, "text/tab-separated-values", "phasing_qc.schema.json"),
+        ("carrier_haplotype_summary", published.haplotype_summary_path, "text/tab-separated-values", "carrier_haplotype_summary.schema.json"),
+        ("phase_target_region_summary", published.summary_path, "application/json", "phase_target_region_summary.schema.json"),
+    )
+    return [
+        _artifact(
+            physical_path=path, relative_path=path.relative_to(output_dir),
+            stage_inputs=stage_inputs, artifact_id=artifact_id,
+            artifact_type=artifact_id, media_type=media_type,
+            schema_name=schema_name, assembly=assembly,
+            sample_set_id=sample_set_id, variant_set_id=variant_set_id,
+            sensitivity="internal",
+        )
+        for artifact_id, path, media_type, schema_name in specifications
+    ]
+
+
 def execute(stage_inputs_path: Path, output_dir: Path) -> int:
     """Prépare les entrées, exécute SHAPEIT5 et attribue les haplotypes porteurs."""
     started_at = utc_now()
@@ -584,6 +609,14 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         minimum_phase_confidence=parameters["minimum_phase_confidence"],
         timeout_seconds=parameters["shapeit5_execution_timeout_seconds"],
     )
+    published_phasing_qc = publish_phasing_qc(
+        inputs_manifest_path=prepared_shapeit5.manifest_path,
+        phasing_manifest_path=phased_shapeit5.manifest_path,
+        carrier_haplotypes_path=phased_shapeit5.carrier_haplotypes_path,
+        transmissions_path=phased_shapeit5.transmissions_path,
+        unreliable_regions_path=phased_shapeit5.unreliable_regions_path,
+        output_dir=output_dir / "phasing_qc",
+    )
     output_artifacts = _output_artifacts(
         stage_inputs,
         output_dir,
@@ -608,6 +641,12 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         )
     )
     output_artifacts.extend(
+        _phasing_qc_artifacts(
+            stage_inputs, output_dir, published_phasing_qc, assembly,
+            phasing_manifest["sample_set_id"], shapeit5_manifest["study_variant_set_id"],
+        )
+    )
+    output_artifacts.extend(
         _shapeit5_phasing_artifacts(
             stage_inputs, output_dir, phased_shapeit5, assembly,
             phasing_manifest["sample_set_id"], shapeit5_manifest["study_variant_set_id"],
@@ -628,7 +667,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         "run_id": stage_inputs["run_id"],
         "stage_id": stage_inputs["stage_id"],
         "stage_name": stage_inputs["stage_name"],
-        "method_id": "shapeit5_common_rare_carrier_assignment_v1",
+        "method_id": "phase_target_region_complete_v1",
         "signature": stage_inputs["signature"],
         "started_at": started_at,
         "completed_at": utc_now(),
@@ -669,6 +708,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             "shapeit5_pedigree_records": prepared_shapeit5.pedigree_record_count,
             "shapeit5_carriers": phased_shapeit5.carrier_count,
             "shapeit5_reliable_carriers": phased_shapeit5.reliable_carrier_count,
+            "phasing_qc_warnings": published_phasing_qc.warning_count,
         },
         "metrics": {
             "panel_id": resolved.panel_id,
@@ -713,6 +753,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             {"check": "shapeit5_common_phase", "status": "PASS"},
             {"check": "shapeit5_rare_phase", "status": "PASS"},
             {"check": "target_carrier_haplotype_assignment", "status": "PASS"},
+            {"check": "phasing_qc_publication", "status": "PASS"},
         ],
         "known_limits": [
             "Aucun gauche-alignement dépendant d'une FASTA n'est effectué ; les entrées GRCh38 doivent déjà utiliser une représentation minimale.",
@@ -720,10 +761,12 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             "Le score PP de SHAPEIT5 n'est disponible que pour les singletons lorsque --score-singletons est activé ; les autres hétérozygotes sont explicitement marqués non fiables.",
             "Avec plusieurs threads, SHAPEIT5 avertit que la graine seule ne garantit pas une reproduction bit à bit.",
         ],
-        "expected_visualizations": [],
-        "manual_validation_required": (
-            phased_shapeit5.reliable_carrier_count < phased_shapeit5.carrier_count
-        ),
+        "expected_visualizations": [
+            "plot_phasing_haplotypes",
+            "plot_phasing_transmissions",
+            "plot_phasing_confidence",
+        ],
+        "manual_validation_required": published_phasing_qc.manual_validation_required,
     }
     validate_json_document(audit, "stage_audit.schema.json")
     atomic_write_json(output_dir / "audit.json", audit)
@@ -771,6 +814,7 @@ def _classify_error(error: Exception) -> int:
             PhaseTargetRegionInputError,
             Shapeit5InputError,
             Shapeit5ExecutionError,
+            PhasingPublicationError,
             ReferenceCatalogError,
             DocumentValidationError,
             OSError,

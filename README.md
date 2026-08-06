@@ -219,6 +219,12 @@ PP des singletons est audité ; une confiance absente ou inférieure au seuil
 conserve le résultat mais le marque non fiable et demande une revue manuelle.
 Le contrat est documenté dans `docs/modules/shapeit5_execution.md`.
 
+La sous-étape `12.7` clôt l'étape en consolidant douze contrôles de phasage,
+les effectifs agrégés `H1/H2/BOTH` et la décision de revue manuelle. Elle lie
+les résultats aux manifestes `12.5–12.6`, publie atomiquement le résumé final et
+déclare les visualisations pseudonymisées attendues à l'étape 18. Le contrat est
+documenté dans `docs/modules/phasing_qc.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est
