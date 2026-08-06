@@ -21,6 +21,12 @@ from effet_fondateur.references.window import (
     ReferenceWindowIntegrityError,
     extract_reference_window,
 )
+from effet_fondateur.references.harmonization import (
+    HarmonizedReferenceWindow,
+    ReferenceHarmonizationError,
+    ReferenceHarmonizationIntegrityError,
+    harmonize_reference_window,
+)
 
 __all__ = [
     "DEFAULT_REFERENCE_CATALOG_PATH",
@@ -32,10 +38,14 @@ __all__ = [
     "ReferenceCatalogError",
     "ResolvedReferencePanel",
     "ExtractedReferenceWindow",
+    "HarmonizedReferenceWindow",
+    "ReferenceHarmonizationError",
+    "ReferenceHarmonizationIntegrityError",
     "ReferenceWindowError",
     "ReferenceWindowIntegrityError",
     "load_reference_catalog",
     "cache_reference_panel",
     "extract_reference_window",
+    "harmonize_reference_window",
     "resolve_reference_panel",
 ]
