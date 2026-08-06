@@ -26,7 +26,11 @@ tools:
   king: king
   bcftools: bcftools
   rscript: Rscript
-  phasing_adapter: null
+  phasing_adapter:
+    adapter_id: shapeit5_phase_common_rare_v1
+    phase_common_command: SHAPEIT5_phase_common
+    phase_rare_command: SHAPEIT5_phase_rare
+    expected_version: 5.1.1
   local_ibd_adapter: null
 
 policies:

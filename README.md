@@ -175,6 +175,12 @@ l'approximation `1 Mb = 1 cM`, contrôle l'ordre, les doublons et les allèles,
 puis publie un manifest PLINK neutre pour l'adaptateur de phasage. Le contrat
 est documenté dans `docs/modules/target_region.md`.
 
+La sous-étape `12.0` retient SHAPEIT5 `5.1.1` avec un contrat à deux composants :
+`phase_common` pour le scaffold partagé avec la référence et `phase_rare` pour
+conserver et phaser les variants rares propres à l'étude, dont la cible si elle
+est absente du panel. Les formats, paramètres et limites sont documentés dans
+`docs/modules/phasing.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est

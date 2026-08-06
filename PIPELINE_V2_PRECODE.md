@@ -1028,8 +1028,11 @@ et position du variant cible.
 **Responsabilité** : produire des haplotypes et identifier celui qui porte le
 variant cible chez chaque porteur.
 
-**Prérequis à décider avant implémentation** : outil de phasage, version,
-référence éventuelle, compatibilité GRCh38 et prise en charge du pedigree.
+**Contrat retenu en 12.0** : adaptateur `shapeit5_phase_common_rare_v1`, SHAPEIT5
+`5.1.1` sous licence MIT, référence phasée obligatoire, autosomes GRCh38, carte
+génétique obligatoire et pedigree enfant-père-mère pris en charge. Le scaffold
+commun est produit par `phase_common`, puis les variants rares ou absents du
+panel sont traités par `phase_rare` afin de ne pas perdre le variant cible.
 
 **Traitements** :
 
@@ -1503,16 +1506,15 @@ limitations historiques
 
 ## 14. Décisions encore requises avant implémentation
 
-1. outil et stratégie de phasage ;
-2. méthode de détection IBD locale ;
-3. carte génétique GRCh38 et licence de redistribution ;
-4. seuils QC adaptés à la taille finale des cohortes ;
-5. seuil d'apparentement retenu pour chaque analyse ;
-6. stratégie d'unité indépendante par famille et chromosome porteur ;
-7. méthode Gamma exacte et implémentation de référence ;
-8. méthode alternative de datation ;
-9. politique de pseudonymisation et niveau de partage des rapports ;
-10. format final du rapport scientifique et procédure de validation humaine.
+1. méthode de détection IBD locale ;
+2. carte génétique GRCh38 et licence de redistribution ;
+3. seuils QC adaptés à la taille finale des cohortes ;
+4. seuil d'apparentement retenu pour chaque analyse ;
+5. stratégie d'unité indépendante par famille et chromosome porteur ;
+6. méthode Gamma exacte et implémentation de référence ;
+7. méthode alternative de datation ;
+8. politique de pseudonymisation et niveau de partage des rapports ;
+9. format final du rapport scientifique et procédure de validation humaine.
 
 Ces décisions doivent apparaître dans un registre de décisions versionné. Elles
 ne doivent pas être résolues implicitement pendant le codage.

@@ -87,7 +87,7 @@
         "king": {"$ref": "#/$defs/commandName"},
         "bcftools": {"$ref": "#/$defs/commandName"},
         "rscript": {"$ref": "#/$defs/commandName"},
-        "phasing_adapter": {"$ref": "#/$defs/commandName"},
+        "phasing_adapter": {"$ref": "#/$defs/phasingAdapter"},
         "local_ibd_adapter": {"$ref": "#/$defs/commandName"}
       }
     },
@@ -137,6 +137,22 @@
       "oneOf": [
         {"type": "string", "minLength": 1},
         {"type": "null"}
+      ]
+    },
+    "phasingAdapter": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["adapter_id", "phase_common_command", "phase_rare_command", "expected_version"],
+          "properties": {
+            "adapter_id": {"const": "shapeit5_phase_common_rare_v1"},
+            "phase_common_command": {"type": "string", "minLength": 1},
+            "phase_rare_command": {"type": "string", "minLength": 1},
+            "expected_version": {"const": "5.1.1"}
+          }
+        }
       ]
     }
   }
