@@ -12,8 +12,10 @@ Dernière mise à jour : 6 août 2026
 - Dernier commit de fusion V2 : `f87b04c`.
 - Environnement : Python 3.12.13 dans `.venv`.
 - Outils disponibles et fonctionnels : PLINK 1.9, KING, bcftools, Rscript et
-  packages R du projet. Les commandes `Gamma`/`gamma` présentes dans le `PATH`
-  pointent actuellement vers un document HTML invalide et ne sont pas utilisables.
+  packages R du projet. SHAPEIT5 5.1.1 est installé dans l'environnement Conda
+  isolé `effet-fondateur-shapeit5` ; `SHAPEIT5_phase_common` démarre correctement.
+  Les commandes `Gamma`/`gamma` présentes dans le `PATH` pointent actuellement
+  vers un document HTML invalide et ne sont pas utilisables.
 
 ## Bilan des avancées
 
@@ -370,7 +372,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `09` | Gel des cohortes | `VALIDE` | Oui | Oui | Génotypes explicites, revues SHA, unités et fichiers keep validés |
 | `10` | QC final | `VALIDE` | Oui | Oui | Trois politiques, exception cible et smoke réel validés |
 | `11` | Région cible | `VALIDE` | Oui | Oui | Carte GRCh38 bornée, cM monotones et smoke réel validés |
-| `12` | Phasage | `NON_FAIT` | Non | Non | Méthode à décider |
+| `12` | Référence phasée et phasage | `NON_FAIT` | Non | Non | Plan `12.0–12.7`, panel complet par défaut |
 | `13` | Haplotype fondateur et IBD local | `NON_FAIT` | Non | Non | Méthode à décider |
 | `14` | Datation du variant | `NON_FAIT` | Non | Non | Méthodes à valider |
 | `15` | LD local secondaire | `NON_FAIT` | Non | Non | Exploratoire par défaut |
@@ -378,6 +380,30 @@ ses tests, son audit et sa documentation sont cohérents.
 | `17` | Analyses de sensibilité | `NON_FAIT` | Non | Non | — |
 | `18` | Visualisations consolidées | `NON_FAIT` | Non | Non | — |
 | `19` | Rapport et revue finale | `NON_FAIT` | Non | Non | — |
+
+### Découpage opérationnel de l'étape 12
+
+L'étape reste générique pour tout variant autosomique. DOCK6 et le chromosome
+19 ne sont que la première configuration d'étude. Le panel principal utilise
+par défaut tous les échantillons et toutes les populations de la référence
+phasée ; les sous-populations sont réservées aux analyses de sensibilité.
+
+| Sous-étape | Responsabilité | Statut | Validation attendue |
+|---:|---|---|---|
+| `12.0` | Figer le contrat et choisir l'adaptateur de phasage | `NON_FAIT` | Version, licence, GRCh38, pedigree, formats et paramètres documentés |
+| `12.1` | Résoudre le panel depuis un catalogue versionné | `NON_FAIT` | Fournisseur, release, chromosome, URL, README et empreintes officiels |
+| `12.2` | Télécharger ou réutiliser le cache immuable | `NON_FAIT` | Verrou, téléchargement atomique, MD5 officiel, SHA-256 local et mode hors ligne |
+| `12.3` | Extraire la fenêtre de référence avec tous les échantillons | `NON_FAIT` | VCF régional bgzip/indexé, génotypes phasés et assemblage concordant |
+| `12.4` | Normaliser et harmoniser référence/ACPA | `NON_FAIT` | Correspondance assemblage+chromosome+position+REF+ALT et ambiguïtés explicites |
+| `12.5` | Construire les entrées étude, pedigree et référence | `NON_FAIT` | Variant cible conservé même absent du panel, ordre et individus concordants |
+| `12.6` | Exécuter l'adaptateur et attribuer le chromosome porteur | `NON_FAIT` | Phase, transmissions, confiance, erreurs externes et zones non fiables auditées |
+| `12.7` | Publier le QC, les haplotypes et le smoke test | `NON_FAIT` | Fixtures synthétiques, reprise cache, test réel temporaire et audit complet |
+
+Les sous-étapes `12.1–12.5` doivent pouvoir être testées sans lancer le logiciel
+de phasage. Un échec d'empreinte, d'assemblage ou d'allèle doit donc bloquer
+avant l'opération externe coûteuse. Le cache de référence est partagé entre les
+runs, mais chaque run enregistre exactement la release, les paramètres et les
+empreintes qu'il consomme.
 
 ### Audits qualité par groupe de cinq étapes
 
@@ -430,9 +456,9 @@ sélection gloutonne et des groupes témoins configurés restent documentées.
 
 ## Priorités de la prochaine session
 
-1. Décider puis implémenter l'adaptateur de phasage de l'étape `12`, avec
-   compatibilité GRCh38, prise en charge du pedigree et stratégie de référence
-   explicitement documentées.
+1. Réaliser `12.0–12.4` : figer le contrat de l'adaptateur, créer le catalogue
+   et le cache de références, extraire le panel complet puis harmoniser ses
+   variants avec les marqueurs ACPA avant tout lancement de phasage.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
 3. Préparer les revues réelles `kinship_exclusion_approval` et
@@ -462,6 +488,13 @@ sélection gloutonne et des groupes témoins configurés restent documentées.
   position, REF et ALT ; conserver les identifiants de sonde et rsID comme
   annotations, sans exclure un marqueur uniquement parce que son rsID manque.
 - Générer chaque figure uniquement depuis des sorties et audits du run courant.
+- Utiliser par défaut toutes les populations du panel phasé de référence ; les
+  sélections de populations ne servent qu'aux analyses de sensibilité.
+- Ne jamais envoyer les données privées de l'étude vers un service externe ; le
+  réseau ne sert qu'à acquérir les références publiques dans un cache immuable.
+- Conserver le variant cible dans les données de l'étude même s'il est absent du
+  panel, et aligner les variants d'abord par assemblage, chromosome, position,
+  REF et ALT plutôt que par rsID ou identifiant de sonde.
 - Archiver un script V1 seulement après cartographie de ses dépendances et
   validation de son remplacement V2.
 
