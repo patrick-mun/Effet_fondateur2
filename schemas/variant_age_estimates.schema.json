@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/variant_age_estimates.schema.json",
+  "title": "Estimations Gamma de l'âge du variant",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["METHOD_ID", "MODEL", "ANALYSIS_STATUS", "N_UNITS", "EFFECTIVE_N", "RHO", "ESTIMATE_GENERATIONS", "CI_LOWER_GENERATIONS", "CI_UPPER_GENERATIONS", "CONFIDENCE_LEVEL", "PRIMARY", "EXCLUSION_CODE"],
+    "null_value": "", "primary_key": ["METHOD_ID", "MODEL"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "count": {"type": "string", "pattern": "^[0-9]+$"},
+    "decimal": {"type": "string", "pattern": "^-?[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$"},
+    "nullableDecimal": {"oneOf": [{"$ref": "#/$defs/decimal"}, {"type": "null"}]},
+    "nullableIdentifier": {"oneOf": [{"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"}, {"type": "null"}]},
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["METHOD_ID", "MODEL", "ANALYSIS_STATUS", "N_UNITS", "EFFECTIVE_N", "RHO", "ESTIMATE_GENERATIONS", "CI_LOWER_GENERATIONS", "CI_UPPER_GENERATIONS", "CONFIDENCE_LEVEL", "PRIMARY", "EXCLUSION_CODE"],
+      "properties": {
+        "METHOD_ID": {"const": "gamma_gandolfo_2014_v1"}, "MODEL": {"enum": ["CORRELATED", "INDEPENDENT"]},
+        "ANALYSIS_STATUS": {"enum": ["PRIMARY", "EXPLORATORY", "NOT_ESTIMATED"]}, "N_UNITS": {"$ref": "#/$defs/count"},
+        "EFFECTIVE_N": {"$ref": "#/$defs/nullableDecimal"}, "RHO": {"$ref": "#/$defs/nullableDecimal"},
+        "ESTIMATE_GENERATIONS": {"$ref": "#/$defs/nullableDecimal"}, "CI_LOWER_GENERATIONS": {"$ref": "#/$defs/nullableDecimal"},
+        "CI_UPPER_GENERATIONS": {"$ref": "#/$defs/nullableDecimal"}, "CONFIDENCE_LEVEL": {"$ref": "#/$defs/decimal"},
+        "PRIMARY": {"type": "boolean"}, "EXCLUSION_CODE": {"$ref": "#/$defs/nullableIdentifier"}
+      }
+    }
+  }
+}

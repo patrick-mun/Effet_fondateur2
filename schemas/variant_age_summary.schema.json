@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/variant_age_summary.schema.json",
+  "title": "Résumé interne de datation du variant",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "method_id", "status", "primary_model", "included_unit_count", "minimum_units_for_estimate", "minimum_units_for_primary", "estimate_generations", "confidence_lower_generations", "confidence_upper_generations", "confidence_level", "chance_sharing_correction_applied", "manual_validation_required"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"}, "method_id": {"const": "gamma_gandolfo_2014_v1"},
+    "status": {"enum": ["PRIMARY_ESTIMATE", "EXPLORATORY_ONLY", "NOT_ESTIMATED"]}, "primary_model": {"const": "CORRELATED"},
+    "included_unit_count": {"type": "integer", "minimum": 0}, "minimum_units_for_estimate": {"type": "integer", "minimum": 3},
+    "minimum_units_for_primary": {"type": "integer", "minimum": 5},
+    "estimate_generations": {"type": ["number", "null"], "exclusiveMinimum": 0},
+    "confidence_lower_generations": {"type": ["number", "null"], "exclusiveMinimum": 0},
+    "confidence_upper_generations": {"type": ["number", "null"], "exclusiveMinimum": 0},
+    "confidence_level": {"type": "number", "exclusiveMinimum": 0.5, "exclusiveMaximum": 1},
+    "chance_sharing_correction_applied": {"type": "boolean"}, "manual_validation_required": {"const": true}
+  }
+}

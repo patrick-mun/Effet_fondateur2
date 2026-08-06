@@ -17,9 +17,10 @@ explicitement qu'aucun appel IBD n'est effectué.
 - La cohorte primaire est `target_carriers_independent` gelée à l'étape 09.
 - Seules les attributions `H1` ou `H2` marquées `PASS` à l'étape 12 sont incluses.
 - Une phase non fiable reste visible avec `PHASING_UNRELIABLE`.
-- Un porteur homozygote cible reste visible avec
-  `TARGET_HOMOZYGOUS_TWO_CHROMOSOMES` et n'est pas réduit arbitrairement à un
-  chromosome.
+- Un porteur homozygote cible `BOTH` compte comme une seule unité familiale. Son
+  segment est défini par le partage continu de marqueurs homozygotes identiques,
+  conformément au cas récessif de la méthode Gamma ; les marqueurs hétérozygotes
+  ne sont pas transformés artificiellement en allèle ancestral.
 - La copie ALT du GT cible phasé est recontrôlée avant l'analyse.
 
 ## Détection du segment
@@ -30,8 +31,12 @@ tous les chromosomes porteurs sélectionnés possèdent le même allèle appelé
 premier manque ou la première discordance arrête le segment. Aucune tolérance de
 mismatch ni interpolation allélique n'est appliquée.
 
-Les limites sont inclusives. `LEFT_LENGTH_CM` et `RIGHT_LENGTH_CM` sont des
-distances positives ou nulles depuis la cible, jamais des positions absolues.
+Les limites individuelles sont les extensions maximales gauche et droite que le
+chromosome partage continûment avec au moins un autre chromosome porteur
+indépendant ; les deux bras peuvent avoir des comparateurs différents. Le
+consensus primaire reste, lui, l'intersection exacte de tous les porteurs. Les
+limites sont inclusives. `LEFT_LENGTH_CM` et `RIGHT_LENGTH_CM` sont des distances
+positives ou nulles depuis la cible, jamais des positions absolues.
 Le profil générique exige au moins trois unités indépendantes et deux marqueurs
 informatifs de chaque côté. Une insuffisance publie `NO_FOUNDER_CONCLUSION`.
 

@@ -24,7 +24,7 @@
         "TARGET_VARIANT_ID": {"$ref": "#/$defs/identifier"}, "LEFT_BOUND_BP": {"$ref": "#/$defs/integer"},
         "TARGET_BP": {"$ref": "#/$defs/integer"}, "RIGHT_BOUND_BP": {"$ref": "#/$defs/integer"},
         "LEFT_LENGTH_CM": {"$ref": "#/$defs/decimal"}, "RIGHT_LENGTH_CM": {"$ref": "#/$defs/decimal"},
-        "PHASING_CONFIDENCE": {"$ref": "#/$defs/nullableDecimal"}, "SEGMENT_METHOD": {"const": "target_centered_exact_ibs_v1"},
+        "PHASING_CONFIDENCE": {"$ref": "#/$defs/nullableDecimal"}, "SEGMENT_METHOD": {"enum": ["target_centered_exact_ibs_v1", "target_centered_pairwise_max_ibs_v1"]},
         "SEGMENT_STATUS": {"enum": ["INCLUDED", "INSUFFICIENT", "EXCLUDED"]}, "EXCLUSION_CODE": {"$ref": "#/$defs/nullableIdentifier"}
       }
     }

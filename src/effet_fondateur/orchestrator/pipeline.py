@@ -252,6 +252,20 @@ INFER_FOUNDER_HAPLOTYPE_STAGE = StageDefinition(
     ),
 )
 
+ESTIMATE_VARIANT_AGE_STAGE = StageDefinition(
+    stage_id="14",
+    stage_name="estimate_variant_age",
+    module="effet_fondateur.stages.estimate_variant_age",
+    critical=True,
+    dependencies=("infer_founder_haplotype",),
+    config_input_files=(),
+    required_artifact_ids=(
+        "founder_segments",
+        "founder_consensus",
+        "founder_analysis_summary",
+    ),
+)
+
 DEFAULT_STAGE_DEFINITIONS = (
     SYNTHETIC_STAGE,
     VALIDATE_SOURCES_STAGE,
@@ -267,6 +281,7 @@ DEFAULT_STAGE_DEFINITIONS = (
     PREPARE_TARGET_REGION_STAGE,
     PHASE_TARGET_REGION_STAGE,
     INFER_FOUNDER_HAPLOTYPE_STAGE,
+    ESTIMATE_VARIANT_AGE_STAGE,
 )
 
 

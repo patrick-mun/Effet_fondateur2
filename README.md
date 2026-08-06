@@ -235,6 +235,16 @@ Le résultat reste un candidat **IBS** compatible avec un ancêtre commun et ne
 constitue jamais une preuve **IBD** sans méthode IBD externe validée. Le contrat
 est documenté dans `docs/modules/founder_haplotype.md`.
 
+L'étape `14_estimate_variant_age` consomme exclusivement les bras individuels
+gauche/droite en cM publiés par l'étape 13. Elle implémente directement Gamma
+selon Gandolfo, Bahlo et Speed (2014), correction de bord comprise, sans appeler
+le faux exécutable historique `Gamma`. Le modèle corrélé est primaire pour le
+contexte insulaire ; le modèle indépendant, le leave-one-family-out et les
+conversions à 25/28/30 ans par génération sont des sensibilités. Une estimation
+est exploratoire avec 3–4 familles indépendantes, primaire à partir de 5, et
+absente sous 3. Le contrat est documenté dans
+`docs/modules/variant_age.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est
