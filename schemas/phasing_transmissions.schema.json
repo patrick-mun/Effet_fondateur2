@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/phasing_transmissions.schema.json",
+  "title": "Transmission familiale au variant cible phasé",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["CHILD_SAMPLE_ID", "FATHER_SAMPLE_ID", "MOTHER_SAMPLE_ID", "CHILD_PHASED_GT", "TRANSMISSION_STATUS", "PATERNAL_CHILD_HAPLOTYPE", "MATERNAL_CHILD_HAPLOTYPE"],
+    "null_value": "",
+    "primary_key": ["CHILD_SAMPLE_ID"],
+    "allow_empty": true,
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "stableIdentifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "nullableIdentifier": {"oneOf": [{"$ref": "#/$defs/stableIdentifier"}, {"type": "null"}]},
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["CHILD_SAMPLE_ID", "FATHER_SAMPLE_ID", "MOTHER_SAMPLE_ID", "CHILD_PHASED_GT", "TRANSMISSION_STATUS", "PATERNAL_CHILD_HAPLOTYPE", "MATERNAL_CHILD_HAPLOTYPE"],
+      "properties": {
+        "CHILD_SAMPLE_ID": {"$ref": "#/$defs/stableIdentifier"},
+        "FATHER_SAMPLE_ID": {"$ref": "#/$defs/nullableIdentifier"},
+        "MOTHER_SAMPLE_ID": {"$ref": "#/$defs/nullableIdentifier"},
+        "CHILD_PHASED_GT": {"pattern": "^[01]\\|[01]$"},
+        "TRANSMISSION_STATUS": {"enum": ["DIRECT", "SWAPPED", "AMBIGUOUS", "DUO_COMPATIBLE"]},
+        "PATERNAL_CHILD_HAPLOTYPE": {"enum": ["H1", "H2", "UNRESOLVED", null]},
+        "MATERNAL_CHILD_HAPLOTYPE": {"enum": ["H1", "H2", "UNRESOLVED", null]}
+      }
+    }
+  }
+}

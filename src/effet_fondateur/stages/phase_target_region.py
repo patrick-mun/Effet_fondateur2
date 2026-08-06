@@ -1,4 +1,4 @@
-"""Étape 12.1–12.5 : référence, harmonisation et entrées SHAPEIT5."""
+"""Étape 12.1–12.6 : préparation, phasage et attribution du chromosome porteur."""
 
 from __future__ import annotations
 
@@ -22,10 +22,16 @@ from effet_fondateur.contracts import (
 from effet_fondateur.orchestrator.state import utc_now
 from effet_fondateur.phasing import (
     PreparedShapeit5Inputs,
+    Shapeit5ExecutionBlockError,
+    Shapeit5ExecutionError,
+    Shapeit5ExecutionExternalError,
+    Shapeit5PhasingResult,
     Shapeit5InputBlockError,
     Shapeit5InputError,
     Shapeit5InputExternalError,
     build_shapeit5_inputs,
+    parse_shapeit5_adapter_config,
+    run_shapeit5_phasing,
 )
 from effet_fondateur.references import (
     ExtractedReferenceWindow,
@@ -83,6 +89,15 @@ def _positive_number(parameters: dict[str, Any], name: str, default: float) -> f
     return float(value)
 
 
+def _bounded_number(
+    parameters: dict[str, Any], name: str, default: float, minimum: float, maximum: float
+) -> float:
+    value = _positive_number(parameters, name, default)
+    if not minimum <= value <= maximum:
+        raise PhaseTargetRegionInputError(f"invalid_parameter:{name}")
+    return value
+
+
 def _boolean(parameters: dict[str, Any], name: str, default: bool) -> bool:
     value = parameters.get(name, default)
     if not isinstance(value, bool):
@@ -124,6 +139,17 @@ def _parameters(parameters: dict[str, Any]) -> dict[str, Any]:
         ),
         "shapeit5_input_timeout_seconds": _positive_number(
             parameters, "shapeit5_input_timeout_seconds", 300
+        ),
+        "shapeit5_execution_timeout_seconds": _positive_number(
+            parameters, "shapeit5_execution_timeout_seconds", 7_200
+        ),
+        "shapeit5_threads": _positive_integer(parameters, "shapeit5_threads", 1),
+        "shapeit5_seed": _positive_integer(parameters, "shapeit5_seed", 15_052_011),
+        "shapeit5_effective_size": _positive_integer(
+            parameters, "shapeit5_effective_size", 15_000
+        ),
+        "minimum_phase_confidence": _bounded_number(
+            parameters, "minimum_phase_confidence", 0.9, 0.5, 1.0
         ),
     }
 
@@ -401,8 +427,37 @@ def _shapeit5_input_artifacts(
     ]
 
 
+def _shapeit5_phasing_artifacts(
+    stage_inputs: dict[str, Any], output_dir: Path, phased: Shapeit5PhasingResult,
+    assembly: str, sample_set_id: str, variant_set_id: str,
+) -> list[dict[str, Any]]:
+    specifications = (
+        ("shapeit5_common_bcf", phased.common_bcf_path, "application/octet-stream", None),
+        ("shapeit5_common_index", phased.common_index_path, "application/octet-stream", None),
+        ("shapeit5_final_bcf", phased.final_bcf_path, "application/octet-stream", None),
+        ("shapeit5_final_index", phased.final_index_path, "application/octet-stream", None),
+        ("shapeit5_common_log", phased.common_log_path, "text/plain", None),
+        ("shapeit5_rare_log", phased.rare_log_path, "text/plain", None),
+        ("carrier_haplotypes", phased.carrier_haplotypes_path, "text/tab-separated-values", "carrier_haplotypes.schema.json"),
+        ("phasing_transmissions", phased.transmissions_path, "text/tab-separated-values", "phasing_transmissions.schema.json"),
+        ("phasing_unreliable_regions", phased.unreliable_regions_path, "text/tab-separated-values", "phasing_unreliable_regions.schema.json"),
+        ("shapeit5_phasing_manifest", phased.manifest_path, "application/json", "shapeit5_phasing_manifest.schema.json"),
+    )
+    return [
+        _artifact(
+            physical_path=path, relative_path=path.relative_to(output_dir),
+            stage_inputs=stage_inputs, artifact_id=artifact_id,
+            artifact_type=artifact_id, media_type=media_type,
+            schema_name=schema_name, assembly=assembly,
+            sample_set_id=sample_set_id, variant_set_id=variant_set_id,
+            sensitivity="sensitive_genetic",
+        )
+        for artifact_id, path, media_type, schema_name in specifications
+    ]
+
+
 def execute(stage_inputs_path: Path, output_dir: Path) -> int:
-    """Prépare la référence et les entrées validées sans lancer SHAPEIT5."""
+    """Prépare les entrées, exécute SHAPEIT5 et attribue les haplotypes porteurs."""
     started_at = utc_now()
     started_clock = monotonic()
     stage_inputs = read_json(stage_inputs_path)
@@ -419,6 +474,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         "target_genetic_map",
         "phasing_input_manifest",
         "samples_master",
+        "target_genotype_audit",
     )
     input_artifacts = {
         artifact_id: _artifact_by_id(stage_inputs, artifact_id)
@@ -511,6 +567,23 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         bcftools_command=bcftools_command,
         timeout_seconds=parameters["shapeit5_input_timeout_seconds"],
     )
+    phasing_adapter = parse_shapeit5_adapter_config(config["tools"]["phasing_adapter"])
+    phased_shapeit5 = run_shapeit5_phasing(
+        input_manifest_path=prepared_shapeit5.manifest_path,
+        study_vcf_path=prepared_shapeit5.study_vcf_path,
+        reference_vcf_path=harmonized.vcf_path,
+        genetic_map_path=prepared_shapeit5.genetic_map_path,
+        pedigree_path=prepared_shapeit5.pedigree_path,
+        target_genotype_audit_path=paths["target_genotype_audit"],
+        output_dir=output_dir / "shapeit5_phasing",
+        adapter_config=phasing_adapter,
+        bcftools_command=bcftools_command,
+        threads=parameters["shapeit5_threads"],
+        seed=parameters["shapeit5_seed"],
+        effective_size=parameters["shapeit5_effective_size"],
+        minimum_phase_confidence=parameters["minimum_phase_confidence"],
+        timeout_seconds=parameters["shapeit5_execution_timeout_seconds"],
+    )
     output_artifacts = _output_artifacts(
         stage_inputs,
         output_dir,
@@ -523,6 +596,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         phasing_manifest["variant_set_id"],
     )
     shapeit5_manifest = read_json(prepared_shapeit5.manifest_path)
+    shapeit5_phasing_manifest = read_json(phased_shapeit5.manifest_path)
     output_artifacts.extend(
         _shapeit5_input_artifacts(
             stage_inputs,
@@ -531,6 +605,12 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             assembly,
             phasing_manifest["sample_set_id"],
             shapeit5_manifest["study_variant_set_id"],
+        )
+    )
+    output_artifacts.extend(
+        _shapeit5_phasing_artifacts(
+            stage_inputs, output_dir, phased_shapeit5, assembly,
+            phasing_manifest["sample_set_id"], shapeit5_manifest["study_variant_set_id"],
         )
     )
     stage_outputs = {
@@ -548,7 +628,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         "run_id": stage_inputs["run_id"],
         "stage_id": stage_inputs["stage_id"],
         "stage_name": stage_inputs["stage_name"],
-        "method_id": "reference_and_shapeit5_input_preparation_v1",
+        "method_id": "shapeit5_common_rare_carrier_assignment_v1",
         "signature": stage_inputs["signature"],
         "started_at": started_at,
         "completed_at": utc_now(),
@@ -567,6 +647,16 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
                 "configured": config["tools"]["plink"],
                 "version": shapeit5_manifest["tools"]["plink"],
             },
+            {
+                "tool": "SHAPEIT5_phase_common",
+                "configured": phasing_adapter.phase_common_command,
+                "version": shapeit5_phasing_manifest["software_version"],
+            },
+            {
+                "tool": "SHAPEIT5_phase_rare",
+                "configured": phasing_adapter.phase_rare_command,
+                "version": shapeit5_phasing_manifest["software_version"],
+            },
         ],
         "counts": {
             "reference_samples": harmonization_manifest["sample_count"],
@@ -577,6 +667,8 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             "harmonization_statuses": dict(sorted(status_counts.items())),
             "shapeit5_study_variants": prepared_shapeit5.study_variant_count,
             "shapeit5_pedigree_records": prepared_shapeit5.pedigree_record_count,
+            "shapeit5_carriers": phased_shapeit5.carrier_count,
+            "shapeit5_reliable_carriers": phased_shapeit5.reliable_carrier_count,
         },
         "metrics": {
             "panel_id": resolved.panel_id,
@@ -590,6 +682,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             ],
             "shapeit5_target_role": shapeit5_manifest["target_variant_role"],
             "shapeit5_input_region": shapeit5_manifest["input_region"],
+            "minimum_phase_confidence": parameters["minimum_phase_confidence"],
         },
         "exclusions": [
             {
@@ -599,16 +692,14 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             }
             for status, count in sorted(ineligible_counts.items())
         ],
-        "warnings": (
-            [
+        "warnings": ([
                 {
                     "code": "target_variant_absent_from_reference",
                     "count": 1,
                 }
-            ]
-            if harmonization_manifest["checks"]["target_variant"] == "STUDY_ONLY"
-            else []
-        ),
+            ] if harmonization_manifest["checks"]["target_variant"] == "STUDY_ONLY" else [])
+            + ([{"code": "carrier_phase_unreliable", "count": phased_shapeit5.carrier_count - phased_shapeit5.reliable_carrier_count}]
+               if phased_shapeit5.reliable_carrier_count < phased_shapeit5.carrier_count else []),
         "checks": [
             {"check": "reference_catalog", "status": "PASS"},
             {"check": "reference_cache_integrity", "status": "PASS"},
@@ -619,14 +710,20 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             {"check": "shapeit5_sample_identity_and_order", "status": "PASS"},
             {"check": "shapeit5_pedigree_identity", "status": "PASS"},
             {"check": "shapeit5_inputs", "status": "PASS"},
+            {"check": "shapeit5_common_phase", "status": "PASS"},
+            {"check": "shapeit5_rare_phase", "status": "PASS"},
+            {"check": "target_carrier_haplotype_assignment", "status": "PASS"},
         ],
         "known_limits": [
             "Aucun gauche-alignement dépendant d'une FASTA n'est effectué ; les entrées GRCh38 doivent déjà utiliser une représentation minimale.",
             "Aucune correction automatique de brin n'est autorisée.",
-            "Cette étape construit les entrées validées mais ne lance pas SHAPEIT5.",
+            "Le score PP de SHAPEIT5 n'est disponible que pour les singletons lorsque --score-singletons est activé ; les autres hétérozygotes sont explicitement marqués non fiables.",
+            "Avec plusieurs threads, SHAPEIT5 avertit que la graine seule ne garantit pas une reproduction bit à bit.",
         ],
         "expected_visualizations": [],
-        "manual_validation_required": False,
+        "manual_validation_required": (
+            phased_shapeit5.reliable_carrier_count < phased_shapeit5.carrier_count
+        ),
     }
     validate_json_document(audit, "stage_audit.schema.json")
     atomic_write_json(output_dir / "audit.json", audit)
@@ -650,6 +747,7 @@ def _classify_error(error: Exception) -> int:
             ReferenceWindowIntegrityError,
             ReferenceHarmonizationIntegrityError,
             Shapeit5InputBlockError,
+            Shapeit5ExecutionBlockError,
         ),
     ):
         return 4
@@ -661,6 +759,8 @@ def _classify_error(error: Exception) -> int:
         return 3
     if isinstance(error, Shapeit5InputExternalError):
         return 3
+    if isinstance(error, Shapeit5ExecutionExternalError):
+        return 3
     if isinstance(error, ReferenceCacheError):
         if message.startswith("reference_download_") or message.endswith("lock_timeout"):
             return 3
@@ -670,6 +770,7 @@ def _classify_error(error: Exception) -> int:
         (
             PhaseTargetRegionInputError,
             Shapeit5InputError,
+            Shapeit5ExecutionError,
             ReferenceCatalogError,
             DocumentValidationError,
             OSError,

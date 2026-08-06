@@ -82,6 +82,7 @@ def _populate_cache(catalog_path: Path, cache_dir: Path, contents: dict[str, byt
 def _write_fake_bcftools(path: Path) -> None:
     script = f'''#!{sys.executable}
 import pathlib
+import shutil
 import sys
 
 arguments = sys.argv[1:]
@@ -98,6 +99,11 @@ if arguments[:2] == ["query", "--list-samples"]:
     if sample_sidecar.is_file():
         print(sample_sidecar.read_text(), end="")
         raise SystemExit(0)
+    if pathlib.Path(arguments[-1]).name in {
+        "study.shapeit5.vcf.gz", "common.phased.bcf", "target.phased.bcf"
+    }:
+        print("sample_1\\nsample_2\\nsample_3")
+        raise SystemExit(0)
     for sample_index in range(1, 3203):
         print(f"HG{{sample_index:05d}}")
     raise SystemExit(0)
@@ -110,6 +116,15 @@ if arguments[:2] == ["index", "--tbi"]:
 if arguments[:2] == ["index", "--nrecords"]:
     print("1")
     raise SystemExit(0)
+if arguments[0] == "+fill-tags":
+    source = pathlib.Path(arguments[1])
+    destination = pathlib.Path(arguments[arguments.index("--output") + 1])
+    shutil.copyfile(source, destination)
+    for suffix in (".samples", ".variants"):
+        source_sidecar = pathlib.Path(str(source) + suffix)
+        if source_sidecar.is_file():
+            shutil.move(source_sidecar, pathlib.Path(str(destination) + suffix))
+    raise SystemExit(0)
 if arguments[0] == "query" and "--include" in arguments:
     raise SystemExit(0)
 if arguments[0] == "norm":
@@ -119,6 +134,23 @@ if arguments[0] == "view" and "--types" in arguments:
     pathlib.Path(arguments[arguments.index("--output") + 1]).write_bytes(b"harmonized vcf")
     raise SystemExit(0)
 if arguments[0] == "query" and "--format" in arguments:
+    if arguments[arguments.index("--format") + 1] == "%INFO/AC\\\\t%INFO/AN\\\\n":
+        print("1\\t6")
+        print("2\\t6")
+        raise SystemExit(0)
+    format_text = arguments[arguments.index("--format") + 1]
+    input_name = pathlib.Path(arguments[-1]).name
+    if "%GT" in format_text and input_name == "study.shapeit5.vcf.gz":
+        print("chr19\\t1900\\trs19\\tA\\tG\\t0/1\\t0/0\\t0/0")
+        print("chr19\\t100000\\ttarget_GRCh38_1_100000_A_G\\tA\\tG\\t0/1\\t0/0\\t0/0")
+        raise SystemExit(0)
+    if "%GT" in format_text and input_name == "common.phased.bcf":
+        print("chr19\\t1900\\trs19\\tA\\tG\\t1|0\\t0|0\\t0|0")
+        raise SystemExit(0)
+    if "%PP" in format_text and input_name == "target.phased.bcf":
+        print("chr19\\t1900\\trs19\\tA\\tG\\t1|0\\t.\\t0|0\\t.\\t0|0\\t.")
+        print("chr19\\t100000\\ttarget_GRCh38_1_100000_A_G\\tA\\tG\\t1|0\\t0.95\\t0|0\\t.\\t0|0\\t.")
+        raise SystemExit(0)
     variant_sidecar = pathlib.Path(arguments[-1] + ".variants")
     if variant_sidecar.is_file():
         print(variant_sidecar.read_text(), end="")
@@ -144,7 +176,7 @@ if arguments == ["--version"]:
     print("PLINK v1.90 synthetic")
     raise SystemExit(0)
 output_prefix = pathlib.Path(arguments[arguments.index("--out") + 1]) if "--out" in arguments else None
-if output_prefix is None or output_prefix.name != "study.shapeit5":
+if output_prefix is None or output_prefix.name != "study.plink_export":
     os.execv({str(delegated_plink)!r}, [{str(delegated_plink)!r}, *arguments])
 base_prefix = pathlib.Path(arguments[arguments.index("--bfile") + 1])
 selected_ids = set(pathlib.Path(arguments[arguments.index("--extract") + 1]).read_text().split())
@@ -171,6 +203,28 @@ pathlib.Path(str(output_vcf) + ".variants").write_text(
     path.chmod(0o755)
 
 
+def _write_fake_shapeit5(path: Path, component: str) -> None:
+    script = f'''#!{sys.executable}
+import pathlib
+import sys
+
+arguments = sys.argv[1:]
+if arguments == ["--help"]:
+    print("[SHAPEIT5] {component}")
+    print("  * Version       : 5.1.1 / commit = test")
+    raise SystemExit(0)
+output_path = pathlib.Path(arguments[arguments.index("--output") + 1])
+output_path.write_bytes(b"synthetic phased bcf")
+pathlib.Path(str(output_path) + ".csi").write_bytes(b"synthetic csi")
+if "--log" in arguments:
+    pathlib.Path(arguments[arguments.index("--log") + 1]).write_text("synthetic common log\\n")
+else:
+    print("synthetic rare log")
+'''
+    path.write_text(script, encoding="utf-8")
+    path.chmod(0o755)
+
+
 def _prepare_phase_inputs(tmp_path: Path) -> tuple[Path, Path]:
     config_path, runs_dir = prepare_target_region_inputs(tmp_path)
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
@@ -188,9 +242,19 @@ def _prepare_phase_inputs(tmp_path: Path) -> tuple[Path, Path]:
     _write_fake_bcftools(bcftools_path)
     shapeit5_plink_path = tmp_path / "shapeit5_plink"
     _write_shapeit5_plink(shapeit5_plink_path, Path(config["tools"]["plink"]))
+    common_path = tmp_path / "SHAPEIT5_phase_common"
+    rare_path = tmp_path / "SHAPEIT5_phase_rare"
+    _write_fake_shapeit5(common_path, "phase_common")
+    _write_fake_shapeit5(rare_path, "phase_rare")
     config["inputs"]["reference_panel_catalog"] = str(catalog_path)
     config["tools"]["bcftools"] = str(bcftools_path)
     config["tools"]["plink"] = str(shapeit5_plink_path)
+    config["tools"]["phasing_adapter"] = {
+        "adapter_id": "shapeit5_phase_common_rare_v1",
+        "phase_common_command": str(common_path),
+        "phase_rare_command": str(rare_path),
+        "expected_version": "5.1.1",
+    }
     config["stages"]["phase_target_region"] = {
         "enabled": True,
         "parameters": {
@@ -204,6 +268,11 @@ def _prepare_phase_inputs(tmp_path: Path) -> tuple[Path, Path]:
             "reference_extract_threads": 1,
             "minimum_common_variants": 1,
             "shapeit5_input_timeout_seconds": 30,
+            "shapeit5_execution_timeout_seconds": 30,
+            "shapeit5_threads": 1,
+            "shapeit5_seed": 15052011,
+            "shapeit5_effective_size": 15000,
+            "minimum_phase_confidence": 0.9,
         },
     }
     config_path.write_text(
@@ -241,6 +310,16 @@ def test_stage_12_publishes_reference_and_harmonization_then_reuses(
         "shapeit5_variant_selection",
         "shapeit5_sample_mapping",
         "shapeit5_inputs_manifest",
+        "shapeit5_common_bcf",
+        "shapeit5_common_index",
+        "shapeit5_final_bcf",
+        "shapeit5_final_index",
+        "shapeit5_common_log",
+        "shapeit5_rare_log",
+        "carrier_haplotypes",
+        "phasing_transmissions",
+        "phasing_unreliable_regions",
+        "shapeit5_phasing_manifest",
     }
     rows = _read_tsv(stage_dir / "reference_harmonization" / "variant_harmonization.tsv")
     assert rows[0]["HARMONIZATION_STATUS"] == "MATCHED_DIRECT"
@@ -276,6 +355,20 @@ def test_stage_12_publishes_reference_and_harmonization_then_reuses(
         "sample_2",
         "sample_3",
     ]
+    carrier_rows = _read_tsv(
+        stage_dir / "shapeit5_phasing" / "carrier_haplotypes.tsv"
+    )
+    assert carrier_rows[0]["SAMPLE_ID"] == "sample_1"
+    assert carrier_rows[0]["CARRIER_HAPLOTYPE"] == "H1"
+    assert carrier_rows[0]["CONFIDENCE_STATUS"] == "SCORED_PASS"
+    assert carrier_rows[0]["RELIABILITY_STATUS"] == "PASS"
+    phasing_manifest = json.loads(
+        (stage_dir / "shapeit5_phasing" / "shapeit5_phasing_manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert phasing_manifest["carrier_count"] == 1
+    assert phasing_manifest["reliable_carrier_count"] == 1
 
     resume_pipeline(run_dir)
 
@@ -309,12 +402,28 @@ def test_stage_12_error_mapping_uses_standard_codes(monkeypatch, tmp_path: Path)
     monkeypatch.setattr(phase_target_region, "execute", raise_external)
     assert phase_target_region.main(arguments) == 3
 
+    def raise_shapeit_external(*args, **kwargs):
+        raise phase_target_region.Shapeit5ExecutionExternalError(
+            "shapeit5_phase_rare_failed:8"
+        )
+
+    monkeypatch.setattr(phase_target_region, "execute", raise_shapeit_external)
+    assert phase_target_region.main(arguments) == 3
+
     def raise_block(*args, **kwargs):
         raise ReferenceHarmonizationIntegrityError(
             "target_variant_harmonization_ambiguous"
         )
 
     monkeypatch.setattr(phase_target_region, "execute", raise_block)
+    assert phase_target_region.main(arguments) == 4
+
+    def raise_shapeit_block(*args, **kwargs):
+        raise phase_target_region.Shapeit5ExecutionBlockError(
+            "phased_target_genotype_discordant"
+        )
+
+    monkeypatch.setattr(phase_target_region, "execute", raise_shapeit_block)
     assert phase_target_region.main(arguments) == 4
 
     def raise_input(*args, **kwargs):

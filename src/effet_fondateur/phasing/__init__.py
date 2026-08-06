@@ -7,6 +7,13 @@ from effet_fondateur.phasing.inputs import (
     Shapeit5InputExternalError,
     build_shapeit5_inputs,
 )
+from effet_fondateur.phasing.execution import (
+    Shapeit5ExecutionBlockError,
+    Shapeit5ExecutionError,
+    Shapeit5ExecutionExternalError,
+    Shapeit5PhasingResult,
+    run_shapeit5_phasing,
+)
 from effet_fondateur.phasing.shapeit5 import (
     SHAPEIT5_CONTRACT,
     Shapeit5AdapterConfig,
@@ -24,6 +31,10 @@ __all__ = [
     "Shapeit5InputBlockError",
     "Shapeit5InputError",
     "Shapeit5InputExternalError",
+    "Shapeit5ExecutionBlockError",
+    "Shapeit5ExecutionError",
+    "Shapeit5ExecutionExternalError",
+    "Shapeit5PhasingResult",
     "Shapeit5AdapterConfig",
     "Shapeit5ContractError",
     "Shapeit5Probe",
@@ -32,4 +43,5 @@ __all__ = [
     "build_shapeit5_inputs",
     "parse_shapeit5_adapter_config",
     "probe_shapeit5",
+    "run_shapeit5_phasing",
 ]

@@ -1078,6 +1078,16 @@ vide est valide et devra conduire `12.6` à omettre son argument. Les fichiers,
 versions d'outils, effectifs, régions et empreintes sont liés dans un manifeste
 publié atomiquement. SHAPEIT5 n'est pas lancé à cette sous-étape.
 
+**Contrat retenu en 12.6** : exécution séquentielle de `phase_common` puis
+`phase_rare` 5.1.1 avec graine, threads, `Ne`, régions et délais enregistrés.
+Les individus, variants, génotypes et erreurs mendéliennes sont comparés avant
+et après. Le chromosome porteur `H1/H2/BOTH` est dérivé du GT cible phasé et
+doit concorder avec le génotype moléculaire explicite. `--score-singletons`
+fournit le PP lorsqu'il existe ; un PP absent ou inférieur au seuil ne disparaît
+pas, mais rend l'attribution non fiable, crée une zone d'alerte et impose une
+revue manuelle. Les transmissions trio/duo restent explicites sans inventer une
+origine parentale ambiguë.
+
 **Traitements** :
 
 - phasage pedigree-aware lorsque disponible ;

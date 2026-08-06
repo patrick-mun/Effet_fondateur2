@@ -142,9 +142,9 @@ def test_rare_command_preserves_input_only_variant_path(tmp_path: Path) -> None:
         input_region="19:1000-2000",
         scaffold_region="19:900-2100",
         output_path=Path("target.phased.bcf"),
-        log_path=Path("rare.log"),
         pedigree_path=Path("pedigree.tsv"),
         threads=2,
+        score_singletons=True,
     )
 
     assert command[0] == probe.phase_rare_path
@@ -152,6 +152,8 @@ def test_rare_command_preserves_input_only_variant_path(tmp_path: Path) -> None:
     assert command[command.index("--scaffold") + 1] == "common.phased.bcf"
     assert command[command.index("--effective-size") + 1] == "15000"
     assert command[command.index("--pedigree") + 1] == "pedigree.tsv"
+    assert "--log" not in command
+    assert "--score-singletons" in command
 
 
 def test_command_rejects_default_map_substitution_and_non_bcf_output(

@@ -153,3 +153,8 @@ stages:
       reference_extract_threads: 1
       minimum_common_variants: 1
       shapeit5_input_timeout_seconds: 300
+      shapeit5_execution_timeout_seconds: 7200
+      shapeit5_threads: 1
+      shapeit5_seed: 15052011
+      shapeit5_effective_size: 15000
+      minimum_phase_confidence: 0.9

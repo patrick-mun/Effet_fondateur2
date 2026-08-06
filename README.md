@@ -212,6 +212,13 @@ REF/ALT avec bcftools. Elle publie les tables d'audit et un manifeste sans
 lancer SHAPEIT5. Le contrat est documenté dans
 `docs/modules/shapeit5_inputs.md`.
 
+La sous-étape `12.6` exécute `phase_common`, puis `phase_rare`, revalide les
+génotypes et les transmissions, et attribue `H1`, `H2` ou les deux au variant
+cible depuis le GT phasé confronté au génotype moléculaire explicite. Le score
+PP des singletons est audité ; une confiance absente ou inférieure au seuil
+conserve le résultat mais le marque non fiable et demande une revue manuelle.
+Le contrat est documenté dans `docs/modules/shapeit5_execution.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est

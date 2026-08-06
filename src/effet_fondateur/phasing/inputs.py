@@ -374,6 +374,37 @@ def _bcftools_variants(
     return variants
 
 
+def _validate_allele_counts(
+    executable: str,
+    path: Path,
+    runner: CommandRunner,
+    timeout_seconds: float,
+) -> None:
+    result = _run_checked(
+        runner,
+        [
+            executable,
+            "query",
+            "--format",
+            "%INFO/AC\\t%INFO/AN\\n",
+            str(path),
+        ],
+        timeout_seconds,
+        "bcftools_query_shapeit5_allele_counts",
+    )
+    rows = [line.split("\t") for line in result.stdout.splitlines()]
+    try:
+        counts = [(int(row[0]), int(row[1])) for row in rows if len(row) == 2]
+    except ValueError as error:
+        raise Shapeit5InputBlockError("shapeit5_allele_counts_invalid") from error
+    if (
+        not rows
+        or len(counts) != len(rows)
+        or any(allele_count < 0 or allele_number <= 0 or allele_count > allele_number for allele_count, allele_number in counts)
+    ):
+        raise Shapeit5InputBlockError("shapeit5_allele_counts_invalid")
+
+
 def _result(output_dir: Path, manifest: dict[str, Any]) -> PreparedShapeit5Inputs:
     files = manifest["files"]
     return PreparedShapeit5Inputs(
@@ -571,7 +602,7 @@ def build_shapeit5_inputs(
             ),
             encoding="utf-8",
         )
-        study_prefix = staging_dir / "study.shapeit5"
+        plink_export_prefix = staging_dir / "study.plink_export"
         _run_checked(
             command_runner,
             [
@@ -594,15 +625,33 @@ def build_shapeit5_inputs(
                 "vcf-iid",
                 "bgz",
                 "--out",
-                str(study_prefix),
+                str(plink_export_prefix),
             ],
             timeout,
             "plink_shapeit5_vcf_export",
         )
-        study_vcf_path = Path(f"{study_prefix}.vcf.gz")
+        plink_vcf_path = Path(f"{plink_export_prefix}.vcf.gz")
+        study_vcf_path = staging_dir / "study.shapeit5.vcf.gz"
         study_index_path = Path(f"{study_vcf_path}.tbi")
-        if study_vcf_path.is_symlink() or not study_vcf_path.is_file():
+        if plink_vcf_path.is_symlink() or not plink_vcf_path.is_file():
             raise Shapeit5InputExternalError("plink_shapeit5_vcf_missing")
+        _run_checked(
+            command_runner,
+            [
+                bcftools_executable,
+                "+fill-tags",
+                str(plink_vcf_path),
+                "--output-type",
+                "z",
+                "--output",
+                str(study_vcf_path),
+                "--",
+                "--tags",
+                "AC,AN",
+            ],
+            timeout,
+            "bcftools_fill_shapeit5_allele_counts",
+        )
         _run_checked(
             command_runner,
             [bcftools_executable, "index", "--tbi", str(study_vcf_path)],
@@ -638,6 +687,12 @@ def build_shapeit5_inputs(
         )
         if observed_variants != expected_variants:
             raise Shapeit5InputBlockError("shapeit5_study_variant_identity_or_order_mismatch")
+        _validate_allele_counts(
+            bcftools_executable,
+            study_vcf_path,
+            command_runner,
+            timeout,
+        )
         reference_samples = _bcftools_samples(
             bcftools_executable,
             reference_vcf_path,
@@ -687,8 +742,9 @@ def build_shapeit5_inputs(
             extract_path,
             reference_alleles_path,
             update_ids_path,
-            Path(f"{study_prefix}.log"),
-            Path(f"{study_prefix}.nosex"),
+            plink_vcf_path,
+            Path(f"{plink_export_prefix}.log"),
+            Path(f"{plink_export_prefix}.nosex"),
         ):
             if temporary_path.exists():
                 temporary_path.unlink()
@@ -732,6 +788,7 @@ def build_shapeit5_inputs(
                 "sample_identity_and_order": "PASS",
                 "pedigree_identity": "PASS",
                 "canonical_ref_alt": "PASS",
+                "allele_counts": "PASS",
                 "reference_common_variants": "PASS",
                 "target_variant_retained": "PASS",
                 "genetic_map": "PASS",

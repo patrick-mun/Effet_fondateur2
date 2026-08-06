@@ -312,6 +312,18 @@ Dernière mise à jour : 6 août 2026
     manifeste lié aux empreintes et publication atomique ;
   - intégration orchestrée, audit, codes de retour, reprise stricte et délai
     externe configurable, sans exécuter `phase_common` ni `phase_rare`.
+- Sous-étape V2 `12.6` implémentée et validée :
+  - ajout des tags `AC/AN` requis par `phase_common` dans le VCF étude `12.5` ;
+  - correction du contrat `phase_rare 5.1.1`, qui ne prend pas `--log`, avec
+    capture stdout/stderr dans un journal dédié ;
+  - exécution séquentielle `phase_common`/`phase_rare`, BCF/index CSI, versions,
+    graine, threads, `Ne`, régions et délais enregistrés ;
+  - contrôle des empreintes, individus, variants, génotypes et erreurs
+    mendéliennes avant/après, puis concordance avec le génotype cible explicite ;
+  - attribution `H1/H2/BOTH`, transmissions trio/duo, score PP des singletons,
+    zones non fiables et revue manuelle lorsque la confiance manque ;
+  - publication atomique des sorties, tables versionnées, manifeste, audit,
+    codes d'erreur et reprise stricte.
 
 ## Jeux de données actuellement disponibles
 
@@ -388,8 +400,8 @@ Dernière mise à jour : 6 août 2026
 - Tests ciblés de l'étape `07` : 8 réussis.
 - Tests ciblés de l'étape `08` : 8 réussis.
 - Tests ciblés de l'étape `09` : 7 réussis.
-- Suite moderne `tests/`, incluant les étapes `01` à `12.5` et les contrôles de
-  maintenabilité V2 : 156 réussis.
+- Suite moderne `tests/`, incluant les étapes `01` à `12.6` et les contrôles de
+  maintenabilité V2 : 159 réussis.
 - Contrôle ciblé final de la fenêtre, du cache, du catalogue, de la
   configuration, de l'orchestrateur et de SHAPEIT5 : 45 réussis.
 - Dernière exécution combinée antérieure des suites modernes et historiques :
@@ -440,6 +452,12 @@ Dernière mise à jour : 6 août 2026
   2 variants, renommage vers les identifiants maître, REF/ALT canoniques et
   index tabix valides ; la complétion d'un REF PLINK `0` par `--a2-allele` est
   également validée sur une sortie temporaire.
+- Smoke réel `12.6` avec SHAPEIT5 5.1.1 et bcftools 1.21 : 60 individus,
+  200 variants communs et une cible rare ; les gardes ont d'abord bloqué une
+  fixture avec erreurs mendéliennes puis un génotype explicite aux mauvais
+  allèles. Après correction de la fixture, les deux passes, 201 variants finaux,
+  l'indexation et l'attribution `H1` ont réussi ; le PP `0,542` a été classé
+  `UNRELIABLE` sous le seuil `0,9`, sans masquer le résultat.
 
 ## Suivi des étapes du pipeline V2
 
@@ -461,7 +479,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `09` | Gel des cohortes | `VALIDE` | Oui | Oui | Génotypes explicites, revues SHA, unités et fichiers keep validés |
 | `10` | QC final | `VALIDE` | Oui | Oui | Trois politiques, exception cible et smoke réel validés |
 | `11` | Région cible | `VALIDE` | Oui | Oui | Carte GRCh38 bornée, cM monotones et smoke réel validés |
-| `12` | Référence phasée et phasage | `EN_COURS` | Partiels | Oui | `12.0–12.5` validées, entrées SHAPEIT5 prêtes |
+| `12` | Référence phasée et phasage | `EN_COURS` | Partiels | Oui | `12.0–12.6` validées, phasage et porteurs audités |
 | `13` | Haplotype fondateur et IBD local | `NON_FAIT` | Non | Non | Méthode à décider |
 | `14` | Datation du variant | `NON_FAIT` | Non | Non | Méthodes à valider |
 | `15` | LD local secondaire | `NON_FAIT` | Non | Non | Exploratoire par défaut |
@@ -485,7 +503,7 @@ phasée ; les sous-populations sont réservées aux analyses de sensibilité.
 | `12.3` | Extraire la fenêtre de référence avec tous les échantillons | `VALIDE` | VCF régional bgzip/indexé, génotypes phasés et assemblage concordant |
 | `12.4` | Normaliser et harmoniser référence/ACPA | `VALIDE` | Étape orchestrée, schémas, reprise, codes V2, smoke bcftools réel et décision sans FASTA validés |
 | `12.5` | Construire les entrées étude, pedigree et référence | `VALIDE` | VCF/index, carte, pedigree, cible rare, ordre/identités, schémas, reprise et smoke réel validés |
-| `12.6` | Exécuter l'adaptateur et attribuer le chromosome porteur | `NON_FAIT` | Phase, transmissions, confiance, erreurs externes et zones non fiables auditées |
+| `12.6` | Exécuter l'adaptateur et attribuer le chromosome porteur | `VALIDE` | Deux passes réelles, transmissions, PP, Mendel, génotypes explicites, zones non fiables et reprise validés |
 | `12.7` | Publier le QC, les haplotypes et le smoke test | `NON_FAIT` | Fixtures synthétiques, reprise cache, test réel temporaire et audit complet |
 
 Les sous-étapes `12.1–12.5` doivent pouvoir être testées sans lancer le logiciel
@@ -545,8 +563,8 @@ sélection gloutonne et des groupes témoins configurés restent documentées.
 
 ## Priorités de la prochaine session
 
-1. Réaliser `12.6` : exécuter `phase_common` puis `phase_rare`, contrôler les
-   transmissions et attribuer le chromosome porteur avec une confiance auditée.
+1. Réaliser `12.7` : consolider le QC, publier les haplotypes et visualisations,
+   puis ajouter le smoke test final reproductible de l'étape `12`.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
 3. Préparer les revues réelles `kinship_exclusion_approval` et
@@ -597,5 +615,6 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action attendue est `12.6` : consommer le manifeste et les entrées validées de
-`12.5`, exécuter l'adaptateur SHAPEIT5 et attribuer le chromosome porteur.
+action attendue est `12.7` : consolider le QC et les haplotypes produits par
+`12.6`, ajouter les visualisations et fermer la validation complète de l'étape
+`12`.

@@ -56,11 +56,12 @@
     "checks": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["sample_identity_and_order", "pedigree_identity", "canonical_ref_alt", "reference_common_variants", "target_variant_retained", "genetic_map", "tabix_index"],
+      "required": ["sample_identity_and_order", "pedigree_identity", "canonical_ref_alt", "allele_counts", "reference_common_variants", "target_variant_retained", "genetic_map", "tabix_index"],
       "properties": {
         "sample_identity_and_order": {"const": "PASS"},
         "pedigree_identity": {"const": "PASS"},
         "canonical_ref_alt": {"const": "PASS"},
+        "allele_counts": {"const": "PASS"},
         "reference_common_variants": {"const": "PASS"},
         "target_variant_retained": {"const": "PASS"},
         "genetic_map": {"const": "PASS"},

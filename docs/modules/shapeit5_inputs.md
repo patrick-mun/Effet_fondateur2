@@ -19,6 +19,9 @@ L'allèle REF canonique est imposé avec `--a2-allele`; PLINK interdit de combin
 `--a1-allele` et `--a2-allele`. Le pipeline recontrôle ensuite avec bcftools
 l'ordre exact des individus et l'identité `CHROM/POS/ID/REF/ALT` de chaque
 variant. Cette vérification confirme aussi ALT sans l'imposer séparément.
+BCFtools calcule ensuite les tags INFO `AC` et `AN`, exigés par
+`SHAPEIT5_phase_common`, puis le pipeline vérifie qu'ils sont présents et
+cohérents pour chaque variant.
 
 ## Carte et pedigree
 

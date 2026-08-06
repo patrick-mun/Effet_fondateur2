@@ -56,9 +56,11 @@ elles sont disponibles après `conda activate effet-fondateur-shapeit5`.
 
 Cette sous-étape ne télécharge aucune référence, ne convertit pas PLINK en BCF et
 ne lance aucun phasage. Le catalogue 1000 Genomes, le cache, l'harmonisation et
-les fichiers de pedigree sont implémentés dans `12.1–12.5`. L'exécution et le
-QC scientifique relèvent de `12.6–12.7`. Le contrat concret des entrées est
-décrit dans `docs/modules/shapeit5_inputs.md`.
+les fichiers de pedigree sont implémentés dans `12.1–12.5`. L'exécution et
+l'attribution du chromosome porteur sont implémentées dans `12.6`; la
+publication consolidée du QC relève de `12.7`. Les contrats concrets sont
+décrits dans `docs/modules/shapeit5_inputs.md` et
+`docs/modules/shapeit5_execution.md`.
 
 Références officielles :
 

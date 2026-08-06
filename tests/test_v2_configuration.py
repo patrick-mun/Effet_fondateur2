@@ -39,6 +39,15 @@ def test_generic_example_is_valid() -> None:
     assert config["stages"]["phase_target_region"]["parameters"][
         "shapeit5_input_timeout_seconds"
     ] == 300
+    assert config["stages"]["phase_target_region"]["parameters"][
+        "shapeit5_execution_timeout_seconds"
+    ] == 7200
+    assert config["stages"]["phase_target_region"]["parameters"][
+        "shapeit5_seed"
+    ] == 15052011
+    assert config["stages"]["phase_target_region"]["parameters"][
+        "minimum_phase_confidence"
+    ] == 0.9
 
 
 def test_dock6_profile_accepts_unconfirmed_target_fields() -> None:

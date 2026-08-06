@@ -242,11 +242,11 @@ def build_phase_rare_command(
     input_region: str,
     scaffold_region: str,
     output_path: Path,
-    log_path: Path,
     pedigree_path: Path | None = None,
     threads: int = 1,
     seed: int = SHAPEIT5_CONTRACT.default_seed,
     effective_size: int = SHAPEIT5_CONTRACT.default_effective_size,
+    score_singletons: bool = False,
 ) -> list[str]:
     """Construit la commande qui replace les variants rares sur le scaffold."""
     command = [
@@ -263,8 +263,6 @@ def build_phase_rare_command(
         _validate_region(scaffold_region),
         "--output",
         str(_validate_output_path(output_path)),
-        "--log",
-        str(log_path),
         "--thread",
         str(_positive_integer(threads, "threads")),
         "--seed",
@@ -274,4 +272,8 @@ def build_phase_rare_command(
     ]
     if pedigree_path is not None:
         command.extend(("--pedigree", str(pedigree_path)))
+    if not isinstance(score_singletons, bool):
+        raise Shapeit5ContractError("invalid_shapeit5_parameter:score_singletons")
+    if score_singletons:
+        command.append("--score-singletons")
     return command
