@@ -119,6 +119,139 @@ INFER_KINSHIP_STAGE = StageDefinition(
     manual_decision_id="kinship_exclusion_approval",
 )
 
+ANALYZE_POPULATION_STRUCTURE_STAGE = StageDefinition(
+    stage_id="08",
+    stage_name="analyze_population_structure",
+    module="effet_fondateur.stages.analyze_population_structure",
+    critical=True,
+    dependencies=("build_sample_registry", "build_kinship_panel", "infer_kinship"),
+    required_artifact_ids=(
+        "samples_master",
+        "kinship_panel_bed",
+        "kinship_panel_bim",
+        "kinship_panel_fam",
+        "kinship_panel_dataset",
+        "independent_set_proposal",
+    ),
+    manual_decision_id="population_structure_exclusion_approval",
+)
+
+FREEZE_COHORTS_STAGE = StageDefinition(
+    stage_id="09",
+    stage_name="freeze_cohorts",
+    module="effet_fondateur.stages.freeze_cohorts",
+    critical=True,
+    dependencies=(
+        "build_sample_registry",
+        "prepare_target_variant_dataset",
+        "qc_preliminary",
+        "infer_kinship",
+        "analyze_population_structure",
+    ),
+    config_input_files=("target_variant_metadata",),
+    required_artifact_ids=(
+        "samples_master",
+        "target_genotype_audit",
+        "qc_individual_metrics",
+        "independent_set_proposal",
+        "population_scores",
+        "population_outliers",
+    ),
+    resolves_manual_decision_ids=(
+        "kinship_exclusion_approval",
+        "population_structure_exclusion_approval",
+    ),
+)
+
+QC_FINAL_STAGE = StageDefinition(
+    stage_id="10",
+    stage_name="qc_final",
+    module="effet_fondateur.stages.qc_final",
+    critical=True,
+    dependencies=(
+        "build_sample_registry",
+        "prepare_target_variant_dataset",
+        "qc_preliminary",
+        "freeze_cohorts",
+    ),
+    config_input_files=("target_variant_metadata",),
+    required_artifact_ids=(
+        "samples_master",
+        "genomewide_pre_qc_bed",
+        "genomewide_pre_qc_bim",
+        "genomewide_pre_qc_fam",
+        "genomewide_pre_qc_dataset",
+        "target_variant_bed",
+        "target_variant_bim",
+        "target_variant_fam",
+        "target_variant_dataset",
+        "cohorts_frozen",
+        "cohort_keep_controls_unrelated",
+        "cohort_keep_target_carriers_independent",
+        "cohort_keep_target_chromosome_all_qc",
+    ),
+)
+
+PREPARE_TARGET_REGION_STAGE = StageDefinition(
+    stage_id="11",
+    stage_name="prepare_target_region",
+    module="effet_fondateur.stages.prepare_target_region",
+    critical=True,
+    dependencies=("prepare_target_variant_dataset", "qc_final"),
+    config_input_files=("target_variant_metadata", "genetic_map"),
+    required_artifact_ids=(
+        "target_chromosome_all_qc_bed",
+        "target_chromosome_all_qc_bim",
+        "target_chromosome_all_qc_fam",
+        "target_chromosome_all_qc_dataset",
+        "variant_qc_final",
+    ),
+)
+
+PHASE_TARGET_REGION_STAGE = StageDefinition(
+    stage_id="12",
+    stage_name="phase_target_region",
+    module="effet_fondateur.stages.phase_target_region",
+    critical=True,
+    dependencies=(
+        "build_sample_registry",
+        "prepare_target_variant_dataset",
+        "prepare_target_region",
+    ),
+    config_input_files=("target_variant_metadata", "reference_panel_catalog"),
+    required_artifact_ids=(
+        "target_region_bim",
+        "target_region_bed",
+        "target_region_fam",
+        "target_genetic_map",
+        "phasing_input_manifest",
+        "samples_master",
+        "target_genotype_audit",
+    ),
+)
+
+INFER_FOUNDER_HAPLOTYPE_STAGE = StageDefinition(
+    stage_id="13",
+    stage_name="infer_founder_haplotype",
+    module="effet_fondateur.stages.infer_founder_haplotype",
+    critical=True,
+    dependencies=(
+        "build_sample_registry",
+        "freeze_cohorts",
+        "prepare_target_region",
+        "phase_target_region",
+    ),
+    config_input_files=(),
+    required_artifact_ids=(
+        "shapeit5_final_bcf",
+        "shapeit5_final_index",
+        "carrier_haplotypes",
+        "target_genetic_map",
+        "cohorts_frozen",
+        "samples_master",
+    ),
+)
+
 DEFAULT_STAGE_DEFINITIONS = (
     SYNTHETIC_STAGE,
     VALIDATE_SOURCES_STAGE,
@@ -128,6 +261,12 @@ DEFAULT_STAGE_DEFINITIONS = (
     QC_PRELIMINARY_STAGE,
     BUILD_KINSHIP_PANEL_STAGE,
     INFER_KINSHIP_STAGE,
+    ANALYZE_POPULATION_STRUCTURE_STAGE,
+    FREEZE_COHORTS_STAGE,
+    QC_FINAL_STAGE,
+    PREPARE_TARGET_REGION_STAGE,
+    PHASE_TARGET_REGION_STAGE,
+    INFER_FOUNDER_HAPLOTYPE_STAGE,
 )
 
 

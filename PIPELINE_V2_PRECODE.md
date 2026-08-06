@@ -874,21 +874,39 @@ coefficients et tableau de concordance.
 
 **Script cible** : `stages/analyze_population_structure.py`.
 
+**Dépendances directes** : étapes `02`, `06` et `07`.
+
 **Responsabilité** : détecter les axes de structure et les individus aberrants
 sur le panel genome-wide indépendant.
 
 **Stratégie** :
 
-- estimer les axes sur une base aussi indépendante que possible ;
-- ne pas laisser plusieurs membres d'une même famille déterminer les axes ;
-- projeter ensuite les apparentés si nécessaire ;
-- documenter les références externes si elles sont introduites ;
+- exporter temporairement les dosages du panel `06` avec PLINK ;
+- estimer les axes uniquement sur les individus `PROPOSED_INCLUDED=true` de la
+  proposition indépendante `07` ;
+- centrer chaque dosage sur `2p` et le réduire par
+  `sqrt(2p(1-p))`, avec `p` estimé dans cette référence ;
+- imputer les génotypes manquants par `2p`, soit zéro après standardisation ;
+- exclure du modèle les variants monomorphes ou insuffisamment appelés dans la
+  référence, avec un code explicite ;
+- ajuster la PCA par SVD, orienter chaque axe de façon déterministe et projeter
+  ensuite tous les individus apparentés sans recalculer les axes ;
+- publier fréquences, écarts-types et loadings nécessaires à la reproduction de
+  la projection ;
+- documenter qu'aucune référence externe n'est introduite dans cette version ;
 - distinguer PCA exploratoire et décision d'exclusion ;
 - réserver la DAPC à une question définie, avec génotypes correctement encodés,
   nombre de composantes validé et contrôle du surapprentissage.
 
-**Sorties** : coordonnées, variance expliquée, métriques d'outliers et décisions
-proposées.
+La métrique d'outlier est la somme des carrés des scores divisés par leur valeur
+propre sur les premiers axes configurés. Sa p-value du chi-deux est une
+approximation exploratoire, pas un critère clinique ou une exclusion automatique.
+
+**Sorties** : `population_scores.tsv`, `population_eigenvalues.tsv`,
+`population_outliers.tsv`, `population_variant_loadings.tsv`, rapport et audit.
+
+**Critère bloquant** : référence indépendante trop petite, nombre de variants
+informatifs insuffisant ou rang PCA nul.
 
 **Visualisations** : scree plot, PCA pseudonymisée par cohorte, lot et famille,
 ainsi que projection des individus exclus potentiels.
@@ -896,6 +914,8 @@ ainsi que projection des individus exclus potentiels.
 ### Étape 09 — Résolution et gel des cohortes
 
 **Script cible** : `stages/freeze_cohorts.py`.
+
+**Dépendances directes** : étapes `02`, `04`, `05`, `07` et `08`.
 
 **Responsabilité** : transformer les résultats QC, KING, structure, pedigree et
 génotype cible en cohortes analytiques explicites.
@@ -919,7 +939,23 @@ génotype cible en cohortes analytiques explicites.
 - aucune cohorte ne se fonde implicitement sur le seul statut `ATTEINT` ;
 - chaque exclusion possède un code et une source.
 
-**Sorties** : `cohorts.frozen.tsv`, fichiers PLINK `--keep` et audit de décision.
+Le gel publie une ligne par individu et par cohorte, y compris pour les individus
+non retenus. Les cohortes indépendantes utilisent au plus un représentant par
+famille, sélectionné avec les métriques techniques de l'étape `05`. Les
+génotypes porteurs/non-porteurs proviennent exclusivement de l'audit accepté de
+l'étape `04`. Les groupes témoins sont une liste explicite de `GROUP_LABEL`
+configurée ; ils ne servent jamais à déduire le génotype cible.
+
+Une proposition d'exclusion de `07` ou `08` bloque le gel tant qu'une revue ne
+fournit pas l'identifiant de revue, le rôle du réviseur, une date horodatée,
+l'empreinte SHA-256 exacte de l'artefact relu et la liste complète des individus
+proposés. Cette revue est déclarée dans la configuration d'un nouveau run. Une
+approbation accepte les exclusions proposées ; changer les représentants exige
+un nouveau calcul amont. Les identifiants individuels restent dans la table
+sensible `cohort_decisions.tsv` et ne sont pas recopiés dans l'audit partageable.
+
+**Sorties** : `cohorts.frozen.tsv`, `cohort_summary.tsv`,
+`cohort_decisions.tsv`, sept fichiers PLINK `--keep`, rapport et audit.
 
 **Critère bloquant** : absence de génotypes cibles fiables ou impossibilité
 de définir une unité porteuse indépendante.
@@ -939,8 +975,15 @@ d'exclusion du variant cible ou d'un signal potentiellement causal.
 **Jeu local cible** : conservation forcée et auditée du variant cible, même s'il
 échoue un filtre exploratoire standard ; toute exception est enregistrée.
 
-**Sorties** : jeux finaux versionnés par cohorte et matrices de concordance des
-variants.
+**Ordre des traitements** : extraction par le fichier `--keep` figé, calcul du
+missingness individuel, exclusion explicite des individus, recalcul des
+métriques variant, exclusion explicite des variants puis publication. Les
+différences de lot restent descriptives et ne provoquent aucune exclusion.
+
+**Sorties** : trois jeux BED/BIM/FAM finaux avec descripteurs versionnés,
+`sample_qc_final.tsv`, `variant_qc_final.tsv`, `batch_qc_final.tsv`, rapport et
+audit. L'exception du variant cible conserve les filtres échoués sans transformer
+le génotype en mesure fiable.
 
 **Visualisations** : HWE chez témoins, MAF par cohorte, missingness comparative
 et densité locale finale.
@@ -966,6 +1009,15 @@ et les analyses locales.
 **Interdiction** : remplacer une carte génétique absente par `1 Mb = 1 cM` en
 mode production.
 
+**Contrat implémenté** : carte TSV à identifiant unique et assemblage explicite,
+positions physiques strictement croissantes, cM monotones, interpolation
+uniquement entre deux ancres séparées d'au plus le seuil configuré, sans
+extrapolation. Le jeu PLINK régional reçoit les cM validés et un manifest
+`PLINK_BED_BIM_FAM_WITH_CM` indépendant du futur outil de phasage.
+
+**Sorties** : `target_region.bed/.bim/.fam`, descripteur versionné,
+`target_genetic_map.tsv`, `phasing_input_manifest.json`, rapport et audit.
+
 **Visualisations** : densité physique et génétique, taux de recombinaison local
 et position du variant cible.
 
@@ -976,8 +1028,74 @@ et position du variant cible.
 **Responsabilité** : produire des haplotypes et identifier celui qui porte le
 variant cible chez chaque porteur.
 
-**Prérequis à décider avant implémentation** : outil de phasage, version,
-référence éventuelle, compatibilité GRCh38 et prise en charge du pedigree.
+**Contrat retenu en 12.0** : adaptateur `shapeit5_phase_common_rare_v1`, SHAPEIT5
+`5.1.1` sous licence MIT, référence phasée obligatoire, autosomes GRCh38, carte
+génétique obligatoire et pedigree enfant-père-mère pris en charge. Le scaffold
+commun est produit par `phase_common`, puis les variants rares ou absents du
+panel sont traités par `phase_rare` afin de ne pas perdre le variant cible.
+
+**Catalogue retenu en 12.1** : panel
+`1kg_3202_high_coverage_20220422`, release phasée SNV/INDEL/SV de `3 202`
+échantillons 1000 Genomes sur GRCh38, toutes populations et tous échantillons
+par défaut. Le catalogue local versionné couvre les 22 autosomes, épingle le
+README et le manifeste fournisseur, puis expose les MD5 officiels du VCF et de
+son index sans effectuer de téléchargement.
+
+**Cache retenu en 12.2** : entrée adressée par les identifiants et empreintes de
+la référence, verrou inter-processus, téléchargement dans un dossier temporaire,
+contrôles MD5/SHA-256 puis renommage atomique. Une entrée publiée est en lecture
+seule et intégralement revérifiée avant réutilisation. Le mode hors ligne bloque
+un cache absent sans accès réseau ; une corruption bloque sans remplacement
+automatique.
+
+**Extraction retenue en 12.3** : fenêtre `chrN:START-END` produite par
+`bcftools` depuis le cache immuable, en conservant exactement tous les
+échantillons dans leur ordre source. Les longueurs de contig GRCh38, le champ
+`GT`, l'effectif, l'index tabix, le nombre de variants et l'absence de génotypes
+appelés non phasés sont contrôlés avant une publication atomique. Le manifeste
+lie la sortie à la release et aux empreintes précises du cache.
+
+**Contrat retenu en 12.4** : décomposition biallélique des SNV/indels de la
+référence, conservation stricte des échantillons et harmonisation de chaque
+marqueur ACPA par assemblage, chromosome, position, REF et ALT. Les inversions
+A1/A2 sont auditées, les corrections de brin ne sont jamais automatiques, les
+collisions entre sondes restent explicites et le variant cible peut rester
+spécifique à l'étude pour `phase_rare`. Une représentation non minimale ou une
+ambiguïté touchant le variant cible bloque avant SHAPEIT5.
+Les entrées GRCh38 doivent déjà utiliser une représentation minimale : aucune
+FASTA ni correction automatique de gauche-alignement n'est ajoutée à ce
+contrat. Un allèle PLINK `0` peut seulement être complété depuis une
+correspondance publique unique, sans modifier ni inférer les génotypes.
+
+**Contrat retenu en 12.5** : VCF d'étude bgzip/indexé utilisant les `SAMPLE_ID`
+maître, REF canonique imposé avec `--a2-allele`, puis contrôle bcftools de
+l'ordre des individus et de chaque identité `CHROM/POS/ID/REF/ALT`. Les variants
+communs alimentent `phase_common`; le variant cible est conservé comme
+`RARE_TARGET` lorsqu'il est absent du panel. La carte SHAPEIT contient
+`pos/chr/cM`. Le pedigree sans en-tête contient `enfant père mère`, emploie les
+mêmes identifiants que le VCF et utilise `NA` pour un parent absent. Un pedigree
+vide est valide et devra conduire `12.6` à omettre son argument. Les fichiers,
+versions d'outils, effectifs, régions et empreintes sont liés dans un manifeste
+publié atomiquement. SHAPEIT5 n'est pas lancé à cette sous-étape.
+
+**Contrat retenu en 12.6** : exécution séquentielle de `phase_common` puis
+`phase_rare` 5.1.1 avec graine, threads, `Ne`, régions et délais enregistrés.
+Les individus, variants, génotypes et erreurs mendéliennes sont comparés avant
+et après. Le chromosome porteur `H1/H2/BOTH` est dérivé du GT cible phasé et
+doit concorder avec le génotype moléculaire explicite. `--score-singletons`
+fournit le PP lorsqu'il existe ; un PP absent ou inférieur au seuil ne disparaît
+pas, mais rend l'attribution non fiable, crée une zone d'alerte et impose une
+revue manuelle. Les transmissions trio/duo restent explicites sans inventer une
+origine parentale ambiguë.
+
+**Contrat retenu en 12.7** : consolidation sans recalcul de douze contrôles
+versionnés couvrant intégrité, `AC/AN`, nombres de variants, ordre des individus,
+préservation des génotypes, cible, Mendel, transmissions et confiance. Les
+effectifs `NONE/H1/H2/BOTH` sont publiés sans identifiant individuel. Un warning
+de confiance est conservé dans le résumé final et impose une revue manuelle.
+Les deux manifestes sources et toutes les sorties sont liés par SHA-256, puis le
+dossier QC est publié atomiquement. Les visualisations pseudonymisées sont
+déclarées mais restent produites à l'étape 18.
 
 **Traitements** :
 
@@ -1002,6 +1120,21 @@ phase incertaine, avec pseudonymes.
 **Responsabilité** : tester l'existence d'un segment ancestral partagé autour de
 du variant cible et mesurer ses limites.
 
+**Contrat retenu** : la méthode primaire `target_centered_exact_ibs_v1` compare
+les haplotypes porteurs fiables d'unités indépendantes dans le BCF final phasé.
+Elle part du variant cible et s'étend de chaque côté tant que tous les chromosomes
+porteurs ont un allèle appelé identique ; le premier manque ou la première
+discordance arrête le segment. Les limites sont reportées en bp et en distances
+cM depuis la cible. Par défaut, trois unités indépendantes et deux marqueurs
+informatifs sur chaque flanc sont requis. Le résultat est nommé
+`IBS_SHARED_CANDIDATE` : en l'absence d'un adaptateur IBD local séparément validé
+sur des données assez denses, il ne constitue jamais une preuve IBD. Le variant
+cible est retiré de la signature mesurée chez les témoins et non-porteurs afin
+d'éviter une comparaison trivialement déterminée par leur statut mutationnel.
+Les porteurs de phase non fiable et les homozygotes cibles sont conservés dans
+l'audit mais exclus de l'estimation à un chromosome par unité. Toute insuffisance
+d'effectif ou de marqueurs produit `NO_FOUNDER_CONCLUSION` et impose une revue.
+
 **Traitements** :
 
 1. sélectionner uniquement les chromosomes porteurs validés ;
@@ -1011,7 +1144,8 @@ du variant cible et mesurer ses limites.
 5. mesurer pour chaque unité indépendante la limite gauche et droite ;
 6. convertir les limites en bp et cM ;
 7. comparer la fréquence du segment chez témoins et non-porteurs ;
-8. calculer un intervalle partagé central et ses variantes de sensibilité ;
+8. calculer un intervalle partagé central et les segments pairwise nécessaires
+   aux variantes de sensibilité ;
 9. signaler les marqueurs informatifs insuffisants ;
 10. ne pas conclure à un fondateur unique si plusieurs haplotypes porteurs
     incompatibles sont observés.
@@ -1271,9 +1405,9 @@ contient en plus `stage_inputs.json`, `stage_outputs.json`, `audit.json`,
 | `05` | `genomewide_base.*`, lots et registre | `genomewide_pre_qc.*`, `sample_qc.tsv`, `variant_qc_preliminary.tsv` | `plot_genotype_qc.py` |
 | `06` | `genomewide_pre_qc.*`, paramètres pruning | `kinship_panel.*`, `pruned_variants.tsv`, `panel_coverage.tsv`, `panel_residual_ld_bins.tsv` | `plot_kinship_panel.py` |
 | `07` | `kinship_panel.*`, pedigree déclaré | `kinship_pairs.tsv`, `kinship_degree_summary.tsv`, `pedigree_concordance.tsv`, `independent_set_proposal.tsv` | `plot_kinship.py` |
-| `08` | panel genome-wide, résultat KING, lots et groupes descriptifs | `population_scores.tsv`, `population_eigenvalues.tsv`, `population_outliers.tsv` | `plot_population_structure.py` |
-| `09` | registre, variant cible, KING, structure, QC | `cohorts.frozen.tsv`, fichiers `keep`, `cohort_decisions.tsv` | `plot_cohorts.py` |
-| `10` | jeux de base, cohortes figées | jeux QC par cohorte, `sample_qc_final.tsv`, `variant_qc.tsv` | `plot_genotype_qc.py` |
+| `08` | panel genome-wide, résultat KING, lots et groupes descriptifs | `population_scores.tsv`, `population_eigenvalues.tsv`, `population_outliers.tsv`, `population_variant_loadings.tsv` | `plot_population_structure.py` |
+| `09` | registre, variant cible, KING, structure, QC | `cohorts.frozen.tsv`, `cohort_summary.tsv`, fichiers `keep`, `cohort_decisions.tsv` | `plot_cohorts.py` |
+| `10` | jeux de base, cohortes figées | jeux QC par cohorte, `sample_qc_final.tsv`, `variant_qc_final.tsv` | `plot_genotype_qc.py` |
 | `11` | jeu du chromosome cible QC, variant cible, carte génétique | `target_region.*`, `target_genetic_map.tsv`, formats de phasage | `plot_target_map.py` |
 | `12` | région cible, pedigree, génotypes cibles | haplotypes phasés, `carrier_haplotypes.tsv`, `phasing_qc.tsv` | `plot_phasing.py` |
 | `13` | haplotypes phasés, porteurs indépendants, témoins | `founder_segments.tsv`, `founder_consensus.tsv`, matrice de partage | `plot_founder_haplotypes.py` |
@@ -1451,16 +1585,15 @@ limitations historiques
 
 ## 14. Décisions encore requises avant implémentation
 
-1. outil et stratégie de phasage ;
-2. méthode de détection IBD locale ;
-3. carte génétique GRCh38 et licence de redistribution ;
-4. seuils QC adaptés à la taille finale des cohortes ;
-5. seuil d'apparentement retenu pour chaque analyse ;
-6. stratégie d'unité indépendante par famille et chromosome porteur ;
-7. méthode Gamma exacte et implémentation de référence ;
-8. méthode alternative de datation ;
-9. politique de pseudonymisation et niveau de partage des rapports ;
-10. format final du rapport scientifique et procédure de validation humaine.
+1. méthode de détection IBD locale ;
+2. carte génétique GRCh38 et licence de redistribution ;
+3. seuils QC adaptés à la taille finale des cohortes ;
+4. seuil d'apparentement retenu pour chaque analyse ;
+5. stratégie d'unité indépendante par famille et chromosome porteur ;
+6. méthode Gamma exacte et implémentation de référence ;
+7. méthode alternative de datation ;
+8. politique de pseudonymisation et niveau de partage des rapports ;
+9. format final du rapport scientifique et procédure de validation humaine.
 
 Ces décisions doivent apparaître dans un registre de décisions versionné. Elles
 ne doivent pas être résolues implicitement pendant le codage.

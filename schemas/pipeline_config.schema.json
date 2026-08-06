@@ -69,13 +69,14 @@
     "inputs": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["acpa_samples_dir", "sample_metadata", "target_variant_metadata", "target_variant_genotypes", "genetic_map"],
+      "required": ["acpa_samples_dir", "sample_metadata", "target_variant_metadata", "target_variant_genotypes", "genetic_map", "reference_panel_catalog"],
       "properties": {
         "acpa_samples_dir": {"$ref": "#/$defs/pathOrNull"},
         "sample_metadata": {"$ref": "#/$defs/pathOrNull"},
         "target_variant_metadata": {"$ref": "#/$defs/pathOrNull"},
         "target_variant_genotypes": {"$ref": "#/$defs/pathOrNull"},
-        "genetic_map": {"$ref": "#/$defs/pathOrNull"}
+        "genetic_map": {"$ref": "#/$defs/pathOrNull"},
+        "reference_panel_catalog": {"$ref": "#/$defs/pathOrNull"}
       }
     },
     "tools": {
@@ -87,7 +88,7 @@
         "king": {"$ref": "#/$defs/commandName"},
         "bcftools": {"$ref": "#/$defs/commandName"},
         "rscript": {"$ref": "#/$defs/commandName"},
-        "phasing_adapter": {"$ref": "#/$defs/commandName"},
+        "phasing_adapter": {"$ref": "#/$defs/phasingAdapter"},
         "local_ibd_adapter": {"$ref": "#/$defs/commandName"}
       }
     },
@@ -137,6 +138,22 @@
       "oneOf": [
         {"type": "string", "minLength": 1},
         {"type": "null"}
+      ]
+    },
+    "phasingAdapter": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["adapter_id", "phase_common_command", "phase_rare_command", "expected_version"],
+          "properties": {
+            "adapter_id": {"const": "shapeit5_phase_common_rare_v1"},
+            "phase_common_command": {"type": "string", "minLength": 1},
+            "phase_rare_command": {"type": "string", "minLength": 1},
+            "expected_version": {"const": "5.1.1"}
+          }
+        }
       ]
     }
   }

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/founder_segments.schema.json",
+  "title": "Segments IBS des unités porteuses indépendantes",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["INDEPENDENT_UNIT_ID", "SAMPLE_ID", "FAMILY_ID", "CARRIER_HAPLOTYPE_ID", "TARGET_VARIANT_ID", "LEFT_BOUND_BP", "TARGET_BP", "RIGHT_BOUND_BP", "LEFT_LENGTH_CM", "RIGHT_LENGTH_CM", "PHASING_CONFIDENCE", "SEGMENT_METHOD", "SEGMENT_STATUS", "EXCLUSION_CODE"],
+    "null_value": "",
+    "primary_key": ["INDEPENDENT_UNIT_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "integer": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+    "decimal": {"type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$"},
+    "nullableDecimal": {"oneOf": [{"$ref": "#/$defs/decimal"}, {"type": "null"}]},
+    "nullableIdentifier": {"oneOf": [{"$ref": "#/$defs/identifier"}, {"type": "null"}]},
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["INDEPENDENT_UNIT_ID", "SAMPLE_ID", "FAMILY_ID", "CARRIER_HAPLOTYPE_ID", "TARGET_VARIANT_ID", "LEFT_BOUND_BP", "TARGET_BP", "RIGHT_BOUND_BP", "LEFT_LENGTH_CM", "RIGHT_LENGTH_CM", "PHASING_CONFIDENCE", "SEGMENT_METHOD", "SEGMENT_STATUS", "EXCLUSION_CODE"],
+      "properties": {
+        "INDEPENDENT_UNIT_ID": {"$ref": "#/$defs/identifier"}, "SAMPLE_ID": {"$ref": "#/$defs/identifier"},
+        "FAMILY_ID": {"$ref": "#/$defs/identifier"}, "CARRIER_HAPLOTYPE_ID": {"enum": ["H1", "H2", "BOTH", "NONE"]},
+        "TARGET_VARIANT_ID": {"$ref": "#/$defs/identifier"}, "LEFT_BOUND_BP": {"$ref": "#/$defs/integer"},
+        "TARGET_BP": {"$ref": "#/$defs/integer"}, "RIGHT_BOUND_BP": {"$ref": "#/$defs/integer"},
+        "LEFT_LENGTH_CM": {"$ref": "#/$defs/decimal"}, "RIGHT_LENGTH_CM": {"$ref": "#/$defs/decimal"},
+        "PHASING_CONFIDENCE": {"$ref": "#/$defs/nullableDecimal"}, "SEGMENT_METHOD": {"const": "target_centered_exact_ibs_v1"},
+        "SEGMENT_STATUS": {"enum": ["INCLUDED", "INSUFFICIENT", "EXCLUDED"]}, "EXCLUSION_CODE": {"$ref": "#/$defs/nullableIdentifier"}
+      }
+    }
+  }
+}

@@ -78,6 +78,13 @@ son lancement tant que le manifest contient l'une de ces décisions. Les étapes
 pour exiger l'approbation du registre maître avant toute transformation
 génétique.
 
+Une étape peut aussi déclarer `resolves_manual_decision_ids`. Cette résolution
+n'est enregistrée qu'après validation et publication atomique de toutes ses
+sorties. `09_freeze_cohorts` utilise ce mécanisme après avoir vérifié que chaque
+revue référence l'empreinte exacte de l'artefact proposé et approuve la liste
+complète des exclusions. Une tentative échouée ne retire jamais une décision du
+manifest.
+
 ## Modifier un contrat
 
 Une modification incompatible exige :
@@ -107,7 +114,7 @@ Le socle minimal ne fournit pas encore :
 - verrou interprocessus empêchant deux reprises simultanées ;
 - délai maximal ou protocole d'annulation des outils externes longs ;
 - cache partagé entre deux runs distincts ;
-- registre de production des étapes scientifiques `08` à `19` ;
+- registre de production des étapes scientifiques `12` à `19` ;
 - artefacts composés BED/BIM/FAM ;
 - migration de version automatique des manifests.
 

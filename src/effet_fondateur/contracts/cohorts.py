@@ -38,4 +38,8 @@ def validate_cohorts_frozen(
             raise TableValidationError(
                 "FAMILY_REPRESENTATIVE exige un INDEPENDENT_UNIT_ID."
             )
+        if row["FAMILY_REPRESENTATIVE"] and not row["INCLUDED"]:
+            raise TableValidationError(
+                "FAMILY_REPRESENTATIVE exige une ligne incluse."
+            )
     return validated_table

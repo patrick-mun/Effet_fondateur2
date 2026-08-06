@@ -17,6 +17,8 @@ TOOL_VERSION_ARGUMENTS = {
     "king": ("--version",),
     "bcftools": ("--version",),
     "rscript": ("--version",),
+    "shapeit5_phase_common": ("--help",),
+    "shapeit5_phase_rare": ("--help",),
 }
 
 
@@ -43,7 +45,15 @@ def capture_tool_environment(
         )
         version_output = completed_process.stdout.strip() or completed_process.stderr.strip()
         if version_output:
-            version = version_output.splitlines()[0][:500]
+            version_lines = version_output.splitlines()
+            if tool_key.startswith("shapeit5_"):
+                version_line = next(
+                    (line.strip() for line in version_lines if "* Version" in line),
+                    version_lines[0],
+                )
+                version = version_line[:500]
+            else:
+                version = version_lines[0][:500]
     except (OSError, subprocess.TimeoutExpired):
         version = None
     # L'étape qui utilise réellement l'outil décidera si une absence ou une
@@ -53,6 +63,21 @@ def capture_tool_environment(
 
 def build_environment(config: dict[str, Any]) -> dict[str, Any]:
     """Construit l'inventaire Python, plateforme et outils déclaré dans le run."""
+    tools_environment: dict[str, Any] = {}
+    for tool_key, tool_config in config["tools"].items():
+        if tool_key == "phasing_adapter" and isinstance(tool_config, dict):
+            tools_environment[tool_key] = {
+                "adapter_id": tool_config["adapter_id"],
+                "expected_version": tool_config["expected_version"],
+                "phase_common": capture_tool_environment(
+                    tool_config["phase_common_command"], "shapeit5_phase_common"
+                ),
+                "phase_rare": capture_tool_environment(
+                    tool_config["phase_rare_command"], "shapeit5_phase_rare"
+                ),
+            }
+        else:
+            tools_environment[tool_key] = capture_tool_environment(tool_config, tool_key)
     return {
         "schema_version": "1.0.0",
         "python": {
@@ -66,8 +91,5 @@ def build_environment(config: dict[str, Any]) -> dict[str, Any]:
             "machine": platform.machine(),
         },
         "pipeline_version": __version__,
-        "tools": {
-            tool_key: capture_tool_environment(command_name, tool_key)
-            for tool_key, command_name in config["tools"].items()
-        },
+        "tools": tools_environment,
     }

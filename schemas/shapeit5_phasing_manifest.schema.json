@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/shapeit5_phasing_manifest.schema.json",
+  "title": "Manifest de l'exécution SHAPEIT5",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "created_at", "method_id", "adapter_id", "software_version", "assembly", "chromosome", "input_region", "scaffold_region", "seed", "threads", "effective_size", "minimum_phase_confidence", "sample_count", "variant_count", "common_variant_count", "carrier_count", "reliable_carrier_count", "pedigree_record_count", "target_variant_id", "target_variant_role", "files", "checks"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "method_id": {"const": "shapeit5_common_rare_carrier_assignment_v1"},
+    "adapter_id": {"const": "shapeit5_phase_common_rare_v1"},
+    "software_version": {"const": "5.1.1"},
+    "assembly": {"const": "GRCh38"},
+    "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+    "input_region": {"type": "string", "minLength": 1},
+    "scaffold_region": {"type": "string", "minLength": 1},
+    "seed": {"type": "integer", "minimum": 1},
+    "threads": {"type": "integer", "minimum": 1},
+    "effective_size": {"type": "integer", "minimum": 1},
+    "minimum_phase_confidence": {"type": "number", "minimum": 0.5, "maximum": 1},
+    "sample_count": {"type": "integer", "minimum": 1},
+    "variant_count": {"type": "integer", "minimum": 2},
+    "common_variant_count": {"type": "integer", "minimum": 1},
+    "carrier_count": {"type": "integer", "minimum": 0},
+    "reliable_carrier_count": {"type": "integer", "minimum": 0},
+    "pedigree_record_count": {"type": "integer", "minimum": 0},
+    "target_variant_id": {"type": "string", "minLength": 1},
+    "target_variant_role": {"enum": ["COMMON_TARGET", "RARE_TARGET"]},
+    "files": {"type": "object", "additionalProperties": {"$ref": "#/$defs/file"}, "minProperties": 9},
+    "checks": {
+      "type": "object", "additionalProperties": false,
+      "required": ["input_integrity", "common_phase", "rare_phase", "sample_order", "genotype_preservation", "target_preservation", "explicit_target_genotypes", "mendel_before", "mendel_after", "carrier_assignment"],
+      "properties": {
+        "input_integrity": {"const": "PASS"}, "common_phase": {"const": "PASS"}, "rare_phase": {"const": "PASS"}, "sample_order": {"const": "PASS"}, "genotype_preservation": {"const": "PASS"}, "target_preservation": {"const": "PASS"}, "explicit_target_genotypes": {"const": "PASS"}, "mendel_before": {"const": "PASS"}, "mendel_after": {"const": "PASS"}, "carrier_assignment": {"const": "PASS"}
+      }
+    }
+  },
+  "$defs": {
+    "file": {
+      "type": "object", "additionalProperties": false,
+      "required": ["filename", "sha256", "size_bytes"],
+      "properties": {"filename": {"type": "string", "pattern": "^[^/\\\\]+$"}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "size_bytes": {"type": "integer", "minimum": 0}}
+    }
+  }
+}

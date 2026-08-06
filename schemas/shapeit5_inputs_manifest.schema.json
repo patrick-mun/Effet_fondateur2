@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/shapeit5_inputs_manifest.schema.json",
+  "title": "Manifest des entrées prêtes pour SHAPEIT5",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "created_at", "method_id", "adapter_id", "assembly",
+    "chromosome", "input_region", "scaffold_region", "sample_set_id",
+    "study_variant_set_id", "reference_variant_set_id", "sample_count",
+    "study_variant_count", "common_variant_count", "pedigree_record_count",
+    "target_variant_id", "target_variant_role", "tools", "files", "checks"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "method_id": {"const": "plink_vcf_shapeit5_inputs_v1"},
+    "adapter_id": {"const": "shapeit5_phase_common_rare_v1"},
+    "assembly": {"const": "GRCh38"},
+    "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+    "input_region": {"type": "string", "pattern": "^chr([1-9]|1[0-9]|2[0-2]):[1-9][0-9]*-[1-9][0-9]*$"},
+    "scaffold_region": {"type": "string", "pattern": "^chr([1-9]|1[0-9]|2[0-2]):[1-9][0-9]*-[1-9][0-9]*$"},
+    "sample_set_id": {"type": "string", "minLength": 1},
+    "study_variant_set_id": {"type": "string", "minLength": 1},
+    "reference_variant_set_id": {"type": "string", "minLength": 1},
+    "sample_count": {"type": "integer", "minimum": 1},
+    "study_variant_count": {"type": "integer", "minimum": 2},
+    "common_variant_count": {"type": "integer", "minimum": 1},
+    "pedigree_record_count": {"type": "integer", "minimum": 0},
+    "target_variant_id": {"type": "string", "minLength": 1},
+    "target_variant_role": {"enum": ["COMMON_TARGET", "RARE_TARGET"]},
+    "tools": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plink", "bcftools"],
+      "properties": {
+        "plink": {"type": "string", "minLength": 1},
+        "bcftools": {"type": "string", "minLength": 1}
+      }
+    },
+    "files": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["study_vcf", "study_index", "reference_vcf", "reference_index", "genetic_map", "pedigree", "variant_selection", "sample_mapping"],
+      "properties": {
+        "study_vcf": {"$ref": "#/$defs/localFile"},
+        "study_index": {"$ref": "#/$defs/localFile"},
+        "reference_vcf": {"$ref": "#/$defs/stageFile"},
+        "reference_index": {"$ref": "#/$defs/stageFile"},
+        "genetic_map": {"$ref": "#/$defs/localFile"},
+        "pedigree": {"$ref": "#/$defs/possiblyEmptyLocalFile"},
+        "variant_selection": {"$ref": "#/$defs/localFile"},
+        "sample_mapping": {"$ref": "#/$defs/localFile"}
+      }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sample_identity_and_order", "pedigree_identity", "canonical_ref_alt", "allele_counts", "reference_common_variants", "target_variant_retained", "genetic_map", "tabix_index"],
+      "properties": {
+        "sample_identity_and_order": {"const": "PASS"},
+        "pedigree_identity": {"const": "PASS"},
+        "canonical_ref_alt": {"const": "PASS"},
+        "allele_counts": {"const": "PASS"},
+        "reference_common_variants": {"const": "PASS"},
+        "target_variant_retained": {"const": "PASS"},
+        "genetic_map": {"const": "PASS"},
+        "tabix_index": {"const": "PASS"}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "localFile": {
+      "type": "object", "additionalProperties": false,
+      "required": ["filename", "sha256", "size_bytes"],
+      "properties": {
+        "filename": {"type": "string", "pattern": "^[^/\\\\]+$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "possiblyEmptyLocalFile": {
+      "type": "object", "additionalProperties": false,
+      "required": ["filename", "sha256", "size_bytes"],
+      "properties": {
+        "filename": {"type": "string", "pattern": "^[^/\\\\]+$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 0}
+      }
+    },
+    "stageFile": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256", "size_bytes"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

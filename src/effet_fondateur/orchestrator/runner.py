@@ -318,6 +318,9 @@ def _record_success(
                 decisions.append(definition.manual_decision_id)
         elif definition.manual_decision_id in decisions:
             decisions.remove(definition.manual_decision_id)
+    for resolved_decision_id in definition.resolves_manual_decision_ids:
+        if resolved_decision_id in manifest["manual_decisions_required"]:
+            manifest["manual_decisions_required"].remove(resolved_decision_id)
     save_manifest(run_dir, manifest)
     record_event(run_dir, definition.directory_name, "stage_succeeded")
 

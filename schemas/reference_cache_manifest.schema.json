@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/reference_cache_manifest.schema.json",
+  "title": "Manifeste d'une entrée immuable du cache de référence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "cache_entry_key",
+    "catalog_id",
+    "catalog_sha256",
+    "panel_id",
+    "provider",
+    "release_id",
+    "assembly",
+    "chromosome",
+    "sample_count",
+    "sample_scope",
+    "population_scope",
+    "created_at",
+    "files"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "cache_entry_key": {"$ref": "#/$defs/sha256"},
+    "catalog_id": {"$ref": "#/$defs/identifier"},
+    "catalog_sha256": {"$ref": "#/$defs/sha256"},
+    "panel_id": {"$ref": "#/$defs/identifier"},
+    "provider": {"$ref": "#/$defs/identifier"},
+    "release_id": {"$ref": "#/$defs/identifier"},
+    "assembly": {"type": "string", "minLength": 1},
+    "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+    "sample_count": {"type": "integer", "minimum": 1},
+    "sample_scope": {"type": "string", "minLength": 1},
+    "population_scope": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "format": "date-time"},
+    "files": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vcf", "index", "readme", "source_manifest"],
+      "properties": {
+        "vcf": {"$ref": "#/$defs/fileWithMd5"},
+        "index": {"$ref": "#/$defs/fileWithMd5"},
+        "readme": {"$ref": "#/$defs/fileWithSha256"},
+        "source_manifest": {"$ref": "#/$defs/fileWithSha256"}
+      }
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "filename": {
+      "type": "string",
+      "pattern": "^[^/\\\\]+$"
+    },
+    "md5": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{32}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "baseFile": {
+      "type": "object",
+      "required": ["filename", "source_url", "size_bytes", "local_sha256"],
+      "properties": {
+        "filename": {"$ref": "#/$defs/filename"},
+        "source_url": {"type": "string", "format": "uri"},
+        "size_bytes": {"type": "integer", "minimum": 0},
+        "local_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "fileWithMd5": {
+      "allOf": [
+        {"$ref": "#/$defs/baseFile"},
+        {
+          "type": "object",
+          "required": ["official_md5"],
+          "properties": {"official_md5": {"$ref": "#/$defs/md5"}}
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "fileWithSha256": {
+      "allOf": [
+        {"$ref": "#/$defs/baseFile"},
+        {
+          "type": "object",
+          "required": ["expected_sha256"],
+          "properties": {"expected_sha256": {"$ref": "#/$defs/sha256"}}
+        }
+      ],
+      "unevaluatedProperties": false
+    }
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/reference_harmonization_manifest.schema.json",
+  "title": "Manifeste d'harmonisation référence/étude",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "created_at", "method_id", "assembly", "chromosome",
+    "region", "target_variant_id", "sample_count", "reference_variant_count",
+    "study_variant_count", "common_variant_count", "source", "study", "tool",
+    "files", "checks"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "method_id": {"const": "canonical_coordinate_allele_harmonization_v1"},
+    "assembly": {"const": "GRCh38"},
+    "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+    "region": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start_bp", "end_bp"],
+      "properties": {
+        "start_bp": {"type": "integer", "minimum": 1},
+        "end_bp": {"type": "integer", "minimum": 1}
+      }
+    },
+    "target_variant_id": {"type": "string", "minLength": 1},
+    "sample_count": {"type": "integer", "minimum": 1},
+    "reference_variant_count": {"type": "integer", "minimum": 1},
+    "study_variant_count": {"type": "integer", "minimum": 2},
+    "common_variant_count": {"type": "integer", "minimum": 1},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["window_manifest_sha256", "vcf_sha256", "index_sha256"],
+      "properties": {
+        "window_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "vcf_sha256": {"$ref": "#/$defs/sha256"},
+        "index_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "study": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phasing_manifest_sha256", "bim_sha256", "variant_set_id"],
+      "properties": {
+        "phasing_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "bim_sha256": {"$ref": "#/$defs/sha256"},
+        "variant_set_id": {"type": "string", "minLength": 1}
+      }
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"const": "bcftools"},
+        "version": {"type": "string", "minLength": 1}
+      }
+    },
+    "files": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vcf", "index", "harmonization"],
+      "properties": {
+        "vcf": {"$ref": "#/$defs/file"},
+        "index": {"$ref": "#/$defs/file"},
+        "harmonization": {"$ref": "#/$defs/file"}
+      }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input_integrity", "assembly_and_region", "sample_set_and_order", "phased_genotypes",
+        "biallelic_sequence_variants", "canonical_variant_identity",
+        "target_variant", "minimum_common_variants", "tabix_index"
+      ],
+      "properties": {
+        "input_integrity": {"const": "PASS"},
+        "assembly_and_region": {"const": "PASS"},
+        "sample_set_and_order": {"const": "PASS"},
+        "phased_genotypes": {"const": "PASS"},
+        "biallelic_sequence_variants": {"const": "PASS"},
+        "canonical_variant_identity": {"const": "PASS"},
+        "target_variant": {"enum": ["MATCHED", "STUDY_ONLY"]},
+        "minimum_common_variants": {"const": "PASS"},
+        "tabix_index": {"const": "PASS"}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["filename", "sha256", "size_bytes"],
+      "properties": {
+        "filename": {"type": "string", "pattern": "^[^/\\\\]+$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

@@ -34,6 +34,15 @@ def build_stage_catalog(
             raise PipelineError(
                 f"Une étape ne peut pas dépendre d'elle-même : {definition.stage_name}."
             )
+        if (
+            definition.manual_decision_id is not None
+            and definition.manual_decision_id
+            in definition.resolves_manual_decision_ids
+        ):
+            raise PipelineError(
+                f"Une étape ne peut pas produire et résoudre la même décision : "
+                f"{definition.stage_name}."
+            )
 
     # Le catalogue est une liste blanche : une valeur YAML ne peut jamais choisir
     # librement un module Python à importer et exécuter.

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/carrier_haplotype_summary.schema.json",
+  "title": "Résumé agrégé des haplotypes porteurs",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["CARRIER_HAPLOTYPE", "RELIABILITY_STATUS", "SAMPLE_COUNT"],
+    "null_value": "",
+    "primary_key": ["CARRIER_HAPLOTYPE", "RELIABILITY_STATUS"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["CARRIER_HAPLOTYPE", "RELIABILITY_STATUS", "SAMPLE_COUNT"],
+      "properties": {
+        "CARRIER_HAPLOTYPE": {"enum": ["NONE", "H1", "H2", "BOTH"]},
+        "RELIABILITY_STATUS": {"enum": ["PASS", "UNRELIABLE"]},
+        "SAMPLE_COUNT": {"type": "string", "pattern": "^[0-9]+$"}
+      }
+    }
+  }
+}

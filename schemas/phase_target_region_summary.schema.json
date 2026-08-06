@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/phase_target_region_summary.schema.json",
+  "title": "Résumé final de l'étape 12",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "created_at", "method_id", "assembly", "chromosome", "target_variant_id", "target_variant_role", "sample_count", "variant_count", "carrier_count", "reliable_carrier_count", "unreliable_carrier_count", "pedigree_record_count", "transmission_record_count", "manual_validation_required", "source_manifests", "haplotype_counts", "files", "checks"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "method_id": {"const": "phase_target_region_qc_publication_v1"},
+    "assembly": {"const": "GRCh38"},
+    "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+    "target_variant_id": {"type": "string", "minLength": 1},
+    "target_variant_role": {"enum": ["COMMON_TARGET", "RARE_TARGET"]},
+    "sample_count": {"type": "integer", "minimum": 1},
+    "variant_count": {"type": "integer", "minimum": 2},
+    "carrier_count": {"type": "integer", "minimum": 0},
+    "reliable_carrier_count": {"type": "integer", "minimum": 0},
+    "unreliable_carrier_count": {"type": "integer", "minimum": 0},
+    "pedigree_record_count": {"type": "integer", "minimum": 0},
+    "transmission_record_count": {"type": "integer", "minimum": 0},
+    "manual_validation_required": {"type": "boolean"},
+    "source_manifests": {
+      "type": "object", "additionalProperties": false,
+      "required": ["shapeit5_inputs", "shapeit5_phasing"],
+      "properties": {"shapeit5_inputs": {"$ref": "#/$defs/source"}, "shapeit5_phasing": {"$ref": "#/$defs/source"}}
+    },
+    "haplotype_counts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["NONE", "H1", "H2", "BOTH"],
+      "properties": {"NONE": {"type": "integer", "minimum": 0}, "H1": {"type": "integer", "minimum": 0}, "H2": {"type": "integer", "minimum": 0}, "BOTH": {"type": "integer", "minimum": 0}}
+    },
+    "files": {
+      "type": "object", "additionalProperties": false,
+      "required": ["phasing_qc", "carrier_haplotype_summary"],
+      "properties": {"phasing_qc": {"$ref": "#/$defs/file"}, "carrier_haplotype_summary": {"$ref": "#/$defs/file"}}
+    },
+    "checks": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_integrity", "qc_complete", "haplotype_accounting", "warning_accounting", "publication"],
+      "properties": {"source_integrity": {"const": "PASS"}, "qc_complete": {"const": "PASS"}, "haplotype_accounting": {"const": "PASS"}, "warning_accounting": {"const": "PASS"}, "publication": {"const": "PASS"}}
+    }
+  },
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "source": {"type": "object", "additionalProperties": false, "required": ["filename", "sha256"], "properties": {"filename": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha"}}},
+    "file": {"type": "object", "additionalProperties": false, "required": ["filename", "sha256", "size_bytes"], "properties": {"filename": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha"}, "size_bytes": {"type": "integer", "minimum": 1}}}
+  }
+}

@@ -20,13 +20,18 @@ inputs:
   target_variant_metadata: null
   target_variant_genotypes: null
   genetic_map: null
+  reference_panel_catalog: config/references/1000g_high_coverage_grch38_phased.json
 
 tools:
   plink: plink
   king: king
   bcftools: bcftools
   rscript: Rscript
-  phasing_adapter: null
+  phasing_adapter:
+    adapter_id: shapeit5_phase_common_rare_v1
+    phase_common_command: SHAPEIT5_phase_common
+    phase_rare_command: SHAPEIT5_phase_rare
+    expected_version: 5.1.1
   local_ibd_adapter: null
 
 policies:
@@ -94,3 +99,69 @@ stages:
       relatedness_max_degree_for_independence: 4
       threads: 4
       king_timeout_seconds: 300
+  analyze_population_structure:
+    enabled: false
+    parameters:
+      requested_components: 10
+      outlier_components: 5
+      min_reference_samples: 3
+      min_informative_variants: 100
+      min_reference_call_rate: 0.95
+      outlier_alpha: 0.001
+      plink_timeout_seconds: 300
+  freeze_cohorts:
+    enabled: false
+    parameters:
+      control_group_labels: [TEMOIN]
+      required_nonempty_cohorts:
+        - controls_unrelated
+        - target_carriers_all
+        - target_carriers_independent
+        - target_chromosome_all_qc
+        - genomewide_structure_reference
+      decision_reviews: {}
+  qc_final:
+    enabled: false
+    parameters:
+      sample_missingness_max: 0.1
+      controls_variant_missingness_max: 0.05
+      controls_maf_min: 0.05
+      controls_hwe_p_min: 1.0e-6
+      carriers_variant_missingness_max: 0.05
+      target_region_variant_missingness_max: 0.05
+      target_region_maf_min: 0.01
+      batch_missingness_delta_alert: 0.02
+      plink_timeout_seconds: 300
+  prepare_target_region:
+    enabled: false
+    parameters:
+      window_left_bp: 5000000
+      window_right_bp: 5000000
+      max_interpolation_gap_bp: 5000000
+      min_region_variants: 2
+      plink_timeout_seconds: 300
+  phase_target_region:
+    enabled: false
+    parameters:
+      reference_panel_id: 1kg_3202_high_coverage_20220422
+      reference_cache_dir: data/cache/references
+      reference_cache_offline: false
+      reference_lock_timeout_seconds: 60
+      reference_download_timeout_seconds: 7200
+      reference_download_chunk_size: 1048576
+      reference_extract_timeout_seconds: 7200
+      reference_extract_threads: 1
+      minimum_common_variants: 1
+      shapeit5_input_timeout_seconds: 300
+      shapeit5_execution_timeout_seconds: 7200
+      shapeit5_threads: 1
+      shapeit5_seed: 15052011
+      shapeit5_effective_size: 15000
+      minimum_phase_confidence: 0.9
+  infer_founder_haplotype:
+    enabled: false
+    parameters:
+      segment_method: target_centered_exact_ibs_v1
+      minimum_independent_carriers: 3
+      minimum_flank_markers: 2
+      bcftools_timeout_seconds: 300

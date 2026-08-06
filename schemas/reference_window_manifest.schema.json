@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/reference_window_manifest.schema.json",
+  "title": "Manifeste d'une fenêtre de référence phasée",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "created_at", "method_id", "assembly", "chromosome", "region", "sample_count", "variant_count", "sample_scope", "population_scope", "source", "tool", "files", "checks"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "method_id": {"const": "bcftools_all_samples_region_extract_v1"},
+    "assembly": {"const": "GRCh38"},
+    "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+    "region": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start_bp", "end_bp"],
+      "properties": {
+        "start_bp": {"type": "integer", "minimum": 1},
+        "end_bp": {"type": "integer", "minimum": 1}
+      }
+    },
+    "sample_count": {"type": "integer", "minimum": 1},
+    "variant_count": {"type": "integer", "minimum": 1},
+    "sample_scope": {"const": "ALL_RELEASE_SAMPLES"},
+    "population_scope": {"const": "ALL_AVAILABLE_1KGP_POPULATIONS"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["catalog_id", "catalog_sha256", "panel_id", "provider", "release_id", "cache_entry_key", "cache_manifest_sha256", "vcf_sha256", "index_sha256"],
+      "properties": {
+        "catalog_id": {"$ref": "#/$defs/stableIdentifier"},
+        "catalog_sha256": {"$ref": "#/$defs/sha256"},
+        "panel_id": {"$ref": "#/$defs/stableIdentifier"},
+        "provider": {"$ref": "#/$defs/stableIdentifier"},
+        "release_id": {"$ref": "#/$defs/stableIdentifier"},
+        "cache_entry_key": {"$ref": "#/$defs/sha256"},
+        "cache_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "vcf_sha256": {"$ref": "#/$defs/sha256"},
+        "index_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"const": "bcftools"},
+        "version": {"type": "string", "minLength": 1}
+      }
+    },
+    "files": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vcf", "index"],
+      "properties": {
+        "vcf": {"$ref": "#/$defs/file"},
+        "index": {"$ref": "#/$defs/file"}
+      }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assembly", "chromosome", "sample_count", "sample_set_and_order", "phased_genotypes", "tabix_index"],
+      "properties": {
+        "assembly": {"const": "PASS"},
+        "chromosome": {"const": "PASS"},
+        "sample_count": {"const": "PASS"},
+        "sample_set_and_order": {"const": "PASS"},
+        "phased_genotypes": {"const": "PASS"},
+        "tabix_index": {"const": "PASS"}
+      }
+    }
+  },
+  "$defs": {
+    "stableIdentifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["filename", "sha256", "size_bytes"],
+      "properties": {
+        "filename": {"type": "string", "pattern": "^[^/\\\\]+$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

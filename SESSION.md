@@ -1,19 +1,22 @@
 # Suivi de session
 
-Dernière mise à jour : 5 août 2026
+Dernière mise à jour : 6 août 2026
 
 ## État du dépôt
 
 - Dépôt GitHub : `patrick-mun/Effet_fondateur2`.
-- Branche active : `feature/v2-orchestrator-foundation`, avec les modifications
-  locales non committées de l'étape `07` au-dessus de la branche distante.
-- PR V2 en brouillon : `#2`, ciblant `main`.
+- Branche active : `feature/v2-shapeit5-contract`, avec l'étape `13` validée
+  localement au-dessus du commit `ab4e65e` qui clôt l'étape `12`.
+- PR V2 `#2` fusionnée dans `main` le 5 août 2026.
 - PR `#1` fusionnée dans `main` le 4 août 2026.
-- Commit de fusion : `f2fec8f`.
+- Dernier commit de fusion V2 : `f87b04c`.
 - Environnement : Python 3.12.13 dans `.venv`.
 - Outils disponibles et fonctionnels : PLINK 1.9, KING, bcftools, Rscript et
-  packages R du projet. Les commandes `Gamma`/`gamma` présentes dans le `PATH`
-  pointent actuellement vers un document HTML invalide et ne sont pas utilisables.
+  packages R du projet. SHAPEIT5 5.1.1 est installé dans l'environnement Conda
+  isolé `effet-fondateur-shapeit5` ; `SHAPEIT5_phase_common` et
+  `SHAPEIT5_phase_rare` démarrent correctement.
+  Les commandes `Gamma`/`gamma` présentes dans le `PATH` pointent actuellement
+  vers un document HTML invalide et ne sont pas utilisables.
 
 ## Bilan des avancées
 
@@ -174,6 +177,164 @@ Dernière mise à jour : 5 août 2026
   - ajout de la décision `kinship_exclusion_approval` au manifest dès qu'une
     exclusion ou une anomalie de pedigree requiert une revue humaine ;
   - aucune nouvelle dépendance : KING, PyYAML et jsonschema étaient déjà requis.
+- Étape V2 `08_analyze_population_structure` implémentée et validée sur fixtures
+  synthétiques et avec PLINK 1.9/KING 2.3.2 réels dans un dossier temporaire :
+  - consommation du panel `06`, du registre maître et de la proposition
+    indépendante `07`, avec contrôle des empreintes et ensembles d'individus ;
+  - export temporaire des dosages A1 par PLINK, sans publication du `.raw` ;
+  - estimation des fréquences, centrage et réduction exclusivement sur les
+    individus proposés indépendants, avec imputation des manquants à `2p` ;
+  - exclusion auditée du modèle des variants monomorphes ou insuffisamment
+    appelés dans la référence ;
+  - PCA par SVD avec signe déterministe et projection séparée de tous les
+    apparentés, qui ne peuvent pas modifier les axes ni les scores de référence ;
+  - publication des scores, valeurs propres, métriques exploratoires d'outlier,
+    fréquences, échelles et loadings nécessaires à la reproduction ;
+  - distinction explicite entre l'ensemble complet projeté et l'identifiant de
+    la référence indépendante ayant servi à ajuster le modèle ;
+  - approximation du chi-deux réservée au signalement exploratoire, sans
+    exclusion automatique ni interprétation clinique ou d'ascendance ;
+  - ajout de `population_structure_exclusion_approval` au manifest uniquement
+    lorsqu'un outlier est proposé pour revue humaine ;
+  - aucune référence populationnelle externe et aucune DAPC dans cette version.
+- Étape V2 `09_freeze_cohorts` implémentée et validée sur fixtures synthétiques
+  et sur une chaîne temporaire `01` à `09` avec PLINK 1.9/KING 2.3.2 réels :
+  - consommation explicite du registre, des génotypes cibles acceptés, du QC,
+    de la proposition indépendante et des résultats populationnels ;
+  - publication d'une matrice complète de sept cohortes avec une ligne par
+    individu, y compris pour chaque exclusion et sa provenance ;
+  - classification porteur/non-porteur fondée exclusivement sur le génotype
+    individuel accepté de l'étape `04`, jamais sur le statut ou le groupe ;
+  - groupes témoins déclarés explicitement par configuration, sans utilisation
+    comme source de génotype ;
+  - représentants indépendants déterministes par famille selon le QC technique,
+    avec unités explicites pour contrôles, familles porteuses et composants KING ;
+  - approbations inter-run liées au SHA-256 exact des propositions `07`/`08`,
+    avec liste complète des exclusions et date horodatée ;
+  - résolution des décisions manuelles par l'orchestrateur seulement après
+    validation et publication atomique de l'étape ; un échec les conserve ;
+  - identifiants approuvés confinés à `cohort_decisions.tsv`, classé sensible,
+    tandis que l'audit et le rapport ne publient que des comptes ;
+  - génération de sept fichiers PLINK `--keep`, dont les cohortes optionnelles
+    peuvent être vides sans ambiguïté.
+- Étape V2 `10_qc_final` implémentée et validée sur fixtures synthétiques et sur
+  une chaîne temporaire `01` à `10` avec PLINK 1.9/KING 2.3.2 réels :
+  - publication séparée de jeux finaux pour les témoins indépendants, les
+    porteurs indépendants et tous les individus du chromosome cible ;
+  - exclusion individuelle sur missingness avant recalcul des métriques variant ;
+  - HWE et MAF appliqués uniquement aux témoins, sans HWE ni filtre MAF chez
+    les porteurs indépendants ;
+  - MAF locale et missingness variant sur le chromosome cible, avec conservation
+    forcée et auditée du variant cible lorsqu'un seuil standard échoue ;
+  - alertes de lot descriptives sans exclusion automatique ;
+  - nouveaux identifiants déterministes d'échantillons et variants pour chaque
+    jeu BED/BIM/FAM final, avec descripteurs et empreintes.
+- Étape V2 `11_prepare_target_region` implémentée et validée sur fixtures
+  synthétiques et sur une chaîne temporaire `01` à `11` avec PLINK 1.9/KING
+  2.3.2 réels :
+  - extraction PLINK d'une fenêtre physique gauche/droite configurable depuis
+    le jeu local final de l'étape `10`, sans modifier les individus ;
+  - carte TSV à identifiant unique, assemblage explicite, positions bp
+    strictement croissantes et positions cM monotones ;
+  - interpolation décimale uniquement entre deux ancres dont l'écart respecte
+    le maximum configuré, sans extrapolation ni approximation `1 Mb = 1 cM` ;
+  - contrôle des coordonnées, allèles, doublons, ordre et présence du variant
+    cible avant publication ;
+  - écriture des cM validés dans le BIM régional et publication de
+    `target_genetic_map.tsv` ;
+  - manifest générique `PLINK_BED_BIM_FAM_WITH_CM`, sans imposer prématurément
+    l'adaptateur de phasage de l'étape `12`.
+- Sous-étape V2 `12.0` implémentée et validée sans donnée génétique :
+  - contrat `shapeit5_phase_common_rare_v1` figé sur SHAPEIT5 `5.1.1`, licence
+    MIT, autosomes GRCh38, sorties BCF et carte génétique obligatoire ;
+  - `phase_common` retenu pour le scaffold partagé avec la référence et
+    `phase_rare` pour le variant cible rare lorsqu'il est absent du panel ;
+  - pedigree enfant-père-mère, graine, threads et taille efficace explicitement
+    représentés dans les commandes reproductibles ;
+  - schéma de configuration strict, sonde de version exacte pour les deux
+    exécutables et inventaire technique du run adaptés au contrat ;
+  - aucune référence téléchargée et aucun phasage exécuté à cette sous-étape.
+- Sous-étape V2 `12.1` implémentée et validée sans téléchargement de panel :
+  - catalogue JSON versionné et schéma strict pour le panel haute couverture
+    phasé de `3 202` échantillons 1000 Genomes sur GRCh38 ;
+  - couverture explicite des 22 autosomes, de tous les échantillons et de toutes
+    les populations disponibles, sans sélection implicite ;
+  - résolution hors ligne par panel, assemblage et chromosome, limitée au
+    domaine officiel `ftp.1000genomes.ebi.ac.uk` ;
+  - URL et SHA-256 du README et du manifeste épinglés, avec MD5 fournisseur du
+    VCF et de son index pour chaque autosome ;
+  - aucun VCF de référence téléchargé et aucune donnée privée transmise.
+- Sous-étape V2 `12.2` implémentée et validée sans téléchargement du VCF 1000G :
+  - cache partagé adressé par catalogue, panel, release, assemblage, chromosome,
+    URL et empreintes attendues ;
+  - verrou `flock`, écriture temporaire sur le même système de fichiers et
+    publication par renommage atomique ;
+  - MD5 fournisseur vérifié pour VCF/index, SHA-256 épinglé pour README/manifeste
+    et SHA-256 local recalculé pour les quatre fichiers ;
+  - entrées publiées en lecture seule et intégralement revérifiées avant chaque
+    réutilisation, sans remplacement automatique d'une corruption ;
+  - reprise des seuls dossiers temporaires interrompus et mode hors ligne
+    bloquant un cache absent sans appel réseau.
+- Sous-étape V2 `12.3` implémentée et validée sans téléchargement du VCF 1000G :
+  - extraction régionale bgzip avec `bcftools` et création d'un index tabix ;
+  - conservation obligatoire de tous les échantillons et de leur ordre source,
+    sans sélection de population ;
+  - contrôle des longueurs canoniques des contigs GRCh38, du champ `GT`, de
+    l'effectif catalogue, du nombre de variants et de l'absence de génotypes
+    appelés non phasés ;
+  - revalidation des empreintes du cache avant lecture et publication atomique
+    d'un manifeste liant la fenêtre à la release et aux fichiers sources.
+- Sous-étape V2 `12.4` implémentée et validée sans lancement de SHAPEIT5 :
+  - décomposition biallélique des SNV/indels de la fenêtre de référence ;
+  - jointure des marqueurs ACPA par assemblage, chromosome, position, REF et ALT,
+    sans utiliser rsID ni identifiant de sonde comme clé scientifique ;
+  - audit des correspondances directes, inversions A1/A2, variants propres à
+    l'étude, discordances alléliques et collisions de sondes ;
+  - absence de correction automatique de brin et blocage des ambiguïtés touchant
+    le variant cible ;
+  - conservation autorisée du variant cible absent du panel pour `phase_rare` ;
+  - publication atomique d'une référence harmonisée, de son index, de la table
+    d'audit et d'un manifeste lié par SHA-256 aux entrées `11` et `12.3`.
+  - intégration à l'étape orchestrée `12_phase_target_region`, avec artefacts
+    `12.3` et `12.4` séparés, audit V2, codes de retour et reprise stricte ;
+  - décision de ne pas ajouter de FASTA : les représentations GRCh38 doivent
+    déjà être minimales et toute évolution de cette méthode sera distincte ;
+  - complétion autorisée d'un allèle PLINK `0` uniquement depuis une
+    correspondance de référence unique, sans inférer de génotype individuel.
+- Sous-étape V2 `12.5` implémentée et validée sans lancement de SHAPEIT5 :
+  - sélection auditée des variants communs et conservation obligatoire du
+    variant cible comme `COMMON_TARGET` ou `RARE_TARGET` ;
+  - export PLINK du VCF d'étude avec les `SAMPLE_ID` maître, REF canonique imposé
+    par `--a2-allele`, puis revalidation bcftools de l'ordre et des REF/ALT ;
+  - carte SHAPEIT `pos/chr/cM`, pedigree trio/duo sans en-tête avec `NA` pour un
+    parent absent et fichier vide autorisé lorsqu'aucun parent n'est présent ;
+  - VCF bgzip/indexé, tables de sélection et de correspondance des individus,
+    manifeste lié aux empreintes et publication atomique ;
+  - intégration orchestrée, audit, codes de retour, reprise stricte et délai
+    externe configurable, sans exécuter `phase_common` ni `phase_rare`.
+- Sous-étape V2 `12.6` implémentée et validée :
+  - ajout des tags `AC/AN` requis par `phase_common` dans le VCF étude `12.5` ;
+  - correction du contrat `phase_rare 5.1.1`, qui ne prend pas `--log`, avec
+    capture stdout/stderr dans un journal dédié ;
+  - exécution séquentielle `phase_common`/`phase_rare`, BCF/index CSI, versions,
+    graine, threads, `Ne`, régions et délais enregistrés ;
+  - contrôle des empreintes, individus, variants, génotypes et erreurs
+    mendéliennes avant/après, puis concordance avec le génotype cible explicite ;
+  - attribution `H1/H2/BOTH`, transmissions trio/duo, score PP des singletons,
+    zones non fiables et revue manuelle lorsque la confiance manque ;
+  - publication atomique des sorties, tables versionnées, manifeste, audit,
+    codes d'erreur et reprise stricte.
+- Sous-étape V2 `12.7` implémentée et validée :
+  - consolidation de douze contrôles couvrant intégrité, `AC/AN`, variants,
+    individus, génotypes, cible, Mendel, transmissions et confiance ;
+  - publication d'un résumé agrégé `NONE/H1/H2/BOTH` sans identifiant
+    individuel et d'un manifeste final lié aux sorties `12.5–12.6` ;
+  - warning de confiance conservé sans exclusion automatique, avec revue
+    manuelle obligatoire lorsqu'un porteur reste non fiable ;
+  - publication atomique, reprise stricte et déclaration des trois
+    visualisations pseudonymisées attendues pour l'étape `18` ;
+  - clôture de l'étape `12` après fixtures synthétiques, suite complète et smoke
+    réel temporaire.
 
 ## Jeux de données actuellement disponibles
 
@@ -248,10 +409,15 @@ Dernière mise à jour : 5 août 2026
 - Tests ciblés de l'étape `05` : 6 réussis.
 - Tests ciblés de l'étape `06` : 7 réussis.
 - Tests ciblés de l'étape `07` : 8 réussis.
-- Suite moderne `tests/`, incluant les étapes `01` à `07` et les contrôles de
-  maintenabilité V2 : 88 réussis.
-- Ensemble des suites Python actuelles : 100 réussis et 4 échecs historiques
-  sans rapport avec les étapes `05` à `07`.
+- Tests ciblés de l'étape `08` : 8 réussis.
+- Tests ciblés de l'étape `09` : 7 réussis.
+- Suite moderne `tests/`, incluant les étapes `01` à `12.7` et les contrôles de
+  maintenabilité V2 : 160 réussis.
+- Contrôle ciblé final de la fenêtre, du cache, du catalogue, de la
+  configuration, de l'orchestrateur et de SHAPEIT5 : 45 réussis.
+- Dernière exécution combinée antérieure des suites modernes et historiques :
+  129 réussis et 4 échecs historiques sans rapport avec les étapes `05` à `11` ;
+  la suite historique n'a pas été relancée pour `12.0`.
 - Smoke test temporaire avec PLINK 1.9 réel : 2 individus, 23 marqueurs
   autosomiques et 2 marqueurs du chromosome cible, conversion réussie.
 - Smoke test temporaire de l'étape `04` avec PLINK 1.9 réel : 2 individus,
@@ -265,6 +431,55 @@ Dernière mise à jour : 5 août 2026
 - Smoke test temporaire de l'étape `07` avec KING 2.3.2 réel : 3 individus,
   une relation parent-enfant déclarée auditée, une exclusion proposée sur la
   seule base du pedigree et validation manuelle correctement requise.
+- Smoke test temporaire de l'étape `08` avec PLINK 1.9 et KING 2.3.2 réels :
+  3 individus, 22 marqueurs, 11 variants informatifs, 2 composantes calculées,
+  aucun outlier et aucun fichier de dosage temporaire publié.
+- Smoke test temporaire de la chaîne `01` à `09` avec PLINK 1.9 et KING 2.3.2
+  réels : 3 individus, 7 cohortes, 2 contrôles indépendants, 1 porteur total et
+  indépendant, 3 individus dans la référence de structure et sur le chromosome
+  cible, sans décision manuelle résiduelle.
+- Smoke test temporaire de la chaîne `01` à `10` avec PLINK 1.9 et KING 2.3.2
+  réels : jeux finaux de 2 individus/11 variants chez les témoins, 1/22 chez le
+  porteur indépendant et 3/2 sur le chromosome cible ; aucun individu exclu et
+  variant cible conservé sans exception sur cette fixture.
+- Smoke test temporaire de la chaîne `01` à `11` avec PLINK 1.9 et KING 2.3.2
+  réels : région de 3 individus et 2 variants, une position de carte exacte,
+  une position interpolée, variant cible en deuxième position et manifest de
+  phasage valide.
+- Smoke technique `12.0` : les exécutables installés
+  `SHAPEIT5_phase_common` et `SHAPEIT5_phase_rare` répondent tous deux avec la
+  version exacte `5.1.1` attendue par le contrat.
+- Smoke métadonnées `12.1` contre le serveur EBI : les 44 MD5 des VCF/index des
+  22 autosomes et les deux SHA-256 du manifeste et du README correspondent au
+  catalogue local.
+- Smoke réseau `12.2` : le téléchargeur Python HTTPS a acquis le manifeste EBI
+  de 5 092 octets et validé son SHA-256 épinglé, sans télécharger aucun VCF.
+- Smoke réel `12.3` avec bcftools 1.21 : VCF bgzip temporaire de 2 échantillons
+  et 2 variants phasés, extraction régionale, index tabix et manifeste valides.
+- Smoke réel `12.4` avec bcftools 1.21 : 2 variants de référence phasés,
+  3 variants d'étude, 2 correspondances canoniques, décomposition, filtrage,
+  index tabix et publication temporaire valides.
+- Smoke réel `12.5` avec PLINK 1.9 et bcftools 1.21 : 3 individus, dont un trio,
+  2 variants, renommage vers les identifiants maître, REF/ALT canoniques et
+  index tabix valides ; la complétion d'un REF PLINK `0` par `--a2-allele` est
+  également validée sur une sortie temporaire.
+- Smoke réel `12.6` avec SHAPEIT5 5.1.1 et bcftools 1.21 : 60 individus,
+  200 variants communs et une cible rare ; les gardes ont d'abord bloqué une
+  fixture avec erreurs mendéliennes puis un génotype explicite aux mauvais
+  allèles. Après correction de la fixture, les deux passes, 201 variants finaux,
+  l'indexation et l'attribution `H1` ont réussi ; le PP `0,542` a été classé
+  `UNRELIABLE` sous le seuil `0,9`, sans masquer le résultat.
+- Smoke réel `12.7` sur les sorties SHAPEIT5 précédentes : douze contrôles QC,
+  200 variants communs, 201 variants finaux, 60 individus et un porteur `H1`
+  correctement comptabilisés ; le warning PP faible est conservé et le résumé
+  final exige une revue manuelle.
+- Étape `13` implémentée avec la méthode conservatrice
+  `target_centered_exact_ibs_v1` : sélection des unités porteuses indépendantes,
+  limites exactes en bp/cM, consensus et matrice pairwise, fréquence de fond
+  hors mutation, exclusions explicites et distinction IBS/IBD. Les tests
+  synthétiques couvrent un candidat partagé, l'effectif insuffisant,
+  l'orchestration et la reprise ; aucune analyse des données réelles n'a été
+  lancée.
 
 ## Suivi des étapes du pipeline V2
 
@@ -282,12 +497,12 @@ ses tests, son audit et sa documentation sont cohérents.
 | `05` | QC préliminaire genome-wide | `VALIDE` | Oui | Oui | Missingness technique, alertes et smoke PLINK réel validés |
 | `06` | Panel indépendant | `VALIDE` | Oui | Oui | MAF post-QC, pruning LD et smoke PLINK réel validés |
 | `07` | Apparentement et duplicats | `VALIDE` | Oui | Oui | KING, pedigree, proposition indépendante et smoke réel validés |
-| `08` | Structure populationnelle | `NON_FAIT` | Non | Non | — |
-| `09` | Gel des cohortes | `NON_FAIT` | Non | Non | Schéma préparé, script non implémenté |
-| `10` | QC final | `NON_FAIT` | Non | Non | — |
-| `11` | Région cible | `NON_FAIT` | Non | Non | — |
-| `12` | Phasage | `NON_FAIT` | Non | Non | Méthode à décider |
-| `13` | Haplotype fondateur et IBD local | `NON_FAIT` | Non | Non | Méthode à décider |
+| `08` | Structure populationnelle | `VALIDE` | Oui | Oui | PCA indépendante, projection, outliers et smoke réel validés |
+| `09` | Gel des cohortes | `VALIDE` | Oui | Oui | Génotypes explicites, revues SHA, unités et fichiers keep validés |
+| `10` | QC final | `VALIDE` | Oui | Oui | Trois politiques, exception cible et smoke réel validés |
+| `11` | Région cible | `VALIDE` | Oui | Oui | Carte GRCh38 bornée, cM monotones et smoke réel validés |
+| `12` | Référence phasée et phasage | `VALIDE` | Oui | Oui | `12.0–12.7` validées, QC final et smoke réel inclus |
+| `13` | Haplotype fondateur et IBD local | `VALIDE` | Oui | Oui | IBS exact centré cible, aucune revendication IBD |
 | `14` | Datation du variant | `NON_FAIT` | Non | Non | Méthodes à valider |
 | `15` | LD local secondaire | `NON_FAIT` | Non | Non | Exploratoire par défaut |
 | `16` | ROH secondaire | `NON_FAIT` | Non | Non | Exploratoire par défaut |
@@ -295,18 +510,50 @@ ses tests, son audit et sa documentation sont cohérents.
 | `18` | Visualisations consolidées | `NON_FAIT` | Non | Non | — |
 | `19` | Rapport et revue finale | `NON_FAIT` | Non | Non | — |
 
+### Découpage opérationnel de l'étape 12
+
+L'étape reste générique pour tout variant autosomique. DOCK6 et le chromosome
+19 ne sont que la première configuration d'étude. Le panel principal utilise
+par défaut tous les échantillons et toutes les populations de la référence
+phasée ; les sous-populations sont réservées aux analyses de sensibilité.
+
+| Sous-étape | Responsabilité | Statut | Validation attendue |
+|---:|---|---|---|
+| `12.0` | Figer le contrat et choisir l'adaptateur de phasage | `VALIDE` | SHAPEIT5 5.1.1, MIT, GRCh38, pedigree, formats, paramètres et sonde réelle validés |
+| `12.1` | Résoudre le panel depuis un catalogue versionné | `VALIDE` | 1000G GRCh38, 3 202 échantillons, 22 autosomes, README, manifeste et MD5 validés |
+| `12.2` | Télécharger ou réutiliser le cache immuable | `VALIDE` | Verrou, publication atomique, reprise, MD5/SHA-256, lecture seule et hors ligne validés |
+| `12.3` | Extraire la fenêtre de référence avec tous les échantillons | `VALIDE` | VCF régional bgzip/indexé, génotypes phasés et assemblage concordant |
+| `12.4` | Normaliser et harmoniser référence/ACPA | `VALIDE` | Étape orchestrée, schémas, reprise, codes V2, smoke bcftools réel et décision sans FASTA validés |
+| `12.5` | Construire les entrées étude, pedigree et référence | `VALIDE` | VCF/index, carte, pedigree, cible rare, ordre/identités, schémas, reprise et smoke réel validés |
+| `12.6` | Exécuter l'adaptateur et attribuer le chromosome porteur | `VALIDE` | Deux passes réelles, transmissions, PP, Mendel, génotypes explicites, zones non fiables et reprise validés |
+| `12.7` | Publier le QC, les haplotypes et le smoke test | `VALIDE` | Douze contrôles, agrégats, warning/revue, reprise, audit complet et smoke réel validés |
+
+Les sous-étapes `12.1–12.5` doivent pouvoir être testées sans lancer le logiciel
+de phasage. Un échec d'empreinte, d'assemblage ou d'allèle doit donc bloquer
+avant l'opération externe coûteuse. Le cache de référence est partagé entre les
+runs, mais chaque run enregistre exactement la release, les paramètres et les
+empreintes qu'il consomme.
+
 ### Audits qualité par groupe de cinq étapes
 
 | Groupe | Audit requis après | Statut | Contenu minimal |
 |---|---:|---|---|
 | `00–04` | étape `04` | `VALIDE` | architecture, contrats, sécurité, tests, audit scientifique |
-| `05–09` | étape `09` | `NON_FAIT` | QC, KING, structure, indépendance et cohortes |
+| `05–09` | étape `09` | `VALIDE` | QC, KING, structure, indépendance et cohortes |
 | `10–14` | étape `14` | `NON_FAIT` | QC final, phasage, haplotypes et datation |
 | `15–19` | étape `19` | `NON_FAIT` | analyses secondaires, figures, rapport et reproductibilité |
 
 La revue de maintenabilité du socle réalisée avant l'étape `01` est un contrôle
 préliminaire ; elle ne remplace pas l'audit complet obligatoire après l'étape
 `04`.
+
+L'audit groupé `05–09` confirme que les filtres automatiques restent limités au
+QC technique, que KING et la PCA ne produisent que des propositions, que les
+revues sont liées aux artefacts par empreinte, que les décisions ne sont
+résolues qu'après succès, que les données individuelles sont classées sensibles
+et que chaque cohorte/raison/unité reste reproductible. Aucun blocage nouveau
+n'a été identifié ; les limites scientifiques de la PCA exploratoire, de la
+sélection gloutonne et des groupes témoins configurés restent documentées.
 
 ## Problèmes connus
 
@@ -338,18 +585,19 @@ préliminaire ; elle ne remplace pas l'audit complet obligatoire après l'étape
 
 ## Priorités de la prochaine session
 
-1. Implémenter `08_analyze_population_structure` sur une base indépendante
-   validée, puis projeter séparément les apparentés si la méthode le permet.
+1. Définir puis réaliser l'étape `14` depuis les longueurs gauche/droite validées
+   de l'étape `13`, sans reprendre la séparation historique de Gamma.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
-3. Définir le mécanisme d'approbation de `kinship_exclusion_approval` consommé
-   par les étapes `08` et `09`, sans modifier un run déjà publié.
+3. Préparer les revues réelles `kinship_exclusion_approval` et
+   `population_structure_exclusion_approval` sur un premier run, puis les lier
+   par SHA-256 dans la configuration d'un nouveau run destiné au gel.
 4. Intégrer les 66 témoins réels dans le QC genome-wide, KING, la structure et le
    gel des cohortes avant toute analyse locale.
 5. Confirmer les données moléculaires et génotypes individuels du variant DOCK6,
    puis valider son intégration et Mendel sur le jeu chromosome 19 définitif.
-6. Implémenter ensuite phasage, haplotype fondateur et datation avec jeux
-   synthétiques de référence avant analyse réelle.
+6. Valider ensuite la datation avec des jeux synthétiques de référence avant
+   toute analyse réelle.
 
 ## Décisions à conserver
 
@@ -368,6 +616,13 @@ préliminaire ; elle ne remplace pas l'audit complet obligatoire après l'étape
   position, REF et ALT ; conserver les identifiants de sonde et rsID comme
   annotations, sans exclure un marqueur uniquement parce que son rsID manque.
 - Générer chaque figure uniquement depuis des sorties et audits du run courant.
+- Utiliser par défaut toutes les populations du panel phasé de référence ; les
+  sélections de populations ne servent qu'aux analyses de sensibilité.
+- Ne jamais envoyer les données privées de l'étude vers un service externe ; le
+  réseau ne sert qu'à acquérir les références publiques dans un cache immuable.
+- Conserver le variant cible dans les données de l'étude même s'il est absent du
+  panel, et aligner les variants d'abord par assemblage, chromosome, position,
+  REF et ALT plutôt que par rsID ou identifiant de sonde.
 - Archiver un script V1 seulement après cartographie de ses dépendances et
   validation de son remplacement V2.
 
@@ -382,6 +637,5 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action attendue est d'implémenter `08_analyze_population_structure` depuis le
-panel de l'étape `06` et la proposition indépendante de l'étape `07`, avec une
-stratégie explicite d'estimation et de projection des apparentés.
+action attendue est de figer la méthode de datation de l'étape `14` avant toute
+analyse des données réelles.

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/carrier_haplotypes.schema.json",
+  "title": "Attribution du chromosome porteur au variant cible",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["SAMPLE_ORDER", "SAMPLE_ID", "TARGET_VARIANT_ID", "EXPLICIT_GENOTYPE", "PHASED_GT", "ALT_COPY_COUNT", "CARRIER_HAPLOTYPE", "PHASE_CONFIDENCE", "CONFIDENCE_STATUS", "RELIABILITY_STATUS", "UNRELIABLE_REASON"],
+    "null_value": "",
+    "primary_key": ["SAMPLE_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "stableIdentifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "nullableNumber": {"oneOf": [{"type": "string", "pattern": "^(0\\.[5-9][0-9]*|1(?:\\.0+)?)$"}, {"type": "null"}]},
+    "nullableReason": {"oneOf": [{"$ref": "#/$defs/stableIdentifier"}, {"type": "null"}]},
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["SAMPLE_ORDER", "SAMPLE_ID", "TARGET_VARIANT_ID", "EXPLICIT_GENOTYPE", "PHASED_GT", "ALT_COPY_COUNT", "CARRIER_HAPLOTYPE", "PHASE_CONFIDENCE", "CONFIDENCE_STATUS", "RELIABILITY_STATUS", "UNRELIABLE_REASON"],
+      "properties": {
+        "SAMPLE_ORDER": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "SAMPLE_ID": {"$ref": "#/$defs/stableIdentifier"},
+        "TARGET_VARIANT_ID": {"$ref": "#/$defs/stableIdentifier"},
+        "EXPLICIT_GENOTYPE": {"type": "string", "pattern": "^[ACGT]+/[ACGT]+$"},
+        "PHASED_GT": {"pattern": "^[01]\\|[01]$"},
+        "ALT_COPY_COUNT": {"enum": ["0", "1", "2"]},
+        "CARRIER_HAPLOTYPE": {"enum": ["NONE", "H1", "H2", "BOTH"]},
+        "PHASE_CONFIDENCE": {"$ref": "#/$defs/nullableNumber"},
+        "CONFIDENCE_STATUS": {"enum": ["NOT_APPLICABLE_HOMOZYGOUS", "SCORED_PASS", "SCORED_LOW", "NOT_AVAILABLE"]},
+        "RELIABILITY_STATUS": {"enum": ["PASS", "UNRELIABLE"]},
+        "UNRELIABLE_REASON": {"$ref": "#/$defs/nullableReason"}
+      }
+    }
+  }
+}

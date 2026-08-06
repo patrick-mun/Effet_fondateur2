@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/founder_sharing_matrix.schema.json",
+  "title": "Partage IBS pairwise des chromosomes porteurs",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["INDEPENDENT_UNIT_ID_1", "SAMPLE_ID_1", "CARRIER_HAPLOTYPE_ID_1", "INDEPENDENT_UNIT_ID_2", "SAMPLE_ID_2", "CARRIER_HAPLOTYPE_ID_2", "LEFT_BOUND_BP", "TARGET_BP", "RIGHT_BOUND_BP", "LEFT_LENGTH_CM", "RIGHT_LENGTH_CM", "LEFT_MARKER_COUNT", "RIGHT_MARKER_COUNT", "PAIR_STATUS"],
+    "null_value": "", "primary_key": ["INDEPENDENT_UNIT_ID_1", "INDEPENDENT_UNIT_ID_2"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "integer": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+    "count": {"type": "string", "pattern": "^[0-9]+$"},
+    "decimal": {"type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$"},
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["INDEPENDENT_UNIT_ID_1", "SAMPLE_ID_1", "CARRIER_HAPLOTYPE_ID_1", "INDEPENDENT_UNIT_ID_2", "SAMPLE_ID_2", "CARRIER_HAPLOTYPE_ID_2", "LEFT_BOUND_BP", "TARGET_BP", "RIGHT_BOUND_BP", "LEFT_LENGTH_CM", "RIGHT_LENGTH_CM", "LEFT_MARKER_COUNT", "RIGHT_MARKER_COUNT", "PAIR_STATUS"],
+      "properties": {
+        "INDEPENDENT_UNIT_ID_1": {"$ref": "#/$defs/identifier"}, "SAMPLE_ID_1": {"$ref": "#/$defs/identifier"}, "CARRIER_HAPLOTYPE_ID_1": {"enum": ["H1", "H2"]},
+        "INDEPENDENT_UNIT_ID_2": {"$ref": "#/$defs/identifier"}, "SAMPLE_ID_2": {"$ref": "#/$defs/identifier"}, "CARRIER_HAPLOTYPE_ID_2": {"enum": ["H1", "H2"]},
+        "LEFT_BOUND_BP": {"$ref": "#/$defs/integer"}, "TARGET_BP": {"$ref": "#/$defs/integer"}, "RIGHT_BOUND_BP": {"$ref": "#/$defs/integer"},
+        "LEFT_LENGTH_CM": {"$ref": "#/$defs/decimal"}, "RIGHT_LENGTH_CM": {"$ref": "#/$defs/decimal"},
+        "LEFT_MARKER_COUNT": {"$ref": "#/$defs/count"}, "RIGHT_MARKER_COUNT": {"$ref": "#/$defs/count"}, "PAIR_STATUS": {"enum": ["SELF", "SHARED", "INSUFFICIENT"]}
+      }
+    }
+  }
+}

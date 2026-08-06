@@ -149,6 +149,92 @@ pedigree déclaré. Elle publie une proposition d'ensemble indépendant orienté
 qualité, sans appliquer automatiquement les exclusions. Le contrat et la revue
 manuelle requise sont documentés dans `docs/modules/kinship.md`.
 
+`08_analyze_population_structure` ajuste ensuite une PCA sur les seuls
+individus proposés comme indépendants à l'étape `07`, puis projette les
+apparentés sans leur permettre de déterminer les axes. Les métriques d'outliers
+restent exploratoires et toute exclusion proposée requiert une validation
+humaine. Le modèle reproductible et ses limites sont documentés dans
+`docs/modules/population_structure.md`.
+
+`09_freeze_cohorts` transforme enfin les génotypes cibles explicites, le QC,
+l'apparentement et la structure en sept cohortes versionnées. Les exclusions
+KING ou PCA ne sont appliquées qu'après une revue liée au SHA-256 exact de
+l'artefact proposé ; le succès de l'étape résout alors les décisions manuelles
+correspondantes. Le contrat est documenté dans `docs/modules/cohort_freeze.md`.
+
+`10_qc_final` repart des fichiers `--keep` figés et publie trois jeux PLINK
+versionnés : témoins indépendants, porteurs indépendants et chromosome cible.
+Le HWE est réservé aux témoins, les lots restent descriptifs et le variant
+cible est conservé avec une exception auditée lorsqu'il échoue un filtre
+standard. Le contrat est documenté dans `docs/modules/final_qc.md`.
+
+`11_prepare_target_region` extrait ensuite une fenêtre configurable autour du
+variant cible et interpole les positions cM uniquement entre les ancres d'une
+carte génétique correspondant à l'assemblage. Elle interdit l'extrapolation et
+l'approximation `1 Mb = 1 cM`, contrôle l'ordre, les doublons et les allèles,
+puis publie un manifest PLINK neutre pour l'adaptateur de phasage. Le contrat
+est documenté dans `docs/modules/target_region.md`.
+
+La sous-étape `12.0` retient SHAPEIT5 `5.1.1` avec un contrat à deux composants :
+`phase_common` pour le scaffold partagé avec la référence et `phase_rare` pour
+conserver et phaser les variants rares propres à l'étude, dont la cible si elle
+est absente du panel. Les formats, paramètres et limites sont documentés dans
+`docs/modules/phasing.md`.
+
+La sous-étape `12.1` résout ensuite le panel haute couverture 1000 Genomes
+GRCh38 depuis un catalogue local couvrant les 22 autosomes et contenant les MD5
+officiels des VCF et index. Elle ne télécharge encore aucun fichier. Le contrat
+est documenté dans `docs/modules/reference_panel.md`.
+
+La sous-étape `12.2` fournit un cache partagé verrouillé, atomique et immuable.
+Elle vérifie les MD5 fournisseur et les SHA-256 locaux, prend en charge un mode
+hors ligne et bloque toute entrée publiée corrompue. Son fonctionnement est
+documenté dans `docs/modules/reference_cache.md`.
+
+La sous-étape `12.3` extrait ensuite une fenêtre bgzip/indexée sans filtrer les
+échantillons du panel. Elle vérifie l'effectif et l'ordre complets, le contig
+GRCh38 et l'absence de génotypes appelés non phasés avant publication atomique.
+Son contrat est documenté dans `docs/modules/reference_window.md`.
+
+La sous-étape `12.4`, désormais intégrée à `12_phase_target_region`, décompose
+les SNV/indels bialléliques puis harmonise les marqueurs ACPA avec la référence
+par assemblage, chromosome, position, REF et ALT. Elle audite les inversions
+A1/A2, les allèles PLINK manquants complétés depuis une correspondance publique
+unique, les collisions et le variant cible absent du panel. Le contrat exige
+des représentations GRCh38 déjà minimales et n'utilise pas de FASTA. Il est
+documenté dans `docs/modules/reference_harmonization.md`.
+
+La sous-étape `12.5` construit enfin le VCF d'étude bgzip/indexé, la carte au
+format SHAPEIT et le pedigree fondé sur les identifiants maître. Elle conserve
+le variant cible pour `phase_rare` lorsqu'il est absent de la référence, impose
+le REF canonique avec PLINK puis revalide l'ordre des individus et tous les
+REF/ALT avec bcftools. Elle publie les tables d'audit et un manifeste sans
+lancer SHAPEIT5. Le contrat est documenté dans
+`docs/modules/shapeit5_inputs.md`.
+
+La sous-étape `12.6` exécute `phase_common`, puis `phase_rare`, revalide les
+génotypes et les transmissions, et attribue `H1`, `H2` ou les deux au variant
+cible depuis le GT phasé confronté au génotype moléculaire explicite. Le score
+PP des singletons est audité ; une confiance absente ou inférieure au seuil
+conserve le résultat mais le marque non fiable et demande une revue manuelle.
+Le contrat est documenté dans `docs/modules/shapeit5_execution.md`.
+
+La sous-étape `12.7` clôt l'étape en consolidant douze contrôles de phasage,
+les effectifs agrégés `H1/H2/BOTH` et la décision de revue manuelle. Elle lie
+les résultats aux manifestes `12.5–12.6`, publie atomiquement le résumé final et
+déclare les visualisations pseudonymisées attendues à l'étape 18. Le contrat est
+documenté dans `docs/modules/phasing_qc.md`.
+
+L'étape `13_infer_founder_haplotype` applique ensuite la méthode conservatrice
+`target_centered_exact_ibs_v1` aux chromosomes porteurs fiables des unités
+indépendantes. Elle s'étend depuis la cible jusqu'au premier allèle manquant ou
+discordant, publie les limites en bp et cM, une matrice pairwise, le consensus
+et l'audit allélique, puis mesure la signature hors mutation chez les témoins
+et non-porteurs. Trois unités et deux marqueurs par flanc sont requis par défaut.
+Le résultat reste un candidat **IBS** compatible avec un ancêtre commun et ne
+constitue jamais une preuve **IBD** sans méthode IBD externe validée. Le contrat
+est documenté dans `docs/modules/founder_haplotype.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est
@@ -160,6 +246,7 @@ Les exécutables suivants doivent être accessibles depuis le `PATH` :
 
 - `plink` 1.9 ou compatible : filtrage, ROH, IBD, HWE et LD ;
 - `king` : estimation des relations de parenté ;
+- `bcftools` : cache, extraction et harmonisation de la référence phasée ;
 - `Rscript` : exécution de l'analyse Adegenet.
 
 Le binaire `Gamma` est uniquement nécessaire pour utiliser la fonction
@@ -172,6 +259,7 @@ Vérification rapide :
 python3 --version
 plink --version
 king --version
+bcftools --version
 Rscript --version
 ```
 

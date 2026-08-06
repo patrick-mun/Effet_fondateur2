@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/population_outliers.schema.json",
+  "title": "Métriques exploratoires d'outliers populationnels V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "SAMPLE_ID", "SAMPLE_SET_ID", "REFERENCE_INCLUDED", "PROJECTED",
+      "COMPONENTS_USED", "DISTANCE_SQUARED", "P_VALUE", "OUTLIER_ALPHA",
+      "OUTLIER_STATUS", "OUTLIER_REASON", "PROPOSED_EXCLUSION",
+      "MANUAL_VALIDATION_REQUIRED"
+    ],
+    "null_value": "",
+    "primary_key": ["SAMPLE_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "nonnegativeDecimal": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"},
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "SAMPLE_ID", "SAMPLE_SET_ID", "REFERENCE_INCLUDED", "PROJECTED",
+        "COMPONENTS_USED", "DISTANCE_SQUARED", "P_VALUE", "OUTLIER_ALPHA",
+        "OUTLIER_STATUS", "OUTLIER_REASON", "PROPOSED_EXCLUSION",
+        "MANUAL_VALIDATION_REQUIRED"
+      ],
+      "properties": {
+        "SAMPLE_ID": {"$ref": "#/$defs/identifier"},
+        "SAMPLE_SET_ID": {"$ref": "#/$defs/identifier"},
+        "REFERENCE_INCLUDED": {"type": "boolean"},
+        "PROJECTED": {"type": "boolean"},
+        "COMPONENTS_USED": {"type": "string", "pattern": "^([1-9]|10)$"},
+        "DISTANCE_SQUARED": {"$ref": "#/$defs/nonnegativeDecimal"},
+        "P_VALUE": {"$ref": "#/$defs/nonnegativeDecimal"},
+        "OUTLIER_ALPHA": {"$ref": "#/$defs/nonnegativeDecimal"},
+        "OUTLIER_STATUS": {"enum": ["INLIER", "OUTLIER"]},
+        "OUTLIER_REASON": {
+          "oneOf": [{"const": "MULTIVARIATE_PC_DISTANCE"}, {"type": "null"}]
+        },
+        "PROPOSED_EXCLUSION": {"type": "boolean"},
+        "MANUAL_VALIDATION_REQUIRED": {"type": "boolean"}
+      }
+    }
+  }
+}

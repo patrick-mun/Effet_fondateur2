@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/founder_consensus.schema.json",
+  "title": "Consensus IBS centré sur le variant cible",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["ANALYSIS_ID", "TARGET_VARIANT_ID", "INTERPRETATION", "CONSENSUS_STATUS", "CARRIER_UNIT_COUNT", "LEFT_BOUND_BP", "TARGET_BP", "RIGHT_BOUND_BP", "LEFT_LENGTH_CM", "RIGHT_LENGTH_CM", "LEFT_MARKER_COUNT", "RIGHT_MARKER_COUNT", "SIGNATURE_MARKER_COUNT", "BACKGROUND_COHORT", "BACKGROUND_HAPLOTYPE_COUNT", "MATCHING_BACKGROUND_HAPLOTYPE_COUNT", "BACKGROUND_MATCH_FREQUENCY", "SEGMENT_METHOD", "MAP_VERSION"],
+    "null_value": "", "primary_key": ["ANALYSIS_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "count": {"type": "string", "pattern": "^[0-9]+$"},
+    "integer": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+    "decimal": {"type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$"},
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ANALYSIS_ID", "TARGET_VARIANT_ID", "INTERPRETATION", "CONSENSUS_STATUS", "CARRIER_UNIT_COUNT", "LEFT_BOUND_BP", "TARGET_BP", "RIGHT_BOUND_BP", "LEFT_LENGTH_CM", "RIGHT_LENGTH_CM", "LEFT_MARKER_COUNT", "RIGHT_MARKER_COUNT", "SIGNATURE_MARKER_COUNT", "BACKGROUND_COHORT", "BACKGROUND_HAPLOTYPE_COUNT", "MATCHING_BACKGROUND_HAPLOTYPE_COUNT", "BACKGROUND_MATCH_FREQUENCY", "SEGMENT_METHOD", "MAP_VERSION"],
+      "properties": {
+        "ANALYSIS_ID": {"const": "primary_exact_ibs"}, "TARGET_VARIANT_ID": {"$ref": "#/$defs/identifier"},
+        "INTERPRETATION": {"enum": ["IBS_SHARED_CANDIDATE", "NO_FOUNDER_CONCLUSION"]},
+        "CONSENSUS_STATUS": {"enum": ["SUPPORTED_IBS_CANDIDATE", "INSUFFICIENT_CARRIERS", "INSUFFICIENT_INFORMATIVE_MARKERS"]},
+        "CARRIER_UNIT_COUNT": {"$ref": "#/$defs/count"}, "LEFT_BOUND_BP": {"$ref": "#/$defs/integer"},
+        "TARGET_BP": {"$ref": "#/$defs/integer"}, "RIGHT_BOUND_BP": {"$ref": "#/$defs/integer"},
+        "LEFT_LENGTH_CM": {"$ref": "#/$defs/decimal"}, "RIGHT_LENGTH_CM": {"$ref": "#/$defs/decimal"},
+        "LEFT_MARKER_COUNT": {"$ref": "#/$defs/count"}, "RIGHT_MARKER_COUNT": {"$ref": "#/$defs/count"},
+        "SIGNATURE_MARKER_COUNT": {"$ref": "#/$defs/count"}, "BACKGROUND_COHORT": {"const": "controls_unrelated_plus_noncarriers"},
+        "BACKGROUND_HAPLOTYPE_COUNT": {"$ref": "#/$defs/count"}, "MATCHING_BACKGROUND_HAPLOTYPE_COUNT": {"$ref": "#/$defs/count"},
+        "BACKGROUND_MATCH_FREQUENCY": {"$ref": "#/$defs/decimal"}, "SEGMENT_METHOD": {"const": "target_centered_exact_ibs_v1"},
+        "MAP_VERSION": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    }
+  }
+}

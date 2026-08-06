@@ -15,6 +15,45 @@ def test_generic_example_is_valid() -> None:
     assert config["schema_version"] == "1.0.0"
     assert config["target"]["project_variant_id"] == "target_GRCh38_1_100000_A_G"
     assert config["target"]["rsid"] is None
+    assert config["inputs"]["reference_panel_catalog"] == (
+        "config/references/1000g_high_coverage_grch38_phased.json"
+    )
+    assert config["stages"]["phase_target_region"]["parameters"][
+        "reference_panel_id"
+    ] == "1kg_3202_high_coverage_20220422"
+    assert config["stages"]["phase_target_region"]["parameters"][
+        "reference_cache_dir"
+    ] == "data/cache/references"
+    assert config["stages"]["phase_target_region"]["parameters"][
+        "reference_cache_offline"
+    ] is False
+    assert config["stages"]["phase_target_region"]["parameters"][
+        "reference_extract_timeout_seconds"
+    ] == 7200
+    assert config["stages"]["phase_target_region"]["parameters"][
+        "reference_extract_threads"
+    ] == 1
+    assert config["stages"]["phase_target_region"]["parameters"][
+        "minimum_common_variants"
+    ] == 1
+    assert config["stages"]["phase_target_region"]["parameters"][
+        "shapeit5_input_timeout_seconds"
+    ] == 300
+    assert config["stages"]["phase_target_region"]["parameters"][
+        "shapeit5_execution_timeout_seconds"
+    ] == 7200
+    assert config["stages"]["phase_target_region"]["parameters"][
+        "shapeit5_seed"
+    ] == 15052011
+    assert config["stages"]["phase_target_region"]["parameters"][
+        "minimum_phase_confidence"
+    ] == 0.9
+    assert config["stages"]["infer_founder_haplotype"]["parameters"] == {
+        "segment_method": "target_centered_exact_ibs_v1",
+        "minimum_independent_carriers": 3,
+        "minimum_flank_markers": 2,
+        "bcftools_timeout_seconds": 300,
+    }
 
 
 def test_dock6_profile_accepts_unconfirmed_target_fields() -> None:

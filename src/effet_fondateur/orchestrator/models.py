@@ -19,6 +19,7 @@ class StageDefinition:
     required_artifact_ids: tuple[str, ...] = ()
     manual_decision_id: str | None = None
     blocking_manual_decision_ids: tuple[str, ...] = ()
+    resolves_manual_decision_ids: tuple[str, ...] = ()
 
     @property
     def directory_name(self) -> str:
