@@ -520,6 +520,22 @@ def test_stage_13_publishes_insufficient_result_without_claiming_ibd(
             "chance_sharing_correction": False,
         },
     }
+    config["stages"]["analyze_local_ld"] = {
+        "enabled": True,
+        "parameters": {
+            "method": "plink19_local_ld_secondary_v1",
+            "minimum_samples": 5,
+            "minimum_primary_samples": 20,
+            "minimum_called_samples_per_pair": 5,
+            "minimum_variant_maf": 0.05,
+            "minimum_pairs_per_bin": 10,
+            "max_pair_distance_bp": 1_000_000,
+            "max_pair_distance_cm": 1.0,
+            "distance_bins_cm": [0.1, 0.25, 0.5, 1.0],
+            "max_pair_count": 1_000_000,
+            "plink_timeout_seconds": 30,
+        },
+    }
     config_path.write_text(
         yaml.safe_dump(config, allow_unicode=True, sort_keys=False), encoding="utf-8"
     )
@@ -548,6 +564,16 @@ def test_stage_13_publishes_insufficient_result_without_claiming_ibd(
     assert dating_summary["status"] == "NOT_ESTIMATED"
     assert dating_summary["included_unit_count"] == 0
 
+    ld_dir = run_dir / "stages" / "15_analyze_local_ld"
+    ld_summary = json.loads(
+        (ld_dir / "local_ld" / "local_ld_analysis_summary.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert ld_summary["analysis_role"] == "SECONDARY_DESCRIPTIVE"
+    assert ld_summary["feeds_variant_age"] is False
+    assert set(ld_summary["cohort_statuses"].values()) == {"NOT_EVALUATED"}
+
     resume_pipeline(run_dir)
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     stage_record = next(
@@ -562,3 +588,9 @@ def test_stage_13_publishes_insufficient_result_without_claiming_ibd(
     )
     assert age_stage_record["state"] == "SUCCEEDED"
     assert age_stage_record["attempt_count"] == 1
+    ld_stage_record = next(
+        stage for stage in manifest["stages"]
+        if stage["stage_name"] == "analyze_local_ld"
+    )
+    assert ld_stage_record["state"] == "SUCCEEDED"
+    assert ld_stage_record["attempt_count"] == 1

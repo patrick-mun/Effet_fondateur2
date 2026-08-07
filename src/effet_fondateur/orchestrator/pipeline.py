@@ -266,6 +266,27 @@ ESTIMATE_VARIANT_AGE_STAGE = StageDefinition(
     ),
 )
 
+ANALYZE_LOCAL_LD_STAGE = StageDefinition(
+    stage_id="15",
+    stage_name="analyze_local_ld",
+    module="effet_fondateur.stages.analyze_local_ld",
+    critical=False,
+    dependencies=("freeze_cohorts", "qc_final", "prepare_target_region"),
+    config_input_files=(),
+    required_artifact_ids=(
+        "cohorts_frozen",
+        "cohort_keep_controls_unrelated",
+        "cohort_keep_target_carriers_independent",
+        "cohort_keep_family_noncarriers",
+        "variant_qc_final",
+        "target_region_bed",
+        "target_region_bim",
+        "target_region_fam",
+        "target_region_dataset",
+        "target_genetic_map",
+    ),
+)
+
 ANALYZE_ROH_STAGE = StageDefinition(
     stage_id="16",
     stage_name="analyze_roh",
@@ -315,6 +336,7 @@ DEFAULT_STAGE_DEFINITIONS = (
     PHASE_TARGET_REGION_STAGE,
     INFER_FOUNDER_HAPLOTYPE_STAGE,
     ESTIMATE_VARIANT_AGE_STAGE,
+    ANALYZE_LOCAL_LD_STAGE,
     ANALYZE_ROH_STAGE,
 )
 

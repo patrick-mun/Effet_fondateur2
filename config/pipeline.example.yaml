@@ -175,6 +175,20 @@ stages:
       generation_years: [25, 28, 30]
       leave_one_family_out: true
       chance_sharing_correction: false
+  analyze_local_ld:
+    enabled: false
+    parameters:
+      method: plink19_local_ld_secondary_v1
+      minimum_samples: 5
+      minimum_primary_samples: 20
+      minimum_called_samples_per_pair: 5
+      minimum_variant_maf: 0.05
+      minimum_pairs_per_bin: 10
+      max_pair_distance_bp: 1000000
+      max_pair_distance_cm: 1.0
+      distance_bins_cm: [0.1, 0.25, 0.5, 1.0]
+      max_pair_count: 1000000
+      plink_timeout_seconds: 300
   analyze_roh:
     enabled: false
     parameters:

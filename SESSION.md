@@ -411,8 +411,8 @@ Dernière mise à jour : 7 août 2026
 - Tests ciblés de l'étape `07` : 8 réussis.
 - Tests ciblés de l'étape `08` : 8 réussis.
 - Tests ciblés de l'étape `09` : 7 réussis.
-- Suite moderne `tests/`, incluant les étapes `01` à `16` disponibles sur cette
-  branche et les contrôles de maintenabilité V2 : 173 réussis.
+- Les validations séparées des branches `15` et `16` totalisaient respectivement
+  171 et 173 tests réussis avant leur intégration locale pour l'étape `17`.
 - Contrôle ciblé final de la fenêtre, du cache, du catalogue, de la
   configuration, de l'orchestrateur et de SHAPEIT5 : 45 réussis.
 - Dernière exécution combinée antérieure des suites modernes et historiques :
@@ -485,9 +485,13 @@ Dernière mise à jour : 7 août 2026
   corrélé primaire, modèle indépendant et leave-one-family-out en sensibilités,
   conversions 25/28/30 ans par génération et règles de non-conclusion sous
   trois unités. Aucun exécutable Gamma externe ni donnée réelle n'est utilisé.
-- Étape `15` livrée dans la PR brouillon `#5` sur la branche
-  `agent/step-15-local-ld`; elle n'est pas encore fusionnée dans `main` ni dans
-  cette branche de travail de l'étape `16`.
+- Étape `15` implémentée avec `plink19_local_ld_secondary_v1` comme analyse
+  descriptive secondaire : cohorte principale de témoins indépendants,
+  porteurs indépendants et non-porteurs familiaux séparés, univers local commun,
+  `r²` génotypique distinct du `D′` haplotypique ML, effectifs et paires
+  insuffisants explicitement non évalués, et aucune dépendance vers les sorties
+  `13–14`. Les tests et le smoke PLINK utilisent uniquement des données
+  synthétiques temporaires ; aucune analyse réelle n'a été lancée.
 - Étape `16` implémentée avec `plink19_array_roh_secondary_v1` : fardeau
   genome-wide sur l'intersection exacte des variants chez témoins et porteurs
   indépendants, analyse séparée du chromosome cible, intersection individuelle
@@ -519,7 +523,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `12` | Référence phasée et phasage | `VALIDE` | Oui | Oui | `12.0–12.7` validées, QC final et smoke réel inclus |
 | `13` | Haplotype fondateur et IBD local | `VALIDE` | Oui | Oui | IBS exact centré cible, aucune revendication IBD |
 | `14` | Datation du variant | `VALIDE` | Oui | Oui | Gamma corrélé primaire, seuils petits effectifs |
-| `15` | LD local secondaire | `FAIT_A_VALIDER` | Oui | Oui | PR brouillon `#5`, absente de cette branche |
+| `15` | LD local secondaire | `FAIT_A_VALIDER` | Oui | Oui | PR brouillon `#5`, intégrée localement pour préparer `17` |
 | `16` | ROH secondaire | `VALIDE` | Oui | Oui | Deux périmètres, autozygotie distincte de l'IBS/IBD |
 | `17` | Analyses de sensibilité | `NON_FAIT` | Non | Non | — |
 | `18` | Visualisations consolidées | `NON_FAIT` | Non | Non | — |
@@ -577,10 +581,15 @@ transforme jamais IBS en preuve IBD et que Gamma ne reçoit que des bras
 individuels positifs en cM provenant d'une unité par famille. L'exemple officiel
 Gamma est reproduit à l'arrondi, les modes corrélé/indépendant et les
 sensibilités sont séparés, et les petits effectifs produisent une non-conclusion
-ou un résultat exploratoire. La suite V2 complète passe avec 166 tests ; les
-durcissements finaux d'indépendance familiale passent ensuite dans 12 tests
-ciblés. Les limites restantes — résolution des marqueurs, phase, carte,
+ou un résultat exploratoire. La suite V2 complète passe désormais avec 171
+tests. Les limites restantes — résolution des marqueurs, phase, carte,
 partage IBS et correction fortuite désactivée — imposent une revue manuelle.
+
+Le contrat de l'étape `15` confirme que le LD reste une branche secondaire
+indépendante des étapes `13–14`. Les cohortes sont lues depuis le gel `09`, une
+unité familiale dupliquée rend la cohorte non évaluable, les mêmes variants et
+distances sont utilisés entre cohortes, et les paires impliquant la cible sont
+signalées comme conditionnées par la sélection porteur/non-porteur.
 
 ## Problèmes connus
 
@@ -613,8 +622,8 @@ partage IBS et correction fortuite désactivée — imposent une revue manuelle.
 
 ## Priorités de la prochaine session
 
-1. Fusionner ou rebaser proprement les branches des étapes `15` et `16`, puis
-   définir l'étape `17` des analyses de sensibilité.
+1. Définir puis implémenter l'étape `17` des analyses de sensibilité sur la
+   branche d'intégration locale des étapes `15–16`.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
 3. Préparer les revues réelles `kinship_exclusion_approval` et
@@ -667,5 +676,5 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action de développement attendue est d'intégrer `15–16` puis de définir l'étape
-`17` avant toute analyse des données réelles.
+action de développement attendue est d'implémenter l'étape `17` sur la branche
+d'intégration locale de `15–16`, avant toute analyse des données réelles.

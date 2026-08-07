@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/local_ld_summary.schema.json",
+  "title": "Résumé du LD local secondaire V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "COHORT_ID", "DISTANCE_BIN_ID", "DISTANCE_MIN_CM", "DISTANCE_MAX_CM",
+      "SAMPLE_COUNT", "COHORT_STATUS", "TOTAL_PAIR_COUNT",
+      "EVALUATED_PAIR_COUNT", "TARGET_PAIR_COUNT", "MEDIAN_R2_GENOTYPE",
+      "MEDIAN_D_PRIME_ABS", "SUMMARY_STATUS"
+    ],
+    "null_value": "",
+    "primary_key": ["COHORT_ID", "DISTANCE_BIN_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "decimal": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"},
+    "nullableDecimal": {"oneOf": [{"$ref": "#/$defs/decimal"}, {"type": "null"}]},
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "COHORT_ID", "DISTANCE_BIN_ID", "DISTANCE_MIN_CM", "DISTANCE_MAX_CM",
+        "SAMPLE_COUNT", "COHORT_STATUS", "TOTAL_PAIR_COUNT",
+        "EVALUATED_PAIR_COUNT", "TARGET_PAIR_COUNT", "MEDIAN_R2_GENOTYPE",
+        "MEDIAN_D_PRIME_ABS", "SUMMARY_STATUS"
+      ],
+      "properties": {
+        "COHORT_ID": {"$ref": "#/$defs/identifier"},
+        "DISTANCE_BIN_ID": {"$ref": "#/$defs/identifier"},
+        "DISTANCE_MIN_CM": {"$ref": "#/$defs/decimal"},
+        "DISTANCE_MAX_CM": {"$ref": "#/$defs/decimal"},
+        "SAMPLE_COUNT": {"type": "string", "pattern": "^[0-9]+$"},
+        "COHORT_STATUS": {"enum": ["DESCRIPTIVE_PRIMARY", "EXPLORATORY_SMALL_N", "NOT_EVALUATED"]},
+        "TOTAL_PAIR_COUNT": {"type": "string", "pattern": "^[0-9]+$"},
+        "EVALUATED_PAIR_COUNT": {"type": "string", "pattern": "^[0-9]+$"},
+        "TARGET_PAIR_COUNT": {"type": "string", "pattern": "^[0-9]+$"},
+        "MEDIAN_R2_GENOTYPE": {"$ref": "#/$defs/nullableDecimal"},
+        "MEDIAN_D_PRIME_ABS": {"$ref": "#/$defs/nullableDecimal"},
+        "SUMMARY_STATUS": {"enum": ["EVALUATED", "INSUFFICIENT_PAIRS", "COHORT_TOO_SMALL", "COHORT_NOT_INDEPENDENT"]}
+      }
+    }
+  }
+}

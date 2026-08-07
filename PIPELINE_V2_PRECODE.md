@@ -1221,20 +1221,70 @@ estimations par scénario et forêt des intervalles de confiance.
 **Script cible** : `stages/analyze_local_ld.py`.
 
 **Responsabilité** : décrire le LD autour du variant cible sans le confondre avec
-l'apparentement ou l'haplotype IBD.
+l'apparentement, l'IBD local, l'haplotype fondateur ou la datation.
 
-**Cohortes** : témoins indépendants, porteurs indépendants et éventuellement
-non-porteurs familiaux dans des analyses séparées.
+**Contrat retenu** : la méthode `plink19_local_ld_secondary_v1` est une analyse
+descriptive secondaire. La cohorte principale est `controls_unrelated`. Les
+cohortes `target_carriers_independent` et `family_noncarriers` sont analysées
+séparément lorsqu'elles existent et satisfont les seuils d'effectif ; elles ne
+sont jamais fusionnées. Une unité indépendante ne peut apparaître qu'une fois
+par cohorte. Le même univers de variants bialléliques, le même ordre allélique,
+la même fenêtre et les mêmes limites de distance sont utilisés pour toute
+comparaison. Cet univers est l'intersection du jeu local QC de l'étape `10` et
+de la région cartographiée de l'étape `11`, sans sélection depuis les résultats
+des étapes `13–14`.
+
+PLINK 1.9 exécute deux calculs natifs distincts. `--r2` fournit le `r²` primaire
+de corrélation des dosages alléliques. `--r2 dprime` fournit `D′` absolu par
+estimation haplotypique de maximum de vraisemblance et son propre `r²`, conservé
+comme mesure secondaire explicitement nommée. L'étape ne mélange jamais ces
+deux définitions. Un export PLINK temporaire sert uniquement à compter les
+génotypes appelés par paire ; aucune statistique de LD n'est recalculée en
+Python.
+
+Les seuils par défaut sont une politique exploratoire de projet, pas des
+constantes biologiques : moins de `5` individus produit `NOT_EVALUATED`, de `5`
+à `19` individus produit `EXPLORATORY_SMALL_N`, et au moins `20` individus est
+requis pour le statut descriptif principal. Chaque paire exige au moins `5`
+individus appelés et une MAF d'au moins `0,05` pour chaque variant dans la
+cohorte. Les paires qui ne
+satisfont pas ces gardes restent auditables avec une raison contrôlée ; une
+valeur absente n'est jamais remplacée par zéro. Les classes de distance sans au
+moins `10` paires évaluables ne reçoivent pas de résumé numérique.
 
 **Traitements** :
 
-- calcul direct de `r²` et `D′` par l'outil ;
-- mêmes fenêtres, variants et conventions entre cohortes comparées ;
-- prise en compte de l'effectif très faible des porteurs ;
-- exclusion ou pondération familiale définie avant calcul ;
-- aucune reconstruction manuelle de `D` depuis `D′` et les MAF sans modèle
-  allélique complet ;
-- analyses descriptives, sans test naïf sur des millions de paires corrélées.
+- calcul natif séparé du `r²` génotypique et de `D′` par PLINK 1.9 ;
+- restriction configurable en bp et cM, sans extrapolation de carte ;
+- univers de variants commun et conventions alléliques identiques entre les
+  cohortes effectivement comparées ;
+- comptage des génotypes appelés par paire et signalement des monomorphes ;
+- statut explicite selon l'effectif et le nombre de paires informatives ;
+- signalement séparé des paires impliquant le variant cible, car le recrutement
+  par génotype conditionne mécaniquement leur distribution chez les porteurs et
+  non-porteurs ;
+- aucune pondération familiale a posteriori : seules les cohortes indépendantes
+  figées à l'étape `09` sont admises ;
+- aucune reconstruction manuelle de `D` depuis `D′` et les MAF ;
+- aucune définition de blocs haplotypiques et aucun test naïf sur des millions
+  de paires corrélées.
+
+**Articulation avec `13–14`** : l'étape `15` dépend exclusivement des étapes
+`09–11` et peut être exécutée en parallèle conceptuel de `13–14`. Elle ne lit ni
+`founder_segments.tsv` ni une estimation d'âge, ne modifie aucune limite de
+segment et n'alimente jamais Gamma. Elle peut seulement contextualiser, après
+coup, la structure de corrélation locale dans laquelle un partage IBS a été
+observé. Une concordance ou une différence de LD ne prouve ni ne réfute une
+origine fondatrice unique et ne valide pas l'âge estimé.
+
+**Sorties** : tables PLINK natives par cohorte et méthode,
+`local_ld_variants.tsv`, `local_ld_pairs.tsv`, `local_ld_summary.tsv`, résumé
+JSON agrégé et audit. Les tables par paire sont classées `sensitive_genetic`.
+
+**Critère non bloquant** : une cohorte trop petite, monomorphe ou sans assez de
+paires informatives publie `NOT_EVALUATED` avec ses raisons. Puisque l'étape est
+secondaire, cette insuffisance ne bloque ni les étapes `13–14` ni le rapport
+technique ; elle interdit seulement une interprétation LD pour cette cohorte.
 
 **Visualisations** : matrices de LD comparables, décroissance selon distance en
 cM et zoom centré sur le variant cible.

@@ -245,6 +245,13 @@ est exploratoire avec 3–4 familles indépendantes, primaire à partir de 5, et
 absente sous 3. Le contrat est documenté dans
 `docs/modules/variant_age.md`.
 
+L'étape secondaire `15_analyze_local_ld` décrit ensuite le LD sur un univers de
+variants identique dans les cohortes indépendantes figées. Elle sépare le `r²`
+génotypique PLINK du `D′` haplotypique estimé par maximum de vraisemblance,
+signale les petits effectifs et les paires conditionnées par le variant cible,
+et ne fournit aucune entrée aux étapes 13–14. Aucun bloc LD ni test massif n'est
+produit. Le contrat est documenté dans `docs/modules/local_ld.md`.
+
 L'étape secondaire `16_analyze_roh` mesure l'autozygotie avec deux périmètres
 séparés : fardeau genome-wide sur un univers commun chez témoins et porteurs
 indépendants, puis recherche individuelle du variant cible dans un ROH du

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/local_ld_variants.schema.json",
+  "title": "Variants du LD local secondaire V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "COHORT_ID", "VARIANT_ORDER", "VARIANT_ID", "CHROMOSOME",
+      "POSITION_BP", "POSITION_CM", "A1", "A2", "CALLED_SAMPLE_COUNT",
+      "MAF", "POLYMORPHIC", "IS_TARGET_VARIANT", "VARIANT_STATUS"
+    ],
+    "null_value": "",
+    "primary_key": ["COHORT_ID", "VARIANT_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "decimal": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"},
+    "nullableDecimal": {"oneOf": [{"$ref": "#/$defs/decimal"}, {"type": "null"}]},
+    "nullableCount": {"oneOf": [{"type": "string", "pattern": "^[0-9]+$"}, {"type": "null"}]},
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "COHORT_ID", "VARIANT_ORDER", "VARIANT_ID", "CHROMOSOME",
+        "POSITION_BP", "POSITION_CM", "A1", "A2", "CALLED_SAMPLE_COUNT",
+        "MAF", "POLYMORPHIC", "IS_TARGET_VARIANT", "VARIANT_STATUS"
+      ],
+      "properties": {
+        "COHORT_ID": {"$ref": "#/$defs/identifier"},
+        "VARIANT_ORDER": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "VARIANT_ID": {"type": "string", "minLength": 1},
+        "CHROMOSOME": {"type": "string", "pattern": "^([1-9]|1[0-9]|2[0-2])$"},
+        "POSITION_BP": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "POSITION_CM": {"$ref": "#/$defs/decimal"},
+        "A1": {"type": "string", "pattern": "^(0|[ACGT]+)$"},
+        "A2": {"type": "string", "pattern": "^(0|[ACGT]+)$"},
+        "CALLED_SAMPLE_COUNT": {"$ref": "#/$defs/nullableCount"},
+        "MAF": {"$ref": "#/$defs/nullableDecimal"},
+        "POLYMORPHIC": {"type": "boolean"},
+        "IS_TARGET_VARIANT": {"type": "boolean"},
+        "VARIANT_STATUS": {"enum": ["EVALUATED", "LOW_MAF", "MONOMORPHIC", "COHORT_TOO_SMALL", "COHORT_NOT_INDEPENDENT"]}
+      }
+    }
+  }
+}
