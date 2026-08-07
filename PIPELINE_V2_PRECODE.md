@@ -1366,7 +1366,47 @@ et chevauchements locaux correctement calculés.
 
 **Script cible** : `stages/run_sensitivity_analyses.py`.
 
-**Responsabilité** : mesurer la stabilité des résultats principaux.
+**Responsabilité** : mesurer la stabilité des résultats principaux sans créer
+une nouvelle preuve ni remplacer le run primaire.
+
+**Contrat scientifique figé avant implémentation** :
+
+- le run primaire reste la seule analyse principale ; un scénario de
+  sensibilité est une perturbation préspécifiée et étiquetée exploratoire ;
+- les scénarios qui changent une cohorte, une fenêtre, une carte, un seuil ou
+  un pruning sont des runs V2 distincts et immuables, jamais des recalculs
+  cachés dans le dossier de l'étape `17` ;
+- chaque scénario conserve son `run_id`, son empreinte de configuration, les
+  signatures des étapes comparées et les SHA-256 des résumés consommés ;
+- un seul axe peut différer du primaire par scénario. Les analyses à plusieurs
+  facteurs doivent être déclarées séparément comme exploratoires et ne sont pas
+  utilisées pour attribuer une instabilité à un facteur précis ;
+- l'assemblage, le variant cible moléculaire, la provenance des génotypes et la
+  définition primaire porteur/non-porteur doivent rester identiques ; le statut
+  clinique ou le groupe ne peuvent jamais devenir une source de génotype ;
+- les unités indépendantes restent la référence. Un scénario avec apparentés
+  éloignés est explicitement secondaire et ne remplace aucune estimation
+  obtenue sur unités indépendantes ;
+- les conclusions sont comparées séparément pour l'IBS local de `13`, la
+  datation de `14`, le LD secondaire de `15` et les ROH secondaires de `16` ;
+  aucun score composite et aucun vote entre domaines ne sont autorisés ;
+- une absence de résultat, un petit effectif ou une étape non exécutée donnent
+  `NOT_EVALUATED` et ne sont jamais comptés comme une confirmation ;
+- la stabilité catégorielle signifie uniquement que le statut technique du
+  domaine ne change pas entre le primaire et tous les scénarios évaluables ;
+  elle ne prouve ni IBD, ni origine unique, ni causalité ;
+- la variation quantitative est toujours publiée. Elle n'est classée stable ou
+  instable que si une tolérance a été préspécifiée dans la configuration ; en
+  l'absence de tolérance, le statut est `NOT_CLASSIFIED` ;
+- toute inversion de statut, franchissement d'une tolérance ou impossibilité
+  systématique d'évaluer un scénario impose une revue manuelle.
+
+**Cohortes et comparabilité** : le primaire utilise les porteurs indépendants
+et témoins indépendants gelés à `09`. Le retrait d'une famille ou d'un porteur
+s'applique à l'unité indépendante correspondante. Les scénarios avec apparentés
+éloignés doivent conserver une colonne d'unité familiale et ne peuvent pas être
+interprétés comme une augmentation équivalente de l'effectif indépendant. Les
+analyses LD et ROH conservent leurs cohortes et rôles propres définis à `15–16`.
 
 Scénarios minimaux :
 
@@ -1376,10 +1416,30 @@ Scénarios minimaux :
 - plusieurs fenêtres locales ;
 - cartes génétiques ou méthodes d'interpolation autorisées ;
 - seuils de pruning LD pour les analyses genome-wide ;
-- comparaison avec et sans apparentés éloignés selon la question.
+- comparaison avec et sans apparentés éloignés selon la question ;
+- profils ROH préspécifiés autour des paramètres exploratoires de `16` ;
+- sélection de populations du panel phasé uniquement comme sensibilité, jamais
+  comme modification silencieuse du panel primaire.
+
+Un registre externe versionné décrit le run primaire, les runs de sensibilité,
+le facteur modifié, les domaines attendus et les empreintes. L'étape contrôle
+les manifestes, configurations, audits et résumés, puis publie une ligne par
+scénario et domaine. Un scénario absent du registre ne peut pas être ajouté a
+posteriori au tableau confirmatoire ; il doit être déclaré exploratoire.
 
 Chaque scénario possède sa propre signature et ne remplace jamais le résultat
 principal.
+
+**Sorties** : registre résolu, comparaison des statuts par scénario et domaine,
+plages quantitatives disponibles, matrice de stabilité, résumé agrégé et audit.
+Le résumé agrégé reste sans identifiant individuel ; le registre résolu est
+`sensitive_genetic` s'il contient l'identifiant pseudonymisé d'une unité retirée.
+
+**Limites** : la sensibilité ne corrige ni un biais partagé par tous les runs,
+ni une erreur de génotype, ni une carte inadéquate, ni la faible densité ACPA.
+Un résultat robuste aux scénarios testés peut rester faux sous une hypothèse non
+testée. L'étape ne fournit pas de validation externe sur une autre population
+ou une autre technologie.
 
 **Visualisations** : tableau de stabilité, forêt des estimations et carte des
 scénarios qui changent la conclusion technique.

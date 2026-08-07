@@ -76,7 +76,8 @@
         "target_variant_metadata": {"$ref": "#/$defs/pathOrNull"},
         "target_variant_genotypes": {"$ref": "#/$defs/pathOrNull"},
         "genetic_map": {"$ref": "#/$defs/pathOrNull"},
-        "reference_panel_catalog": {"$ref": "#/$defs/pathOrNull"}
+        "reference_panel_catalog": {"$ref": "#/$defs/pathOrNull"},
+        "sensitivity_scenarios": {"$ref": "#/$defs/pathOrNull"}
       }
     },
     "tools": {

@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/sensitivity_comparisons.schema.json",
+  "title": "Comparaisons par scénario et domaine",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["SCENARIO_ID", "SCENARIO_SIGNATURE", "ROLE", "DESIGN", "CHANGED_FACTOR", "DOMAIN", "EXPECTED", "SOURCE_RUN_ID", "SOURCE_MANIFEST_SHA256", "SOURCE_CONFIG_SHA256", "SOURCE_STAGE_SIGNATURE", "SOURCE_SUMMARY_SHA256", "EVALUATION_STATUS", "TECHNICAL_STATUS", "PRIMARY_TECHNICAL_STATUS", "CATEGORICAL_COMPARISON", "NUMERIC_METRIC", "PRIMARY_NUMERIC_VALUE", "SCENARIO_NUMERIC_VALUE", "RELATIVE_CHANGE", "QUANTITATIVE_CLASSIFICATION"],
+    "null_value": "", "primary_key": ["SCENARIO_ID", "DOMAIN"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "decimal": {"type": "string", "pattern": "^-?[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$"},
+    "nullableDecimal": {"oneOf": [{"$ref": "#/$defs/decimal"}, {"type": "null"}]},
+    "nullableText": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]},
+    "nullableSha": {"oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["SCENARIO_ID", "SCENARIO_SIGNATURE", "ROLE", "DESIGN", "CHANGED_FACTOR", "DOMAIN", "EXPECTED", "SOURCE_RUN_ID", "SOURCE_MANIFEST_SHA256", "SOURCE_CONFIG_SHA256", "SOURCE_STAGE_SIGNATURE", "SOURCE_SUMMARY_SHA256", "EVALUATION_STATUS", "TECHNICAL_STATUS", "PRIMARY_TECHNICAL_STATUS", "CATEGORICAL_COMPARISON", "NUMERIC_METRIC", "PRIMARY_NUMERIC_VALUE", "SCENARIO_NUMERIC_VALUE", "RELATIVE_CHANGE", "QUANTITATIVE_CLASSIFICATION"],
+      "properties": {
+        "SCENARIO_ID": {"$ref": "#/$defs/identifier"}, "SCENARIO_SIGNATURE": {"$ref": "#/$defs/sha256"},
+        "ROLE": {"enum": ["PRIMARY", "SENSITIVITY"]}, "DESIGN": {"enum": ["BASELINE", "SINGLE_FACTOR", "MULTIFACTOR"]},
+        "CHANGED_FACTOR": {"type": "string", "minLength": 1}, "DOMAIN": {"enum": ["FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH"]},
+        "EXPECTED": {"type": "boolean"}, "SOURCE_RUN_ID": {"type": "string", "minLength": 1},
+        "SOURCE_MANIFEST_SHA256": {"$ref": "#/$defs/sha256"}, "SOURCE_CONFIG_SHA256": {"$ref": "#/$defs/sha256"},
+        "SOURCE_STAGE_SIGNATURE": {"$ref": "#/$defs/nullableSha"}, "SOURCE_SUMMARY_SHA256": {"$ref": "#/$defs/nullableSha"},
+        "EVALUATION_STATUS": {"enum": ["EVALUATED", "NOT_EVALUATED"]}, "TECHNICAL_STATUS": {"$ref": "#/$defs/nullableText"},
+        "PRIMARY_TECHNICAL_STATUS": {"$ref": "#/$defs/nullableText"},
+        "CATEGORICAL_COMPARISON": {"enum": ["PRIMARY", "STABLE", "VARIABLE", "NOT_COMPARABLE"]},
+        "NUMERIC_METRIC": {"$ref": "#/$defs/nullableText"}, "PRIMARY_NUMERIC_VALUE": {"$ref": "#/$defs/nullableDecimal"},
+        "SCENARIO_NUMERIC_VALUE": {"$ref": "#/$defs/nullableDecimal"}, "RELATIVE_CHANGE": {"$ref": "#/$defs/nullableDecimal"},
+        "QUANTITATIVE_CLASSIFICATION": {"enum": ["PRIMARY", "WITHIN_TOLERANCE", "OUTSIDE_TOLERANCE", "NOT_CLASSIFIED", "NOT_AVAILABLE"]}
+      }
+    }
+  }
+}

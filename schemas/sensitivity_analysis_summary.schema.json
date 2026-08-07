@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/sensitivity_analysis_summary.schema.json",
+  "title": "Résumé agrégé des sensibilités",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "method_id", "analysis_role", "primary_scenario_id", "scenario_count", "domain_stability", "composite_founder_score_calculated", "manual_validation_required"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"}, "method_id": {"const": "cross_run_sensitivity_consolidation_v1"},
+    "analysis_role": {"const": "ROBUSTNESS_NOT_EXTERNAL_VALIDATION"}, "primary_scenario_id": {"type": "string", "minLength": 1},
+    "scenario_count": {"type": "integer", "minimum": 1},
+    "domain_stability": {"type": "object", "additionalProperties": {"enum": ["STABLE", "VARIABLE", "INCONCLUSIVE", "NOT_EVALUATED"]}},
+    "composite_founder_score_calculated": {"const": false}, "manual_validation_required": {"const": true}
+  }
+}

@@ -411,8 +411,8 @@ Dernière mise à jour : 7 août 2026
 - Tests ciblés de l'étape `07` : 8 réussis.
 - Tests ciblés de l'étape `08` : 8 réussis.
 - Tests ciblés de l'étape `09` : 7 réussis.
-- Les validations séparées des branches `15` et `16` totalisaient respectivement
-  171 et 173 tests réussis avant leur intégration locale pour l'étape `17`.
+- Suite moderne `tests/`, incluant l'intégration locale des étapes `15–16` et
+  l'étape `17` : 182 tests réussis.
 - Contrôle ciblé final de la fenêtre, du cache, du catalogue, de la
   configuration, de l'orchestrateur et de SHAPEIT5 : 45 réussis.
 - Dernière exécution combinée antérieure des suites modernes et historiques :
@@ -499,6 +499,16 @@ Dernière mise à jour : 7 août 2026
   cibles hétérozygotes dans un ROH et `F_ROH` interdit sans dénominateur sourcé.
   Les seuils insuffisants publient `NOT_EVALUATED` sans relâchement automatique.
   Aucun calcul n'a été lancé sur les données réelles.
+- Étape `17` implémentée avec `cross_run_sensitivity_consolidation_v1` : un run
+  primaire et des runs de sensibilité V2 distincts sont déclarés dans un
+  registre préspécifié, puis contrôlés par manifeste, configuration, signature,
+  SHA-256 des résumés et ancrages `samples_master`/`target_genotype_audit`.
+  Chaque scénario à un facteur est contrôlé contre les axes configurables
+  autorisés. IBS, datation, LD et ROH restent comparés séparément ; les résultats
+  absents sont `NOT_EVALUATED`, les variations numériques restent
+  `NOT_CLASSIFIED` sans tolérance préalable et aucun score composite d'effet
+  fondateur n'est calculé. Les tests utilisent uniquement des runs synthétiques
+  temporaires ; aucune analyse réelle n'a été lancée.
 
 ## Suivi des étapes du pipeline V2
 
@@ -525,7 +535,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `14` | Datation du variant | `VALIDE` | Oui | Oui | Gamma corrélé primaire, seuils petits effectifs |
 | `15` | LD local secondaire | `FAIT_A_VALIDER` | Oui | Oui | PR brouillon `#5`, intégrée localement pour préparer `17` |
 | `16` | ROH secondaire | `VALIDE` | Oui | Oui | Deux périmètres, autozygotie distincte de l'IBS/IBD |
-| `17` | Analyses de sensibilité | `NON_FAIT` | Non | Non | — |
+| `17` | Analyses de sensibilité | `VALIDE` | Oui | Oui | Consolidation inter-runs signée, aucun recalcul caché |
 | `18` | Visualisations consolidées | `NON_FAIT` | Non | Non | — |
 | `19` | Rapport et revue finale | `NON_FAIT` | Non | Non | — |
 
@@ -622,8 +632,8 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 
 ## Priorités de la prochaine session
 
-1. Définir puis implémenter l'étape `17` des analyses de sensibilité sur la
-   branche d'intégration locale des étapes `15–16`.
+1. Faire relire puis fusionner dans l'ordre les PR des étapes `15–16` et préparer
+   une branche propre de livraison de l'étape `17` sur leur base commune.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
 3. Préparer les revues réelles `kinship_exclusion_approval` et
@@ -676,5 +686,5 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action de développement attendue est d'implémenter l'étape `17` sur la branche
-d'intégration locale de `15–16`, avant toute analyse des données réelles.
+action de développement attendue est de livrer l'étape `17`, puis de définir
+l'étape `18` des visualisations consolidées avant toute analyse réelle.
