@@ -1476,6 +1476,12 @@ son étape attendue dans un état `SUCCEEDED` ou `CACHED`.
 
 - `population_structure.svg`, `founder_ibs.svg`, `variant_age.svg`,
   `local_ld.svg`, `roh.svg` et `sensitivity.svg` ;
+- `visualization_gallery.html`, rendu de consultation prioritaire assemblé
+  depuis `figure_index.json` sans table individuelle ;
+- `visualization_gallery.pdf`, rendu secondaire paginé depuis le même index et
+  les mêmes SVG avec `fpdf2` ;
+- `visualization_render_manifest.json`, qui lie l'index, le HTML et le PDF par
+  SHA-256 et atteste l'absence de recalcul scientifique ;
 - un document `<figure>.figure.json` par figure, conforme au schéma
   `figure_provenance.schema.json` ;
 - `figure_index.json`, conforme au schéma `figure_index.schema.json` ;
@@ -1489,6 +1495,12 @@ Chaque entrée d'index possède un domaine unique parmi `POPULATION_STRUCTURE`,
 de ses sources exactes. Les figures et provenances sont classées au moins
 `sensitive_genetic`, même si elles n'affichent que des pseudonymes, afin de ne
 pas déclassifier implicitement une vue dérivée de données génétiques.
+
+Le HTML est le format de consultation principal : navigation par domaine,
+statuts, limites et liens vers les provenances. Le PDF est produit ensuite et
+conserve le même ordre, les mêmes statuts et les mêmes figures. Les deux formats
+sont `sensitive_genetic`, ne chargent aucune ressource réseau et ne lisent aucun
+artefact scientifique supplémentaire.
 
 **Contrôles d'intégrité bloquants par figure** :
 
@@ -1593,6 +1605,59 @@ de sensibilité et la section de rapport autorisée.
 
 **Principe** : l'interprétation automatique se limite à des faits calculés et à
 des limitations structurées.
+
+La méthode de rapport est versionnée `reviewable_scientific_report_v1`. Elle
+consomme uniquement les artefacts validés du run courant : les figures, index et
+manifest de rendu de `18`, ainsi que les résumés KING, paires pseudonymisées et
+contrôles de concordance de `07`. La configuration résolue et les audits du run
+sont lus uniquement pour présenter les paramètres effectivement utilisés ; les
+chemins d'entrée, secrets, identifiants sources et données génétiques brutes ne
+sont jamais injectés dans le rapport ou dans un prompt.
+
+**Sorties de brouillon** :
+
+- `interpretation_facts.json` : faits, effectifs, unités, statuts et limites
+  contrôlés, sans conclusion causale ;
+- `interpretation_prompt.txt` : prompt versionné construit depuis ce paquet de
+  faits et destiné à une IA configurée explicitement ;
+- `interpretation_draft.json` : proposition structurée, toujours étiquetée
+  `AI_DRAFT` ou `DETERMINISTIC_DRAFT` et jamais considérée comme validée ;
+- `report_draft.html` et `report_editor.js` : HTML local éditable, sans ressource
+  réseau, qui permet de télécharger un `report_review.json` ;
+- `report_validation.json` : état `AWAITING_HUMAN_REVIEW`,
+  `READY_FOR_SCIENTIFIC_REVIEW` ou `TECHNICAL_INCOMPLETE` ;
+- après relecture : `report_final.html` verrouillé, puis `report_final.pdf`
+  produit depuis le même contenu approuvé.
+
+L'appel à une IA externe est désactivé par défaut. Un fournisseur ne peut être
+activé que par une configuration explicite et ne reçoit que
+`interpretation_facts.json`. Le modèle, sa version, le SHA-256 du prompt et le
+mode de génération sont enregistrés ; aucun jeton n'est écrit dans les sorties.
+Une génération IA ne modifie jamais un résultat scientifique.
+
+**Cycle de validation humaine** : `AI_DRAFT` → `HUMAN_EDITED` → `APPROVED` →
+`FINAL`. Chaque zone de texte conserve son identifiant de section et ses faits
+sources. Le bouton « Valider le rapport » contrôle les champs obligatoires et
+télécharge la décision de relecture ; la finalisation côté pipeline vérifie son
+schéma, les empreintes du brouillon et des faits, les formulations interdites et
+la complétude avant de verrouiller le HTML. Une correction ultérieure crée une
+nouvelle révision au lieu de réécrire l'approbation précédente.
+
+Le rapport commence par une fiche d'étude issue des paramètres résolus : run,
+assemblage, cible, effectifs, seuils QC/KING, paramètres de structure, fenêtres
+IBS/LD, profil ROH, datation et sensibilités. Il présente ensuite un tableau KING
+pseudonymisé et un réseau de parenté lorsque les artefacts validés le permettent.
+KING reste un apparentement genome-wide et n'est jamais décrit comme une preuve
+d'IBD locale. La PCA est primaire ; une DAPC ne pourra apparaître que comme
+analyse exploratoire si une étape amont publie ultérieurement un artefact DAPC
+validé. L'étape `19` ne reprend jamais directement le PNG ou le code historique.
+
+**Garde-fous rédactionnels** : tous les nombres et unités du texte doivent être
+présents dans le paquet de faits ; `NOT_EVALUATED` interdit une conclusion ; le
+primaire reste distinct de l'exploratoire ; les petits effectifs, exclusions,
+valeurs manquantes et limites sont obligatoires. Les termes affirmant une preuve,
+une causalité, une origine unique ou une confirmation automatique déclenchent
+`REVIEW_REQUIRED`. Aucun score composite d'effet fondateur n'est produit.
 
 Exemples autorisés :
 

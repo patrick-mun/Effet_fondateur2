@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.metadata
 import json
 import sys
 from pathlib import Path
@@ -12,7 +13,7 @@ from typing import Any, Sequence
 from effet_fondateur.audit import atomic_write_json, read_json, sha256_file
 from effet_fondateur.contracts import build_file_artifact, validate_json_document
 from effet_fondateur.orchestrator.state import utc_now
-from effet_fondateur.visualization import build_consolidated_figures
+from effet_fondateur.visualization import build_consolidated_figures, publish_renderings
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -83,9 +84,18 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
     completeness = {"schema_version": "1.0.0", "run_id": stage_inputs["run_id"], "expected_domain_count": 6, "rendered_count": rendered_count, "not_evaluated_count": not_evaluated_count, "blocked_count": blocked_count, "complete_for_scientific_report": blocked_count == 0}
     validate_json_document(completeness, "visualization_completeness.schema.json")
     completeness_path = output_dir / "visualization_completeness.json"; atomic_write_json(completeness_path, completeness)
+    render_publication = publish_renderings(
+        run_id=stage_inputs["run_id"],
+        output_dir=output_dir,
+        figure_index=index,
+        figure_index_path=index_path,
+    )
     specs: list[tuple[str, Path, str, str]] = [
         ("figure_index", index_path, "figure_index.schema.json", "internal"),
         ("visualization_completeness", completeness_path, "visualization_completeness.schema.json", "internal"),
+        ("visualization_gallery_html", render_publication.html_path, "", "sensitive_genetic"),
+        ("visualization_gallery_pdf", render_publication.pdf_path, "", "sensitive_genetic"),
+        ("visualization_render_manifest", render_publication.manifest_path, "visualization_render_manifest.schema.json", "sensitive_genetic"),
     ]
     for result in results:
         specs.append((f"figure_provenance_{result.figure_id}", result.provenance_path, "figure_provenance.schema.json", "sensitive_genetic"))
@@ -95,7 +105,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         physical_path=path,
         published_path=f"{stage_inputs['published_output_dir']}/{path.relative_to(output_dir).as_posix()}",
         artifact_id=artifact_id, artifact_type=artifact_id,
-        media_type="image/svg+xml" if path.suffix == ".svg" else "application/json",
+        media_type={".svg": "image/svg+xml", ".html": "text/html", ".pdf": "application/pdf"}.get(path.suffix, "application/json"),
         producer_stage=stage_inputs["stage_name"], producer_signature=stage_inputs["signature"],
         schema_name=schema_name or None, schema_version="1.0.0" if schema_name else None,
         assembly=None, sample_set_id=None, variant_set_id=None, sensitivity=sensitivity,
@@ -106,11 +116,14 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         "schema_version": "1.0.0", "run_id": stage_inputs["run_id"], "stage_id": stage_inputs["stage_id"], "stage_name": stage_inputs["stage_name"],
         "method_id": parameters["method"], "signature": stage_inputs["signature"], "started_at": started_at, "completed_at": utc_now(), "duration_seconds": monotonic() - started_clock,
         "inputs": stage_inputs["artifacts"], "outputs": artifacts, "parameters": parameters,
-        "tools": [{"tool": "python_svg_renderer", "configured": Path(sys.executable).name, "version": sys.version.split()[0]}],
+        "tools": [
+            {"tool": "python_svg_html_renderer", "configured": Path(sys.executable).name, "version": sys.version.split()[0]},
+            {"tool": "fpdf2", "configured": "Python package", "version": importlib.metadata.version("fpdf2")},
+        ],
         "counts": {"expected_domains": 6, "rendered": rendered_count, "not_evaluated": not_evaluated_count, "blocked": blocked_count},
-        "metrics": {"complete_for_scientific_report": blocked_count == 0, "pseudonymized": True, "sensitivity": "sensitive_genetic", "composite_founder_score_calculated": False},
+        "metrics": {"complete_for_scientific_report": blocked_count == 0, "pseudonymized": True, "sensitivity": "sensitive_genetic", "html_rendered": True, "pdf_rendered": True, "scientific_recalculation_performed": False, "composite_founder_score_calculated": False},
         "exclusions": [], "warnings": [{"code": "figure_blocked", "count": blocked_count}] if blocked_count else [],
-        "checks": [{"check": "current_run_only", "status": "PASS"}, {"check": "source_checksums_and_signatures", "status": "PASS" if blocked_count == 0 else "WARN"}, {"check": "domain_separation", "status": "PASS"}, {"check": "primary_exploratory_separation", "status": "PASS"}, {"check": "no_scientific_recalculation", "status": "PASS"}, {"check": "no_composite_founder_score", "status": "PASS"}],
+        "checks": [{"check": "current_run_only", "status": "PASS"}, {"check": "source_checksums_and_signatures", "status": "PASS" if blocked_count == 0 else "WARN"}, {"check": "domain_separation", "status": "PASS"}, {"check": "primary_exploratory_separation", "status": "PASS"}, {"check": "html_render_from_figure_index", "status": "PASS"}, {"check": "pdf_render_from_same_figure_index", "status": "PASS"}, {"check": "no_scientific_recalculation", "status": "PASS"}, {"check": "no_composite_founder_score", "status": "PASS"}],
         "known_limits": ["Les figures reprennent les limites et non-évaluations des producteurs.", "Une figure ne constitue pas une preuve causale, IBD ou d'origine fondatrice unique.", "Les SVG et provenances restent classés sensitive_genetic malgré la pseudonymisation."],
         "expected_visualizations": [item.figure_id for item in results], "manual_validation_required": True,
     }

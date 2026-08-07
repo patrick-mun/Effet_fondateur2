@@ -223,3 +223,8 @@ stages:
     enabled: false
     parameters:
       method: validated_current_run_figures_v1
+  build_report:
+    enabled: false
+    parameters:
+      method: reviewable_scientific_report_v1
+      ai_provider: disabled

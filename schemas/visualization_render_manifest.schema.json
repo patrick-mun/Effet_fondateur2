@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/visualization_render_manifest.schema.json",
+  "title": "Manifest des rendus HTML et PDF de l'étape 18",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "run_id", "method_id", "source_figure_index_sha256",
+    "domain_order", "html", "pdf", "pseudonymized", "sensitivity",
+    "scientific_recalculation_performed", "composite_founder_score_calculated"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "method_id": {"const": "validated_current_run_rendering_v1"},
+    "source_figure_index_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "domain_order": {
+      "const": ["POPULATION_STRUCTURE", "FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "SENSITIVITY"]
+    },
+    "html": {"$ref": "#/$defs/renderedFile"},
+    "pdf": {"$ref": "#/$defs/renderedFile"},
+    "pseudonymized": {"const": true},
+    "sensitivity": {"const": "sensitive_genetic"},
+    "scientific_recalculation_performed": {"const": false},
+    "composite_founder_score_calculated": {"const": false}
+  },
+  "$defs": {
+    "renderedFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "media_type", "sha256", "renderer", "renderer_version"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "media_type": {"enum": ["text/html", "application/pdf"]},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "renderer": {"enum": ["python_html_v1", "fpdf2_svg_v1"]},
+        "renderer_version": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

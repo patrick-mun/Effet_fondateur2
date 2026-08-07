@@ -346,6 +346,23 @@ BUILD_VISUALIZATIONS_STAGE = StageDefinition(
     ),
 )
 
+BUILD_REPORT_STAGE = StageDefinition(
+    stage_id="19",
+    stage_name="build_report",
+    module="effet_fondateur.stages.build_report",
+    critical=True,
+    dependencies=("infer_kinship", "build_visualizations"),
+    required_artifact_ids=(
+        "kinship_pairs", "kinship_degree_summary", "kinship_report",
+        "figure_index", "visualization_completeness", "visualization_render_manifest",
+        "figure_population_structure", "figure_founder_ibs", "figure_variant_age",
+        "figure_local_ld", "figure_roh", "figure_sensitivity",
+        "figure_provenance_population_structure", "figure_provenance_founder_ibs",
+        "figure_provenance_variant_age", "figure_provenance_local_ld",
+        "figure_provenance_roh", "figure_provenance_sensitivity",
+    ),
+)
+
 DEFAULT_STAGE_DEFINITIONS = (
     SYNTHETIC_STAGE,
     VALIDATE_SOURCES_STAGE,
@@ -366,6 +383,7 @@ DEFAULT_STAGE_DEFINITIONS = (
     ANALYZE_ROH_STAGE,
     RUN_SENSITIVITY_ANALYSES_STAGE,
     BUILD_VISUALIZATIONS_STAGE,
+    BUILD_REPORT_STAGE,
 )
 
 

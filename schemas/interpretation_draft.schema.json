@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/interpretation_draft.schema.json",
+  "title": "Brouillon d'interprétation V2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "method_id", "draft_status", "generator", "facts_sha256", "prompt_sha256", "sections", "human_validation_required"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "method_id": {"const": "reviewable_scientific_report_v1"},
+    "draft_status": {"enum": ["AI_DRAFT", "DETERMINISTIC_DRAFT"]},
+    "generator": {"type": "object"},
+    "facts_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "prompt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["section_id", "observation", "interpretation_prudente", "limites", "review_required"],
+        "properties": {
+          "section_id": {"type": "string"},
+          "observation": {"type": "string"},
+          "interpretation_prudente": {"type": "string"},
+          "limites": {"type": "string"},
+          "review_required": {"const": true}
+        }
+      }
+    },
+    "human_validation_required": {"const": true}
+  }
+}

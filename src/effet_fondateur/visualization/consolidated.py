@@ -1,8 +1,9 @@
-"""Rendu SVG audité des cinq domaines scientifiques consolidés."""
+"""Rendu SVG audité des six domaines scientifiques consolidés."""
 
 from __future__ import annotations
 
 import html
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
@@ -147,13 +148,175 @@ def _population_svg(subtitle: str, lines: list[str], footer: str) -> str:
     return "".join(body)
 
 
+def _chart_header(title: str, subtitle: str) -> list[str]:
+    """Construit l'en-tête commun des graphiques scientifiques SVG."""
+    return [
+        '<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="650" viewBox="0 0 1100 650">',
+        '<rect width="100%" height="100%" fill="#fbfaf7"/>',
+        f'<text x="40" y="42" font-family="sans-serif" font-size="25" font-weight="700" fill="#172554">{html.escape(title)}</text>',
+        f'<text x="40" y="70" font-family="sans-serif" font-size="15" fill="#475569">{html.escape(subtitle)}</text>',
+    ]
+
+
+def _chart_footer(body: list[str], footer: str) -> str:
+    body.append(f'<text x="40" y="625" font-family="sans-serif" font-size="13" fill="#7c2d12">{html.escape(footer)}</text></svg>\n')
+    return "".join(body)
+
+
+def _founder_svg(subtitle: str, lines: list[str], footer: str) -> str:
+    """Trace les longueurs IBS gauche/droite autour du variant cible."""
+    pattern = re.compile(r"^(UNIT-\d+) \| left=([0-9.]+) cM \| right=([0-9.]+) cM \| (.+)$")
+    rows = [(match.group(1), float(match.group(2)), float(match.group(3)), match.group(4)) for line in lines if (match := pattern.match(line))]
+    if not rows:
+        return _svg("FOUNDER IBS", subtitle, lines, footer)
+    body = _chart_header("Partage IBS autour du variant cible", subtitle)
+    body.extend([
+        '<text x="55" y="112" font-family="sans-serif" font-size="15" font-weight="700">Longueur partagée autour de la cible (cM)</text>',
+        '<line x1="500" y1="135" x2="500" y2="485" stroke="#dc2626" stroke-width="2"/>',
+        '<text x="478" y="515" font-family="sans-serif" font-size="12" fill="#991b1b">cible</text>',
+    ])
+    maximum = max((max(left, right) for _, left, right, _ in rows), default=1.0) or 1.0
+    for index, (unit, left, right, status) in enumerate(rows):
+        y = 165 + index * 65
+        left_x = 500 - 340 * left / maximum
+        right_x = 500 + 340 * right / maximum
+        body.extend([
+            f'<text x="55" y="{y + 5}" font-family="monospace" font-size="13">{html.escape(unit)}</text>',
+            f'<line x1="{left_x:.2f}" y1="{y}" x2="{right_x:.2f}" y2="{y}" stroke="#2563eb" stroke-width="13" stroke-linecap="round"/>',
+            f'<circle cx="500" cy="{y}" r="7" fill="#dc2626"/>',
+            f'<text x="865" y="{y + 5}" font-family="sans-serif" font-size="12">{left:g} + {right:g} cM · {html.escape(status)}</text>',
+        ])
+    for index, summary in enumerate(line for line in lines if not line.startswith("UNIT-")):
+        body.append(f'<text x="55" y="{545 + 20 * index}" font-family="monospace" font-size="12" fill="#475569">{html.escape(summary)}</text>')
+    return _chart_footer(body, footer)
+
+
+def _age_svg(subtitle: str, lines: list[str], footer: str) -> str:
+    """Trace les estimations de datation et leurs intervalles en générations."""
+    pattern = re.compile(r"^(PRIMARY|EXPLORATORY) (\S+) \| n=(\d+) \| estimate=([0-9.]+) generations \| CI=([0-9.]+)\.\.([0-9.]+)$")
+    rows = [(match.group(1), match.group(2), int(match.group(3)), float(match.group(4)), float(match.group(5)), float(match.group(6))) for line in lines if (match := pattern.match(line))]
+    if not rows:
+        return _svg("VARIANT AGE", subtitle, lines, footer)
+    body = _chart_header("Datation du variant", subtitle)
+    body.extend([
+        '<text x="55" y="112" font-family="sans-serif" font-size="15" font-weight="700">Estimation et intervalle de confiance (générations)</text>',
+        '<line x1="300" y1="500" x2="990" y2="500" stroke="#64748b"/>',
+    ])
+    maximum = max((upper for *_, upper in rows), default=1.0) or 1.0
+    for tick in range(5):
+        value = maximum * tick / 4
+        x = 300 + 690 * tick / 4
+        body.extend([f'<line x1="{x:.2f}" y1="495" x2="{x:.2f}" y2="505" stroke="#64748b"/>', f'<text x="{x - 10:.2f}" y="525" font-family="sans-serif" font-size="11">{value:.1f}</text>'])
+    for index, (role, model, count, estimate, lower, upper) in enumerate(rows):
+        y = 180 + index * 105
+        lower_x, estimate_x, upper_x = (300 + 690 * value / maximum for value in (lower, estimate, upper))
+        color = "#0f766e" if role == "PRIMARY" else "#d97706"
+        body.extend([
+            f'<text x="55" y="{y - 8}" font-family="sans-serif" font-size="14" font-weight="700" fill="{color}">{role} {html.escape(model)}</text>',
+            f'<text x="55" y="{y + 15}" font-family="sans-serif" font-size="12">n={count} · {estimate:g} [{lower:g}–{upper:g}] générations</text>',
+            f'<line x1="{lower_x:.2f}" y1="{y}" x2="{upper_x:.2f}" y2="{y}" stroke="{color}" stroke-width="5"/>',
+            f'<line x1="{lower_x:.2f}" y1="{y - 9}" x2="{lower_x:.2f}" y2="{y + 9}" stroke="{color}"/>',
+            f'<line x1="{upper_x:.2f}" y1="{y - 9}" x2="{upper_x:.2f}" y2="{y + 9}" stroke="{color}"/>',
+            f'<circle cx="{estimate_x:.2f}" cy="{y}" r="8" fill="{color}"/>',
+        ])
+    return _chart_footer(body, footer)
+
+
+def _ld_svg(subtitle: str, lines: list[str], footer: str) -> str:
+    """Compare r² génotypique et |D′| par classe de distance."""
+    pattern = re.compile(r"^(.*?) \| n=(\d+) \| ([0-9.]+)\.\.([0-9.]+) cM \| r2=([0-9.]+) \| Dprime=([0-9.]+) \| (.+)$")
+    rows = [(match.group(1), int(match.group(2)), float(match.group(3)), float(match.group(4)), float(match.group(5)), float(match.group(6)), match.group(7)) for line in lines if (match := pattern.match(line))]
+    if not rows:
+        return _svg("LOCAL LD", subtitle, lines, footer)
+    body = _chart_header("LD local secondaire", subtitle)
+    body.extend([
+        '<text x="55" y="112" font-family="sans-serif" font-size="15" font-weight="700">Médianes descriptives par classe de distance</text>',
+        '<line x1="220" y1="500" x2="1010" y2="500" stroke="#64748b"/>',
+        '<line x1="220" y1="145" x2="220" y2="500" stroke="#64748b"/>',
+    ])
+    group_width = 700 / max(len(rows), 1)
+    for index, (cohort, count, low, high, r2, dprime, status) in enumerate(rows):
+        center = 270 + index * group_width
+        body.extend([
+            f'<rect x="{center - 34:.2f}" y="{500 - 320 * r2:.2f}" width="30" height="{320 * r2:.2f}" fill="#2563eb"/>',
+            f'<rect x="{center + 6:.2f}" y="{500 - 320 * dprime:.2f}" width="30" height="{320 * dprime:.2f}" fill="#0f766e"/>',
+            f'<text x="{center - 45:.2f}" y="525" font-family="sans-serif" font-size="11">{low:g}–{high:g} cM</text>',
+            f'<text x="{center - 45:.2f}" y="545" font-family="sans-serif" font-size="10">n={count} · {html.escape(cohort)}</text>',
+            f'<text x="{center - 45:.2f}" y="565" font-family="sans-serif" font-size="10">{html.escape(status)}</text>',
+        ])
+    body.extend([
+        '<rect x="730" y="105" width="16" height="16" fill="#2563eb"/><text x="753" y="118" font-family="sans-serif" font-size="12">r² génotypique</text>',
+        '<rect x="865" y="105" width="16" height="16" fill="#0f766e"/><text x="888" y="118" font-family="sans-serif" font-size="12">|D′|</text>',
+    ])
+    return _chart_footer(body, footer)
+
+
+def _roh_svg(subtitle: str, lines: list[str], footer: str) -> str:
+    """Trace la charge ROH médiane par portée et cohorte."""
+    pattern = re.compile(r"^(.*?) / (.*?) \| evaluated=(\d+)/(\d+) \| median total=([0-9.]+) kb \| target in ROH=(\d+) \| (.+)$")
+    rows = [(match.group(1), match.group(2), int(match.group(3)), int(match.group(4)), float(match.group(5)), int(match.group(6)), match.group(7)) for line in lines if (match := pattern.match(line))]
+    if not rows:
+        return _svg("ROH", subtitle, lines, footer)
+    body = _chart_header("ROH et autozygotie", subtitle)
+    body.append('<text x="55" y="112" font-family="sans-serif" font-size="15" font-weight="700">Charge ROH médiane (kb)</text>')
+    maximum = max((total for *_, total, _, _ in rows), default=1.0) or 1.0
+    for index, (scope, cohort, evaluated, count, total, target_count, status) in enumerate(rows):
+        y = 165 + index * 125
+        width = 650 * total / maximum
+        color = "#0f766e" if "PRIMARY" in status else "#d97706"
+        body.extend([
+            f'<text x="55" y="{y}" font-family="sans-serif" font-size="13" font-weight="700">{html.escape(scope)} / {html.escape(cohort)}</text>',
+            f'<rect x="300" y="{y - 21}" width="{width:.2f}" height="28" rx="4" fill="{color}"/>',
+            f'<text x="{315 + width:.2f}" y="{y}" font-family="sans-serif" font-size="12">{total:g} kb</text>',
+            f'<text x="55" y="{y + 25}" font-family="sans-serif" font-size="11">évalués {evaluated}/{count} · cible dans ROH {target_count} · {html.escape(status)}</text>',
+        ])
+    return _chart_footer(body, footer)
+
+
+def _sensitivity_svg(subtitle: str, lines: list[str], footer: str) -> str:
+    """Trace les écarts exploratoires par rapport à la référence primaire zéro."""
+    pattern = re.compile(r"^EXPLORATORY (\S+) \| factor=(\S+) \| (\S+) \| (\S+) \| delta=([-0-9.]+|missing)$")
+    rows = [(match.group(1), match.group(2), match.group(3), match.group(4), None if match.group(5) == "missing" else float(match.group(5))) for line in lines if (match := pattern.match(line))]
+    if not rows:
+        return _svg("SENSITIVITY", subtitle, lines, footer)
+    body = _chart_header("Analyses de sensibilité", subtitle)
+    body.extend([
+        '<text x="55" y="112" font-family="sans-serif" font-size="15" font-weight="700">Variation relative des scénarios exploratoires</text>',
+        '<line x1="600" y1="135" x2="600" y2="500" stroke="#0f766e" stroke-width="2"/>',
+        '<text x="548" y="525" font-family="sans-serif" font-size="11">primaire = 0 %</text>',
+    ])
+    maximum = max((abs(delta) for *_, delta in rows if delta is not None), default=0.1) or 0.1
+    for index, (domain, factor, evaluation, category, delta) in enumerate(rows):
+        y = 170 + index * 75
+        body.append(f'<text x="55" y="{y + 5}" font-family="sans-serif" font-size="13" font-weight="700">{html.escape(domain)}</text>')
+        body.append(f'<circle cx="600" cy="{y}" r="6" fill="#0f766e"/>')
+        if delta is None:
+            body.append(f'<text x="655" y="{y + 5}" font-family="sans-serif" font-size="12" fill="#9a3412">NOT_EVALUATED · {html.escape(factor)}</text>')
+            continue
+        x = 600 + 300 * delta / maximum
+        body.extend([
+            f'<line x1="600" y1="{y}" x2="{x:.2f}" y2="{y}" stroke="#d97706" stroke-width="4"/>',
+            f'<circle cx="{x:.2f}" cy="{y}" r="8" fill="#d97706"/>',
+            f'<text x="{x + 12:.2f}" y="{y + 5}" font-family="sans-serif" font-size="11">{100 * delta:+.1f}% · {html.escape(factor)} · {html.escape(category)}</text>',
+        ])
+    body.append('<text x="55" y="575" font-family="sans-serif" font-size="12" fill="#7c2d12">Résultat primaire et scénarios exploratoires séparés · composite founder score: NOT CALCULATED</text>')
+    return _chart_footer(body, footer)
+
+
+DOMAIN_RENDERERS: dict[str, Callable[[str, list[str], str], str]] = {
+    "POPULATION_STRUCTURE": _population_svg,
+    "FOUNDER_IBS": _founder_svg,
+    "VARIANT_AGE": _age_svg,
+    "LOCAL_LD": _ld_svg,
+    "ROH": _roh_svg,
+    "SENSITIVITY": _sensitivity_svg,
+}
+
+
 def _write_result(output_dir: Path, run_id: str, figure_id: str, domain: str, status: str, lines: list[str], counts: tuple[int, int, int, int], source_artifacts: list[dict[str, Any]], warnings: list[str], limits: list[str]) -> FigureResult:
     figure_path = output_dir / f"{figure_id}.svg"
-    svg = (
-        _population_svg(f"run {run_id} — {status}", lines, warnings[0])
-        if domain == "POPULATION_STRUCTURE"
-        else _svg(domain.replace("_", " "), f"run {run_id} — {status}", lines, warnings[0])
-    )
+    renderer = DOMAIN_RENDERERS.get(domain)
+    svg = renderer(f"run {run_id} — {status}", lines, warnings[0]) if renderer else _svg(domain.replace("_", " "), f"run {run_id} — {status}", lines, warnings[0])
     figure_path.write_text(svg, encoding="utf-8")
     provenance = {
         "schema_version": "1.0.0", "run_id": run_id, "figure_id": figure_id,
@@ -273,7 +436,7 @@ def _sensitivity(paths: dict[str, Path]) -> tuple[str, list[str], tuple[int, int
     missing = sum(row["SCENARIO_NUMERIC_VALUE"] is None for row in comparisons.rows)
     not_eval = sum(row["EVALUATION_STATUS"] == "NOT_EVALUATED" for row in comparisons.rows)
     lines = [f"PRIMARY {row['DOMAIN']} | {row['TECHNICAL_STATUS'] or 'NOT_EVALUATED'}" for row in primary]
-    lines += [f"EXPLORATORY {row['DOMAIN']} | factor={row['CHANGED_FACTOR']} | {row['EVALUATION_STATUS']} | {row['CATEGORICAL_COMPARISON']}" for row in comparisons.rows if row["ROLE"] == "SENSITIVITY"]
+    lines += [f"EXPLORATORY {row['DOMAIN']} | factor={row['CHANGED_FACTOR']} | {row['EVALUATION_STATUS']} | {row['CATEGORICAL_COMPARISON']} | delta={row['RELATIVE_CHANGE'] if row['RELATIVE_CHANGE'] is not None else 'missing'}" for row in comparisons.rows if row["ROLE"] == "SENSITIVITY"]
     lines.append("composite founder score: NOT CALCULATED")
     return ("NOT_EVALUATED" if not_eval == len(comparisons.rows) else "RENDERED", lines, (len(comparisons.rows), 0, missing, not_eval))
 
@@ -289,7 +452,7 @@ DOMAIN_SPECS: tuple[tuple[str, str, dict[str, tuple[str, str]], Callable[[dict[s
 
 
 def build_consolidated_figures(*, run_dir: Path, output_dir: Path, stage_inputs: dict[str, Any]) -> list[FigureResult]:
-    """Construit les cinq figures sans jamais lire hors du manifeste d'entrée."""
+    """Construit les six figures sans jamais lire hors du manifeste d'entrée."""
     output_dir.mkdir(parents=True, exist_ok=True)
     artifacts = {item["artifact_id"]: item for item in stage_inputs["artifacts"]}
     results: list[FigureResult] = []

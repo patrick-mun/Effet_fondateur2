@@ -116,6 +116,12 @@ def test_consolidated_figures_are_separate_pseudonymized_and_non_causal(tmp_path
     assert "<circle" in combined and "Variance expliquée" in combined
     assert "PRIMARY CORRELATED" in combined and "EXPLORATORY INDEPENDENT" in combined
     assert "composite founder score: NOT CALCULATED" in combined
+    rendered = {result.domain: result.figure_path.read_text(encoding="utf-8") for result in results if result.figure_path}
+    assert rendered["FOUNDER_IBS"].count("<line") >= 3 and "Longueur partagée" in rendered["FOUNDER_IBS"]
+    assert "intervalle de confiance" in rendered["VARIANT_AGE"] and rendered["VARIANT_AGE"].count("<circle") >= 2
+    assert "r² génotypique" in rendered["LOCAL_LD"] and rendered["LOCAL_LD"].count("<rect") >= 3
+    assert "Charge ROH médiane" in rendered["ROH"] and rendered["ROH"].count("<rect") >= 3
+    assert "Variation relative" in rendered["SENSITIVITY"] and rendered["SENSITIVITY"].count("<circle") >= 8
 
 
 def test_count_incoherence_blocks_only_the_affected_figure(tmp_path: Path) -> None:
@@ -167,7 +173,22 @@ def test_stage_18_publishes_versioned_index_completeness_and_audit(tmp_path: Pat
     index = json.loads((output_dir / "figure_index.json").read_text(encoding="utf-8"))
     completeness = json.loads((output_dir / "visualization_completeness.json").read_text(encoding="utf-8"))
     audit = json.loads((output_dir / "audit.json").read_text(encoding="utf-8"))
+    outputs = json.loads((output_dir / "stage_outputs.json").read_text(encoding="utf-8"))
+    render_manifest = json.loads((output_dir / "visualization_render_manifest.json").read_text(encoding="utf-8"))
     validate_json_document(index, "figure_index.schema.json")
+    validate_json_document(render_manifest, "visualization_render_manifest.schema.json")
     assert completeness == {"schema_version": "1.0.0", "run_id": "synthetic_visual_run", "expected_domain_count": 6, "rendered_count": 6, "not_evaluated_count": 0, "blocked_count": 0, "complete_for_scientific_report": True}
     assert audit["metrics"]["composite_founder_score_calculated"] is False
     assert audit["metrics"]["sensitivity"] == "sensitive_genetic"
+    assert audit["metrics"]["html_rendered"] is True
+    assert audit["metrics"]["pdf_rendered"] is True
+    artifact_ids = {artifact["artifact_id"] for artifact in outputs["artifacts"]}
+    assert {"visualization_gallery_html", "visualization_gallery_pdf", "visualization_render_manifest"} <= artifact_ids
+    html_document = (output_dir / "visualization_gallery.html").read_text(encoding="utf-8")
+    assert html_document.startswith("<!doctype html>")
+    assert html_document.count("<section id=") == 6
+    assert "PRIVATE_SAMPLE" not in html_document and "PRIVATE_PCA" not in html_document
+    assert html_document.index("population_structure") < html_document.index("founder_ibs")
+    assert (output_dir / "visualization_gallery.pdf").read_bytes().startswith(b"%PDF-")
+    assert render_manifest["scientific_recalculation_performed"] is False
+    assert render_manifest["composite_founder_score_calculated"] is False
