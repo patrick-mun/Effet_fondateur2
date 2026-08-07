@@ -219,3 +219,7 @@ stages:
         VARIANT_AGE: null
         LOCAL_LD: null
         ROH: null
+  build_visualizations:
+    enabled: false
+    parameters:
+      method: validated_current_run_figures_v1

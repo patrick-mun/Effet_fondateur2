@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/figure_index.schema.json",
+  "title": "Index des figures consolidées V2",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "run_id", "method_id", "composite_founder_score_calculated", "figures"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"}, "run_id": {"type": "string", "minLength": 1},
+    "method_id": {"const": "validated_current_run_figures_v1"},
+    "composite_founder_score_calculated": {"const": false},
+    "figures": {"type": "array", "minItems": 6, "maxItems": 6, "items": {"type": "object", "additionalProperties": false, "required": ["figure_id", "domain", "status", "figure_path", "provenance_path", "sensitivity", "blocked_reason"], "properties": {"figure_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}, "domain": {"enum": ["POPULATION_STRUCTURE", "FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "SENSITIVITY"]}, "status": {"enum": ["RENDERED", "NOT_EVALUATED", "BLOCKED"]}, "figure_path": {"type": ["string", "null"]}, "provenance_path": {"type": "string", "minLength": 1}, "sensitivity": {"const": "sensitive_genetic"}, "blocked_reason": {"type": ["string", "null"]}}}}
+  }
+}

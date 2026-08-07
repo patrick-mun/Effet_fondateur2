@@ -5,8 +5,13 @@ Dernière mise à jour : 7 août 2026
 ## État du dépôt
 
 - Dépôt GitHub : `patrick-mun/Effet_fondateur2`.
-- La PR `#4` porte la livraison de l'étape `14` depuis la branche
-  `feature/v2-variant-age`, au commit fonctionnel `c844823`.
+- `main` contient les étapes `00–17` et pointe sur `7e3c317` après les fusions
+  ordonnées des PR `#5`, `#6` et `#7` le 7 août 2026.
+- La PR `#5` a livré l'étape `15`, la PR `#6` l'étape `16` et la PR `#7`
+  l'étape `17`. La branche `#6` a été avancée en fast-forward vers le commit
+  d'intégration existant `fbc6398`, sans rebase ni réécriture destructive.
+- La branche locale `agent/step-18-visualizations` contient l'étape `18` au
+  commit `a46bcfc` et intègre désormais `origin/main` de façon non destructive.
 - PR `#3` fusionnée dans `main` le 6 août 2026 ; elle valide les étapes `08–13`.
 - PR V2 `#2` fusionnée dans `main` le 5 août 2026.
 - PR `#1` fusionnée dans `main` le 4 août 2026.
@@ -411,8 +416,8 @@ Dernière mise à jour : 7 août 2026
 - Tests ciblés de l'étape `07` : 8 réussis.
 - Tests ciblés de l'étape `08` : 8 réussis.
 - Tests ciblés de l'étape `09` : 7 réussis.
-- Suite moderne `tests/`, incluant l'intégration locale des étapes `15–16` et
-  l'étape `17` : 182 tests réussis.
+- Suite moderne `tests/`, incluant l'intégration locale des étapes `15–18` et
+  la figure PCA consolidée : 188 tests réussis.
 - Contrôle ciblé final de la fenêtre, du cache, du catalogue, de la
   configuration, de l'orchestrateur et de SHAPEIT5 : 45 réussis.
 - Dernière exécution combinée antérieure des suites modernes et historiques :
@@ -509,6 +514,16 @@ Dernière mise à jour : 7 août 2026
   `NOT_CLASSIFIED` sans tolérance préalable et aucun score composite d'effet
   fondateur n'est calculé. Les tests utilisent uniquement des runs synthétiques
   temporaires ; aucune analyse réelle n'a été lancée.
+- Étape `18` implémentée avec `validated_current_run_figures_v1` : six SVG
+  distincts pour PCA, IBS, datation, LD, ROH et sensibilités, avec provenance
+  versionnée, index et contrôle de complétude. Les scripts ne consomment que les
+  artefacts déclarés des étapes `13–17`, vérifient empreintes, signatures,
+  schémas, ensembles, effectifs et unités, pseudonymisent les unités IBS et
+  classent figures/provenances `sensitive_genetic`. Une incohérence bloque la
+  seule figure concernée ; `NOT_EVALUATED`, petits effectifs, exclusions et
+  valeurs manquantes restent visibles. Aucun recalcul, score composite ou
+  langage causal n'est produit. Les tests sont exclusivement synthétiques et
+  temporaires ; aucune analyse réelle n'a été lancée.
 
 ## Suivi des étapes du pipeline V2
 
@@ -536,7 +551,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `15` | LD local secondaire | `FAIT_A_VALIDER` | Oui | Oui | PR brouillon `#5`, intégrée localement pour préparer `17` |
 | `16` | ROH secondaire | `VALIDE` | Oui | Oui | Deux périmètres, autozygotie distincte de l'IBS/IBD |
 | `17` | Analyses de sensibilité | `VALIDE` | Oui | Oui | Consolidation inter-runs signée, aucun recalcul caché |
-| `18` | Visualisations consolidées | `NON_FAIT` | Non | Non | — |
+| `18` | Visualisations consolidées | `VALIDE` | Oui | Oui | Six domaines séparés, PCA incluse, provenance et blocage local validés |
 | `19` | Rapport et revue finale | `NON_FAIT` | Non | Non | — |
 
 ### Découpage opérationnel de l'étape 12
@@ -632,8 +647,8 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 
 ## Priorités de la prochaine session
 
-1. Faire relire puis fusionner dans l'ordre les PR des étapes `15–16` et préparer
-   une branche propre de livraison de l'étape `17` sur leur base commune.
+1. Définir puis implémenter l'étape `19` de rapport et revue finale à partir des
+   audits et de l'index des figures, sans relancer les calculs scientifiques.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
 3. Préparer les revues réelles `kinship_exclusion_approval` et
@@ -686,5 +701,4 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action de développement attendue est de livrer l'étape `17`, puis de définir
-l'étape `18` des visualisations consolidées avant toute analyse réelle.
+action de développement attendue est de définir l'étape `19` sans analyse réelle.
