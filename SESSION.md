@@ -5,13 +5,13 @@ Dernière mise à jour : 7 août 2026
 ## État du dépôt
 
 - Dépôt GitHub : `patrick-mun/Effet_fondateur2`.
-- `main` contient les étapes `00–14` et pointe sur `f1ee47f` après la fusion de
-  la PR `#4`.
-- Les PR brouillon `#5`, `#6` et `#7` sont ouvertes, non fusionnées et
-  fusionnables au 7 août 2026. Elles portent respectivement les étapes `15`,
-  `16` et `17`.
-- La branche locale `agent/step-18-visualizations` part de `ba18a2a` et conserve
-  temporairement l'intégration des commits `15–17` sans réécrire leurs branches.
+- `main` contient les étapes `00–17` et pointe sur `7e3c317` après les fusions
+  ordonnées des PR `#5`, `#6` et `#7` le 7 août 2026.
+- La PR `#5` a livré l'étape `15`, la PR `#6` l'étape `16` et la PR `#7`
+  l'étape `17`. La branche `#6` a été avancée en fast-forward vers le commit
+  d'intégration existant `fbc6398`, sans rebase ni réécriture destructive.
+- La branche locale `agent/step-18-visualizations` contient l'étape `18` au
+  commit `a46bcfc` et intègre désormais `origin/main` de façon non destructive.
 - PR `#3` fusionnée dans `main` le 6 août 2026 ; elle valide les étapes `08–13`.
 - PR V2 `#2` fusionnée dans `main` le 5 août 2026.
 - PR `#1` fusionnée dans `main` le 4 août 2026.
@@ -647,21 +647,18 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 
 ## Priorités de la prochaine session
 
-1. Faire relire puis fusionner les PR dans l'ordre sûr `#5`, `#6`, recontrôler
-   `#7`, puis fusionner `#7`. Aucun rebase destructif n'est requis a priori.
-2. Après ces fusions, mettre à jour la branche de l'étape `18` depuis `main` par
-   une intégration non destructive, vérifier que son diff ne contient que
-   l'étape `18`, puis préparer sa livraison sur demande explicite.
-3. Préparer la table maître réelle et son approbation humaine sans déduire les
+1. Définir puis implémenter l'étape `19` de rapport et revue finale à partir des
+   audits et de l'index des figures, sans relancer les calculs scientifiques.
+2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
-4. Préparer les revues réelles `kinship_exclusion_approval` et
+3. Préparer les revues réelles `kinship_exclusion_approval` et
    `population_structure_exclusion_approval` sur un premier run, puis les lier
    par SHA-256 dans la configuration d'un nouveau run destiné au gel.
-5. Intégrer les 66 témoins réels dans le QC genome-wide, KING, la structure et le
+4. Intégrer les 66 témoins réels dans le QC genome-wide, KING, la structure et le
    gel des cohortes avant toute analyse locale.
-6. Confirmer les données moléculaires et génotypes individuels du variant DOCK6,
+5. Confirmer les données moléculaires et génotypes individuels du variant DOCK6,
    puis valider son intégration et Mendel sur le jeu chromosome 19 définitif.
-7. Valider ensuite la datation avec des jeux synthétiques de référence avant
+6. Valider ensuite la datation avec des jeux synthétiques de référence avant
    toute analyse réelle.
 
 ## Décisions à conserver
@@ -704,5 +701,4 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action de développement attendue est de faire relire l'étape `18`, de livrer les
-PR `#5–#7` dans l'ordre sûr, puis de définir l'étape `19` sans analyse réelle.
+action de développement attendue est de définir l'étape `19` sans analyse réelle.
