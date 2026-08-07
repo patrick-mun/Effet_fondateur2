@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/figure_provenance.schema.json",
+  "title": "Provenance d'une figure V2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "figure_id", "domain", "status", "method_id", "script_version", "sources", "represented_count", "excluded_count", "missing_value_count", "not_evaluated_count", "pseudonymized", "sensitivity", "legend", "interpretation_warnings", "known_limits"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "figure_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+    "domain": {"enum": ["POPULATION_STRUCTURE", "FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "SENSITIVITY"]},
+    "status": {"enum": ["RENDERED", "NOT_EVALUATED", "BLOCKED"]},
+    "method_id": {"const": "validated_current_run_figures_v1"},
+    "script_version": {"const": "1.0.0"},
+    "sources": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["artifact_id", "producer_stage", "producer_signature", "schema_name", "schema_version", "sha256"], "properties": {"artifact_id": {"type": "string", "minLength": 1}, "producer_stage": {"type": "string", "minLength": 1}, "producer_signature": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "schema_name": {"type": "string", "minLength": 1}, "schema_version": {"const": "1.0.0"}, "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}}},
+    "represented_count": {"type": "integer", "minimum": 0},
+    "excluded_count": {"type": "integer", "minimum": 0},
+    "missing_value_count": {"type": "integer", "minimum": 0},
+    "not_evaluated_count": {"type": "integer", "minimum": 0},
+    "pseudonymized": {"const": true},
+    "sensitivity": {"const": "sensitive_genetic"},
+    "legend": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "interpretation_warnings": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "known_limits": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  }
+}

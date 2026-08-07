@@ -329,6 +329,23 @@ RUN_SENSITIVITY_ANALYSES_STAGE = StageDefinition(
     config_input_files=("sensitivity_scenarios",),
 )
 
+BUILD_VISUALIZATIONS_STAGE = StageDefinition(
+    stage_id="18",
+    stage_name="build_visualizations",
+    module="effet_fondateur.stages.build_visualizations",
+    critical=True,
+    dependencies=(
+        "analyze_population_structure", "infer_founder_haplotype", "estimate_variant_age", "analyze_local_ld",
+        "analyze_roh", "run_sensitivity_analyses",
+    ),
+    required_artifact_ids=(
+        "population_scores", "population_eigenvalues", "population_outliers",
+        "founder_segments", "founder_analysis_summary",
+        "variant_age_estimates", "variant_age_scenarios", "local_ld_summary",
+        "roh_cohort_summary", "sensitivity_comparisons", "sensitivity_stability",
+    ),
+)
+
 DEFAULT_STAGE_DEFINITIONS = (
     SYNTHETIC_STAGE,
     VALIDATE_SOURCES_STAGE,
@@ -348,6 +365,7 @@ DEFAULT_STAGE_DEFINITIONS = (
     ANALYZE_LOCAL_LD_STAGE,
     ANALYZE_ROH_STAGE,
     RUN_SENSITIVITY_ANALYSES_STAGE,
+    BUILD_VISUALIZATIONS_STAGE,
 )
 
 

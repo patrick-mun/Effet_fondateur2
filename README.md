@@ -269,6 +269,15 @@ numérique que si une tolérance a été préspécifiée. Copier
 et SHA-256 des manifestes, puis renseigner `inputs.sensitivity_scenarios`. Le
 contrat complet est documenté dans `docs/modules/sensitivity.md`.
 
+L'étape `18_build_visualizations` produit six vues SVG séparées pour la PCA,
+l'IBS, la datation, le LD, les ROH et les sensibilités. Elle consomme uniquement
+les tables et résumés versionnés des étapes 08 et 13–17 dans le run courant, valide leurs
+empreintes, signatures, schémas, effectifs et unités, puis publie une provenance
+par figure, un index et un contrôle de complétude. Les non-évaluations et petits
+effectifs restent visibles ; aucune statistique scientifique, preuve causale ou
+score composite n'est produit. Le contrat complet est documenté dans
+`docs/modules/visualizations.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est

@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/visualization_completeness.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "run_id", "expected_domain_count", "rendered_count", "not_evaluated_count", "blocked_count", "complete_for_scientific_report"],
+  "properties": {"schema_version": {"const": "1.0.0"}, "run_id": {"type": "string", "minLength": 1}, "expected_domain_count": {"const": 6}, "rendered_count": {"type": "integer", "minimum": 0}, "not_evaluated_count": {"type": "integer", "minimum": 0}, "blocked_count": {"type": "integer", "minimum": 0}, "complete_for_scientific_report": {"type": "boolean"}}
+}

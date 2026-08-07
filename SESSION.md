@@ -5,8 +5,13 @@ Dernière mise à jour : 7 août 2026
 ## État du dépôt
 
 - Dépôt GitHub : `patrick-mun/Effet_fondateur2`.
-- La PR `#4` porte la livraison de l'étape `14` depuis la branche
-  `feature/v2-variant-age`, au commit fonctionnel `c844823`.
+- `main` contient les étapes `00–14` et pointe sur `f1ee47f` après la fusion de
+  la PR `#4`.
+- Les PR brouillon `#5`, `#6` et `#7` sont ouvertes, non fusionnées et
+  fusionnables au 7 août 2026. Elles portent respectivement les étapes `15`,
+  `16` et `17`.
+- La branche locale `agent/step-18-visualizations` part de `ba18a2a` et conserve
+  temporairement l'intégration des commits `15–17` sans réécrire leurs branches.
 - PR `#3` fusionnée dans `main` le 6 août 2026 ; elle valide les étapes `08–13`.
 - PR V2 `#2` fusionnée dans `main` le 5 août 2026.
 - PR `#1` fusionnée dans `main` le 4 août 2026.
@@ -411,8 +416,8 @@ Dernière mise à jour : 7 août 2026
 - Tests ciblés de l'étape `07` : 8 réussis.
 - Tests ciblés de l'étape `08` : 8 réussis.
 - Tests ciblés de l'étape `09` : 7 réussis.
-- Suite moderne `tests/`, incluant l'intégration locale des étapes `15–16` et
-  l'étape `17` : 182 tests réussis.
+- Suite moderne `tests/`, incluant l'intégration locale des étapes `15–18` et
+  la figure PCA consolidée : 188 tests réussis.
 - Contrôle ciblé final de la fenêtre, du cache, du catalogue, de la
   configuration, de l'orchestrateur et de SHAPEIT5 : 45 réussis.
 - Dernière exécution combinée antérieure des suites modernes et historiques :
@@ -509,6 +514,16 @@ Dernière mise à jour : 7 août 2026
   `NOT_CLASSIFIED` sans tolérance préalable et aucun score composite d'effet
   fondateur n'est calculé. Les tests utilisent uniquement des runs synthétiques
   temporaires ; aucune analyse réelle n'a été lancée.
+- Étape `18` implémentée avec `validated_current_run_figures_v1` : six SVG
+  distincts pour PCA, IBS, datation, LD, ROH et sensibilités, avec provenance
+  versionnée, index et contrôle de complétude. Les scripts ne consomment que les
+  artefacts déclarés des étapes `13–17`, vérifient empreintes, signatures,
+  schémas, ensembles, effectifs et unités, pseudonymisent les unités IBS et
+  classent figures/provenances `sensitive_genetic`. Une incohérence bloque la
+  seule figure concernée ; `NOT_EVALUATED`, petits effectifs, exclusions et
+  valeurs manquantes restent visibles. Aucun recalcul, score composite ou
+  langage causal n'est produit. Les tests sont exclusivement synthétiques et
+  temporaires ; aucune analyse réelle n'a été lancée.
 
 ## Suivi des étapes du pipeline V2
 
@@ -536,7 +551,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `15` | LD local secondaire | `FAIT_A_VALIDER` | Oui | Oui | PR brouillon `#5`, intégrée localement pour préparer `17` |
 | `16` | ROH secondaire | `VALIDE` | Oui | Oui | Deux périmètres, autozygotie distincte de l'IBS/IBD |
 | `17` | Analyses de sensibilité | `VALIDE` | Oui | Oui | Consolidation inter-runs signée, aucun recalcul caché |
-| `18` | Visualisations consolidées | `NON_FAIT` | Non | Non | — |
+| `18` | Visualisations consolidées | `VALIDE` | Oui | Oui | Six domaines séparés, PCA incluse, provenance et blocage local validés |
 | `19` | Rapport et revue finale | `NON_FAIT` | Non | Non | — |
 
 ### Découpage opérationnel de l'étape 12
@@ -632,18 +647,21 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 
 ## Priorités de la prochaine session
 
-1. Faire relire puis fusionner dans l'ordre les PR des étapes `15–16` et préparer
-   une branche propre de livraison de l'étape `17` sur leur base commune.
-2. Préparer la table maître réelle et son approbation humaine sans déduire les
+1. Faire relire puis fusionner les PR dans l'ordre sûr `#5`, `#6`, recontrôler
+   `#7`, puis fusionner `#7`. Aucun rebase destructif n'est requis a priori.
+2. Après ces fusions, mettre à jour la branche de l'étape `18` depuis `main` par
+   une intégration non destructive, vérifier que son diff ne contient que
+   l'étape `18`, puis préparer sa livraison sur demande explicite.
+3. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
-3. Préparer les revues réelles `kinship_exclusion_approval` et
+4. Préparer les revues réelles `kinship_exclusion_approval` et
    `population_structure_exclusion_approval` sur un premier run, puis les lier
    par SHA-256 dans la configuration d'un nouveau run destiné au gel.
-4. Intégrer les 66 témoins réels dans le QC genome-wide, KING, la structure et le
+5. Intégrer les 66 témoins réels dans le QC genome-wide, KING, la structure et le
    gel des cohortes avant toute analyse locale.
-5. Confirmer les données moléculaires et génotypes individuels du variant DOCK6,
+6. Confirmer les données moléculaires et génotypes individuels du variant DOCK6,
    puis valider son intégration et Mendel sur le jeu chromosome 19 définitif.
-6. Valider ensuite la datation avec des jeux synthétiques de référence avant
+7. Valider ensuite la datation avec des jeux synthétiques de référence avant
    toute analyse réelle.
 
 ## Décisions à conserver
@@ -686,5 +704,5 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action de développement attendue est de livrer l'étape `17`, puis de définir
-l'étape `18` des visualisations consolidées avant toute analyse réelle.
+action de développement attendue est de faire relire l'étape `18`, de livrer les
+PR `#5–#7` dans l'ordre sûr, puis de définir l'étape `19` sans analyse réelle.

@@ -1448,6 +1448,101 @@ scénarios qui changent la conclusion technique.
 
 **Orchestrateur cible** : `visualization/build_figure_index.py`.
 
+**Responsabilité** : transformer uniquement les artefacts scientifiques déjà
+validés du run courant en vues descriptives séparées, sans recalcul, classement
+causal ni synthèse quantitative entre domaines. La méthode de consolidation est
+versionnée `validated_current_run_figures_v1`.
+
+**Entrées minimales** :
+
+- étape `08` : `population_scores.tsv`, `population_eigenvalues.tsv` et
+  `population_outliers.tsv` ;
+- étape `13` : `founder_segments.tsv` et `founder_analysis_summary.json` ;
+- étape `14` : `variant_age_estimates.tsv` et `variant_age_scenarios.tsv` ;
+- étape `15` : `local_ld_summary.tsv` ;
+- étape `16` : `roh_cohort_summary.tsv` ;
+- étape `17` : `sensitivity_comparisons.tsv` et
+  `sensitivity_stability.tsv` ;
+- descripteurs de ces artefacts, signatures productrices, SHA-256, schémas et
+  audits producteurs déclarés par le run courant.
+
+Les exports ACPA, BED/BIM/FAM, BCF/VCF, sorties PLINK natives et tout chemin
+`data/output/` historique sont hors contrat. L'étape ne peut pas découvrir un
+fichier par parcours de répertoire ou par glob : chaque entrée doit être
+déclarée dans `stage_inputs.json`, appartenir au même `run_id` et provenir de
+son étape attendue dans un état `SUCCEEDED` ou `CACHED`.
+
+**Sorties versionnées** :
+
+- `population_structure.svg`, `founder_ibs.svg`, `variant_age.svg`,
+  `local_ld.svg`, `roh.svg` et `sensitivity.svg` ;
+- un document `<figure>.figure.json` par figure, conforme au schéma
+  `figure_provenance.schema.json` ;
+- `figure_index.json`, conforme au schéma `figure_index.schema.json` ;
+- `visualization_completeness.json`, conforme au schéma
+  `visualization_completeness.schema.json` ;
+- `stage_outputs.json`, `audit.json` et `checksums.sha256` usuels.
+
+Chaque entrée d'index possède un domaine unique parmi `POPULATION_STRUCTURE`,
+`FOUNDER_IBS`, `VARIANT_AGE`, `LOCAL_LD`, `ROH` et `SENSITIVITY`, un statut
+`RENDERED`, `NOT_EVALUATED` ou `BLOCKED`, son niveau de sensibilité et la liste
+de ses sources exactes. Les figures et provenances sont classées au moins
+`sensitive_genetic`, même si elles n'affichent que des pseudonymes, afin de ne
+pas déclassifier implicitement une vue dérivée de données génétiques.
+
+**Contrôles d'intégrité bloquants par figure** :
+
+1. chemin déclaré, confiné au run courant et distinct de `data/output/` ;
+2. SHA-256, signature productrice, étape productrice et version de schéma ;
+3. validation complète des JSON/TSV consommés ;
+4. cohérence de `sample_set_id`, `variant_set_id`, assemblage et unités lorsque
+   ces champs sont applicables ;
+5. égalité des effectifs et statuts redondants entre résumé, table et audit ;
+6. aucune valeur numérique présente lorsqu'un statut est `NOT_EVALUATED` ou
+   `NOT_ESTIMATED`, et aucune unité bp/kb/cM/générations interchangeable ;
+7. absence d'identifiant individuel autre qu'un pseudonyme graphique autorisé.
+
+Une incohérence bloque la figure concernée avant écriture de son SVG et produit
+une entrée `BLOCKED` avec un code non sensible. Elle ne doit pas être remplacée
+par une figure ancienne. Les autres domaines intègres peuvent être rendus, mais
+l'étape 18 reste incomplète et l'étape 19 ne peut pas présenter le rapport comme
+prêt pour revue scientifique.
+
+**Comportement `NOT_EVALUATED`** : une non-évaluation valide n'est pas une
+erreur d'intégrité. Elle produit un panneau neuf et audité indiquant le domaine,
+le statut, les effectifs observés, les valeurs manquantes, les exclusions ou la
+raison contrôlée et les limites pertinentes. Une valeur manquante n'est jamais
+convertie en zéro et une étape `SKIPPED` reste distincte d'un résultat négatif.
+
+**Visualisations minimales** :
+
+- structure populationnelle : scree plot et projection PC1–PC2 dans un SVG
+  commun, avec pseudonymes, distinction de la référence indépendante, des
+  apparentés projetés et des outliers exploratoires ; effectifs, composantes
+  manquantes et limites sont affichés sans attribution automatique d'ascendance ;
+- IBS : longueurs gauche/droite en cM par unité pseudonymisée, inclusions,
+  exclusions, confiance manquante, effectif et rappel explicite « IBS, pas
+  preuve IBD » ;
+- datation : estimation corrélée primaire distincte du modèle indépendant et
+  des scénarios exploratoires, intervalles en générations, petits effectifs,
+  `NOT_ESTIMATED` et limites Gamma ;
+- LD : médianes `r²` et `D′` séparées par cohorte et classe de distance,
+  effectifs, paires évaluables et `NOT_EVALUATED`, sans fusion de cohortes ;
+- ROH : fardeau genome-wide séparé de l'intersection au chromosome cible,
+  effectifs évalués, valeurs manquantes et avertissement autozygotie ≠ IBS/IBD ;
+- sensibilités : résultat primaire visuellement distinct des scénarios
+  exploratoires, domaines en lignes séparées, scénarios non évalués visibles et
+  aucune moyenne, vote ou score composite.
+
+**Articulation avec `08` et `13–17`** : l'étape 18 ne renvoie aucune donnée vers
+les étapes scientifiques et ne change aucun de leurs statuts. Elle représente
+la PCA exploratoire de `08` sans attribuer d'ascendance, le partage IBS de `13`
+sans le renommer IBD, la datation de `14` dans ses unités publiées, le LD de
+`15` et les ROH de `16` comme analyses secondaires séparées, et les sensibilités
+de `17` comme comparaisons au primaire. Une concordance visuelle entre domaines
+ne constitue ni preuve causale, ni preuve d'un fondateur unique, ni validation
+de l'âge estimé.
+
 Les scripts de visualisation par domaine sont indépendants des scripts de
 calcul :
 
@@ -1478,6 +1573,12 @@ Règles :
 - toutes les figures utilisent des légendes générées depuis les paramètres
   réels ;
 - les couleurs et catégories sont centralisées dans une configuration graphique.
+- les petits effectifs, exclusions, valeurs manquantes, `NOT_EVALUATED` et
+  limites sont inscrits dans la figure et dans sa provenance ;
+- aucun script ne produit de score composite d'effet fondateur ni de langage
+  causal ;
+- le scénario primaire et les scénarios exploratoires utilisent des styles et
+  libellés distincts.
 
 `figure_index.json` référence toutes les figures, leur provenance, leur niveau
 de sensibilité et la section de rapport autorisée.
