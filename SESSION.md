@@ -417,7 +417,7 @@ Dernière mise à jour : 7 août 2026
 - Tests ciblés de l'étape `08` : 8 réussis.
 - Tests ciblés de l'étape `09` : 7 réussis.
 - Suite moderne `tests/`, incluant l'intégration locale des étapes `15–18` et
-  la figure PCA consolidée : 188 tests réussis.
+  la figure PCA consolidée et le rapport révisable : 189 tests réussis.
 - Contrôle ciblé final de la fenêtre, du cache, du catalogue, de la
   configuration, de l'orchestrateur et de SHAPEIT5 : 45 réussis.
 - Dernière exécution combinée antérieure des suites modernes et historiques :
@@ -517,13 +517,32 @@ Dernière mise à jour : 7 août 2026
 - Étape `18` implémentée avec `validated_current_run_figures_v1` : six SVG
   distincts pour PCA, IBS, datation, LD, ROH et sensibilités, avec provenance
   versionnée, index et contrôle de complétude. Les scripts ne consomment que les
-  artefacts déclarés des étapes `13–17`, vérifient empreintes, signatures,
+  artefacts déclarés des étapes `08` et `13–17`, vérifient empreintes, signatures,
   schémas, ensembles, effectifs et unités, pseudonymisent les unités IBS et
   classent figures/provenances `sensitive_genetic`. Une incohérence bloque la
   seule figure concernée ; `NOT_EVALUATED`, petits effectifs, exclusions et
   valeurs manquantes restent visibles. Aucun recalcul, score composite ou
   langage causal n'est produit. Les tests sont exclusivement synthétiques et
   temporaires ; aucune analyse réelle n'a été lancée.
+- Le rendu de consultation de l'étape `18` publie un HTML prioritaire avec
+  navigation et limites, puis un PDF paginé depuis le même index et les mêmes
+  SVG. Un manifest lie les deux formats par SHA-256 et enregistre la version de
+  `fpdf2`; aucune ressource réseau ni table individuelle n'est lue.
+- Les six SVG évaluables sont des graphiques, et non des résumés textuels :
+  scree plot/projection PCA, segments IBS centrés cible, forest plot de datation,
+  barres `r²`/`D′`, charge ROH et écarts relatifs des scénarios de sensibilité.
+  Une démonstration locale entièrement synthétique est disponible sous
+  `data/runs/synthetic_step18_html_pdf_preview/` et reste ignorée par Git.
+- Étape `19` relancée avec `reviewable_scientific_report_v1` : paquet de faits
+  contrôlés, prompt prudent versionné, brouillon déterministe sans appel IA
+  externe, fiche des paramètres, tableau et réseau KING pseudonymisés, six
+  figures et commentaires HTML modifiables. Le bouton télécharge une décision
+  `report_review.json`; le finaliseur vérifie schéma, empreintes, sections,
+  checklist et formulations affirmatives avant de produire l'HTML verrouillé,
+  puis le PDF. Une validation humaine reste obligatoire et ne transforme pas le
+  faisceau d'arguments en preuve. Validation : 22 tests ciblés et 189 tests de
+  la suite moderne réussis ; imports et `git diff --check` valides, uniquement
+  sur données synthétiques.
 
 ## Suivi des étapes du pipeline V2
 
@@ -552,7 +571,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `16` | ROH secondaire | `VALIDE` | Oui | Oui | Deux périmètres, autozygotie distincte de l'IBS/IBD |
 | `17` | Analyses de sensibilité | `VALIDE` | Oui | Oui | Consolidation inter-runs signée, aucun recalcul caché |
 | `18` | Visualisations consolidées | `VALIDE` | Oui | Oui | Six domaines séparés, PCA incluse, provenance et blocage local validés |
-| `19` | Rapport et revue finale | `NON_FAIT` | Non | Non | — |
+| `19` | Rapport et revue finale | `VALIDE` | Oui | Oui | Brouillon révisable, prompt prudent, finalisation humaine HTML puis PDF |
 
 ### Découpage opérationnel de l'étape 12
 

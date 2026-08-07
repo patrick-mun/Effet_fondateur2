@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/report_validation.schema.json",
+  "title": "Validation du rapport V2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "method_id", "status", "facts_sha256", "draft_sha256", "human_validation_required", "checks", "blocking_reasons"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "run_id": {"type": "string"},
+    "method_id": {"const": "reviewable_scientific_report_v1"},
+    "status": {"enum": ["AWAITING_HUMAN_REVIEW", "READY_FOR_SCIENTIFIC_REVIEW", "TECHNICAL_INCOMPLETE"]},
+    "facts_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "draft_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "human_validation_required": {"type": "boolean"},
+    "checks": {"type": "array", "items": {"type": "object"}},
+    "blocking_reasons": {"type": "array", "items": {"type": "string"}}
+  }
+}

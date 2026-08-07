@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/interpretation_facts.schema.json",
+  "title": "Faits contrôlés pour le rapport V2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "method_id", "sensitivity", "scientific_recalculation_performed", "composite_founder_score_calculated", "study_context", "kinship", "sections"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "method_id": {"const": "reviewable_scientific_report_v1"},
+    "sensitivity": {"const": "sensitive_genetic"},
+    "scientific_recalculation_performed": {"const": false},
+    "composite_founder_score_calculated": {"const": false},
+    "study_context": {"type": "object"},
+    "kinship": {
+      "type": "object",
+      "required": ["status", "sample_count", "reported_pair_count", "related_pair_count", "degree_counts", "pairs", "known_limits"],
+      "properties": {
+        "status": {"enum": ["VALID", "NOT_EVALUATED", "BLOCKED"]},
+        "sample_count": {"type": "integer", "minimum": 0},
+        "reported_pair_count": {"type": "integer", "minimum": 0},
+        "related_pair_count": {"type": "integer", "minimum": 0},
+        "degree_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "pairs": {"type": "array", "items": {"type": "object"}},
+        "known_limits": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["section_id", "title", "status", "facts", "limits", "source_artifact_ids"],
+        "properties": {
+          "section_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+          "title": {"type": "string", "minLength": 1},
+          "status": {"enum": ["VALID", "EXPLORATORY", "NOT_EVALUATED", "BLOCKED", "SKIPPED", "FAILED"]},
+          "facts": {"type": "array", "items": {"type": "string"}},
+          "limits": {"type": "array", "items": {"type": "string"}},
+          "source_artifact_ids": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  }
+}

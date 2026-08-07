@@ -89,7 +89,25 @@ les statuts, les valeurs manquantes, les exclusions, les limites, la légende et
 la pseudonymisation. Les figures et leurs provenances sont classées
 `sensitive_genetic` par défaut.
 
-`figure_index.json` référence les cinq domaines sans dupliquer de données
+`figure_index.json` référence les six domaines sans dupliquer de données
 individuelles. `visualization_completeness.json` compte les figures rendues,
 non évaluées et bloquées et indique si l'étape 19 peut assembler un rapport
 complet. Ces documents n'autorisent aucune lecture d'un autre run.
+
+## Rendus de consultation
+
+`visualization_gallery.html` est produit en premier depuis `figure_index.json`.
+Il présente les six domaines dans l'ordre contractuel, affiche chaque statut et
+limite, référence les SVG par chemin relatif et permet d'ouvrir la provenance
+correspondante. Une Content Security Policy interdit toute ressource réseau ;
+le document est marqué `noindex` et reste classé `sensitive_genetic`.
+
+`visualization_gallery.pdf` est ensuite construit par `fpdf2` depuis le même
+index et les mêmes SVG, avec une page par domaine. Une copie typographique
+temporaire compatible avec la police interne de `fpdf2` peut être utilisée ;
+elle est supprimée après rendu et ne modifie jamais les SVG publiés.
+
+`visualization_render_manifest.json` enregistre les SHA-256 de l'index, du HTML
+et du PDF, la version du moteur PDF, l'ordre des domaines, la pseudonymisation
+et les invariants `scientific_recalculation_performed=false` et
+`composite_founder_score_calculated=false`.

@@ -278,6 +278,29 @@ effectifs restent visibles ; aucune statistique scientifique, preuve causale ou
 score composite n'est produit. Le contrat complet est documenté dans
 `docs/modules/visualizations.md`.
 
+L'étape publie également `visualization_gallery.html` comme rendu prioritaire,
+puis `visualization_gallery.pdf` depuis le même index et les mêmes SVG. Les deux
+formats sont pseudonymisés, classés `sensitive_genetic`, autonomes hors réseau
+et liés par `visualization_render_manifest.json`.
+
+L'étape `19_build_report` assemble ensuite un rapport HTML révisable depuis les
+seuls artefacts signés des étapes 07 et 18. Il contient la fiche des paramètres
+effectivement utilisés, le tableau et le réseau KING pseudonymisés, les figures,
+les faits contrôlés et des commentaires modifiables. Le prompt prudent est
+publié avec son empreinte ; aucun fournisseur IA externe n'est appelé par
+défaut. Le bouton final télécharge `report_review.json`, qui doit être contrôlé
+avant de verrouiller le rapport et de produire le PDF :
+
+```bash
+.venv/bin/python -m effet_fondateur.reporting.finalize \
+  --report-dir data/runs/<run_id>/stages/19_build_report \
+  --review /chemin/vers/report_review.json
+```
+
+Le statut `READY_FOR_SCIENTIFIC_REVIEW` atteste la complétude technique et la
+relecture éditoriale, jamais la preuve d'un effet fondateur. Le contrat complet
+est documenté dans `docs/modules/reporting.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est
