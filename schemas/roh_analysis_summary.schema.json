@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/roh_analysis_summary.schema.json",
+  "title": "Résumé agrégé de l'étape 16",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "method_id", "analysis_role", "scope_statuses", "genomewide_common_variant_count", "target_chromosome_variant_count", "target_variant_id", "target_in_roh_count", "f_roh_calculated", "feeds_founder_haplotype", "feeds_variant_age", "consumes_local_ld"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"}, "method_id": {"const": "plink19_array_roh_secondary_v1"},
+    "analysis_role": {"const": "SECONDARY_DESCRIPTIVE_AUTOZYGOSITY"},
+    "scope_statuses": {"type": "object", "additionalProperties": {"enum": ["EVALUATED", "NOT_EVALUATED_DENSITY_OR_COVERAGE"]}},
+    "genomewide_common_variant_count": {"type": "integer", "minimum": 0}, "target_chromosome_variant_count": {"type": "integer", "minimum": 1},
+    "target_variant_id": {"type": "string", "minLength": 1}, "target_in_roh_count": {"type": "integer", "minimum": 0},
+    "f_roh_calculated": {"type": "boolean"}, "feeds_founder_haplotype": {"const": false}, "feeds_variant_age": {"const": false}, "consumes_local_ld": {"const": false}
+  }
+}

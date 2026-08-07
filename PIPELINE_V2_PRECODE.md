@@ -1293,19 +1293,71 @@ cM et zoom centré sur le variant cible.
 
 **Script cible** : `stages/analyze_roh.py`.
 
-**Responsabilité** : étudier l'autozygotie comme phénomène distinct de
-l'haplotype fondateur.
+**Responsabilité** : étudier l'autozygotie individuelle comme phénomène distinct
+de l'haplotype fondateur partagé entre individus.
+
+**Contrat retenu** : la méthode `plink19_array_roh_secondary_v1` utilise PLINK
+1.9 avec tous les paramètres de scan explicités. Elle possède deux périmètres
+qui ne sont jamais agrégés. Le périmètre `GENOMEWIDE_BURDEN` compare
+descriptivement `controls_unrelated` et `target_carriers_independent` sur
+l'intersection exacte de leurs variants genome-wide QC de l'étape `10`. Le
+périmètre `TARGET_CHROMOSOME` recherche les ROH sur le jeu chromosome cible de
+tous les individus QC et détermine, individu par individu, si la coordonnée du
+variant cible appartient à un segment. Les `family_noncarriers` peuvent être
+décrits dans ce second périmètre, mais pas introduits dans le fardeau genome-wide
+faute de jeu autosomique final comparable publié par l'étape `10`.
+
+Le profil exploratoire par défaut requiert un ROH d'au moins `1 500 kb` et `50`
+variants, une densité moyenne d'au moins un variant par `50 kb`, aucun trou de
+plus de `1 000 kb`, une fenêtre de `50` variants, au plus un hétérozygote et
+cinq appels manquants par fenêtre, et un taux minimal de fenêtres concordantes
+de `0,05`. Ces valeurs sont configurables et doivent être reprises comme
+scénarios à l'étape `17`; elles ne sont pas des constantes biologiques. PLINK
+1.9 autorisant par défaut un nombre total illimité d'hétérozygotes dans un
+segment, le nombre observé reste audité via `PHET` et toute interprétation est
+limitée par le profil de fenêtre. Aucun seuil n'est relâché automatiquement si
+la densité ACPA est insuffisante : le périmètre est `NOT_EVALUATED`.
 
 **Traitements** :
 
-- paramètres adaptés à la densité ACPA ;
-- analyse genome-wide du fardeau ROH si les données le permettent ;
-- analyse locale du chromosome cible séparée ;
-- calcul d'intersections par chromosome et par segment ;
-- comparaison descriptive entre cohortes indépendantes ;
-- recherche du variant cible dans un ROH par individu, jamais uniquement au niveau
-  global ;
-- distinction explicite entre homozygotie, IBS et IBD.
+- contrôler l'intégrité, l'assemblage, les individus et les variants des trois
+  jeux QC de l'étape `10` ;
+- construire l'univers genome-wide commun sans fusionner les cohortes ;
+- exiger une couverture autosomique et un effectif minimal configurés avant le
+  scan genome-wide ;
+- exécuter PLINK séparément par cohorte genome-wide avec les mêmes variants et
+  paramètres ;
+- conserver chaque individu, y compris lorsqu'aucun ROH n'est détecté ;
+- publier nombre de segments, longueur totale, longueur maximale et classes de
+  longueur par individu ;
+- ne calculer un véritable `F_ROH` que si un dénominateur autosomique en kb,
+  accompagné de sa source, est explicitement configuré ;
+- exécuter séparément le scan du chromosome cible sur tous les individus QC ;
+- calculer l'intersection exacte `POS1 <= TARGET_BP <= POS2` pour chaque
+  individu et conserver le génotype cible moléculaire accepté ;
+- signaler un génotype cible hétérozygote à l'intérieur d'un ROH comme une
+  discordance d'interprétation compatible avec la tolérance de scan ou une
+  incertitude technique ;
+- ne jamais construire une « zone commune » en mélangeant plusieurs segments
+  ou chromosomes avant d'avoir défini une règle d'appariement explicite ;
+- réserver les comparaisons de groupe aux unités indépendantes et aux effectifs
+  suffisants.
+
+**Articulation avec `13–15`** : l'étape `16` ne lit ni les segments IBS de
+`13`, ni les estimations Gamma de `14`, ni les paires LD de `15`. Un ROH décrit
+une homozygotie continue au sein d'un individu ; l'étape `13` cherche un
+haplotype partagé entre individus. L'absence de ROH chez un hétérozygote
+n'affaiblit donc pas automatiquement l'hypothèse fondatrice. Les analyses
+croisées ROH–LD ou les changements de profil sont réservés à `17`.
+
+**Sorties** : sorties natives PLINK par périmètre, `roh_segments.tsv`,
+`roh_burden.tsv`, `target_in_roh.tsv`, `roh_cohort_summary.tsv`, résumé agrégé
+et audit. Les tables individuelles sont classées `sensitive_genetic`.
+
+**Critère non bloquant** : effectif, couverture ou densité insuffisants publient
+`NOT_EVALUATED` avec une raison contrôlée. L'étape reste secondaire et ne bloque
+pas `13–15`; elle interdit seulement une interprétation ROH pour le périmètre
+concerné.
 
 **Visualisations** : fardeau ROH, longueurs, pistes individuelles par chromosome
 et chevauchements locaux correctement calculés.

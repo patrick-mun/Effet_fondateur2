@@ -411,8 +411,8 @@ Dernière mise à jour : 7 août 2026
 - Tests ciblés de l'étape `07` : 8 réussis.
 - Tests ciblés de l'étape `08` : 8 réussis.
 - Tests ciblés de l'étape `09` : 7 réussis.
-- Suite moderne `tests/`, incluant les étapes `01` à `15` et les contrôles de
-  maintenabilité V2 : 171 réussis.
+- Les validations séparées des branches `15` et `16` totalisaient respectivement
+  171 et 173 tests réussis avant leur intégration locale pour l'étape `17`.
 - Contrôle ciblé final de la fenêtre, du cache, du catalogue, de la
   configuration, de l'orchestrateur et de SHAPEIT5 : 45 réussis.
 - Dernière exécution combinée antérieure des suites modernes et historiques :
@@ -492,6 +492,13 @@ Dernière mise à jour : 7 août 2026
   insuffisants explicitement non évalués, et aucune dépendance vers les sorties
   `13–14`. Les tests et le smoke PLINK utilisent uniquement des données
   synthétiques temporaires ; aucune analyse réelle n'a été lancée.
+- Étape `16` implémentée avec `plink19_array_roh_secondary_v1` : fardeau
+  genome-wide sur l'intersection exacte des variants chez témoins et porteurs
+  indépendants, analyse séparée du chromosome cible, intersection individuelle
+  avec le variant, conservation des individus sans segment, avertissement des
+  cibles hétérozygotes dans un ROH et `F_ROH` interdit sans dénominateur sourcé.
+  Les seuils insuffisants publient `NOT_EVALUATED` sans relâchement automatique.
+  Aucun calcul n'a été lancé sur les données réelles.
 
 ## Suivi des étapes du pipeline V2
 
@@ -516,8 +523,8 @@ ses tests, son audit et sa documentation sont cohérents.
 | `12` | Référence phasée et phasage | `VALIDE` | Oui | Oui | `12.0–12.7` validées, QC final et smoke réel inclus |
 | `13` | Haplotype fondateur et IBD local | `VALIDE` | Oui | Oui | IBS exact centré cible, aucune revendication IBD |
 | `14` | Datation du variant | `VALIDE` | Oui | Oui | Gamma corrélé primaire, seuils petits effectifs |
-| `15` | LD local secondaire | `VALIDE` | Oui | Oui | PLINK `r²`/`D′` séparés, exploratoire par défaut |
-| `16` | ROH secondaire | `NON_FAIT` | Non | Non | Exploratoire par défaut |
+| `15` | LD local secondaire | `FAIT_A_VALIDER` | Oui | Oui | PR brouillon `#5`, intégrée localement pour préparer `17` |
+| `16` | ROH secondaire | `VALIDE` | Oui | Oui | Deux périmètres, autozygotie distincte de l'IBS/IBD |
 | `17` | Analyses de sensibilité | `NON_FAIT` | Non | Non | — |
 | `18` | Visualisations consolidées | `NON_FAIT` | Non | Non | — |
 | `19` | Rapport et revue finale | `NON_FAIT` | Non | Non | — |
@@ -615,8 +622,8 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 
 ## Priorités de la prochaine session
 
-1. Définir l'étape `16` de ROH comme analyse secondaire distincte de
-   l'haplotype fondateur et du LD local.
+1. Définir puis implémenter l'étape `17` des analyses de sensibilité sur la
+   branche d'intégration locale des étapes `15–16`.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
 3. Préparer les revues réelles `kinship_exclusion_approval` et
@@ -669,5 +676,5 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action de développement attendue est de définir l'étape `16` de ROH avant toute
-analyse des données réelles.
+action de développement attendue est d'implémenter l'étape `17` sur la branche
+d'intégration locale de `15–16`, avant toute analyse des données réelles.

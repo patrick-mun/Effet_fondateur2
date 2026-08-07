@@ -252,6 +252,13 @@ signale les petits effectifs et les paires conditionnées par le variant cible,
 et ne fournit aucune entrée aux étapes 13–14. Aucun bloc LD ni test massif n'est
 produit. Le contrat est documenté dans `docs/modules/local_ld.md`.
 
+L'étape secondaire `16_analyze_roh` mesure l'autozygotie avec deux périmètres
+séparés : fardeau genome-wide sur un univers commun chez témoins et porteurs
+indépendants, puis recherche individuelle du variant cible dans un ROH du
+chromosome cible. Elle ne redéfinit ni l'IBS fondateur ni la datation, et ne
+calcule `F_ROH` qu'avec un dénominateur autosomique explicite et sourcé. Le
+contrat est documenté dans `docs/modules/roh.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est

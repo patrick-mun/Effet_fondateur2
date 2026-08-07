@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/target_in_roh.schema.json",
+  "title": "Présence individuelle du variant cible dans un ROH V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["SAMPLE_ID", "FID", "IID", "TARGET_VARIANT_ID", "TARGET_BP", "TARGET_GENOTYPE", "TARGET_ZYGOSITY", "ANALYTIC_ROLES", "TARGET_IN_ROH", "COVERING_SEGMENT_COUNT", "ROH_POS1_BP", "ROH_POS2_BP", "ROH_LENGTH_KB", "INTERPRETATION_STATUS"],
+    "null_value": "", "primary_key": ["SAMPLE_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "decimal": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"},
+    "nullableDecimal": {"oneOf": [{"$ref": "#/$defs/decimal"}, {"type": "null"}]},
+    "nullableBp": {"oneOf": [{"type": "string", "pattern": "^[1-9][0-9]*$"}, {"type": "null"}]},
+    "nullableRoles": {"oneOf": [{"type": "string", "pattern": "^[A-Za-z0-9._-]+(,[A-Za-z0-9._-]+)*$"}, {"type": "null"}]},
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["SAMPLE_ID", "FID", "IID", "TARGET_VARIANT_ID", "TARGET_BP", "TARGET_GENOTYPE", "TARGET_ZYGOSITY", "ANALYTIC_ROLES", "TARGET_IN_ROH", "COVERING_SEGMENT_COUNT", "ROH_POS1_BP", "ROH_POS2_BP", "ROH_LENGTH_KB", "INTERPRETATION_STATUS"],
+      "properties": {
+        "SAMPLE_ID": {"$ref": "#/$defs/identifier"}, "FID": {"$ref": "#/$defs/identifier"}, "IID": {"$ref": "#/$defs/identifier"},
+        "TARGET_VARIANT_ID": {"$ref": "#/$defs/identifier"}, "TARGET_BP": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "TARGET_GENOTYPE": {"type": "string", "pattern": "^[ACGT]+/[ACGT]+$"},
+        "TARGET_ZYGOSITY": {"enum": ["HOMOZYGOUS", "HETEROZYGOUS"]},
+        "ANALYTIC_ROLES": {"$ref": "#/$defs/nullableRoles"}, "TARGET_IN_ROH": {"type": "boolean"},
+        "COVERING_SEGMENT_COUNT": {"type": "string", "pattern": "^[0-1]$"},
+        "ROH_POS1_BP": {"$ref": "#/$defs/nullableBp"}, "ROH_POS2_BP": {"$ref": "#/$defs/nullableBp"}, "ROH_LENGTH_KB": {"$ref": "#/$defs/nullableDecimal"},
+        "INTERPRETATION_STATUS": {"enum": ["IN_ROH_HOMOZYGOUS", "IN_ROH_HETEROZYGOUS_WARNING", "NOT_IN_ROH", "NOT_EVALUATED_SCOPE"]}
+      }
+    }
+  }
+}

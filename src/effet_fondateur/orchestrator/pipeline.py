@@ -287,6 +287,39 @@ ANALYZE_LOCAL_LD_STAGE = StageDefinition(
     ),
 )
 
+ANALYZE_ROH_STAGE = StageDefinition(
+    stage_id="16",
+    stage_name="analyze_roh",
+    module="effet_fondateur.stages.analyze_roh",
+    critical=False,
+    dependencies=(
+        "build_sample_registry",
+        "prepare_target_variant_dataset",
+        "freeze_cohorts",
+        "qc_final",
+        "prepare_target_region",
+    ),
+    config_input_files=("target_variant_metadata",),
+    required_artifact_ids=(
+        "samples_master",
+        "target_genotype_audit",
+        "cohorts_frozen",
+        "controls_unrelated_qc_bed",
+        "controls_unrelated_qc_bim",
+        "controls_unrelated_qc_fam",
+        "controls_unrelated_qc_dataset",
+        "target_carriers_independent_qc_bed",
+        "target_carriers_independent_qc_bim",
+        "target_carriers_independent_qc_fam",
+        "target_carriers_independent_qc_dataset",
+        "target_chromosome_all_qc_bed",
+        "target_chromosome_all_qc_bim",
+        "target_chromosome_all_qc_fam",
+        "target_chromosome_all_qc_dataset",
+        "target_genetic_map",
+    ),
+)
+
 DEFAULT_STAGE_DEFINITIONS = (
     SYNTHETIC_STAGE,
     VALIDATE_SOURCES_STAGE,
@@ -304,6 +337,7 @@ DEFAULT_STAGE_DEFINITIONS = (
     INFER_FOUNDER_HAPLOTYPE_STAGE,
     ESTIMATE_VARIANT_AGE_STAGE,
     ANALYZE_LOCAL_LD_STAGE,
+    ANALYZE_ROH_STAGE,
 )
 
 

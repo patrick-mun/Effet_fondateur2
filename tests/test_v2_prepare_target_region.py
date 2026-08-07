@@ -25,6 +25,9 @@ import os
 import pathlib
 import sys
 
+if sys.argv[1:] == ["--version"]:
+    print("PLINK v1.90 synthetic")
+    raise SystemExit(0)
 output_prefix = pathlib.Path(sys.argv[sys.argv.index("--out") + 1]) if "--out" in sys.argv else None
 if output_prefix is None or output_prefix.name != "target_region":
     os.execv({str(delegated_plink)!r}, [{str(delegated_plink)!r}, *sys.argv[1:]])
@@ -156,6 +159,60 @@ def test_target_region_publishes_generic_phasing_manifest(tmp_path: Path) -> Non
     assert descriptor["source_format"] == "PLINK_TARGET_REGION"
     assert descriptor["sample_count"] == 3
     assert descriptor["variant_count"] == 2
+
+
+def test_stage_16_publishes_non_evaluation_on_sparse_synthetic_chain(
+    tmp_path: Path,
+) -> None:
+    config_path, runs_dir = prepare_target_region_inputs(tmp_path)
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    config["stages"]["analyze_roh"] = {
+        "enabled": True,
+        "parameters": _parameters_for_sparse_roh_test(),
+    }
+    config_path.write_text(
+        yaml.safe_dump(config, allow_unicode=True, sort_keys=False), encoding="utf-8"
+    )
+
+    run_dir = run_pipeline(config_path, runs_dir)
+
+    stage_dir = run_dir / "stages" / "16_analyze_roh"
+    summary = json.loads(
+        (stage_dir / "roh" / "roh_analysis_summary.json").read_text(encoding="utf-8")
+    )
+    assert set(summary["scope_statuses"].values()) == {
+        "NOT_EVALUATED_DENSITY_OR_COVERAGE"
+    }
+    assert summary["feeds_founder_haplotype"] is False
+    assert summary["feeds_variant_age"] is False
+    assert summary["consumes_local_ld"] is False
+    target_rows = read_tsv(stage_dir / "roh" / "target_in_roh.tsv")
+    assert len(target_rows) == 3
+    assert {row["INTERPRETATION_STATUS"] for row in target_rows} == {
+        "NOT_EVALUATED_SCOPE"
+    }
+
+
+def _parameters_for_sparse_roh_test() -> dict[str, object]:
+    return {
+        "method": "plink19_array_roh_secondary_v1",
+        "minimum_roh_kb": 1500,
+        "minimum_roh_snps": 50,
+        "maximum_density_kb_per_snp": 50,
+        "maximum_gap_kb": 1000,
+        "window_snps": 50,
+        "window_max_heterozygotes": 1,
+        "window_max_missing": 5,
+        "window_threshold": 0.05,
+        "minimum_genomewide_variants": 10000,
+        "minimum_genomewide_autosomes": 22,
+        "minimum_target_chromosome_variants": 100,
+        "minimum_group_samples": 5,
+        "minimum_primary_samples": 20,
+        "autosomal_denominator_kb": None,
+        "autosomal_denominator_source": None,
+        "plink_timeout_seconds": 30,
+    }
 
 
 def test_target_region_blocks_map_extrapolation(tmp_path: Path) -> None:

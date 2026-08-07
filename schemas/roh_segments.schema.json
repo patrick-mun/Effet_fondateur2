@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/roh_segments.schema.json",
+  "title": "Segments ROH individuels V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "SCOPE", "DATASET_ID", "COHORT_ID", "SAMPLE_ID", "FID", "IID",
+      "CHROMOSOME", "SNP1", "SNP2", "POS1_BP", "POS2_BP", "LENGTH_KB",
+      "NSNP", "DENSITY_KB_PER_SNP", "PHOM", "PHET", "INVOLVES_TARGET"
+    ],
+    "null_value": "",
+    "allow_empty": true,
+    "primary_key": ["SCOPE", "SAMPLE_ID", "CHROMOSOME", "POS1_BP", "POS2_BP"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "decimal": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"},
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["SCOPE", "DATASET_ID", "COHORT_ID", "SAMPLE_ID", "FID", "IID", "CHROMOSOME", "SNP1", "SNP2", "POS1_BP", "POS2_BP", "LENGTH_KB", "NSNP", "DENSITY_KB_PER_SNP", "PHOM", "PHET", "INVOLVES_TARGET"],
+      "properties": {
+        "SCOPE": {"enum": ["GENOMEWIDE_BURDEN", "TARGET_CHROMOSOME"]},
+        "DATASET_ID": {"$ref": "#/$defs/identifier"},
+        "COHORT_ID": {"$ref": "#/$defs/identifier"},
+        "SAMPLE_ID": {"$ref": "#/$defs/identifier"},
+        "FID": {"$ref": "#/$defs/identifier"},
+        "IID": {"$ref": "#/$defs/identifier"},
+        "CHROMOSOME": {"type": "string", "pattern": "^([1-9]|1[0-9]|2[0-2])$"},
+        "SNP1": {"type": "string", "minLength": 1}, "SNP2": {"type": "string", "minLength": 1},
+        "POS1_BP": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "POS2_BP": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "LENGTH_KB": {"$ref": "#/$defs/decimal"},
+        "NSNP": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "DENSITY_KB_PER_SNP": {"$ref": "#/$defs/decimal"},
+        "PHOM": {"$ref": "#/$defs/decimal"}, "PHET": {"$ref": "#/$defs/decimal"},
+        "INVOLVES_TARGET": {"type": "boolean"}
+      }
+    }
+  }
+}
