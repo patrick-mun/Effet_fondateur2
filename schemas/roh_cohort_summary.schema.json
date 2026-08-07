@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/roh_cohort_summary.schema.json",
+  "title": "Résumé descriptif ROH par cohorte V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["SCOPE", "COHORT_ID", "SAMPLE_COUNT", "EVALUATED_SAMPLE_COUNT", "MEDIAN_N_ROH", "MEDIAN_TOTAL_ROH_KB", "MEDIAN_MAX_ROH_KB", "TARGET_IN_ROH_COUNT", "COHORT_STATUS"],
+    "null_value": "", "primary_key": ["SCOPE", "COHORT_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "decimal": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"},
+    "nullableDecimal": {"oneOf": [{"$ref": "#/$defs/decimal"}, {"type": "null"}]},
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["SCOPE", "COHORT_ID", "SAMPLE_COUNT", "EVALUATED_SAMPLE_COUNT", "MEDIAN_N_ROH", "MEDIAN_TOTAL_ROH_KB", "MEDIAN_MAX_ROH_KB", "TARGET_IN_ROH_COUNT", "COHORT_STATUS"],
+      "properties": {
+        "SCOPE": {"enum": ["GENOMEWIDE_BURDEN", "TARGET_CHROMOSOME"]}, "COHORT_ID": {"$ref": "#/$defs/identifier"},
+        "SAMPLE_COUNT": {"type": "string", "pattern": "^[0-9]+$"}, "EVALUATED_SAMPLE_COUNT": {"type": "string", "pattern": "^[0-9]+$"},
+        "MEDIAN_N_ROH": {"$ref": "#/$defs/nullableDecimal"}, "MEDIAN_TOTAL_ROH_KB": {"$ref": "#/$defs/nullableDecimal"}, "MEDIAN_MAX_ROH_KB": {"$ref": "#/$defs/nullableDecimal"},
+        "TARGET_IN_ROH_COUNT": {"type": "string", "pattern": "^[0-9]+$"},
+        "COHORT_STATUS": {"enum": ["DESCRIPTIVE_PRIMARY", "EXPLORATORY_SMALL_N", "NOT_EVALUATED"]}
+      }
+    }
+  }
+}

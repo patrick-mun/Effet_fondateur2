@@ -175,3 +175,23 @@ stages:
       generation_years: [25, 28, 30]
       leave_one_family_out: true
       chance_sharing_correction: false
+  analyze_roh:
+    enabled: false
+    parameters:
+      method: plink19_array_roh_secondary_v1
+      minimum_roh_kb: 1500
+      minimum_roh_snps: 50
+      maximum_density_kb_per_snp: 50
+      maximum_gap_kb: 1000
+      window_snps: 50
+      window_max_heterozygotes: 1
+      window_max_missing: 5
+      window_threshold: 0.05
+      minimum_genomewide_variants: 10000
+      minimum_genomewide_autosomes: 22
+      minimum_target_chromosome_variants: 100
+      minimum_group_samples: 5
+      minimum_primary_samples: 20
+      autosomal_denominator_kb: null
+      autosomal_denominator_source: null
+      plink_timeout_seconds: 300

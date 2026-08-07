@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/roh_burden.schema.json",
+  "title": "Fardeau ROH genome-wide V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["COHORT_ID", "SAMPLE_ID", "FID", "IID", "N_ROH", "TOTAL_ROH_KB", "MEAN_ROH_KB", "MAX_ROH_KB", "TOTAL_1P5_TO_4MB_KB", "TOTAL_4_TO_8MB_KB", "TOTAL_AT_LEAST_8MB_KB", "AUTOZYGOSITY_DENOMINATOR_KB", "AUTOZYGOSITY_DENOMINATOR_SOURCE", "F_ROH", "ANALYSIS_STATUS"],
+    "null_value": "", "primary_key": ["COHORT_ID", "SAMPLE_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "decimal": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"},
+    "nullableDecimal": {"oneOf": [{"$ref": "#/$defs/decimal"}, {"type": "null"}]},
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["COHORT_ID", "SAMPLE_ID", "FID", "IID", "N_ROH", "TOTAL_ROH_KB", "MEAN_ROH_KB", "MAX_ROH_KB", "TOTAL_1P5_TO_4MB_KB", "TOTAL_4_TO_8MB_KB", "TOTAL_AT_LEAST_8MB_KB", "AUTOZYGOSITY_DENOMINATOR_KB", "AUTOZYGOSITY_DENOMINATOR_SOURCE", "F_ROH", "ANALYSIS_STATUS"],
+      "properties": {
+        "COHORT_ID": {"$ref": "#/$defs/identifier"}, "SAMPLE_ID": {"$ref": "#/$defs/identifier"},
+        "FID": {"$ref": "#/$defs/identifier"}, "IID": {"$ref": "#/$defs/identifier"},
+        "N_ROH": {"oneOf": [{"type": "string", "pattern": "^[0-9]+$"}, {"type": "null"}]},
+        "TOTAL_ROH_KB": {"$ref": "#/$defs/nullableDecimal"}, "MEAN_ROH_KB": {"$ref": "#/$defs/nullableDecimal"}, "MAX_ROH_KB": {"$ref": "#/$defs/nullableDecimal"},
+        "TOTAL_1P5_TO_4MB_KB": {"$ref": "#/$defs/nullableDecimal"}, "TOTAL_4_TO_8MB_KB": {"$ref": "#/$defs/nullableDecimal"}, "TOTAL_AT_LEAST_8MB_KB": {"$ref": "#/$defs/nullableDecimal"},
+        "AUTOZYGOSITY_DENOMINATOR_KB": {"$ref": "#/$defs/nullableDecimal"},
+        "AUTOZYGOSITY_DENOMINATOR_SOURCE": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]},
+        "F_ROH": {"$ref": "#/$defs/nullableDecimal"},
+        "ANALYSIS_STATUS": {"enum": ["EVALUATED", "NOT_EVALUATED_SCOPE"]}
+      }
+    }
+  }
+}

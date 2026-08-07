@@ -411,8 +411,8 @@ Dernière mise à jour : 7 août 2026
 - Tests ciblés de l'étape `07` : 8 réussis.
 - Tests ciblés de l'étape `08` : 8 réussis.
 - Tests ciblés de l'étape `09` : 7 réussis.
-- Suite moderne `tests/`, incluant les étapes `01` à `12.7` et les contrôles de
-  maintenabilité V2 : 160 réussis.
+- Suite moderne `tests/`, incluant les étapes `01` à `16` disponibles sur cette
+  branche et les contrôles de maintenabilité V2 : 173 réussis.
 - Contrôle ciblé final de la fenêtre, du cache, du catalogue, de la
   configuration, de l'orchestrateur et de SHAPEIT5 : 45 réussis.
 - Dernière exécution combinée antérieure des suites modernes et historiques :
@@ -485,6 +485,16 @@ Dernière mise à jour : 7 août 2026
   corrélé primaire, modèle indépendant et leave-one-family-out en sensibilités,
   conversions 25/28/30 ans par génération et règles de non-conclusion sous
   trois unités. Aucun exécutable Gamma externe ni donnée réelle n'est utilisé.
+- Étape `15` livrée dans la PR brouillon `#5` sur la branche
+  `agent/step-15-local-ld`; elle n'est pas encore fusionnée dans `main` ni dans
+  cette branche de travail de l'étape `16`.
+- Étape `16` implémentée avec `plink19_array_roh_secondary_v1` : fardeau
+  genome-wide sur l'intersection exacte des variants chez témoins et porteurs
+  indépendants, analyse séparée du chromosome cible, intersection individuelle
+  avec le variant, conservation des individus sans segment, avertissement des
+  cibles hétérozygotes dans un ROH et `F_ROH` interdit sans dénominateur sourcé.
+  Les seuils insuffisants publient `NOT_EVALUATED` sans relâchement automatique.
+  Aucun calcul n'a été lancé sur les données réelles.
 
 ## Suivi des étapes du pipeline V2
 
@@ -509,8 +519,8 @@ ses tests, son audit et sa documentation sont cohérents.
 | `12` | Référence phasée et phasage | `VALIDE` | Oui | Oui | `12.0–12.7` validées, QC final et smoke réel inclus |
 | `13` | Haplotype fondateur et IBD local | `VALIDE` | Oui | Oui | IBS exact centré cible, aucune revendication IBD |
 | `14` | Datation du variant | `VALIDE` | Oui | Oui | Gamma corrélé primaire, seuils petits effectifs |
-| `15` | LD local secondaire | `NON_FAIT` | Non | Non | Exploratoire par défaut |
-| `16` | ROH secondaire | `NON_FAIT` | Non | Non | Exploratoire par défaut |
+| `15` | LD local secondaire | `FAIT_A_VALIDER` | Oui | Oui | PR brouillon `#5`, absente de cette branche |
+| `16` | ROH secondaire | `VALIDE` | Oui | Oui | Deux périmètres, autozygotie distincte de l'IBS/IBD |
 | `17` | Analyses de sensibilité | `NON_FAIT` | Non | Non | — |
 | `18` | Visualisations consolidées | `NON_FAIT` | Non | Non | — |
 | `19` | Rapport et revue finale | `NON_FAIT` | Non | Non | — |
@@ -603,8 +613,8 @@ partage IBS et correction fortuite désactivée — imposent une revue manuelle.
 
 ## Priorités de la prochaine session
 
-1. Définir l'étape `15` de LD local comme analyse secondaire sans la confondre
-   avec l'apparentement, l'IBD ou la datation principale.
+1. Fusionner ou rebaser proprement les branches des étapes `15` et `16`, puis
+   définir l'étape `17` des analyses de sensibilité.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
 3. Préparer les revues réelles `kinship_exclusion_approval` et
@@ -657,5 +667,5 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action attendue est de définir l'étape `15` de LD local avant toute analyse des
-données réelles.
+action de développement attendue est d'intégrer `15–16` puis de définir l'étape
+`17` avant toute analyse des données réelles.
