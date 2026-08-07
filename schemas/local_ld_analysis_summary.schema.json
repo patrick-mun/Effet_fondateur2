@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/local_ld_analysis_summary.schema.json",
+  "title": "Résumé agrégé de l'étape 15",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "method_id", "analysis_role", "primary_cohort",
+    "cohort_statuses", "variant_count", "target_variant_id",
+    "r2_definition", "dprime_definition", "feeds_variant_age"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "method_id": {"const": "plink19_local_ld_secondary_v1"},
+    "analysis_role": {"const": "SECONDARY_DESCRIPTIVE"},
+    "primary_cohort": {"const": "controls_unrelated"},
+    "cohort_statuses": {
+      "type": "object",
+      "additionalProperties": {"enum": ["DESCRIPTIVE_PRIMARY", "EXPLORATORY_SMALL_N", "NOT_EVALUATED"]}
+    },
+    "variant_count": {"type": "integer", "minimum": 2},
+    "target_variant_id": {"type": "string", "minLength": 1},
+    "r2_definition": {"const": "GENOTYPE_ALLELE_COUNT_CORRELATION_SQUARED"},
+    "dprime_definition": {"const": "ABSOLUTE_HAPLOTYPE_ML"},
+    "feeds_variant_age": {"const": false}
+  }
+}
