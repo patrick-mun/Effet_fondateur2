@@ -508,6 +508,18 @@ def test_stage_13_publishes_insufficient_result_without_claiming_ibd(
             "bcftools_timeout_seconds": 30,
         },
     }
+    config["stages"]["estimate_variant_age"] = {
+        "enabled": True,
+        "parameters": {
+            "method": "gamma_gandolfo_2014_v1",
+            "confidence_level": 0.95,
+            "minimum_units_for_estimate": 3,
+            "minimum_units_for_primary": 5,
+            "generation_years": [25, 28, 30],
+            "leave_one_family_out": True,
+            "chance_sharing_correction": False,
+        },
+    }
     config_path.write_text(
         yaml.safe_dump(config, allow_unicode=True, sort_keys=False), encoding="utf-8"
     )
@@ -527,6 +539,15 @@ def test_stage_13_publishes_insufficient_result_without_claiming_ibd(
     assert audit["metrics"]["ibd_claimed"] is False
     assert audit["manual_validation_required"] is True
 
+    dating_dir = run_dir / "stages" / "14_estimate_variant_age"
+    dating_summary = json.loads(
+        (dating_dir / "dating" / "variant_age_summary.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert dating_summary["status"] == "NOT_ESTIMATED"
+    assert dating_summary["included_unit_count"] == 0
+
     resume_pipeline(run_dir)
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     stage_record = next(
@@ -535,3 +556,9 @@ def test_stage_13_publishes_insufficient_result_without_claiming_ibd(
     )
     assert stage_record["state"] == "SUCCEEDED"
     assert stage_record["attempt_count"] == 1
+    age_stage_record = next(
+        stage for stage in manifest["stages"]
+        if stage["stage_name"] == "estimate_variant_age"
+    )
+    assert age_stage_record["state"] == "SUCCEEDED"
+    assert age_stage_record["attempt_count"] == 1

@@ -1,15 +1,15 @@
 # Suivi de session
 
-Dernière mise à jour : 6 août 2026
+Dernière mise à jour : 7 août 2026
 
 ## État du dépôt
 
 - Dépôt GitHub : `patrick-mun/Effet_fondateur2`.
-- Branche active : `feature/v2-shapeit5-contract`, avec l'étape `13` validée
-  localement au-dessus du commit `ab4e65e` qui clôt l'étape `12`.
+- La PR `#4` porte la livraison de l'étape `14` depuis la branche
+  `feature/v2-variant-age`, au commit fonctionnel `c844823`.
+- PR `#3` fusionnée dans `main` le 6 août 2026 ; elle valide les étapes `08–13`.
 - PR V2 `#2` fusionnée dans `main` le 5 août 2026.
 - PR `#1` fusionnée dans `main` le 4 août 2026.
-- Dernier commit de fusion V2 : `f87b04c`.
 - Environnement : Python 3.12.13 dans `.venv`.
 - Outils disponibles et fonctionnels : PLINK 1.9, KING, bcftools, Rscript et
   packages R du projet. SHAPEIT5 5.1.1 est installé dans l'environnement Conda
@@ -480,6 +480,11 @@ Dernière mise à jour : 6 août 2026
   synthétiques couvrent un candidat partagé, l'effectif insuffisant,
   l'orchestration et la reprise ; aucune analyse des données réelles n'a été
   lancée.
+- Étape `14` implémentée avec `gamma_gandolfo_2014_v1` : correction des bras
+  individuels de l'étape 13, reproduction de l'exemple Gamma officiel, modèle
+  corrélé primaire, modèle indépendant et leave-one-family-out en sensibilités,
+  conversions 25/28/30 ans par génération et règles de non-conclusion sous
+  trois unités. Aucun exécutable Gamma externe ni donnée réelle n'est utilisé.
 
 ## Suivi des étapes du pipeline V2
 
@@ -503,7 +508,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `11` | Région cible | `VALIDE` | Oui | Oui | Carte GRCh38 bornée, cM monotones et smoke réel validés |
 | `12` | Référence phasée et phasage | `VALIDE` | Oui | Oui | `12.0–12.7` validées, QC final et smoke réel inclus |
 | `13` | Haplotype fondateur et IBD local | `VALIDE` | Oui | Oui | IBS exact centré cible, aucune revendication IBD |
-| `14` | Datation du variant | `NON_FAIT` | Non | Non | Méthodes à valider |
+| `14` | Datation du variant | `VALIDE` | Oui | Oui | Gamma corrélé primaire, seuils petits effectifs |
 | `15` | LD local secondaire | `NON_FAIT` | Non | Non | Exploratoire par défaut |
 | `16` | ROH secondaire | `NON_FAIT` | Non | Non | Exploratoire par défaut |
 | `17` | Analyses de sensibilité | `NON_FAIT` | Non | Non | — |
@@ -540,7 +545,7 @@ empreintes qu'il consomme.
 |---|---:|---|---|
 | `00–04` | étape `04` | `VALIDE` | architecture, contrats, sécurité, tests, audit scientifique |
 | `05–09` | étape `09` | `VALIDE` | QC, KING, structure, indépendance et cohortes |
-| `10–14` | étape `14` | `NON_FAIT` | QC final, phasage, haplotypes et datation |
+| `10–14` | étape `14` | `VALIDE` | QC final, phasage, haplotypes et datation |
 | `15–19` | étape `19` | `NON_FAIT` | analyses secondaires, figures, rapport et reproductibilité |
 
 La revue de maintenabilité du socle réalisée avant l'étape `01` est un contrôle
@@ -555,6 +560,18 @@ et que chaque cohorte/raison/unité reste reproductible. Aucun blocage nouveau
 n'a été identifié ; les limites scientifiques de la PCA exploratoire, de la
 sélection gloutonne et des groupes témoins configurés restent documentées.
 
+L'audit groupé `10–14` confirme que le variant cible reste conservé par le QC,
+que la carte génétique interdit extrapolation et approximation physique, que le
+phasage est confronté aux génotypes moléculaires explicites, que l'étape 13 ne
+transforme jamais IBS en preuve IBD et que Gamma ne reçoit que des bras
+individuels positifs en cM provenant d'une unité par famille. L'exemple officiel
+Gamma est reproduit à l'arrondi, les modes corrélé/indépendant et les
+sensibilités sont séparés, et les petits effectifs produisent une non-conclusion
+ou un résultat exploratoire. La suite V2 complète passe avec 166 tests ; les
+durcissements finaux d'indépendance familiale passent ensuite dans 12 tests
+ciblés. Les limites restantes — résolution des marqueurs, phase, carte,
+partage IBS et correction fortuite désactivée — imposent une revue manuelle.
+
 ## Problèmes connus
 
 1. Les allèles génomiques REF/ALT de la mutation DOCK6 doivent être confirmés
@@ -565,8 +582,9 @@ sélection gloutonne et des groupes témoins configurés restent documentées.
    `data/input/complex_simulation/` et ouvre automatiquement le rapport HTML.
 4. L'interface Streamlit écrit `user_input.ped/map`, tandis que le pipeline lit
    `genotype_data.ped/map`.
-5. La datation Gamma sépare actuellement les positions en deux moitiés au lieu
-   d'utiliser des longueurs gauche/droite pertinentes autour de la mutation.
+5. La datation Gamma du pipeline V1 sépare les positions en deux moitiés au
+   lieu d'utiliser des longueurs gauche/droite pertinentes autour de la
+   mutation ; l'étape V2 `14` ne reprend pas cette approximation.
 6. Les exécutables `Gamma` et `gamma` installés dans `/usr/local/bin` contiennent
    une page HTML au lieu d'un programme exécutable. Gamma reste optionnel et ne
    doit pas être déclaré disponible avant réinstallation et validation.
@@ -585,8 +603,8 @@ sélection gloutonne et des groupes témoins configurés restent documentées.
 
 ## Priorités de la prochaine session
 
-1. Définir puis réaliser l'étape `14` depuis les longueurs gauche/droite validées
-   de l'étape `13`, sans reprendre la séparation historique de Gamma.
+1. Définir l'étape `15` de LD local comme analyse secondaire sans la confondre
+   avec l'apparentement, l'IBD ou la datation principale.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
 3. Préparer les revues réelles `kinship_exclusion_approval` et
@@ -633,9 +651,11 @@ Au début de la prochaine session :
 ```bash
 cd /Users/utilisateur/Documents/python_programme/Effet_fondateur2
 source .venv/bin/activate
+git checkout main
+git pull --ff-only origin main
 git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action attendue est de figer la méthode de datation de l'étape `14` avant toute
-analyse des données réelles.
+action attendue est de définir l'étape `15` de LD local avant toute analyse des
+données réelles.

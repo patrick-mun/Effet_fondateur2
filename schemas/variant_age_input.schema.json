@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/variant_age_input.schema.json",
+  "title": "Entrées Gamma dérivées des segments fondateurs",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["INDEPENDENT_UNIT_ID", "FAMILY_ID", "LEFT_LENGTH_CM", "RIGHT_LENGTH_CM", "INCLUDED", "EXCLUSION_CODE", "MAP_VERSION", "SEGMENT_METHOD"],
+    "null_value": "", "primary_key": ["INDEPENDENT_UNIT_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "decimal": {"type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$"},
+    "nullableIdentifier": {"oneOf": [{"$ref": "#/$defs/identifier"}, {"type": "null"}]},
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["INDEPENDENT_UNIT_ID", "FAMILY_ID", "LEFT_LENGTH_CM", "RIGHT_LENGTH_CM", "INCLUDED", "EXCLUSION_CODE", "MAP_VERSION", "SEGMENT_METHOD"],
+      "properties": {
+        "INDEPENDENT_UNIT_ID": {"$ref": "#/$defs/identifier"}, "FAMILY_ID": {"$ref": "#/$defs/identifier"},
+        "LEFT_LENGTH_CM": {"$ref": "#/$defs/decimal"}, "RIGHT_LENGTH_CM": {"$ref": "#/$defs/decimal"},
+        "INCLUDED": {"type": "boolean"}, "EXCLUSION_CODE": {"$ref": "#/$defs/nullableIdentifier"},
+        "MAP_VERSION": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "SEGMENT_METHOD": {"enum": ["target_centered_exact_ibs_v1", "target_centered_pairwise_max_ibs_v1"]}
+      },
+      "allOf": [{
+        "if": {"properties": {"INCLUDED": {"const": false}}, "required": ["INCLUDED"]},
+        "then": {"properties": {"EXCLUSION_CODE": {"type": "string"}}},
+        "else": {"properties": {"EXCLUSION_CODE": {"type": "null"}}}
+      }]
+    }
+  }
+}

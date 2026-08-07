@@ -167,6 +167,8 @@ def _allele(genotype: str, haplotype_index: int) -> str | None:
     alleles = genotype.split("|")
     if len(alleles) != 2 or any(value not in {"0", "1", "."} for value in alleles):
         return None
+    if haplotype_index == -1:
+        return alleles[0] if alleles[0] == alleles[1] and alleles[0] != "." else None
     value = alleles[haplotype_index]
     return None if value == "." else value
 
@@ -248,9 +250,7 @@ def infer_target_centered_ibs(
             raise FounderAnalysisError("carrier_sample_identity_mismatch")
         if assignment["RELIABILITY_STATUS"] != "PASS":
             exclusion_code = "PHASING_UNRELIABLE"
-        elif assignment["CARRIER_HAPLOTYPE"] == "BOTH":
-            exclusion_code = "TARGET_HOMOZYGOUS_TWO_CHROMOSOMES"
-        elif assignment["CARRIER_HAPLOTYPE"] not in {"H1", "H2"}:
+        elif assignment["CARRIER_HAPLOTYPE"] not in {"H1", "H2", "BOTH"}:
             exclusion_code = "CARRIER_HAPLOTYPE_NOT_ASSIGNED"
         if exclusion_code:
             excluded_rows.append({
@@ -267,7 +267,11 @@ def infer_target_centered_ibs(
                 "SEGMENT_STATUS": "EXCLUDED", "EXCLUSION_CODE": exclusion_code,
             })
             continue
-        haplotype_index = 0 if assignment["CARRIER_HAPLOTYPE"] == "H1" else 1
+        haplotype_index = {
+            "H1": 0,
+            "H2": 1,
+            "BOTH": -1,
+        }[assignment["CARRIER_HAPLOTYPE"]]
         if _allele(target_variant.genotypes[sample_indexes[sample_id]], haplotype_index) != "1":
             raise FounderAnalysisError("target_carrier_haplotype_discordant")
         selected.append(CarrierHaplotype(
@@ -292,31 +296,16 @@ def infer_target_centered_ibs(
     status = "SUPPORTED_IBS_CANDIDATE" if enough_carriers and enough_flanks else (
         "INSUFFICIENT_CARRIERS" if not enough_carriers else "INSUFFICIENT_INFORMATIVE_MARKERS"
     )
-    segment_rows = excluded_rows + [
-        {
-            "INDEPENDENT_UNIT_ID": carrier.independent_unit_id,
-            "SAMPLE_ID": carrier.sample_id, "FAMILY_ID": carrier.family_id,
-            "CARRIER_HAPLOTYPE_ID": carrier.haplotype_id,
-            "TARGET_VARIANT_ID": target_variant.variant_id,
-            "LEFT_BOUND_BP": segment_values["LEFT_BOUND_BP"],
-            "TARGET_BP": segment_values["TARGET_BP"],
-            "RIGHT_BOUND_BP": segment_values["RIGHT_BOUND_BP"],
-            "LEFT_LENGTH_CM": segment_values["LEFT_LENGTH_CM"],
-            "RIGHT_LENGTH_CM": segment_values["RIGHT_LENGTH_CM"],
-            "PHASING_CONFIDENCE": carrier.phase_confidence,
-            "SEGMENT_METHOD": "target_centered_exact_ibs_v1",
-            "SEGMENT_STATUS": "INCLUDED" if status == "SUPPORTED_IBS_CANDIDATE" else "INSUFFICIENT",
-            "EXCLUSION_CODE": "" if status == "SUPPORTED_IBS_CANDIDATE" else status,
-        }
-        for carrier in selected
-    ]
     sharing_rows: list[dict[str, str]] = []
+    pair_segments: dict[tuple[str, str], Segment] = {}
     for first_index, first in enumerate(selected):
         for second in selected[first_index:]:
             pair_segment = _shared_segment(variants, (
                 (sample_indexes[first.sample_id], first.haplotype_index),
                 (sample_indexes[second.sample_id], second.haplotype_index),
             ))
+            pair_segments[(first.independent_unit_id, second.independent_unit_id)] = pair_segment
+            pair_segments[(second.independent_unit_id, first.independent_unit_id)] = pair_segment
             values = _segment_values(variants, pair_segment)
             sharing_rows.append({
                 "INDEPENDENT_UNIT_ID_1": first.independent_unit_id,
@@ -328,6 +317,38 @@ def infer_target_centered_ibs(
                     "SHARED" if int(values["LEFT_MARKER_COUNT"]) >= minimum_flank_markers and int(values["RIGHT_MARKER_COUNT"]) >= minimum_flank_markers else "INSUFFICIENT"
                 ),
             })
+    segment_rows = list(excluded_rows)
+    for carrier in selected:
+        comparisons = [
+            pair_segments[(carrier.independent_unit_id, other.independent_unit_id)]
+            for other in selected
+            if other != carrier
+        ]
+        if not comparisons:
+            comparisons = [
+                pair_segments[(carrier.independent_unit_id, carrier.independent_unit_id)]
+            ]
+        individual_segment = Segment(
+            left_index=min(pair.left_index for pair in comparisons),
+            target_index=segment.target_index,
+            right_index=max(pair.right_index for pair in comparisons),
+        )
+        individual_values = _segment_values(variants, individual_segment)
+        segment_rows.append({
+            "INDEPENDENT_UNIT_ID": carrier.independent_unit_id,
+            "SAMPLE_ID": carrier.sample_id, "FAMILY_ID": carrier.family_id,
+            "CARRIER_HAPLOTYPE_ID": carrier.haplotype_id,
+            "TARGET_VARIANT_ID": target_variant.variant_id,
+            "LEFT_BOUND_BP": individual_values["LEFT_BOUND_BP"],
+            "TARGET_BP": individual_values["TARGET_BP"],
+            "RIGHT_BOUND_BP": individual_values["RIGHT_BOUND_BP"],
+            "LEFT_LENGTH_CM": individual_values["LEFT_LENGTH_CM"],
+            "RIGHT_LENGTH_CM": individual_values["RIGHT_LENGTH_CM"],
+            "PHASING_CONFIDENCE": carrier.phase_confidence,
+            "SEGMENT_METHOD": "target_centered_pairwise_max_ibs_v1",
+            "SEGMENT_STATUS": "INCLUDED" if status == "SUPPORTED_IBS_CANDIDATE" else "INSUFFICIENT",
+            "EXCLUSION_CODE": "" if status == "SUPPORTED_IBS_CANDIDATE" else status,
+        })
     discordance_rows: list[dict[str, str]] = []
     for index, variant in enumerate(variants):
         alleles = [_allele(variant.genotypes[sample_index], haplotype_index) for sample_index, haplotype_index in carrier_keys]

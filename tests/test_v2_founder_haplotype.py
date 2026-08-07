@@ -24,10 +24,10 @@ if arguments == ["--version"]:
 elif arguments[:2] == ["query", "--list-samples"]:
     print("carrier_1\\ncarrier_2\\ncarrier_3\\ncontrol_1")
 elif arguments[:2] == ["query", "--format"]:
-    print("v80\\t80\\t0|1\\t0|0\\t1|0\\t0|1")
-    print("v90\\t90\\t1|0\\t1|1\\t0|1\\t1|0")
-    print("target\\t100\\t1|0\\t1|0\\t0|1\\t0|0")
-    print("v110\\t110\\t1|0\\t1|1\\t0|1\\t1|0")
+    print("v80\\t80\\t0|1\\t0|0\\t0|0\\t0|1")
+    print("v90\\t90\\t1|0\\t1|1\\t1|1\\t1|0")
+    print("target\\t100\\t1|0\\t1|0\\t1|1\\t0|0")
+    print("v110\\t110\\t1|0\\t1|1\\t1|1\\t1|0")
     print("v120\\t120\\t1|0\\t1|0\\t0|0\\t0|0")
 else:
     raise SystemExit(9)
@@ -66,7 +66,7 @@ def _prepare_inputs(tmp_path: Path) -> dict[str, Path]:
     _write_tsv(carrier_path, carrier_columns, [
         ["1", "carrier_1", "target", "A/G", "1|0", "1", "H1", "0.99", "SCORED_PASS", "PASS", ""],
         ["2", "carrier_2", "target", "A/G", "1|0", "1", "H1", "0.98", "SCORED_PASS", "PASS", ""],
-        ["3", "carrier_3", "target", "A/G", "0|1", "1", "H2", "0.97", "SCORED_PASS", "PASS", ""],
+        ["3", "carrier_3", "target", "G/G", "1|1", "2", "BOTH", "", "NOT_APPLICABLE_HOMOZYGOUS", "PASS", ""],
         ["4", "control_1", "target", "A/A", "0|0", "0", "NONE", "", "NOT_APPLICABLE_HOMOZYGOUS", "PASS", ""],
     ])
     cohorts_path = tmp_path / "cohorts_frozen.tsv"
@@ -94,7 +94,7 @@ def _prepare_inputs(tmp_path: Path) -> dict[str, Path]:
         for sample_id, family_id, group, genotype in [
             ("carrier_1", "family_1", "CASE", "A/G"),
             ("carrier_2", "family_2", "CASE", "A/G"),
-            ("carrier_3", "family_3", "CASE", "A/G"),
+            ("carrier_3", "family_3", "CASE", "G/G"),
             ("control_1", "family_4", "CONTROL", "A/A"),
         ]
     ]
@@ -124,7 +124,10 @@ def test_exact_ibs_publishes_conservative_founder_candidate(tmp_path: Path) -> N
     ).rows
     assert len(segment_rows) == 3
     assert {row["LEFT_BOUND_BP"] for row in segment_rows} == {"80"}
-    assert {row["RIGHT_BOUND_BP"] for row in segment_rows} == {"110"}
+    assert [row["RIGHT_BOUND_BP"] for row in segment_rows] == ["120", "120", "110"]
+    assert {row["SEGMENT_METHOD"] for row in segment_rows} == {
+        "target_centered_pairwise_max_ibs_v1"
+    }
     consensus = validate_tsv_table(
         result.consensus_path, "founder_consensus.schema.json"
     ).rows[0]

@@ -1131,9 +1131,11 @@ informatifs sur chaque flanc sont requis. Le résultat est nommé
 sur des données assez denses, il ne constitue jamais une preuve IBD. Le variant
 cible est retiré de la signature mesurée chez les témoins et non-porteurs afin
 d'éviter une comparaison trivialement déterminée par leur statut mutationnel.
-Les porteurs de phase non fiable et les homozygotes cibles sont conservés dans
-l'audit mais exclus de l'estimation à un chromosome par unité. Toute insuffisance
-d'effectif ou de marqueurs produit `NO_FOUNDER_CONCLUSION` et impose une revue.
+Les porteurs de phase non fiable sont exclus mais conservés dans l'audit. Un
+homozygote cible compte comme une unité familiale et n'est informatif qu'aux
+marqueurs homozygotes identiques, conformément au cas récessif de Gamma. Toute
+insuffisance d'effectif ou de marqueurs produit `NO_FOUNDER_CONCLUSION` et impose
+une revue.
 
 **Traitements** :
 
@@ -1168,6 +1170,21 @@ partage, haplotype consensus éventuel et audit des discordances.
 **Responsabilité** : estimer l'âge uniquement depuis les longueurs génétiques
 gauche/droite des haplotypes porteurs indépendants.
 
+**Contrat retenu** : l'estimateur primaire est
+`gamma_gandolfo_2014_v1`, réimplémentation auditée des formules et corrections
+de bord de Gandolfo, Bahlo et Speed (2014). Le modèle corrélé est primaire afin
+de tenir compte de l'apparentement cryptique plausible dans une population
+insulaire ; le modèle indépendant est toujours publié comme sensibilité. Trois
+unités familiales indépendantes permettent seulement une estimation
+exploratoire et cinq sont requises pour une estimation primaire. En dessous de
+trois unités, ou si un bras individuel est nul, l'étape publie explicitement
+`NOT_ESTIMATED`. La correction de partage fortuit est désactivée par défaut :
+elle ne peut être activée qu'avec fréquence allélique médiane, nombre de
+marqueurs chromosomiques et longueur chromosomique en cM explicitement fournis.
+Les sensibilités comprennent le modèle indépendant, le leave-one-family-out et
+les conversions à 25, 28 et 30 ans par génération. EstiAge reste différé tant
+qu'un adaptateur local reproductible n'est pas validé.
+
 **Entrées obligatoires** :
 
 - une ligne par unité porteuse indépendante ;
@@ -1182,7 +1199,7 @@ gauche/droite des haplotypes porteurs indépendants.
 **Traitements** :
 
 - validation des longueurs positives et des unités ;
-- exécution de Gamma avec paramètres explicites si la méthode est validée ;
+- calcul de Gamma corrélé et indépendant avec paramètres explicites ;
 - méthode alternative ou analyse de comparaison lorsque disponible ;
 - intervalles de confiance ;
 - bootstrap ou sensibilité leave-one-family-out ;

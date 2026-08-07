@@ -54,6 +54,15 @@ def test_generic_example_is_valid() -> None:
         "minimum_flank_markers": 2,
         "bcftools_timeout_seconds": 300,
     }
+    assert config["stages"]["estimate_variant_age"]["parameters"] == {
+        "method": "gamma_gandolfo_2014_v1",
+        "confidence_level": 0.95,
+        "minimum_units_for_estimate": 3,
+        "minimum_units_for_primary": 5,
+        "generation_years": [25, 28, 30],
+        "leave_one_family_out": True,
+        "chance_sharing_correction": False,
+    }
 
 
 def test_dock6_profile_accepts_unconfirmed_target_fields() -> None:
