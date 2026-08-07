@@ -5,13 +5,13 @@ Dernière mise à jour : 7 août 2026
 ## État du dépôt
 
 - Dépôt GitHub : `patrick-mun/Effet_fondateur2`.
-- `main` contient les étapes `00–17` et pointe sur `7e3c317` après les fusions
-  ordonnées des PR `#5`, `#6` et `#7` le 7 août 2026.
+- `main` contient les étapes `00–18` et pointe sur `21184ff` après les fusions
+  ordonnées des PR `#5`, `#6`, `#7` et `#8` le 7 août 2026.
 - La PR `#5` a livré l'étape `15`, la PR `#6` l'étape `16` et la PR `#7`
   l'étape `17`. La branche `#6` a été avancée en fast-forward vers le commit
   d'intégration existant `fbc6398`, sans rebase ni réécriture destructive.
-- La branche locale `agent/step-18-visualizations` contient l'étape `18` au
-  commit `a46bcfc` et intègre désormais `origin/main` de façon non destructive.
+- La PR `#8` a livré l'étape `18` avec les six domaines graphiques, dont la PCA.
+  Les branches de livraison sont conservées et aucune n'a été supprimée.
 - PR `#3` fusionnée dans `main` le 6 août 2026 ; elle valide les étapes `08–13`.
 - PR V2 `#2` fusionnée dans `main` le 5 août 2026.
 - PR `#1` fusionnée dans `main` le 4 août 2026.
