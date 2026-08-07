@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/local_ld_pairs.schema.json",
+  "title": "Paires du LD local secondaire V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": [
+      "COHORT_ID", "VARIANT_A", "VARIANT_B", "POSITION_A_BP",
+      "POSITION_B_BP", "POSITION_A_CM", "POSITION_B_CM", "DISTANCE_BP",
+      "DISTANCE_CM", "CALLED_SAMPLE_COUNT", "R2_GENOTYPE",
+      "R2_HAPLOTYPE_ML", "D_PRIME_ABS", "INVOLVES_TARGET", "PAIR_STATUS"
+    ],
+    "null_value": "",
+    "allow_empty": true,
+    "primary_key": ["COHORT_ID", "VARIANT_A", "VARIANT_B"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "decimal": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?([eE][+-]?[0-9]+)?$"},
+    "nullableDecimal": {"oneOf": [{"$ref": "#/$defs/decimal"}, {"type": "null"}]},
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "COHORT_ID", "VARIANT_A", "VARIANT_B", "POSITION_A_BP",
+        "POSITION_B_BP", "POSITION_A_CM", "POSITION_B_CM", "DISTANCE_BP",
+        "DISTANCE_CM", "CALLED_SAMPLE_COUNT", "R2_GENOTYPE",
+        "R2_HAPLOTYPE_ML", "D_PRIME_ABS", "INVOLVES_TARGET", "PAIR_STATUS"
+      ],
+      "properties": {
+        "COHORT_ID": {"$ref": "#/$defs/identifier"},
+        "VARIANT_A": {"type": "string", "minLength": 1},
+        "VARIANT_B": {"type": "string", "minLength": 1},
+        "POSITION_A_BP": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "POSITION_B_BP": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "POSITION_A_CM": {"$ref": "#/$defs/decimal"},
+        "POSITION_B_CM": {"$ref": "#/$defs/decimal"},
+        "DISTANCE_BP": {"type": "string", "pattern": "^[0-9]+$"},
+        "DISTANCE_CM": {"$ref": "#/$defs/decimal"},
+        "CALLED_SAMPLE_COUNT": {"type": "string", "pattern": "^[0-9]+$"},
+        "R2_GENOTYPE": {"$ref": "#/$defs/nullableDecimal"},
+        "R2_HAPLOTYPE_ML": {"$ref": "#/$defs/nullableDecimal"},
+        "D_PRIME_ABS": {"$ref": "#/$defs/nullableDecimal"},
+        "INVOLVES_TARGET": {"type": "boolean"},
+        "PAIR_STATUS": {"enum": ["EVALUATED", "INSUFFICIENT_CALLS", "LOW_MAF", "MONOMORPHIC", "TOOL_NOT_REPORTED"]}
+      }
+    }
+  }
+}

@@ -411,8 +411,8 @@ Dernière mise à jour : 7 août 2026
 - Tests ciblés de l'étape `07` : 8 réussis.
 - Tests ciblés de l'étape `08` : 8 réussis.
 - Tests ciblés de l'étape `09` : 7 réussis.
-- Suite moderne `tests/`, incluant les étapes `01` à `12.7` et les contrôles de
-  maintenabilité V2 : 160 réussis.
+- Suite moderne `tests/`, incluant les étapes `01` à `15` et les contrôles de
+  maintenabilité V2 : 171 réussis.
 - Contrôle ciblé final de la fenêtre, du cache, du catalogue, de la
   configuration, de l'orchestrateur et de SHAPEIT5 : 45 réussis.
 - Dernière exécution combinée antérieure des suites modernes et historiques :
@@ -485,6 +485,13 @@ Dernière mise à jour : 7 août 2026
   corrélé primaire, modèle indépendant et leave-one-family-out en sensibilités,
   conversions 25/28/30 ans par génération et règles de non-conclusion sous
   trois unités. Aucun exécutable Gamma externe ni donnée réelle n'est utilisé.
+- Étape `15` implémentée avec `plink19_local_ld_secondary_v1` comme analyse
+  descriptive secondaire : cohorte principale de témoins indépendants,
+  porteurs indépendants et non-porteurs familiaux séparés, univers local commun,
+  `r²` génotypique distinct du `D′` haplotypique ML, effectifs et paires
+  insuffisants explicitement non évalués, et aucune dépendance vers les sorties
+  `13–14`. Les tests et le smoke PLINK utilisent uniquement des données
+  synthétiques temporaires ; aucune analyse réelle n'a été lancée.
 
 ## Suivi des étapes du pipeline V2
 
@@ -509,7 +516,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `12` | Référence phasée et phasage | `VALIDE` | Oui | Oui | `12.0–12.7` validées, QC final et smoke réel inclus |
 | `13` | Haplotype fondateur et IBD local | `VALIDE` | Oui | Oui | IBS exact centré cible, aucune revendication IBD |
 | `14` | Datation du variant | `VALIDE` | Oui | Oui | Gamma corrélé primaire, seuils petits effectifs |
-| `15` | LD local secondaire | `NON_FAIT` | Non | Non | Exploratoire par défaut |
+| `15` | LD local secondaire | `VALIDE` | Oui | Oui | PLINK `r²`/`D′` séparés, exploratoire par défaut |
 | `16` | ROH secondaire | `NON_FAIT` | Non | Non | Exploratoire par défaut |
 | `17` | Analyses de sensibilité | `NON_FAIT` | Non | Non | — |
 | `18` | Visualisations consolidées | `NON_FAIT` | Non | Non | — |
@@ -567,10 +574,15 @@ transforme jamais IBS en preuve IBD et que Gamma ne reçoit que des bras
 individuels positifs en cM provenant d'une unité par famille. L'exemple officiel
 Gamma est reproduit à l'arrondi, les modes corrélé/indépendant et les
 sensibilités sont séparés, et les petits effectifs produisent une non-conclusion
-ou un résultat exploratoire. La suite V2 complète passe avec 166 tests ; les
-durcissements finaux d'indépendance familiale passent ensuite dans 12 tests
-ciblés. Les limites restantes — résolution des marqueurs, phase, carte,
+ou un résultat exploratoire. La suite V2 complète passe désormais avec 171
+tests. Les limites restantes — résolution des marqueurs, phase, carte,
 partage IBS et correction fortuite désactivée — imposent une revue manuelle.
+
+Le contrat de l'étape `15` confirme que le LD reste une branche secondaire
+indépendante des étapes `13–14`. Les cohortes sont lues depuis le gel `09`, une
+unité familiale dupliquée rend la cohorte non évaluable, les mêmes variants et
+distances sont utilisés entre cohortes, et les paires impliquant la cible sont
+signalées comme conditionnées par la sélection porteur/non-porteur.
 
 ## Problèmes connus
 
@@ -603,8 +615,8 @@ partage IBS et correction fortuite désactivée — imposent une revue manuelle.
 
 ## Priorités de la prochaine session
 
-1. Définir l'étape `15` de LD local comme analyse secondaire sans la confondre
-   avec l'apparentement, l'IBD ou la datation principale.
+1. Définir l'étape `16` de ROH comme analyse secondaire distincte de
+   l'haplotype fondateur et du LD local.
 2. Préparer la table maître réelle et son approbation humaine sans déduire les
    génotypes cibles du statut clinique ou du groupe.
 3. Préparer les revues réelles `kinship_exclusion_approval` et
@@ -657,5 +669,5 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action attendue est de définir l'étape `15` de LD local avant toute analyse des
-données réelles.
+action de développement attendue est de définir l'étape `16` de ROH avant toute
+analyse des données réelles.
