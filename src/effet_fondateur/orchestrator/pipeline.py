@@ -320,6 +320,15 @@ ANALYZE_ROH_STAGE = StageDefinition(
     ),
 )
 
+RUN_SENSITIVITY_ANALYSES_STAGE = StageDefinition(
+    stage_id="17",
+    stage_name="run_sensitivity_analyses",
+    module="effet_fondateur.stages.run_sensitivity_analyses",
+    critical=False,
+    dependencies=("initialize_run",),
+    config_input_files=("sensitivity_scenarios",),
+)
+
 DEFAULT_STAGE_DEFINITIONS = (
     SYNTHETIC_STAGE,
     VALIDATE_SOURCES_STAGE,
@@ -338,6 +347,7 @@ DEFAULT_STAGE_DEFINITIONS = (
     ESTIMATE_VARIANT_AGE_STAGE,
     ANALYZE_LOCAL_LD_STAGE,
     ANALYZE_ROH_STAGE,
+    RUN_SENSITIVITY_ANALYSES_STAGE,
 )
 
 

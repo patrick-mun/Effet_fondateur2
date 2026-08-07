@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/sensitivity_stability.schema.json",
+  "title": "Matrice de stabilité par domaine",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["DOMAIN", "PRIMARY_STATUS", "EXPECTED_SCENARIO_COUNT", "EVALUATED_SCENARIO_COUNT", "STABLE_SCENARIO_COUNT", "VARIABLE_SCENARIO_COUNT", "NOT_EVALUATED_SCENARIO_COUNT", "CATEGORICAL_STABILITY", "QUANTITATIVE_STABILITY", "MANUAL_REVIEW_REQUIRED"],
+    "null_value": "", "primary_key": ["DOMAIN"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "count": {"type": "string", "pattern": "^[0-9]+$"},
+    "nullableText": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]},
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["DOMAIN", "PRIMARY_STATUS", "EXPECTED_SCENARIO_COUNT", "EVALUATED_SCENARIO_COUNT", "STABLE_SCENARIO_COUNT", "VARIABLE_SCENARIO_COUNT", "NOT_EVALUATED_SCENARIO_COUNT", "CATEGORICAL_STABILITY", "QUANTITATIVE_STABILITY", "MANUAL_REVIEW_REQUIRED"],
+      "properties": {
+        "DOMAIN": {"enum": ["FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH"]}, "PRIMARY_STATUS": {"$ref": "#/$defs/nullableText"},
+        "EXPECTED_SCENARIO_COUNT": {"$ref": "#/$defs/count"}, "EVALUATED_SCENARIO_COUNT": {"$ref": "#/$defs/count"},
+        "STABLE_SCENARIO_COUNT": {"$ref": "#/$defs/count"}, "VARIABLE_SCENARIO_COUNT": {"$ref": "#/$defs/count"},
+        "NOT_EVALUATED_SCENARIO_COUNT": {"$ref": "#/$defs/count"},
+        "CATEGORICAL_STABILITY": {"enum": ["STABLE", "VARIABLE", "INCONCLUSIVE", "NOT_EVALUATED"]},
+        "QUANTITATIVE_STABILITY": {"enum": ["STABLE", "VARIABLE", "INCONCLUSIVE", "NOT_CLASSIFIED", "NOT_AVAILABLE"]},
+        "MANUAL_REVIEW_REQUIRED": {"type": "boolean"}
+      }
+    }
+  }
+}

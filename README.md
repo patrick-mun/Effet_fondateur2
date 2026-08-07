@@ -259,6 +259,16 @@ chromosome cible. Elle ne redéfinit ni l'IBS fondateur ni la datation, et ne
 calcule `F_ROH` qu'avec un dénominateur autosomique explicite et sourcé. Le
 contrat est documenté dans `docs/modules/roh.md`.
 
+L'étape `17_run_sensitivity_analyses` consolide ensuite un run primaire et des
+runs de sensibilité distincts, déclarés dans un registre TSV. Elle vérifie les
+manifestes, configurations, signatures, résumés et ancrages moléculaires avant
+de comparer séparément IBS, datation, LD et ROH. Elle ne relance aucun calcul,
+ne calcule aucun score composite d'effet fondateur et ne classe une variation
+numérique que si une tolérance a été préspécifiée. Copier
+`config/sensitivity/scenarios.example.tsv`, remplacer les chemins, identifiants
+et SHA-256 des manifestes, puis renseigner `inputs.sensitivity_scenarios`. Le
+contrat complet est documenté dans `docs/modules/sensitivity.md`.
+
 Les responsabilités de l'orchestrateur, la procédure d'ajout d'une étape et les
 limites techniques actuelles sont documentées dans
 `docs/modules/orchestrator.md`. L'évolution des colonnes et vocabulaires TSV est

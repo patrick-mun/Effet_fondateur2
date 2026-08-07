@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/sensitivity_scenario_registry.schema.json",
+  "title": "Registre préspécifié des runs de sensibilité V2",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["SCENARIO_ID", "ROLE", "DESIGN", "CHANGED_FACTOR", "CHANGED_VALUE", "RUN_DIR", "RUN_ID", "MANIFEST_SHA256", "EXPECT_FOUNDER_IBS", "EXPECT_VARIANT_AGE", "EXPECT_LOCAL_LD", "EXPECT_ROH"],
+    "null_value": "", "primary_key": ["SCENARIO_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["SCENARIO_ID", "ROLE", "DESIGN", "CHANGED_FACTOR", "CHANGED_VALUE", "RUN_DIR", "RUN_ID", "MANIFEST_SHA256", "EXPECT_FOUNDER_IBS", "EXPECT_VARIANT_AGE", "EXPECT_LOCAL_LD", "EXPECT_ROH"],
+      "properties": {
+        "SCENARIO_ID": {"$ref": "#/$defs/identifier"},
+        "ROLE": {"enum": ["PRIMARY", "SENSITIVITY"]},
+        "DESIGN": {"enum": ["BASELINE", "SINGLE_FACTOR", "MULTIFACTOR"]},
+        "CHANGED_FACTOR": {"enum": ["PRIMARY", "LEAVE_ONE_FAMILY_OUT", "LOW_PHASE_CONFIDENCE_CARRIER_EXCLUSION", "HAPLOTYPE_DEFINITION", "LOCAL_WINDOW", "GENETIC_MAP_INTERPOLATION", "GENOMEWIDE_LD_PRUNING", "DISTANT_RELATIVE_POLICY", "ROH_PROFILE", "REFERENCE_POPULATION", "MULTIFACTOR"]},
+        "CHANGED_VALUE": {"type": "string", "minLength": 1, "maxLength": 500},
+        "RUN_DIR": {"type": "string", "minLength": 1},
+        "RUN_ID": {"type": "string", "minLength": 1},
+        "MANIFEST_SHA256": {"$ref": "#/$defs/sha256"},
+        "EXPECT_FOUNDER_IBS": {"type": "boolean"},
+        "EXPECT_VARIANT_AGE": {"type": "boolean"},
+        "EXPECT_LOCAL_LD": {"type": "boolean"},
+        "EXPECT_ROH": {"type": "boolean"}
+      }
+    }
+  }
+}

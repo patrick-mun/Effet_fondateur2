@@ -21,6 +21,7 @@ inputs:
   target_variant_genotypes: null
   genetic_map: null
   reference_panel_catalog: config/references/1000g_high_coverage_grch38_phased.json
+  sensitivity_scenarios: null
 
 tools:
   plink: plink
@@ -209,3 +210,12 @@ stages:
       autosomal_denominator_kb: null
       autosomal_denominator_source: null
       plink_timeout_seconds: 300
+  run_sensitivity_analyses:
+    enabled: false
+    parameters:
+      method: cross_run_sensitivity_consolidation_v1
+      relative_change_tolerances:
+        FOUNDER_IBS: null
+        VARIANT_AGE: null
+        LOCAL_LD: null
+        ROH: null
