@@ -1,15 +1,15 @@
 # Suivi de session
 
-Dernière mise à jour : 6 août 2026
+Dernière mise à jour : 7 août 2026
 
 ## État du dépôt
 
 - Dépôt GitHub : `patrick-mun/Effet_fondateur2`.
-- Branche active : `feature/v2-variant-age`, créée depuis `main` après la fusion
-  de la PR `#3` qui valide les étapes `08–13`.
+- La PR `#4` porte la livraison de l'étape `14` depuis la branche
+  `feature/v2-variant-age`, au commit fonctionnel `c844823`.
+- PR `#3` fusionnée dans `main` le 6 août 2026 ; elle valide les étapes `08–13`.
 - PR V2 `#2` fusionnée dans `main` le 5 août 2026.
 - PR `#1` fusionnée dans `main` le 4 août 2026.
-- Dernier commit de fusion V2 : `f87b04c`.
 - Environnement : Python 3.12.13 dans `.venv`.
 - Outils disponibles et fonctionnels : PLINK 1.9, KING, bcftools, Rscript et
   packages R du projet. SHAPEIT5 5.1.1 est installé dans l'environnement Conda
@@ -582,8 +582,9 @@ partage IBS et correction fortuite désactivée — imposent une revue manuelle.
    `data/input/complex_simulation/` et ouvre automatiquement le rapport HTML.
 4. L'interface Streamlit écrit `user_input.ped/map`, tandis que le pipeline lit
    `genotype_data.ped/map`.
-5. La datation Gamma sépare actuellement les positions en deux moitiés au lieu
-   d'utiliser des longueurs gauche/droite pertinentes autour de la mutation.
+5. La datation Gamma du pipeline V1 sépare les positions en deux moitiés au
+   lieu d'utiliser des longueurs gauche/droite pertinentes autour de la
+   mutation ; l'étape V2 `14` ne reprend pas cette approximation.
 6. Les exécutables `Gamma` et `gamma` installés dans `/usr/local/bin` contiennent
    une page HTML au lieu d'un programme exécutable. Gamma reste optionnel et ne
    doit pas être déclaré disponible avant réinstallation et validation.
@@ -650,6 +651,8 @@ Au début de la prochaine session :
 ```bash
 cd /Users/utilisateur/Documents/python_programme/Effet_fondateur2
 source .venv/bin/activate
+git checkout main
+git pull --ff-only origin main
 git status -sb
 ```
 
