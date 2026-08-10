@@ -1,6 +1,6 @@
 # Suivi de session
 
-Dernière mise à jour : 7 août 2026
+Dernière mise à jour : 10 août 2026
 
 ## État du dépôt
 
@@ -543,6 +543,17 @@ Dernière mise à jour : 7 août 2026
   faisceau d'arguments en preuve. Validation : 22 tests ciblés et 189 tests de
   la suite moderne réussis ; imports et `git diff --check` valides, uniquement
   sur données synthétiques.
+- Préparation réelle DOCK6 engagée sans calcul scientifique : 80 exports ChAS
+  uniques (11 familiaux, 69 témoins), registre et génotypes Sanger explicites
+  complets, variant `GRCh38 chr19:11237780 C>A` validé et configuration
+  `phase01_registry.yaml` limitée aux étapes `00–02`. Le premier run réel a
+  correctement publié `00`, puis `01` a bloqué avant conversion parce que les
+  en-têtes ChAS réels possèdent une tabulation terminale. Le parseur accepte
+  désormais uniquement les colonnes anonymes terminales, continue de refuser
+  les colonnes anonymes internes et dispose d'un test synthétique de
+  régression. Validation : 6 tests ciblés et 190 tests modernes réussis ; les
+  données réelles n'ont pas été utilisées comme fixtures et le run échoué est
+  conservé pour audit.
 
 ## Suivi des étapes du pipeline V2
 
@@ -553,7 +564,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | Étape | Nom | Statut | Tests ciblés | Audit d'étape | Remarque |
 |---:|---|---|---|---|---|
 | `00` | Initialisation du run | `VALIDE` | Oui | Oui | Bootstrap et reprise synthétique validés |
-| `01` | Validation des sources | `VALIDE` | Oui | Oui | Fixtures synthétiques et reprise validées |
+| `01` | Validation des sources | `VALIDE` | Oui | Oui | Tabulation terminale ChAS réelle couverte par régression synthétique |
 | `02` | Métadonnées maître | `VALIDE` | Oui | Oui | Revue manuelle et reprise synthétiques validées |
 | `03` | Conversion et harmonisation ACPA | `VALIDE` | Oui | Oui | Double sortie PLINK et smoke réel validés |
 | `04` | Variant cible | `VALIDE` | Oui | Oui | Injection explicite et smoke PLINK réel validés |
@@ -637,10 +648,10 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 
 ## Problèmes connus
 
-1. Les allèles génomiques REF/ALT de la mutation DOCK6 doivent être confirmés
-   sur le brin de référence GRCh38 ; la notation HGVS du transcrit ne suffit pas.
-2. Les génotypes individuels réels de la mutation restent à renseigner. Les
-   règles de groupe d'exemple créent au moins une incompatibilité mendélienne.
+1. La carte génétique GRCh38 du chromosome 19 reste à fournir et à sourcer avant
+   l'étape `11` ; elle n'est pas nécessaire au run limité aux étapes `00–02`.
+2. Le premier run réel est bloqué sur l'ancienne tentative de l'étape `01` ; un
+   nouveau run contrôlé doit confirmer les 80 exports avec le parseur corrigé.
 3. `run_pipeline.py` utilise encore des chemins fixes dans
    `data/input/complex_simulation/` et ouvre automatiquement le rapport HTML.
 4. L'interface Streamlit écrit `user_input.ped/map`, tandis que le pipeline lit
@@ -666,19 +677,13 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 
 ## Priorités de la prochaine session
 
-1. Définir puis implémenter l'étape `19` de rapport et revue finale à partir des
-   audits et de l'index des figures, sans relancer les calculs scientifiques.
-2. Préparer la table maître réelle et son approbation humaine sans déduire les
-   génotypes cibles du statut clinique ou du groupe.
-3. Préparer les revues réelles `kinship_exclusion_approval` et
-   `population_structure_exclusion_approval` sur un premier run, puis les lier
-   par SHA-256 dans la configuration d'un nouveau run destiné au gel.
-4. Intégrer les 66 témoins réels dans le QC genome-wide, KING, la structure et le
-   gel des cohortes avant toute analyse locale.
-5. Confirmer les données moléculaires et génotypes individuels du variant DOCK6,
-   puis valider son intégration et Mendel sur le jeu chromosome 19 définitif.
-6. Valider ensuite la datation avec des jeux synthétiques de référence avant
-   toute analyse réelle.
+1. Relancer un nouveau run réel limité aux étapes `00–02` avec
+   `phase01_registry.yaml`, puis contrôler les audits agrégés de l'étape `01`.
+2. Examiner `sample_registry_review.tsv` et ne créer l'approbation humaine du
+   registre qu'après validation des 80 correspondances.
+3. Préparer ensuite une configuration `00–08` approuvée pour conversion, QC,
+   KING et PCA, sans appliquer automatiquement leurs propositions d'exclusion.
+4. Fournir et valider une carte génétique GRCh38 sourcée avant l'étape `11`.
 
 ## Décisions à conserver
 
@@ -720,4 +725,5 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action de développement attendue est de définir l'étape `19` sans analyse réelle.
+action est de relancer le run réel limité à `00–02`, puis d'examiner l'audit de
+validation des sources sans poursuivre automatiquement vers la conversion.

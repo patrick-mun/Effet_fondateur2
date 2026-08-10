@@ -123,8 +123,16 @@ def _read_metadata_and_table(
             raise SourceValidationError("missing_header")
 
         reader = csv.DictReader(chain([header_line], source_file), delimiter="\t")
-        raw_fieldnames = reader.fieldnames or []
+        raw_fieldnames = list(reader.fieldnames or [])
+        # Les exports ChAS réels peuvent terminer leur ligne d'en-tête par une
+        # tabulation, sans ajouter de cellule aux lignes de données. Cette
+        # colonne anonyme terminale est un détail de sérialisation, pas une
+        # donnée scientifique. Les colonnes anonymes internes restent refusées.
+        while raw_fieldnames and not raw_fieldnames[-1].strip():
+            raw_fieldnames.pop()
         fieldnames = [field.strip() for field in raw_fieldnames]
+        if any(not field for field in fieldnames):
+            raise SourceValidationError("empty_column_name")
         if len(fieldnames) != len(set(fieldnames)):
             raise SourceValidationError("duplicate_columns")
         reader.fieldnames = fieldnames
