@@ -60,6 +60,8 @@ elif "--bmerge" in sys.argv:
     has_ambiguous_sex_phenotype = any(row[4] == "0" and row[5] not in {{"-9", "0", "NA"}} for row in base_fam_rows)
     if has_ambiguous_sex_phenotype and "--allow-no-sex" not in sys.argv:
         raise SystemExit(10)
+    if "--indiv-sort" not in sys.argv or sys.argv[sys.argv.index("--indiv-sort") + 1] not in {{"none", "0"}}:
+        raise SystemExit(11)
     merge_bed = pathlib.Path(sys.argv[sys.argv.index("--bmerge") + 1])
     merge_bim = pathlib.Path(sys.argv[sys.argv.index("--bmerge") + 2])
     shutil.copyfile(base_prefix.with_suffix(".fam"), output_prefix.with_suffix(".fam"))
@@ -88,15 +90,21 @@ def write_acpa_source(path: Path) -> None:
     path.write_text(ACPA_HEADER + "\n".join(rows) + "\n", encoding="utf-8")
 
 
-def write_samples_metadata(path: Path, *, sample_2_sex: str = "FEMALE") -> None:
-    path.write_text(
-        SAMPLES_HEADER
-        + "sample_1\tsample_1.txt\tFAM1\tI1\t0\t0\tMALE\tAFFECTED\tFAMILY\t"
-        "A/G\tlaboratory_report\tbatch_1\ttrue\ttrue\t\n"
-        + f"sample_2\tsample_2.txt\tFAM2\tI2\t0\t0\t{sample_2_sex}\tUNAFFECTED\tFAMILY\t"
+def write_samples_metadata(
+    path: Path,
+    *,
+    sample_2_sex: str = "FEMALE",
+    reverse_sample_order: bool = False,
+) -> None:
+    rows = [
+        "sample_1\tsample_1.txt\tFAM1\tI1\t0\t0\tMALE\tAFFECTED\tFAMILY\t"
+        "A/G\tlaboratory_report\tbatch_1\ttrue\ttrue\t\n",
+        f"sample_2\tsample_2.txt\tFAM2\tI2\t0\t0\t{sample_2_sex}\tUNAFFECTED\tFAMILY\t"
         "\t\tbatch_1\ttrue\ttrue\t\n",
-        encoding="utf-8",
-    )
+    ]
+    if reverse_sample_order:
+        rows.reverse()
+    path.write_text(SAMPLES_HEADER + "".join(rows), encoding="utf-8")
 
 
 def write_variant_metadata(path: Path, *, position_bp: int = 100000) -> None:
@@ -153,12 +161,17 @@ def prepare_inputs(
     fail_merge: bool = False,
     mendel_error: bool = False,
     sample_2_sex: str = "FEMALE",
+    reverse_sample_order: bool = False,
 ) -> tuple[Path, Path]:
     source_dir = tmp_path / "sources"
     write_acpa_source(source_dir / "sample_1.txt")
     write_acpa_source(source_dir / "sample_2.txt")
     samples_path = tmp_path / "samples.tsv"
-    write_samples_metadata(samples_path, sample_2_sex=sample_2_sex)
+    write_samples_metadata(
+        samples_path,
+        sample_2_sex=sample_2_sex,
+        reverse_sample_order=reverse_sample_order,
+    )
     variant_path = tmp_path / "variant.yaml"
     write_variant_metadata(variant_path, position_bp=metadata_position_bp)
     genotypes_path = tmp_path / "genotypes.tsv"
@@ -252,7 +265,11 @@ def test_target_variant_dataset_is_published_without_modifying_base(
 def test_target_variant_merge_allows_unknown_sex_with_phenotype(
     tmp_path: Path,
 ) -> None:
-    config_path, runs_dir = prepare_inputs(tmp_path, sample_2_sex="UNKNOWN")
+    config_path, runs_dir = prepare_inputs(
+        tmp_path,
+        sample_2_sex="UNKNOWN",
+        reverse_sample_order=True,
+    )
 
     run_dir = run_pipeline(config_path, runs_dir)
 
@@ -268,7 +285,11 @@ def test_target_variant_smoke_with_real_plink_and_unknown_sex(
     plink_path = shutil.which("plink")
     if plink_path is None:
         pytest.skip("PLINK réel indisponible")
-    config_path, runs_dir = prepare_inputs(tmp_path, sample_2_sex="UNKNOWN")
+    config_path, runs_dir = prepare_inputs(
+        tmp_path,
+        sample_2_sex="UNKNOWN",
+        reverse_sample_order=True,
+    )
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     config["tools"]["plink"] = plink_path
     config_path.write_text(

@@ -562,9 +562,12 @@ Dernière mise à jour : 10 août 2026
   temporaire de 80 individus et 2 726 variants, puis PLINK a bloqué la
   finalisation car 69 sexes inconnus possèdent un phénotype. La fusion utilise
   désormais explicitement `--allow-no-sex`, sans inférer ni modifier le sexe.
-  Une régression avec sexe inconnu et un smoke test synthétique avec PLINK réel
-  couvrent ce comportement. Validation : 8 tests ciblés et 193 tests modernes
-  réussis ; le contrôle mendélien réel n'a pas encore été exécuté.
+  La seconde tentative a révélé le tri naturel appliqué par défaut aux merges ;
+  `--indiv-sort none` préserve désormais l'ordre validé du registre. Une
+  régression avec sexe inconnu et un smoke test PLINK réel dont l'ordre initial
+  est volontairement non trié couvrent les deux comportements. Validation : 8
+  tests ciblés et 193 tests modernes réussis ; le contrôle mendélien réel n'a
+  pas encore été exécuté.
 
 ## Suivi des étapes du pipeline V2
 
@@ -662,8 +665,9 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 1. La carte génétique GRCh38 du chromosome 19 reste à fournir et à sourcer avant
    l'étape `11` ; elle n'est pas nécessaire au run limité aux étapes `00–02`.
 2. Le run réel `2026-08-10T103912Z_dock6_reunion_founder_effect_810e49ba` est
-   `BLOCKED` sur l'ancienne tentative de `04` sans `--allow-no-sex` ; il est
-   destiné à être repris après validation du correctif PLINK.
+   `BLOCKED` après deux anciennes tentatives de `04`, sans `--allow-no-sex`
+   puis avec le tri naturel PLINK ; il est destiné à être repris après
+   validation du correctif complet.
 3. `run_pipeline.py` utilise encore des chemins fixes dans
    `data/input/complex_simulation/` et ouvre automatiquement le rapport HTML.
 4. L'interface Streamlit écrit `user_input.ped/map`, tandis que le pipeline lit
