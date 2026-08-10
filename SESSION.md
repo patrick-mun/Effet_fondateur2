@@ -546,14 +546,16 @@ Dernière mise à jour : 10 août 2026
 - Préparation réelle DOCK6 engagée sans calcul scientifique : 80 exports ChAS
   uniques (11 familiaux, 69 témoins), registre et génotypes Sanger explicites
   complets, variant `GRCh38 chr19:11237780 C>A` validé et configuration
-  `phase01_registry.yaml` limitée aux étapes `00–02`. Le premier run réel a
-  correctement publié `00`, puis `01` a bloqué avant conversion parce que les
-  en-têtes ChAS réels possèdent une tabulation terminale. Le parseur accepte
-  désormais uniquement les colonnes anonymes terminales, continue de refuser
-  les colonnes anonymes internes et dispose d'un test synthétique de
-  régression. Validation : 6 tests ciblés et 190 tests modernes réussis ; les
-  données réelles n'ont pas été utilisées comme fixtures et le run échoué est
-  conservé pour audit.
+  `phase01_registry.yaml` limitée aux étapes `00–02`. Le run approuvé
+  `2026-08-10T095408Z_dock6_reunion_founder_effect_5ba8cde6` est
+  `TECHNICALLY_VALID`, avec 80 correspondances et génotypes enregistrés. Le
+  premier essai `00–03` a ensuite bloqué avant PLINK : le convertisseur ne
+  normalisait pas encore la tabulation terminale des en-têtes ChAS déjà prise
+  en charge par `01`. Le parseur de `03` retire désormais uniquement les
+  colonnes anonymes terminales, refuse les colonnes anonymes internes et les
+  doublons, et dispose d'une régression synthétique. Validation : 8 tests
+  ciblés et 191 tests modernes réussis ; aucune donnée réelle n'est utilisée
+  comme fixture et le run échoué reste conservé pour audit et reprise.
 
 ## Suivi des étapes du pipeline V2
 
@@ -650,8 +652,9 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 
 1. La carte génétique GRCh38 du chromosome 19 reste à fournir et à sourcer avant
    l'étape `11` ; elle n'est pas nécessaire au run limité aux étapes `00–02`.
-2. Le premier run réel est bloqué sur l'ancienne tentative de l'étape `01` ; un
-   nouveau run contrôlé doit confirmer les 80 exports avec le parseur corrigé.
+2. Le run réel `2026-08-10T100108Z_dock6_reunion_founder_effect_0a03887c` est
+   `BLOCKED` sur l'ancienne tentative de `03` avec `malformed_acpa_row` ; il est
+   destiné à être repris après validation du correctif du convertisseur.
 3. `run_pipeline.py` utilise encore des chemins fixes dans
    `data/input/complex_simulation/` et ouvre automatiquement le rapport HTML.
 4. L'interface Streamlit écrit `user_input.ped/map`, tandis que le pipeline lit
@@ -677,12 +680,12 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 
 ## Priorités de la prochaine session
 
-1. Relancer un nouveau run réel limité aux étapes `00–02` avec
-   `phase01_registry.yaml`, puis contrôler les audits agrégés de l'étape `01`.
-2. Examiner `sample_registry_review.tsv` et ne créer l'approbation humaine du
-   registre qu'après validation des 80 correspondances.
-3. Préparer ensuite une configuration `00–08` approuvée pour conversion, QC,
-   KING et PCA, sans appliquer automatiquement leurs propositions d'exclusion.
+1. Reprendre le run réel bloqué avec `effet-fondateur resume --run-dir` afin de
+   réexécuter `03` sans relancer un nouveau run complet.
+2. Contrôler l'audit de conversion, les effectifs, marqueurs communs, sorties
+   PLINK et empreintes avant d'activer `04`.
+3. Préparer ensuite progressivement les étapes `04–08`, sans appliquer
+   automatiquement les propositions d'exclusion de KING ou de la PCA.
 4. Fournir et valider une carte génétique GRCh38 sourcée avant l'étape `11`.
 
 ## Décisions à conserver
@@ -725,5 +728,5 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action est de relancer le run réel limité à `00–02`, puis d'examiner l'audit de
-validation des sources sans poursuivre automatiquement vers la conversion.
+action est de reprendre le run réel bloqué sur `03`, puis d'examiner l'audit de
+conversion avant toute activation de l'étape `04`.

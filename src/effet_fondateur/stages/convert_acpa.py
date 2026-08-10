@@ -129,6 +129,22 @@ def _parse_genotype(value: str) -> tuple[str, str]:
     return genotype[0], genotype[1]
 
 
+def _normalize_acpa_fieldnames(raw_fieldnames: Sequence[str]) -> list[str]:
+    """Normalise l'en-tête ChAS sans accepter de colonne anonyme interne."""
+    fieldnames = list(raw_fieldnames)
+    # Certains exports ChAS ajoutent une tabulation terminale à l'en-tête,
+    # sans cellule correspondante dans les lignes de données. Elle ne porte
+    # aucune information scientifique et peut être retirée sans ambiguïté.
+    while fieldnames and not fieldnames[-1].strip():
+        fieldnames.pop()
+    normalized = [field.strip() for field in fieldnames]
+    if any(not field for field in normalized):
+        raise AcpaConversionError("empty_acpa_column_name")
+    if len(normalized) != len(set(normalized)):
+        raise AcpaConversionError("duplicate_acpa_columns")
+    return normalized
+
+
 def _read_source_to_spool(
     source_path: Path,
     spool_path: Path,
@@ -161,7 +177,7 @@ def _read_source_to_spool(
             raise AcpaConversionError("incompatible_acpa_assembly")
 
         reader = csv.DictReader(chain([header_line], source_file), delimiter="\t")
-        fieldnames = [field.strip() for field in (reader.fieldnames or [])]
+        fieldnames = _normalize_acpa_fieldnames(reader.fieldnames or [])
         reader.fieldnames = fieldnames
         if REQUIRED_ACPA_COLUMNS - set(fieldnames):
             raise AcpaConversionError("missing_acpa_columns")

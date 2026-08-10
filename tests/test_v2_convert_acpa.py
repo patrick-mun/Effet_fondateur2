@@ -76,9 +76,17 @@ def acpa_rows(
     return rows
 
 
-def write_acpa_source(path: Path, rows: list[str]) -> None:
+def write_acpa_source(
+    path: Path,
+    rows: list[str],
+    *,
+    trailing_empty_header: bool = False,
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(ACPA_HEADER + "\n".join(rows) + "\n", encoding="utf-8")
+    header = ACPA_HEADER
+    if trailing_empty_header:
+        header = header.replace("Chromosomal Position\n", "Chromosomal Position\t\n")
+    path.write_text(header + "\n".join(rows) + "\n", encoding="utf-8")
 
 
 def write_samples_metadata(path: Path) -> None:
@@ -141,10 +149,19 @@ def prepare_inputs(
     marker_mode: str = "intersection",
     approved: bool = True,
     plink_fails: bool = False,
+    trailing_empty_header: bool = False,
 ) -> tuple[Path, Path]:
     source_dir = tmp_path / "sources"
-    write_acpa_source(source_dir / "sample_1.txt", sample_1_rows or acpa_rows())
-    write_acpa_source(source_dir / "sample_2.txt", sample_2_rows or acpa_rows())
+    write_acpa_source(
+        source_dir / "sample_1.txt",
+        sample_1_rows or acpa_rows(),
+        trailing_empty_header=trailing_empty_header,
+    )
+    write_acpa_source(
+        source_dir / "sample_2.txt",
+        sample_2_rows or acpa_rows(),
+        trailing_empty_header=trailing_empty_header,
+    )
     metadata_path = tmp_path / "samples.master.input.tsv"
     write_samples_metadata(metadata_path)
     plink_path = tmp_path / "fake_plink"
@@ -184,6 +201,19 @@ def test_convert_acpa_publishes_two_aligned_plink_datasets(tmp_path: Path) -> No
     )
     assert report["source_read_counts"] == {"sample_1.txt": 1, "sample_2.txt": 1}
     assert read_manifest(run_dir)["global_status"] == "TECHNICALLY_VALID"
+
+
+def test_convert_acpa_accepts_chas_trailing_empty_header(tmp_path: Path) -> None:
+    config_path, runs_dir = prepare_inputs(tmp_path, trailing_empty_header=True)
+
+    run_dir = run_pipeline(config_path, runs_dir)
+
+    stage_dir = run_dir / "stages" / "03_convert_acpa"
+    report = json.loads(
+        (stage_dir / "acpa_conversion_report.json").read_text(encoding="utf-8")
+    )
+    assert report["source_read_counts"] == {"sample_1.txt": 1, "sample_2.txt": 1}
+    assert read_manifest(run_dir)["stages"][-1]["state"] == "SUCCEEDED"
 
 
 def test_union_keeps_marker_missing_from_one_sample(tmp_path: Path) -> None:
