@@ -1,5 +1,6 @@
 import csv
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -55,6 +56,10 @@ elif "--bmerge" in sys.argv:
     if {fail_merge!r}:
         raise SystemExit(8)
     base_prefix = pathlib.Path(sys.argv[sys.argv.index("--bfile") + 1])
+    base_fam_rows = [line.split() for line in base_prefix.with_suffix(".fam").read_text().splitlines() if line]
+    has_ambiguous_sex_phenotype = any(row[4] == "0" and row[5] not in {{"-9", "0", "NA"}} for row in base_fam_rows)
+    if has_ambiguous_sex_phenotype and "--allow-no-sex" not in sys.argv:
+        raise SystemExit(10)
     merge_bed = pathlib.Path(sys.argv[sys.argv.index("--bmerge") + 1])
     merge_bim = pathlib.Path(sys.argv[sys.argv.index("--bmerge") + 2])
     shutil.copyfile(base_prefix.with_suffix(".fam"), output_prefix.with_suffix(".fam"))
@@ -83,12 +88,12 @@ def write_acpa_source(path: Path) -> None:
     path.write_text(ACPA_HEADER + "\n".join(rows) + "\n", encoding="utf-8")
 
 
-def write_samples_metadata(path: Path) -> None:
+def write_samples_metadata(path: Path, *, sample_2_sex: str = "FEMALE") -> None:
     path.write_text(
         SAMPLES_HEADER
         + "sample_1\tsample_1.txt\tFAM1\tI1\t0\t0\tMALE\tAFFECTED\tFAMILY\t"
         "A/G\tlaboratory_report\tbatch_1\ttrue\ttrue\t\n"
-        + "sample_2\tsample_2.txt\tFAM2\tI2\t0\t0\tFEMALE\tUNAFFECTED\tFAMILY\t"
+        + f"sample_2\tsample_2.txt\tFAM2\tI2\t0\t0\t{sample_2_sex}\tUNAFFECTED\tFAMILY\t"
         "\t\tbatch_1\ttrue\ttrue\t\n",
         encoding="utf-8",
     )
@@ -147,12 +152,13 @@ def prepare_inputs(
     metadata_position_bp: int = 100000,
     fail_merge: bool = False,
     mendel_error: bool = False,
+    sample_2_sex: str = "FEMALE",
 ) -> tuple[Path, Path]:
     source_dir = tmp_path / "sources"
     write_acpa_source(source_dir / "sample_1.txt")
     write_acpa_source(source_dir / "sample_2.txt")
     samples_path = tmp_path / "samples.tsv"
-    write_samples_metadata(samples_path)
+    write_samples_metadata(samples_path, sample_2_sex=sample_2_sex)
     variant_path = tmp_path / "variant.yaml"
     write_variant_metadata(variant_path, position_bp=metadata_position_bp)
     genotypes_path = tmp_path / "genotypes.tsv"
@@ -241,6 +247,45 @@ def test_target_variant_dataset_is_published_without_modifying_base(
         audit_rows = list(csv.DictReader(file, delimiter="\t"))
     assert [row["SAMPLE_ID"] for row in audit_rows] == ["sample_1", "sample_2"]
     assert report["mendel_status"] == "NOT_APPLICABLE"
+
+
+def test_target_variant_merge_allows_unknown_sex_with_phenotype(
+    tmp_path: Path,
+) -> None:
+    config_path, runs_dir = prepare_inputs(tmp_path, sample_2_sex="UNKNOWN")
+
+    run_dir = run_pipeline(config_path, runs_dir)
+
+    stage_dir = run_dir / "stages" / "04_prepare_target_variant_dataset"
+    assert (stage_dir / "target_variant.bed").is_file()
+    manifest = json.loads((run_dir / "manifest.json").read_text())
+    assert manifest["stages"][-1]["state"] == "SUCCEEDED"
+
+
+def test_target_variant_smoke_with_real_plink_and_unknown_sex(
+    tmp_path: Path,
+) -> None:
+    plink_path = shutil.which("plink")
+    if plink_path is None:
+        pytest.skip("PLINK réel indisponible")
+    config_path, runs_dir = prepare_inputs(tmp_path, sample_2_sex="UNKNOWN")
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    config["tools"]["plink"] = plink_path
+    config_path.write_text(
+        yaml.safe_dump(config, allow_unicode=True, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    run_dir = run_pipeline(config_path, runs_dir)
+
+    stage_dir = run_dir / "stages" / "04_prepare_target_variant_dataset"
+    report = json.loads(
+        (stage_dir / "target_variant_injection_report.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert report["sample_count"] == 2
+    assert report["variant_count_after"] == 2
 
 
 def test_missing_individual_genotype_blocks_stage(tmp_path: Path) -> None:

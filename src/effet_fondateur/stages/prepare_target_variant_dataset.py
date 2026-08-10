@@ -585,6 +585,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             str(single_prefix.with_suffix(".bed")),
             str(single_prefix.with_suffix(".bim")),
             str(single_prefix.with_suffix(".fam")),
+            "--allow-no-sex",
             "--make-bed",
             "--out",
             str(enriched_prefix),

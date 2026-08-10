@@ -556,6 +556,15 @@ Dernière mise à jour : 10 août 2026
   doublons, et dispose d'une régression synthétique. Validation : 8 tests
   ciblés et 191 tests modernes réussis ; aucune donnée réelle n'est utilisée
   comme fixture et le run échoué reste conservé pour audit et reprise.
+- Le run réel `00–04`
+  `2026-08-10T103912Z_dock6_reunion_founder_effect_810e49ba` a validé les
+  étapes `00–03`, créé le variant monomarque complet et préparé une fusion
+  temporaire de 80 individus et 2 726 variants, puis PLINK a bloqué la
+  finalisation car 69 sexes inconnus possèdent un phénotype. La fusion utilise
+  désormais explicitement `--allow-no-sex`, sans inférer ni modifier le sexe.
+  Une régression avec sexe inconnu et un smoke test synthétique avec PLINK réel
+  couvrent ce comportement. Validation : 8 tests ciblés et 193 tests modernes
+  réussis ; le contrôle mendélien réel n'a pas encore été exécuté.
 
 ## Suivi des étapes du pipeline V2
 
@@ -652,9 +661,9 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 
 1. La carte génétique GRCh38 du chromosome 19 reste à fournir et à sourcer avant
    l'étape `11` ; elle n'est pas nécessaire au run limité aux étapes `00–02`.
-2. Le run réel `2026-08-10T100108Z_dock6_reunion_founder_effect_0a03887c` est
-   `BLOCKED` sur l'ancienne tentative de `03` avec `malformed_acpa_row` ; il est
-   destiné à être repris après validation du correctif du convertisseur.
+2. Le run réel `2026-08-10T103912Z_dock6_reunion_founder_effect_810e49ba` est
+   `BLOCKED` sur l'ancienne tentative de `04` sans `--allow-no-sex` ; il est
+   destiné à être repris après validation du correctif PLINK.
 3. `run_pipeline.py` utilise encore des chemins fixes dans
    `data/input/complex_simulation/` et ouvre automatiquement le rapport HTML.
 4. L'interface Streamlit écrit `user_input.ped/map`, tandis que le pipeline lit
@@ -681,10 +690,10 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 ## Priorités de la prochaine session
 
 1. Reprendre le run réel bloqué avec `effet-fondateur resume --run-dir` afin de
-   réexécuter `03` sans relancer un nouveau run complet.
-2. Contrôler l'audit de conversion, les effectifs, marqueurs communs, sorties
-   PLINK et empreintes avant d'activer `04`.
-3. Préparer ensuite progressivement les étapes `04–08`, sans appliquer
+   réexécuter `04` sans relancer un nouveau run complet.
+2. Contrôler l'injection du variant, les 2 726 variants attendus, le contrôle
+   mendélien, les effectifs et les empreintes avant d'activer `05`.
+3. Préparer ensuite progressivement les étapes `05–08`, sans appliquer
    automatiquement les propositions d'exclusion de KING ou de la PCA.
 4. Fournir et valider une carte génétique GRCh38 sourcée avant l'étape `11`.
 
@@ -728,5 +737,5 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action est de reprendre le run réel bloqué sur `03`, puis d'examiner l'audit de
-conversion avant toute activation de l'étape `04`.
+action est de reprendre le run réel bloqué sur `04`, puis d'examiner l'audit du
+variant cible avant toute activation de l'étape `05`.
