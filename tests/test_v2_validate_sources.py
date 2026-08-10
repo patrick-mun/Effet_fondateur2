@@ -18,11 +18,18 @@ ACPA_HEADER = (
 )
 
 
-def write_acpa_source(path: Path, *, missing_column: bool = False) -> None:
+def write_acpa_source(
+    path: Path,
+    *,
+    missing_column: bool = False,
+    trailing_empty_header: bool = False,
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     header = ACPA_HEADER
     if missing_column:
         header = header.replace("\tdbSNP RS ID", "")
+    if trailing_empty_header:
+        header = header.replace("Chromosomal Position\n", "Chromosomal Position\t\n")
     rows = [
         f"probe_{chromosome}\tAA\trs{chromosome}\t{chromosome}\t{chromosome * 100}"
         for chromosome in range(1, 23)
@@ -77,6 +84,28 @@ def test_validate_sources_publishes_inventory_and_qc(tmp_path: Path) -> None:
         "passed_files": 2,
         "failed_checks": 0,
     }
+
+
+def test_validate_sources_accepts_chas_trailing_empty_header(
+    tmp_path: Path,
+) -> None:
+    source_dir = tmp_path / "sources"
+    write_acpa_source(
+        source_dir / "sample.txt",
+        trailing_empty_header=True,
+    )
+    config_path = tmp_path / "config.yaml"
+    write_config(config_path, source_dir, expected_file_count=1)
+
+    run_dir = run_pipeline(config_path, tmp_path / "runs")
+
+    stage_dir = run_dir / "stages" / "01_validate_sources"
+    with (stage_dir / "source_inventory.tsv").open(encoding="utf-8") as input_file:
+        inventory = list(csv.DictReader(input_file, delimiter="\t"))
+    assert len(inventory) == 1
+    assert inventory[0]["STATUS"] == "PASS"
+    audit = json.loads((stage_dir / "audit.json").read_text(encoding="utf-8"))
+    assert audit["counts"]["failed_checks"] == 0
 
 
 def test_validate_sources_blocks_missing_required_column(tmp_path: Path) -> None:
