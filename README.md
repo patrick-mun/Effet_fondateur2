@@ -172,8 +172,11 @@ standard. Le contrat est documenté dans `docs/modules/final_qc.md`.
 variant cible et interpole les positions cM uniquement entre les ancres d'une
 carte génétique correspondant à l'assemblage. Elle interdit l'extrapolation et
 l'approximation `1 Mb = 1 cM`, contrôle l'ordre, les doublons et les allèles,
-puis publie un manifest PLINK neutre pour l'adaptateur de phasage. Le contrat
-est documenté dans `docs/modules/target_region.md`.
+puis publie un manifest PLINK neutre pour l'adaptateur de phasage. La carte peut
+être fournie explicitement ou résolue depuis un catalogue épinglé : dans ce
+second mode, l'archive vérifiée et les 22 autosomes normalisés sont conservés
+sous `data/cache/` et réutilisés par les runs suivants, y compris hors ligne.
+Le contrat est documenté dans `docs/modules/target_region.md`.
 
 La sous-étape `12.0` retient SHAPEIT5 `5.1.1` avec un contrat à deux composants :
 `phase_common` pour le scaffold partagé avec la référence et `phase_rare` pour

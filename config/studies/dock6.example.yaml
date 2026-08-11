@@ -20,6 +20,7 @@ inputs:
   target_variant_metadata: null
   target_variant_genotypes: null
   genetic_map: null
+  genetic_map_catalog: config/references/shapeit4_hapmap_grch38.json
   reference_panel_catalog: config/references/1000g_high_coverage_grch38_phased.json
   sensitivity_scenarios: null
 
@@ -136,6 +137,9 @@ stages:
   prepare_target_region:
     enabled: false
     parameters:
+      genetic_map_id: shapeit4_hapmap_grch38_7a0cab7
+      genetic_map_cache_dir: data/cache/references/genetic_maps
+      genetic_map_cache_offline: false
       window_left_bp: 5000000
       window_right_bp: 5000000
       max_interpolation_gap_bp: 5000000

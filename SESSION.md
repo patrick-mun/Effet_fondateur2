@@ -595,7 +595,7 @@ ses tests, son audit et sa documentation sont cohérents.
 | `08` | Structure populationnelle | `VALIDE` | Oui | Oui | PCA indépendante, projection, outliers et smoke réel validés |
 | `09` | Gel des cohortes | `VALIDE` | Oui | Oui | Génotypes explicites, revues SHA, unités et fichiers keep validés |
 | `10` | QC final | `VALIDE` | Oui | Oui | Trois politiques, exception cible et smoke réel validés |
-| `11` | Région cible | `VALIDE` | Oui | Oui | Carte GRCh38 bornée, cM monotones et smoke réel validés |
+| `11` | Région cible | `VALIDE` | Oui | Oui | Carte GRCh38 bornée ; catalogue/cache public immuable et mode hors ligne validés |
 | `12` | Référence phasée et phasage | `VALIDE` | Oui | Oui | `12.0–12.7` validées, QC final et smoke réel inclus |
 | `13` | Haplotype fondateur et IBD local | `VALIDE` | Oui | Oui | IBS exact centré cible, aucune revendication IBD |
 | `14` | Datation du variant | `VALIDE` | Oui | Oui | Gamma corrélé primaire, seuils petits effectifs |
@@ -669,8 +669,13 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 
 ## Problèmes connus
 
-1. La carte génétique GRCh38 du chromosome 19 reste à fournir et à sourcer avant
-   l'étape `11` ; elle n'est pas nécessaire au run limité aux étapes `00–02`.
+1. La carte GRCh38 est désormais résolue depuis un catalogue SHAPEIT4/HapMap
+   épinglé au commit `7a0cab7`, avec archive SHA-256 vérifiée. Le premier accès
+   conserve l'archive et normalise les 22 autosomes sous `data/cache/` ; les
+   accès ultérieurs vérifient le manifest et réutilisent la carte sans réseau.
+   Le mode catalogue et le mode TSV explicite sont exclusifs et rétrocompatibles.
+   Validation synthétique : tests ciblés réussis, configuration réelle de phase
+   10 valide et suite moderne complète à `199 passed`.
 2. Le run réel `2026-08-10T103912Z_dock6_reunion_founder_effect_810e49ba` est
    `BLOCKED` après deux anciennes tentatives de `04`, sans `--allow-no-sex`
    puis avec le tri naturel PLINK ; il est destiné à être repris après
@@ -700,13 +705,12 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 
 ## Priorités de la prochaine session
 
-1. Reprendre le run réel bloqué avec `effet-fondateur resume --run-dir` afin de
-   réexécuter `04` sans relancer un nouveau run complet.
-2. Contrôler l'injection du variant, les 2 726 variants attendus, le contrôle
-   mendélien, les effectifs et les empreintes avant d'activer `05`.
-3. Préparer ensuite progressivement les étapes `05–08`, sans appliquer
-   automatiquement les propositions d'exclusion de KING ou de la PCA.
-4. Fournir et valider une carte génétique GRCh38 sourcée avant l'étape `11`.
+1. Lancer manuellement `phase10_target_region.yaml`, puis contrôler l'audit de
+   l'étape `11`, la provenance et le statut `POPULATED` ou `HIT` du cache.
+2. Vérifier que le variant cible est dans les bornes de la carte et que toutes
+   les interpolations respectent l'intervalle maximal configuré.
+3. N'activer l'étape `12` qu'après validation de la région, de la carte et des
+   effectifs ; ne pas lancer le phasage automatiquement.
 
 ## Décisions à conserver
 
@@ -748,5 +752,5 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action est de reprendre le run réel bloqué sur `04`, puis d'examiner l'audit du
-variant cible avant toute activation de l'étape `05`.
+action est le lancement manuel de `phase10_target_region.yaml`, suivi du contrôle
+de l'audit de l'étape `11` avant toute activation du phasage.

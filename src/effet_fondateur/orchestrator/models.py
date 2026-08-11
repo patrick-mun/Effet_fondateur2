@@ -16,6 +16,7 @@ class StageDefinition:
     dependencies: tuple[str, ...] = ()
     config_input_directories: tuple[str, ...] = ()
     config_input_files: tuple[str, ...] = ()
+    config_input_file_alternatives: tuple[tuple[str, ...], ...] = ()
     required_artifact_ids: tuple[str, ...] = ()
     manual_decision_id: str | None = None
     blocking_manual_decision_ids: tuple[str, ...] = ()

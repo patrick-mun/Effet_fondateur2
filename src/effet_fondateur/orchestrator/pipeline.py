@@ -198,7 +198,8 @@ PREPARE_TARGET_REGION_STAGE = StageDefinition(
     module="effet_fondateur.stages.prepare_target_region",
     critical=True,
     dependencies=("prepare_target_variant_dataset", "qc_final"),
-    config_input_files=("target_variant_metadata", "genetic_map"),
+    config_input_files=("target_variant_metadata",),
+    config_input_file_alternatives=(("genetic_map", "genetic_map_catalog"),),
     required_artifact_ids=(
         "target_chromosome_all_qc_bed",
         "target_chromosome_all_qc_bim",

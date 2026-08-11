@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0.0",
+  "catalog_id": "shapeit4_public_genetic_maps_v1",
+  "maps": [
+    {
+      "map_id": "shapeit4_hapmap_grch38_7a0cab7",
+      "provider": "SHAPEIT4",
+      "release_id": "git_7a0cab7ea8ce4a90fbadcd93a9f7d168af816f03",
+      "assembly": "GRCh38",
+      "population_scope": "HapMap_combined_as_distributed_by_SHAPEIT4",
+      "method": "provider_supplied_genetic_map",
+      "archive_url": "https://raw.githubusercontent.com/odelaneau/shapeit4/7a0cab7ea8ce4a90fbadcd93a9f7d168af816f03/maps/genetic_maps.b38.tar.gz",
+      "archive_sha256": "04f97acc6524d75e1dbc397e72cf6776b2f1e33f72a06ee477ef69359a97c69e",
+      "member_template": "chr{chromosome}.b38.gmap.gz",
+      "chromosomes": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
+    }
+  ]
+}

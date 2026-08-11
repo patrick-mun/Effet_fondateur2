@@ -992,6 +992,17 @@ et densité locale finale.
 
 **Script cible** : `stages/prepare_target_region.py`.
 
+**Contrat de carte** : l'étape accepte exactement une source entre une carte
+TSV locale explicitement validée et un catalogue public versionné. En mode
+catalogue, l'URL est épinglée à une révision, l'archive est contrôlée par
+SHA-256, conservée dans un cache partagé hors Git, puis les 22 autosomes sont
+normalisés et publiés atomiquement avec un manifest d'empreintes. Un futur run
+sur une autre mutation du même chromosome réutilise la carte normalisée ; un
+run sur un autre autosome réutilise la même archive déjà extraite. Le catalogue
+et son empreinte appartiennent à la signature de l'étape. Toute divergence
+d'archive, de carte, d'assemblage ou de manifest est bloquante ; le mode hors
+ligne interdit un téléchargement implicite.
+
 **Responsabilité** : préparer les données autour du variant cible pour le phasage
 et les analyses locales.
 

@@ -1,6 +1,9 @@
 import csv
+import gzip
 import json
+import shutil
 import sys
+import tarfile
 from pathlib import Path
 
 import pytest
@@ -8,6 +11,8 @@ import yaml
 
 from effet_fondateur.orchestrator import StageExecutionError
 from effet_fondateur.orchestrator.pipeline import run_pipeline
+from effet_fondateur.audit import sha256_file
+from effet_fondateur.references.genetic_maps import ensure_genetic_map_cached, resolve_genetic_map
 from test_v2_qc_final import prepare_final_qc_inputs
 
 
@@ -110,6 +115,49 @@ def prepare_target_region_inputs(
         encoding="utf-8",
     )
     return config_path, runs_dir
+
+
+def test_target_region_uses_prepopulated_catalog_cache_offline(tmp_path: Path) -> None:
+    config_path, runs_dir = prepare_target_region_inputs(tmp_path)
+    archive = tmp_path / "maps.tar.gz"
+    source_dir = tmp_path / "map_sources"
+    source_dir.mkdir()
+    for chromosome in range(1, 23):
+        source = source_dir / f"chr{chromosome}.b38.gmap.gz"
+        with gzip.open(source, "wt", encoding="utf-8") as handle:
+            handle.write(f"pos\tchr\tcM\n1\t{chromosome}\t0\n200000\t{chromosome}\t2\n")
+    with tarfile.open(archive, "w:gz") as bundle:
+        for source in sorted(source_dir.iterdir()):
+            bundle.add(source, arcname=source.name)
+    catalog = tmp_path / "map_catalog.json"
+    catalog.write_text(json.dumps({
+        "schema_version": "1.0.0", "catalog_id": "synthetic_maps",
+        "maps": [{"map_id": "synthetic_cached_map", "provider": "SHAPEIT4",
+                  "release_id": "git_synthetic", "assembly": "GRCh38",
+                  "population_scope": "synthetic", "method": "synthetic",
+                  "archive_url": "https://raw.githubusercontent.com/example/maps/archive.tar.gz",
+                  "archive_sha256": sha256_file(archive),
+                  "member_template": "chr{chromosome}.b38.gmap.gz",
+                  "chromosomes": list(range(1, 23))}]}, sort_keys=True), encoding="utf-8")
+    cache_root = tmp_path / "map_cache"
+    resolved = resolve_genetic_map(catalog, "synthetic_cached_map", "GRCh38")
+    ensure_genetic_map_cached(
+        resolved=resolved, chromosome=19, cache_root=cache_root,
+        downloader=lambda _url, destination, _timeout, _chunk: shutil.copyfile(archive, destination),
+    )
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    config["inputs"]["genetic_map"] = None
+    config["inputs"]["genetic_map_catalog"] = str(catalog)
+    parameters = config["stages"]["prepare_target_region"]["parameters"]
+    parameters.update({"genetic_map_id": "synthetic_cached_map",
+                       "genetic_map_cache_dir": str(cache_root),
+                       "genetic_map_cache_offline": True,
+                       "max_interpolation_gap_bp": 250_000})
+    config_path.write_text(yaml.safe_dump(config, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    run_dir = run_pipeline(config_path, runs_dir)
+    report = json.loads((run_dir / "stages" / "11_prepare_target_region" / "target_region_report.json").read_text(encoding="utf-8"))
+    assert report["map_provenance"]["source_mode"] == "CATALOG_CACHE"
+    assert report["map_provenance"]["cache_status"] == "HIT"
 
 
 def read_tsv(path: Path) -> list[dict[str, str]]:

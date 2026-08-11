@@ -27,6 +27,11 @@ from effet_fondateur.contracts import (
     validate_tsv_table,
 )
 from effet_fondateur.orchestrator.state import utc_now
+from effet_fondateur.references.genetic_maps import (
+    GeneticMapError,
+    ensure_genetic_map_cached,
+    resolve_genetic_map,
+)
 
 
 MAP_COLUMNS = (
@@ -72,7 +77,7 @@ def _positive_integer(parameters: dict[str, Any], name: str, default: int) -> in
     return value
 
 
-def _parameters(parameters: dict[str, Any]) -> dict[str, int]:
+def _parameters(parameters: dict[str, Any]) -> dict[str, Any]:
     resolved = {
         "window_left_bp": _positive_integer(parameters, "window_left_bp", 5_000_000),
         "window_right_bp": _positive_integer(parameters, "window_right_bp", 5_000_000),
@@ -83,10 +88,81 @@ def _parameters(parameters: dict[str, Any]) -> dict[str, int]:
         "plink_timeout_seconds": _positive_integer(
             parameters, "plink_timeout_seconds", 300
         ),
+        "genetic_map_id": parameters.get("genetic_map_id"),
+        "genetic_map_cache_dir": parameters.get(
+            "genetic_map_cache_dir", "data/cache/references/genetic_maps"
+        ),
+        "genetic_map_cache_offline": parameters.get(
+            "genetic_map_cache_offline", False
+        ),
+        "genetic_map_lock_timeout_seconds": _positive_integer(
+            parameters, "genetic_map_lock_timeout_seconds", 60
+        ),
+        "genetic_map_download_timeout_seconds": _positive_integer(
+            parameters, "genetic_map_download_timeout_seconds", 600
+        ),
     }
     if resolved["min_region_variants"] < 2:
         raise TargetRegionInputError("invalid_parameter:min_region_variants")
+    if resolved["genetic_map_id"] is not None and not isinstance(
+        resolved["genetic_map_id"], str
+    ):
+        raise TargetRegionInputError("invalid_parameter:genetic_map_id")
+    if not isinstance(resolved["genetic_map_cache_dir"], str):
+        raise TargetRegionInputError("invalid_parameter:genetic_map_cache_dir")
+    if not isinstance(resolved["genetic_map_cache_offline"], bool):
+        raise TargetRegionInputError("invalid_parameter:genetic_map_cache_offline")
     return resolved
+
+
+def _resolve_map_input(
+    stage_inputs: dict[str, Any],
+    run_dir: Path,
+    parameters: dict[str, Any],
+    assembly: str,
+    chromosome: int,
+) -> tuple[dict[str, Any], Path, dict[str, Any]]:
+    explicit = [
+        artifact
+        for artifact in stage_inputs["artifacts"]
+        if artifact["artifact_id"] == "config_input_genetic_map"
+    ]
+    catalog = [
+        artifact
+        for artifact in stage_inputs["artifacts"]
+        if artifact["artifact_id"] == "config_input_genetic_map_catalog"
+    ]
+    if len(explicit) == 1 and not catalog:
+        path = _validated_artifact_path(explicit[0], run_dir)
+        return explicit[0], path, {
+            "source_mode": "EXPLICIT",
+            "cache_status": "NOT_APPLICABLE",
+        }
+    if len(catalog) != 1 or explicit or not parameters["genetic_map_id"]:
+        raise TargetRegionInputError("genetic_map_input_missing_or_ambiguous")
+    catalog_path = _validated_artifact_path(catalog[0], run_dir)
+    resolved = resolve_genetic_map(
+        catalog_path, parameters["genetic_map_id"], assembly
+    )
+    cached = ensure_genetic_map_cached(
+        resolved=resolved, chromosome=chromosome,
+        cache_root=Path(parameters["genetic_map_cache_dir"]),
+        offline=parameters["genetic_map_cache_offline"],
+        lock_timeout_seconds=parameters["genetic_map_lock_timeout_seconds"],
+        download_timeout_seconds=parameters["genetic_map_download_timeout_seconds"],
+    )
+    provenance = {
+        "source_mode": "CATALOG_CACHE",
+        "cache_status": cached.status,
+        "catalog_sha256": resolved.catalog_sha256,
+        "archive_sha256": cached.archive_sha256,
+        "normalized_map_sha256": cached.map_sha256,
+        "provider": resolved.provider,
+        "release_id": resolved.release_id,
+        "population_scope": resolved.population_scope,
+        "method": resolved.method,
+    }
+    return catalog[0], cached.map_path, provenance
 
 
 def _resolve_input_path(artifact: dict[str, Any], run_dir: Path) -> Path:
@@ -486,7 +562,6 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
     parameters = _parameters(stage_inputs["parameters"])
     artifact_ids = (
         "config_input_target_variant_metadata",
-        "config_input_genetic_map",
         "target_chromosome_all_qc_bed",
         "target_chromosome_all_qc_bim",
         "target_chromosome_all_qc_fam",
@@ -502,6 +577,14 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         for artifact_id, artifact in input_artifacts.items()
     }
     metadata = _load_target_metadata(paths["config_input_target_variant_metadata"])
+    map_artifact, map_path, map_provenance = _resolve_map_input(
+        stage_inputs,
+        run_dir,
+        parameters,
+        metadata["assembly"],
+        metadata["chromosome"],
+    )
+    input_artifacts[map_artifact["artifact_id"]] = map_artifact
     descriptor, source_fam, _ = _validate_source_dataset(paths, input_artifacts)
     if descriptor["assembly"] != metadata["assembly"]:
         raise TargetRegionInputError("target_dataset_assembly_mismatch")
@@ -514,7 +597,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         paths["variant_qc_final"], metadata["project_variant_id"]
     )
     map_id, map_points = _load_genetic_map(
-        paths["config_input_genetic_map"], metadata["assembly"], metadata["chromosome"]
+        map_path, metadata["assembly"], metadata["chromosome"]
     )
     window_start_bp = max(1, metadata["position_bp"] - parameters["window_left_bp"])
     window_end_bp = metadata["position_bp"] + parameters["window_right_bp"]
@@ -610,6 +693,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         ),
         "minimum_position_cm": map_rows[0]["POSITION_CM"],
         "maximum_position_cm": map_rows[-1]["POSITION_CM"],
+        "map_provenance": map_provenance,
     }
     atomic_write_json(report_path, report)
     output_artifacts = _dataset_artifacts(
@@ -700,6 +784,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         },
         "metrics": {
             "map_id": map_id,
+            "map_provenance": map_provenance,
             "window_start_bp": window_start_bp,
             "window_end_bp": window_end_bp,
             "target_variant_order": target_order,
@@ -716,7 +801,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             {"check": "phasing_input_manifest", "status": "PASS"},
         ],
         "known_limits": [
-            "La carte fournie est utilisée telle quelle comme carte de référence ; son origine et sa population doivent être validées scientifiquement en amont.",
+            "La carte publique est une référence externe ; sa population et sa méthode ne représentent pas nécessairement la population étudiée.",
             "Aucune extrapolation hors des ancres de carte et aucune approximation 1 Mb = 1 cM ne sont autorisées.",
             "Le manifest reste indépendant de l'outil tant que l'adaptateur de phasage de l'étape 12 n'est pas choisi.",
         ],
@@ -755,6 +840,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
         return 4
     except (
         TargetRegionInputError,
+        GeneticMapError,
         DocumentValidationError,
         TableValidationError,
         OSError,

@@ -9,9 +9,15 @@ futur adaptateur de phasage.
 
 Cette étape ne phase aucun génotype et ne choisit aucun logiciel de phasage.
 
-## Carte d'entrée
+## Carte d'entrée et cache partagé
 
-`inputs.genetic_map` est un TSV conforme à `schemas/genetic_map.schema.json` :
+Deux modes exclusifs sont acceptés :
+
+- `inputs.genetic_map` fournit directement un TSV validé ;
+- `inputs.genetic_map_catalog` désigne un catalogue versionné, tandis que
+  `genetic_map_id` choisit l'archive publique épinglée.
+
+Le TSV normalisé est conforme à `schemas/genetic_map.schema.json` :
 
 ```text
 MAP_ID  ASSEMBLY  CHROMOSOME  POSITION_BP  POSITION_CM
@@ -22,10 +28,20 @@ projet et fournir au moins deux ancres sur le chromosome cible. Sur ce
 chromosome, les positions en bp doivent être strictement croissantes et les
 positions cumulées en cM monotones.
 
-L'origine, la population de référence et la méthode de construction associées
-au `MAP_ID` doivent être validées avant une analyse scientifique réelle. Le
-pipeline conserve l'identifiant et l'empreinte de la carte, mais ne peut pas en
-évaluer la pertinence biologique.
+En mode catalogue, l'archive est téléchargée sous
+`genetic_map_cache_dir`, contrôlée par SHA-256, extraite dans un dossier
+temporaire puis publiée atomiquement. Les 22 cartes autosomiques sont
+normalisées au premier téléchargement. L'archive d'origine, les cartes et un
+manifest de leurs empreintes restent conservés : une nouvelle mutation du même
+chromosome produit un cache `HIT`, et les autres autosomes sont déjà prêts.
+`genetic_map_cache_offline=true` interdit tout accès réseau et bloque si le
+cache manque. Un verrou empêche deux runs de peupler la même entrée en parallèle.
+
+Le catalogue fait partie de la signature du run. Une incohérence du catalogue,
+de l'assemblage, de l'archive, du manifest ou d'une carte normalisée bloque
+l'étape. Le cache n'est jamais une source génétique du projet et ne contient
+aucun échantillon. L'origine, la population de référence et la méthode restent
+dans l'audit ; le pipeline ne peut pas en évaluer seul la pertinence biologique.
 
 ## Fenêtre et interpolation
 
@@ -46,6 +62,8 @@ Les comportements suivants bloquent l'étape :
 - allèle non A/C/G/T ou allèles identiques ;
 - absence, mauvaise coordonnée ou mauvais couple REF/ALT du variant cible ;
 - moins de `min_region_variants` après extraction.
+- archive ou fichier du cache dont l'empreinte diffère du catalogue/manifest ;
+- archive absente lorsque le mode hors ligne est demandé.
 
 Aucune extrapolation et aucune approximation `1 Mb = 1 cM` ne sont autorisées.
 

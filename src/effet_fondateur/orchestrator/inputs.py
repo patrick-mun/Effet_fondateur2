@@ -175,5 +175,24 @@ def resolve_stage_input_artifacts(
                 assembly=config["project"]["assembly"],
             )
         )
+    for alternatives in definition.config_input_file_alternatives:
+        selected = [
+            key for key in alternatives if config["inputs"].get(key) is not None
+        ]
+        if len(selected) != 1:
+            joined = ", ".join(f"inputs.{key}" for key in alternatives)
+            raise StageExecutionError(
+                f"Une seule entrée de configuration doit être définie parmi : {joined}",
+                2,
+            )
+        input_key = selected[0]
+        artifacts.append(
+            _config_file_artifact(
+                configured_path=config["inputs"][input_key],
+                input_key=input_key,
+                config_sha256=config_sha256,
+                assembly=config["project"]["assembly"],
+            )
+        )
     artifacts.extend(_dependency_artifacts(run_dir, definition))
     return artifacts

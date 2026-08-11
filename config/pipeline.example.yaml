@@ -20,6 +20,7 @@ inputs:
   target_variant_metadata: data/input/target_variant/variant.yaml
   target_variant_genotypes: data/input/target_variant/genotypes.tsv
   genetic_map: data/input/reference/genetic_map.tsv
+  genetic_map_catalog: null
   reference_panel_catalog: config/references/1000g_high_coverage_grch38_phased.json
   sensitivity_scenarios: null
 
