@@ -8,6 +8,7 @@ import yaml
 
 from effet_fondateur.orchestrator import StageExecutionError
 from effet_fondateur.orchestrator.pipeline import run_pipeline
+from effet_fondateur.stages.qc_final import _hwe_by_variant
 from test_v2_freeze_cohorts import prepare_cohort_inputs
 
 
@@ -133,6 +134,13 @@ def prepare_final_qc_inputs(
 def read_tsv(path: Path) -> list[dict[str, str]]:
     with path.open(encoding="utf-8") as input_file:
         return list(csv.DictReader(input_file, delimiter="\t"))
+
+
+@pytest.mark.parametrize("test_label", ["ALL", "ALL(NP)", "ALL(QT)"])
+def test_hwe_parser_accepts_documented_all_sample_labels(test_label: str) -> None:
+    rows = [{"SNP": "probe_1", "TEST": test_label, "P": "0.5"}]
+
+    assert _hwe_by_variant(rows) == {"probe_1": 0.5}
 
 
 def test_final_qc_applies_distinct_cohort_policies(tmp_path: Path) -> None:

@@ -1,6 +1,6 @@
 # Suivi de session
 
-Dernière mise à jour : 10 août 2026
+Dernière mise à jour : 11 août 2026
 
 ## État du dépôt
 
@@ -568,6 +568,13 @@ Dernière mise à jour : 10 août 2026
   est volontairement non trié couvrent les deux comportements. Validation : 8
   tests ciblés et 193 tests modernes réussis ; le contrôle mendélien réel n'a
   pas encore été exécuté.
+- Le nouveau jeu réel corrigé contient 75 échantillons et a progressé jusqu'au
+  gel validé des cohortes de l'étape `09`. La première tentative de `10` a
+  bloqué uniquement parce que PLINK 1.9 étiquette le test HWE sans phénotype
+  `ALL(NP)`, alors que le parseur attendait `ALL`. Le parseur accepte désormais
+  les trois libellés documentés `ALL`, `ALL(NP)` et `ALL(QT)`, sans modifier le
+  calcul ni les seuils HWE. Validation : 9 tests ciblés et 196 tests modernes
+  réussis. Le run bloqué doit être repris, et non recréé, pour réexécuter `10`.
 
 ## Suivi des étapes du pipeline V2
 

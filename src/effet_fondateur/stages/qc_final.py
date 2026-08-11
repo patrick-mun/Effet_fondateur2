@@ -471,7 +471,10 @@ def _batch_rows(
 
 
 def _hwe_by_variant(rows: list[dict[str, str]]) -> dict[str, float | None]:
-    all_rows = [row for row in rows if row.get("TEST") == "ALL"]
+    # PLINK distingue l'absence de phénotype et les phénotypes quantitatifs,
+    # mais ces trois libellés décrivent le même test HWE tous échantillons.
+    all_sample_labels = {"ALL", "ALL(NP)", "ALL(QT)"}
+    all_rows = [row for row in rows if row.get("TEST") in all_sample_labels]
     if not all_rows:
         raise ExternalToolError("hwe_all_rows_missing")
     by_variant: dict[str, float | None] = {}
