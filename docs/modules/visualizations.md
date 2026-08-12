@@ -5,11 +5,13 @@
 L'étape `18_build_visualizations` applique la méthode
 `validated_current_run_figures_v1`. Elle rend des vues de résultats déjà
 calculés ; elle ne recalcule aucune statistique, ne modifie aucun artefact
-scientifique et ne combine jamais IBS, datation, LD, ROH ou sensibilités en un
+scientifique et ne combine jamais IBS, datation, LD, ROH, ascendance de
+référence ou sensibilités en un
 score d'effet fondateur.
 
-La sortie minimale comprend six domaines séparés : `POPULATION_STRUCTURE`,
-`FOUNDER_IBS`, `VARIANT_AGE`, `LOCAL_LD`, `ROH` et `SENSITIVITY`. Une
+La sortie minimale comprend huit domaines séparés : `POPULATION_STRUCTURE`,
+`FOUNDER_IBS`, `VARIANT_AGE`, `LOCAL_LD`, `ROH`,
+`REFERENCE_ANCESTRY_GLOBAL`, `REFERENCE_ANCESTRY_LOCAL` et `SENSITIVITY`. Une
 ressemblance entre leurs figures ne constitue ni une preuve causale, ni une
 preuve IBD, ni une validation croisée implicite.
 
@@ -22,6 +24,8 @@ preuve IBD, ni une validation croisée implicite.
 | Datation | `14` | `variant_age_estimates`, `variant_age_scenarios` |
 | LD | `15` | `local_ld_summary` |
 | ROH | `16` | `roh_cohort_summary` |
+| Ascendance globale | `16A` | `ancestry_scores`, `ancestry_eigenvalues`, `ancestry_population_centroids`, `reference_ancestry_summary` |
+| Ascendance locale | `16A` | les mêmes artefacts, restreints à la portée `LOCAL` |
 | Sensibilités | `17` | `sensitivity_comparisons`, `sensitivity_stability` |
 
 Tous les artefacts sont résolus depuis `stage_inputs.json`. Leur chemin doit
@@ -77,6 +81,11 @@ aucun seuil et ne requalifie pas un résultat exploratoire en résultat primaire
 - `roh.svg` : fardeau genome-wide distinct du chromosome cible, effectifs
   observés/évalués et rappel que l'autozygotie individuelle n'est pas l'IBS/IBD
   inter-individus.
+- `reference_ancestry_global.svg` : centroïdes larges 1000G et individus
+  pseudonymisés projetés, sans attribution ethnique ou généalogique.
+- `reference_ancestry_local.svg` : centroïdes haplotypiques 1000G et copies
+  locales projetées, avec copies porteuses signalées sans prétendre inférer une
+  ascendance locale ni démontrer un IBD.
 - `sensitivity.svg` : primaire explicitement étiqueté et scénarios
   exploratoires distincts pour chaque domaine, non-évaluations visibles, aucun
   score composite.
@@ -89,7 +98,7 @@ les statuts, les valeurs manquantes, les exclusions, les limites, la légende et
 la pseudonymisation. Les figures et leurs provenances sont classées
 `sensitive_genetic` par défaut.
 
-`figure_index.json` référence les six domaines sans dupliquer de données
+`figure_index.json` référence les huit domaines sans dupliquer de données
 individuelles. `visualization_completeness.json` compte les figures rendues,
 non évaluées et bloquées et indique si l'étape 19 peut assembler un rapport
 complet. Ces documents n'autorisent aucune lecture d'un autre run.
@@ -97,7 +106,7 @@ complet. Ces documents n'autorisent aucune lecture d'un autre run.
 ## Rendus de consultation
 
 `visualization_gallery.html` est produit en premier depuis `figure_index.json`.
-Il présente les six domaines dans l'ordre contractuel, affiche chaque statut et
+Il présente les huit domaines dans l'ordre contractuel, affiche chaque statut et
 limite, référence les SVG par chemin relatif et permet d'ouvrir la provenance
 correspondante. Une Content Security Policy interdit toute ressource réseau ;
 le document est marqué `noindex` et reste classé `sensitive_genetic`.

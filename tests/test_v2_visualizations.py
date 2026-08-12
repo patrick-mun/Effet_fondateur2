@@ -17,6 +17,7 @@ SIGNATURES = {
     "estimate_variant_age": "14" * 32,
     "analyze_local_ld": "15" * 32,
     "analyze_roh": "16" * 32,
+    "analyze_reference_ancestry": "a6" * 32,
     "run_sensitivity_analyses": "17" * 32,
 }
 
@@ -61,7 +62,38 @@ def _fixture(run_dir: Path, *, founder_count_mismatch: bool = False, ld_not_eval
     definitions.append(("roh_cohort_summary", "analyze_roh", "roh_cohort_summary.schema.json",
         ["SCOPE", "COHORT_ID", "SAMPLE_COUNT", "EVALUATED_SAMPLE_COUNT", "MEDIAN_N_ROH", "MEDIAN_TOTAL_ROH_KB", "MEDIAN_MAX_ROH_KB", "TARGET_IN_ROH_COUNT", "COHORT_STATUS"],
         [["GENOMEWIDE_BURDEN", "controls_unrelated", 20, 20, 2, 3000, 1800, 0, "DESCRIPTIVE_PRIMARY"], ["TARGET_CHROMOSOME", "target_all", 8, 8, 1, 1600, 1600, 1, "EXPLORATORY_SMALL_N"]]))
-    domains = ["FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH"]
+    ancestry_score_columns = ["ANALYSIS_SCOPE", "ENTITY_TYPE", "ENTITY_ID", "SAMPLE_ID", "HAPLOTYPE", "POPULATION", "SUPERPOPULATION", "TARGET_COPY_STATUS", "REFERENCE_INCLUDED", "PROJECTED", "PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8", "PC9", "PC10"]
+    definitions.append(("ancestry_scores", "analyze_reference_ancestry", "ancestry_scores.schema.json", ancestry_score_columns, [
+        ["GLOBAL", "REFERENCE_INDIVIDUAL", "REF_A", "REF_A", "", "POP_A", "AFR", "REFERENCE_UNKNOWN", "true", "false", -1, 0.2, "", "", "", "", "", "", "", ""],
+        ["GLOBAL", "REFERENCE_INDIVIDUAL", "REF_B", "REF_B", "", "POP_B", "EUR", "REFERENCE_UNKNOWN", "true", "false", 1, -0.2, "", "", "", "", "", "", "", ""],
+        ["GLOBAL", "STUDY_INDIVIDUAL", "PRIVATE_ANCESTRY_A", "PRIVATE_ANCESTRY_A", "", "", "", "NOT_APPLICABLE", "false", "true", 0.1, 0.3, "", "", "", "", "", "", "", ""],
+        ["LOCAL", "REFERENCE_HAPLOTYPE", "REF_A:H1", "REF_A", "H1", "POP_A", "AFR", "REFERENCE_UNKNOWN", "true", "false", -1.1, 0.1, "", "", "", "", "", "", "", ""],
+        ["LOCAL", "REFERENCE_HAPLOTYPE", "REF_A:H2", "REF_A", "H2", "POP_A", "AFR", "REFERENCE_UNKNOWN", "true", "false", -0.9, 0.3, "", "", "", "", "", "", "", ""],
+        ["LOCAL", "REFERENCE_HAPLOTYPE", "REF_B:H1", "REF_B", "H1", "POP_B", "EUR", "REFERENCE_UNKNOWN", "true", "false", 0.9, -0.3, "", "", "", "", "", "", "", ""],
+        ["LOCAL", "REFERENCE_HAPLOTYPE", "REF_B:H2", "REF_B", "H2", "POP_B", "EUR", "REFERENCE_UNKNOWN", "true", "false", 1.1, -0.1, "", "", "", "", "", "", "", ""],
+        ["LOCAL", "STUDY_HAPLOTYPE", "PRIVATE_ANCESTRY_A:H1", "PRIVATE_ANCESTRY_A", "H1", "", "", "CARRIER_COPY", "false", "true", 0.2, 0.4, "", "", "", "", "", "", "", ""],
+        ["LOCAL", "STUDY_HAPLOTYPE", "PRIVATE_ANCESTRY_A:H2", "PRIVATE_ANCESTRY_A", "H2", "", "", "NON_CARRIER_COPY", "false", "true", -0.2, 0.1, "", "", "", "", "", "", "", ""],
+    ]))
+    definitions.append(("ancestry_eigenvalues", "analyze_reference_ancestry", "ancestry_eigenvalues.schema.json",
+        ["ANALYSIS_SCOPE", "COMPONENT", "EIGENVALUE", "EXPLAINED_VARIANCE_RATIO", "REFERENCE_ENTITY_COUNT", "INFORMATIVE_VARIANT_COUNT"],
+        [["GLOBAL", "PC1", 2, 0.6, 2, 100], ["GLOBAL", "PC2", 1, 0.3, 2, 100], ["LOCAL", "PC1", 2, 0.55, 4, 40], ["LOCAL", "PC2", 1, 0.25, 4, 40]]))
+    centroid_columns = ["ANALYSIS_SCOPE", "GROUP_LEVEL", "GROUP_ID", "REFERENCE_ENTITY_COUNT", "PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8", "PC9", "PC10"]
+    definitions.append(("ancestry_population_centroids", "analyze_reference_ancestry", "ancestry_population_centroids.schema.json", centroid_columns, [
+        ["GLOBAL", "SUPERPOPULATION", "AFR", 1, -1, 0.2, "", "", "", "", "", "", "", ""],
+        ["GLOBAL", "SUPERPOPULATION", "EUR", 1, 1, -0.2, "", "", "", "", "", "", "", ""],
+        ["LOCAL", "SUPERPOPULATION", "AFR", 2, -1, 0.2, "", "", "", "", "", "", "", ""],
+        ["LOCAL", "SUPERPOPULATION", "EUR", 2, 1, -0.2, "", "", "", "", "", "", "", ""],
+    ]))
+    definitions.append(("reference_ancestry_summary", "analyze_reference_ancestry", "reference_ancestry_summary.schema.json", None, {
+        "schema_version": "1.0.0", "method_id": "reference_only_global_local_pca_v1", "assembly": "GRCh38",
+        "target": {"variant_id": "target_v1", "chromosome": 5, "position_bp": 100, "ref": "A", "alt": "G"},
+        "global": {"reference_entity_count": 2, "study_entity_count": 1, "candidate_variant_count": 110, "informative_variant_count": 100, "component_count": 2},
+        "local": {"reference_entity_count": 4, "study_entity_count": 2, "candidate_variant_count": 50, "informative_variant_count": 40, "component_count": 2, "region_start_bp": 50, "region_end_bp": 150},
+        "cache": {"metadata_status": "HIT", "extract_hits": 1, "extract_populated": 0, "offline": True},
+        "interpretation": {"policy": "RELATIVE_REFERENCE_POSITIONING_ONLY", "ethnic_identity_assigned": False, "genealogical_ancestor_identified": False, "local_ancestry_proven": False, "ibd_proven": False},
+        "checks": {"reference_unrelated_only": "PASS", "study_not_used_for_axes": "PASS", "global_local_separated": "PASS", "target_and_region_resolved": "PASS", "cache_integrity": "PASS", "variant_harmonization": "PASS"},
+    }))
+    domains = ["FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY"]
     comparison_columns = ["SCENARIO_ID", "SCENARIO_SIGNATURE", "ROLE", "DESIGN", "CHANGED_FACTOR", "DOMAIN", "EXPECTED", "SOURCE_RUN_ID", "SOURCE_MANIFEST_SHA256", "SOURCE_CONFIG_SHA256", "SOURCE_STAGE_SIGNATURE", "SOURCE_SUMMARY_SHA256", "EVALUATION_STATUS", "TECHNICAL_STATUS", "PRIMARY_TECHNICAL_STATUS", "CATEGORICAL_COMPARISON", "NUMERIC_METRIC", "PRIMARY_NUMERIC_VALUE", "SCENARIO_NUMERIC_VALUE", "RELATIVE_CHANGE", "QUANTITATIVE_CLASSIFICATION"]
     comparison_rows = [["primary", "aa" * 32, "PRIMARY", "BASELINE", "PRIMARY", domain, "true", "primary_run", "bb" * 32, "cc" * 32, "dd" * 32, "ee" * 32, "EVALUATED", "PRIMARY_STATUS", "PRIMARY_STATUS", "PRIMARY", "metric", 1, 1, 0, "PRIMARY"] for domain in domains]
     comparison_rows += [["window_wide", "ab" * 32, "SENSITIVITY", "SINGLE_FACTOR", "LOCAL_WINDOW", domain, "true", "scenario_run", "bc" * 32, "cd" * 32, "de" * 32, "ef" * 32, "EVALUATED", "PRIMARY_STATUS", "PRIMARY_STATUS", "STABLE", "metric", 1, 1.1, 0.1, "NOT_CLASSIFIED"] for domain in domains]
@@ -90,7 +122,7 @@ def _fixture(run_dir: Path, *, founder_count_mismatch: bool = False, ld_not_eval
 
 
 def _producer_controls(run_dir: Path, stage_inputs: dict[str, Any]) -> None:
-    stage_ids = {"analyze_population_structure": "08", "infer_founder_haplotype": "13", "estimate_variant_age": "14", "analyze_local_ld": "15", "analyze_roh": "16", "run_sensitivity_analyses": "17"}
+    stage_ids = {"analyze_population_structure": "08", "infer_founder_haplotype": "13", "estimate_variant_age": "14", "analyze_local_ld": "15", "analyze_roh": "16", "analyze_reference_ancestry": "16A", "run_sensitivity_analyses": "17"}
     records = []
     for producer, stage_id in stage_ids.items():
         artifacts = [item for item in stage_inputs["artifacts"] if item["producer_stage"] == producer]
@@ -106,11 +138,12 @@ def _producer_controls(run_dir: Path, stage_inputs: dict[str, Any]) -> None:
 def test_consolidated_figures_are_separate_pseudonymized_and_non_causal(tmp_path: Path) -> None:
     stage_inputs = _fixture(tmp_path)
     results = build_consolidated_figures(run_dir=tmp_path, output_dir=tmp_path / "rendered", stage_inputs=stage_inputs)
-    assert {result.domain for result in results} == {"POPULATION_STRUCTURE", "FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "SENSITIVITY"}
+    assert {result.domain for result in results} == {"POPULATION_STRUCTURE", "FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY_GLOBAL", "REFERENCE_ANCESTRY_LOCAL", "SENSITIVITY"}
     assert all(result.status == "RENDERED" for result in results)
     combined = "".join(result.figure_path.read_text(encoding="utf-8") for result in results if result.figure_path)
     assert "PRIVATE_SAMPLE" not in combined
     assert "PRIVATE_PCA" not in combined
+    assert "PRIVATE_ANCESTRY" not in combined
     assert "UNIT-001" in combined
     assert "PCA-001" in combined and "Référence indépendante" in combined
     assert "<circle" in combined and "Variance expliquée" in combined
@@ -177,7 +210,7 @@ def test_stage_18_publishes_versioned_index_completeness_and_audit(tmp_path: Pat
     render_manifest = json.loads((output_dir / "visualization_render_manifest.json").read_text(encoding="utf-8"))
     validate_json_document(index, "figure_index.schema.json")
     validate_json_document(render_manifest, "visualization_render_manifest.schema.json")
-    assert completeness == {"schema_version": "1.0.0", "run_id": "synthetic_visual_run", "expected_domain_count": 6, "rendered_count": 6, "not_evaluated_count": 0, "blocked_count": 0, "complete_for_scientific_report": True}
+    assert completeness == {"schema_version": "1.0.0", "run_id": "synthetic_visual_run", "expected_domain_count": 8, "rendered_count": 8, "not_evaluated_count": 0, "blocked_count": 0, "complete_for_scientific_report": True}
     assert audit["metrics"]["composite_founder_score_calculated"] is False
     assert audit["metrics"]["sensitivity"] == "sensitive_genetic"
     assert audit["metrics"]["html_rendered"] is True
@@ -186,7 +219,7 @@ def test_stage_18_publishes_versioned_index_completeness_and_audit(tmp_path: Pat
     assert {"visualization_gallery_html", "visualization_gallery_pdf", "visualization_render_manifest"} <= artifact_ids
     html_document = (output_dir / "visualization_gallery.html").read_text(encoding="utf-8")
     assert html_document.startswith("<!doctype html>")
-    assert html_document.count("<section id=") == 6
+    assert html_document.count("<section id=") == 8
     assert "PRIVATE_SAMPLE" not in html_document and "PRIVATE_PCA" not in html_document
     assert html_document.index("population_structure") < html_document.index("founder_ibs")
     assert (output_dir / "visualization_gallery.pdf").read_bytes().startswith(b"%PDF-")

@@ -262,13 +262,15 @@ chromosome cible. Elle ne redéfinit ni l'IBS fondateur ni la datation, et ne
 calcule `F_ROH` qu'avec un dénominateur autosomique explicite et sourcé. Le
 contrat est documenté dans `docs/modules/roh.md`.
 
-L'étape planifiée `16A_analyze_reference_ancestry` séparera ensuite une PCA
+L'étape `16A_analyze_reference_ancestry` sépare une PCA
 globale de référence d'un positionnement haplotypique local. La branche locale
 est définie autour de la variation cible configurée et de sa région phasée :
 elle n'est liée ni à `DOCK6`, ni au chromosome 19, ni à une coordonnée codée en
-dur. `DOCK6` est uniquement le premier cas d'étude. Les axes seront ajustés sur
-les références 1000 Genomes non apparentées, puis les individus ou haplotypes
-de l'étude seront projetés sans modifier ces axes. Ces résultats resteront des
+dur. `DOCK6` est uniquement le premier cas d'étude. Les axes sont ajustés sur
+les 2 504 références 1000 Genomes non apparentées, puis les individus ou
+haplotypes de l'étude sont projetés sans modifier ces axes. Les extraits par
+chromosome sont mis en cache de façon immuable et vérifiés avant réutilisation.
+Ces résultats restent des
 positionnements relatifs et ne constitueront ni une attribution ethnique ni une
 preuve d'ascendance généalogique ou d'IBD. Le contrat est documenté dans
 `docs/modules/reference_ancestry.md`.
@@ -276,15 +278,16 @@ preuve d'ascendance généalogique ou d'IBD. Le contrat est documenté dans
 L'étape `17_run_sensitivity_analyses` consolide ensuite un run primaire et des
 runs de sensibilité distincts, déclarés dans un registre TSV. Elle vérifie les
 manifestes, configurations, signatures, résumés et ancrages moléculaires avant
-de comparer séparément IBS, datation, LD et ROH. Elle ne relance aucun calcul,
+de comparer séparément IBS, datation, LD, ROH et ascendance de référence. Elle ne relance aucun calcul,
 ne calcule aucun score composite d'effet fondateur et ne classe une variation
 numérique que si une tolérance a été préspécifiée. Copier
 `config/sensitivity/scenarios.example.tsv`, remplacer les chemins, identifiants
 et SHA-256 des manifestes, puis renseigner `inputs.sensitivity_scenarios`. Le
 contrat complet est documenté dans `docs/modules/sensitivity.md`.
 
-L'étape `18_build_visualizations` produit six vues SVG séparées pour la PCA,
-l'IBS, la datation, le LD, les ROH et les sensibilités. Elle consomme uniquement
+L'étape `18_build_visualizations` produit huit vues SVG séparées pour la PCA
+interne, l'IBS, la datation, le LD, les ROH, les positionnements 1000G global
+et local, et les sensibilités. Elle consomme uniquement
 les tables et résumés versionnés des étapes 08 et 13–17 dans le run courant, valide leurs
 empreintes, signatures, schémas, effectifs et unités, puis publie une provenance
 par figure, un index et un contrôle de complétude. Les non-évaluations et petits

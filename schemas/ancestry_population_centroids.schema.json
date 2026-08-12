@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/ancestry_population_centroids.schema.json",
+  "title": "Centroïdes descriptifs des populations 1000 Genomes",
+  "x-tsv": {"schema_version": "1.0.0", "columns": ["ANALYSIS_SCOPE", "GROUP_LEVEL", "GROUP_ID", "REFERENCE_ENTITY_COUNT", "PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8", "PC9", "PC10"], "null_value": "", "primary_key": ["ANALYSIS_SCOPE", "GROUP_LEVEL", "GROUP_ID"], "boolean_values": {}},
+  "$defs": {
+    "decimal": {"oneOf": [{"type": "string", "pattern": "^-?[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$"}, {"type": "null"}]},
+    "row": {"type": "object", "additionalProperties": false, "required": ["ANALYSIS_SCOPE", "GROUP_LEVEL", "GROUP_ID", "REFERENCE_ENTITY_COUNT", "PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8", "PC9", "PC10"], "properties": {
+      "ANALYSIS_SCOPE": {"enum": ["GLOBAL", "LOCAL"]}, "GROUP_LEVEL": {"enum": ["POPULATION", "SUPERPOPULATION"]}, "GROUP_ID": {"type": "string", "minLength": 1}, "REFERENCE_ENTITY_COUNT": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+      "PC1": {"$ref": "#/$defs/decimal"}, "PC2": {"$ref": "#/$defs/decimal"}, "PC3": {"$ref": "#/$defs/decimal"}, "PC4": {"$ref": "#/$defs/decimal"}, "PC5": {"$ref": "#/$defs/decimal"}, "PC6": {"$ref": "#/$defs/decimal"}, "PC7": {"$ref": "#/$defs/decimal"}, "PC8": {"$ref": "#/$defs/decimal"}, "PC9": {"$ref": "#/$defs/decimal"}, "PC10": {"$ref": "#/$defs/decimal"}
+    }}
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/ancestry_eigenvalues.schema.json",
+  "title": "Valeurs propres des PCA de référence",
+  "x-tsv": {"schema_version": "1.0.0", "columns": ["ANALYSIS_SCOPE", "COMPONENT", "EIGENVALUE", "EXPLAINED_VARIANCE_RATIO", "REFERENCE_ENTITY_COUNT", "INFORMATIVE_VARIANT_COUNT"], "null_value": "", "primary_key": ["ANALYSIS_SCOPE", "COMPONENT"], "boolean_values": {}},
+  "$defs": {"row": {"type": "object", "additionalProperties": false, "required": ["ANALYSIS_SCOPE", "COMPONENT", "EIGENVALUE", "EXPLAINED_VARIANCE_RATIO", "REFERENCE_ENTITY_COUNT", "INFORMATIVE_VARIANT_COUNT"], "properties": {
+    "ANALYSIS_SCOPE": {"enum": ["GLOBAL", "LOCAL"]}, "COMPONENT": {"type": "string", "pattern": "^PC(?:[1-9]|10)$"},
+    "EIGENVALUE": {"type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$"}, "EXPLAINED_VARIANCE_RATIO": {"type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$"},
+    "REFERENCE_ENTITY_COUNT": {"type": "string", "pattern": "^[1-9][0-9]*$"}, "INFORMATIVE_VARIANT_COUNT": {"type": "string", "pattern": "^[1-9][0-9]*$"}
+  }}}
+}

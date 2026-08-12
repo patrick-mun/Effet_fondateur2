@@ -322,6 +322,38 @@ ANALYZE_ROH_STAGE = StageDefinition(
     ),
 )
 
+ANALYZE_REFERENCE_ANCESTRY_STAGE = StageDefinition(
+    stage_id="16A",
+    stage_name="analyze_reference_ancestry",
+    module="effet_fondateur.stages.analyze_reference_ancestry",
+    critical=False,
+    dependencies=(
+        "build_sample_registry",
+        "build_kinship_panel",
+        "phase_target_region",
+        "analyze_roh",
+    ),
+    config_input_files=(
+        "target_variant_metadata",
+        "reference_panel_catalog",
+        "ancestry_reference_catalog",
+    ),
+    required_artifact_ids=(
+        "samples_master",
+        "kinship_panel_bed",
+        "kinship_panel_bim",
+        "kinship_panel_fam",
+        "kinship_panel_dataset",
+        "shapeit5_final_bcf",
+        "shapeit5_final_index",
+        "carrier_haplotypes",
+        "harmonized_reference_vcf",
+        "harmonized_reference_index",
+        "reference_harmonization_manifest",
+        "roh_analysis_summary",
+    ),
+)
+
 RUN_SENSITIVITY_ANALYSES_STAGE = StageDefinition(
     stage_id="17",
     stage_name="run_sensitivity_analyses",
@@ -338,13 +370,15 @@ BUILD_VISUALIZATIONS_STAGE = StageDefinition(
     critical=True,
     dependencies=(
         "analyze_population_structure", "infer_founder_haplotype", "estimate_variant_age", "analyze_local_ld",
-        "analyze_roh", "run_sensitivity_analyses",
+        "analyze_roh", "analyze_reference_ancestry", "run_sensitivity_analyses",
     ),
     required_artifact_ids=(
         "population_scores", "population_eigenvalues", "population_outliers",
         "founder_segments", "founder_analysis_summary",
         "variant_age_estimates", "variant_age_scenarios", "local_ld_summary",
-        "roh_cohort_summary", "sensitivity_comparisons", "sensitivity_stability",
+        "roh_cohort_summary", "ancestry_scores", "ancestry_eigenvalues",
+        "ancestry_population_centroids", "reference_ancestry_summary",
+        "sensitivity_comparisons", "sensitivity_stability",
     ),
 )
 
@@ -358,10 +392,12 @@ BUILD_REPORT_STAGE = StageDefinition(
         "kinship_pairs", "kinship_degree_summary", "kinship_report",
         "figure_index", "visualization_completeness", "visualization_render_manifest",
         "figure_population_structure", "figure_founder_ibs", "figure_variant_age",
-        "figure_local_ld", "figure_roh", "figure_sensitivity",
+        "figure_local_ld", "figure_roh", "figure_reference_ancestry_global",
+        "figure_reference_ancestry_local", "figure_sensitivity",
         "figure_provenance_population_structure", "figure_provenance_founder_ibs",
         "figure_provenance_variant_age", "figure_provenance_local_ld",
-        "figure_provenance_roh", "figure_provenance_sensitivity",
+        "figure_provenance_roh", "figure_provenance_reference_ancestry_global",
+        "figure_provenance_reference_ancestry_local", "figure_provenance_sensitivity",
     ),
 )
 
@@ -383,6 +419,7 @@ DEFAULT_STAGE_DEFINITIONS = (
     ESTIMATE_VARIANT_AGE_STAGE,
     ANALYZE_LOCAL_LD_STAGE,
     ANALYZE_ROH_STAGE,
+    ANALYZE_REFERENCE_ANCESTRY_STAGE,
     RUN_SENSITIVITY_ANALYSES_STAGE,
     BUILD_VISUALIZATIONS_STAGE,
     BUILD_REPORT_STAGE,

@@ -1,4 +1,4 @@
-"""Rendu SVG audité des six domaines scientifiques consolidés."""
+"""Rendu SVG audité des huit domaines scientifiques consolidés."""
 
 from __future__ import annotations
 
@@ -146,6 +146,37 @@ def _population_svg(subtitle: str, lines: list[str], footer: str) -> str:
         body.append(f'<text x="55" y="{385 + 24 * index}" font-family="monospace" font-size="13" fill="#334155">{html.escape(summary)}</text>')
     body.append(f'<text x="40" y="625" font-family="sans-serif" font-size="13" fill="#7c2d12">{html.escape(footer)}</text></svg>\n')
     return "".join(body)
+
+
+def _reference_ancestry_svg(
+    title: str, subtitle: str, lines: list[str], footer: str
+) -> str:
+    """Réutilise la grammaire PCA pour un positionnement externe non identitaire."""
+    rendered = _population_svg(subtitle, lines, footer)
+    return (
+        rendered.replace(
+            "Structure populationnelle — PCA exploratoire", title, 1
+        )
+        .replace("Référence indépendante", "Centroïde 1000G", 1)
+        .replace("Individu projeté", "Entité d’étude projetée", 1)
+        .replace("Outlier exploratoire", "Projection (sans attribution)", 1)
+    )
+
+
+def _reference_ancestry_global_svg(
+    subtitle: str, lines: list[str], footer: str
+) -> str:
+    return _reference_ancestry_svg(
+        "Ascendance de référence — PCA globale", subtitle, lines, footer
+    )
+
+
+def _reference_ancestry_local_svg(
+    subtitle: str, lines: list[str], footer: str
+) -> str:
+    return _reference_ancestry_svg(
+        "Ascendance de référence — haplotypes locaux", subtitle, lines, footer
+    )
 
 
 def _chart_header(title: str, subtitle: str) -> list[str]:
@@ -309,6 +340,8 @@ DOMAIN_RENDERERS: dict[str, Callable[[str, list[str], str], str]] = {
     "VARIANT_AGE": _age_svg,
     "LOCAL_LD": _ld_svg,
     "ROH": _roh_svg,
+    "REFERENCE_ANCESTRY_GLOBAL": _reference_ancestry_global_svg,
+    "REFERENCE_ANCESTRY_LOCAL": _reference_ancestry_local_svg,
     "SENSITIVITY": _sensitivity_svg,
 }
 
@@ -420,6 +453,102 @@ def _roh(paths: dict[str, Path]) -> tuple[str, list[str], tuple[int, int, int, i
     return ("NOT_EVALUATED" if not_eval == len(table.rows) else "RENDERED", lines, (len(table.rows), 0, missing, not_eval))
 
 
+def _reference_ancestry(
+    paths: dict[str, Path], scope: str
+) -> tuple[str, list[str], tuple[int, int, int, int]]:
+    """Prépare une vue agrégée sans exposer les identifiants d'étude."""
+    scores = validate_tsv_table(paths["ancestry_scores"], "ancestry_scores.schema.json")
+    eigenvalues = validate_tsv_table(
+        paths["ancestry_eigenvalues"], "ancestry_eigenvalues.schema.json"
+    )
+    centroids = validate_tsv_table(
+        paths["ancestry_population_centroids"],
+        "ancestry_population_centroids.schema.json",
+    )
+    summary = read_json(paths["reference_ancestry_summary"])
+    validate_json_document(summary, "reference_ancestry_summary.schema.json")
+    scope_key = scope.lower()
+    scope_scores = [row for row in scores.rows if row["ANALYSIS_SCOPE"] == scope]
+    scope_eigenvalues = [
+        row for row in eigenvalues.rows if row["ANALYSIS_SCOPE"] == scope
+    ]
+    scope_centroids = [
+        row for row in centroids.rows
+        if row["ANALYSIS_SCOPE"] == scope and row["GROUP_LEVEL"] == "SUPERPOPULATION"
+    ]
+    reference_rows = [row for row in scope_scores if row["REFERENCE_INCLUDED"]]
+    projected_rows = [row for row in scope_scores if row["PROJECTED"]]
+    expected = summary[scope_key]
+    if (
+        len(reference_rows) != expected["reference_entity_count"]
+        or len(projected_rows) != expected["study_entity_count"]
+        or any(int(row["REFERENCE_ENTITY_COUNT"]) != len(reference_rows) for row in scope_eigenvalues)
+        or any(row["PROJECTED"] for row in reference_rows)
+        or any(row["REFERENCE_INCLUDED"] for row in projected_rows)
+    ):
+        raise VisualizationContractError("reference_ancestry_effective_count_mismatch")
+    if not scope_centroids:
+        raise VisualizationContractError("reference_ancestry_centroids_missing")
+    complete_centroids = [
+        row for row in scope_centroids if row["PC1"] is not None and row["PC2"] is not None
+    ]
+    complete_projected = [
+        row for row in projected_rows if row["PC1"] is not None and row["PC2"] is not None
+    ]
+    missing = 2 * (len(scope_centroids) + len(projected_rows)) - sum(
+        row[axis] is not None
+        for row in scope_centroids + projected_rows
+        for axis in ("PC1", "PC2")
+    )
+    lines = [
+        f"EIGEN|{row['COMPONENT']}|{row['EXPLAINED_VARIANCE_RATIO']}"
+        for row in scope_eigenvalues
+    ]
+    lines += [
+        f"POINT|REF-{row['GROUP_ID']}|{row['PC1']}|{row['PC2']}|REFERENCE|INLIER"
+        for row in complete_centroids
+    ]
+    ordered = sorted(complete_projected, key=lambda row: row["ENTITY_ID"])
+    for index, row in enumerate(ordered, 1):
+        prefix = (
+            "CARRIER"
+            if row["TARGET_COPY_STATUS"] == "CARRIER_COPY"
+            else "UNRELIABLE"
+            if row["TARGET_COPY_STATUS"] == "CARRIER_COPY_UNRELIABLE"
+            else "STUDY"
+        )
+        lines.append(
+            f"POINT|{prefix}-{index:03d}|{row['PC1']}|{row['PC2']}|PROJECTED|INLIER"
+        )
+    lines += [
+        f"SUMMARY|références ajustant les axes n={len(reference_rows)}",
+        f"SUMMARY|entités d’étude projetées n={len(projected_rows)}",
+        f"SUMMARY|variants informatifs n={expected['informative_variant_count']}",
+        "SUMMARY|positionnement relatif uniquement; aucune attribution ethnique ou IBD",
+    ]
+    not_evaluated = int(
+        len(scope_eigenvalues) < 2 or not complete_centroids or not complete_projected
+    )
+    represented = len(complete_centroids) + len(complete_projected)
+    return (
+        "NOT_EVALUATED" if not_evaluated else "RENDERED",
+        lines,
+        (represented, 0, missing, not_evaluated),
+    )
+
+
+def _reference_ancestry_global(
+    paths: dict[str, Path]
+) -> tuple[str, list[str], tuple[int, int, int, int]]:
+    return _reference_ancestry(paths, "GLOBAL")
+
+
+def _reference_ancestry_local(
+    paths: dict[str, Path]
+) -> tuple[str, list[str], tuple[int, int, int, int]]:
+    return _reference_ancestry(paths, "LOCAL")
+
+
 def _sensitivity(paths: dict[str, Path]) -> tuple[str, list[str], tuple[int, int, int, int]]:
     comparisons = validate_tsv_table(paths["sensitivity_comparisons"], "sensitivity_comparisons.schema.json")
     stability = validate_tsv_table(paths["sensitivity_stability"], "sensitivity_stability.schema.json")
@@ -447,12 +576,14 @@ DOMAIN_SPECS: tuple[tuple[str, str, dict[str, tuple[str, str]], Callable[[dict[s
     ("variant_age", "VARIANT_AGE", {"variant_age_estimates": ("estimate_variant_age", "variant_age_estimates.schema.json"), "variant_age_scenarios": ("estimate_variant_age", "variant_age_scenarios.schema.json")}, _age, ["Gamma conditionne sur une origine unique non démontrée par la figure."], ["Les petits effectifs et l'incertitude de phase/carte limitent l'estimation."]),
     ("local_ld", "LOCAL_LD", {"local_ld_summary": ("analyze_local_ld", "local_ld_summary.schema.json")}, _ld, ["LD descriptif secondaire ; aucune preuve d'origine fondatrice."], ["r2 et D-prime restent distincts et sensibles aux effectifs/fréquences."]),
     ("roh", "ROH", {"roh_cohort_summary": ("analyze_roh", "roh_cohort_summary.schema.json")}, _roh, ["Autozygotie individuelle distincte de l'IBS/IBD entre individus."], ["La densité ACPA et les paramètres de scan limitent les ROH observables."]),
+    ("reference_ancestry_global", "REFERENCE_ANCESTRY_GLOBAL", {"ancestry_scores": ("analyze_reference_ancestry", "ancestry_scores.schema.json"), "ancestry_eigenvalues": ("analyze_reference_ancestry", "ancestry_eigenvalues.schema.json"), "ancestry_population_centroids": ("analyze_reference_ancestry", "ancestry_population_centroids.schema.json"), "reference_ancestry_summary": ("analyze_reference_ancestry", "reference_ancestry_summary.schema.json")}, _reference_ancestry_global, ["Positionnement global relatif aux références 1000G ; aucune attribution ethnique ou généalogique."], ["Les populations 1000G ne représentent pas exhaustivement l'histoire démographique réunionnaise."]),
+    ("reference_ancestry_local", "REFERENCE_ANCESTRY_LOCAL", {"ancestry_scores": ("analyze_reference_ancestry", "ancestry_scores.schema.json"), "ancestry_eigenvalues": ("analyze_reference_ancestry", "ancestry_eigenvalues.schema.json"), "ancestry_population_centroids": ("analyze_reference_ancestry", "ancestry_population_centroids.schema.json"), "reference_ancestry_summary": ("analyze_reference_ancestry", "reference_ancestry_summary.schema.json")}, _reference_ancestry_local, ["Positionnement haplotypique local relatif ; aucune preuve d'ascendance locale, d'IBD ou d'effet fondateur."], ["La projection dépend de la région phasée autour de la variation cible configurée et des variants harmonisés."]),
     ("sensitivity", "SENSITIVITY", {"sensitivity_comparisons": ("run_sensitivity_analyses", "sensitivity_comparisons.schema.json"), "sensitivity_stability": ("run_sensitivity_analyses", "sensitivity_stability.schema.json")}, _sensitivity, ["Robustesse aux scénarios testés, pas validation externe ni causalité."], ["Un biais partagé par tous les runs n'est pas détecté."]),
 )
 
 
 def build_consolidated_figures(*, run_dir: Path, output_dir: Path, stage_inputs: dict[str, Any]) -> list[FigureResult]:
-    """Construit les six figures sans jamais lire hors du manifeste d'entrée."""
+    """Construit les huit figures sans jamais lire hors du manifeste d'entrée."""
     output_dir.mkdir(parents=True, exist_ok=True)
     artifacts = {item["artifact_id"]: item for item in stage_inputs["artifacts"]}
     results: list[FigureResult] = []

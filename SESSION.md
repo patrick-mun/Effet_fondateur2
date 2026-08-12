@@ -10,7 +10,8 @@ Dernière mise à jour : 12 août 2026
 - La PR `#5` a livré l'étape `15`, la PR `#6` l'étape `16` et la PR `#7`
   l'étape `17`. La branche `#6` a été avancée en fast-forward vers le commit
   d'intégration existant `fbc6398`, sans rebase ni réécriture destructive.
-- La PR `#8` a livré l'étape `18` avec les six domaines graphiques, dont la PCA.
+- La PR `#8` a livré l'étape `18` avec les six domaines graphiques initiaux,
+  dont la PCA interne.
   Les branches de livraison sont conservées et aucune n'a été supprimée.
 - PR `#3` fusionnée dans `main` le 6 août 2026 ; elle valide les étapes `08–13`.
 - PR V2 `#2` fusionnée dans `main` le 5 août 2026.
@@ -729,22 +730,33 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 
 ## Priorités de la prochaine session
 
-1. Implémenter `16A_analyze_reference_ancestry`, après ROH et avant les
-   sensibilités, sans renuméroter les étapes historiques `17–19`.
-2. Séparer une PCA globale de référence ajustée sur les 2 504 individus 1000G
-   non apparentés et une analyse haplotypique locale autour de la variation
-   cible configurée ; chromosome, position, allèles et fenêtre viennent du run,
-   sans dépendance à DOCK6. Les individus de l'étude sont projetés et ne peuvent
-   pas modifier les axes.
-3. Ajouter un cache immuable d'extraits autosomiques limités aux variants utiles,
-   lié aux MD5 officiels des VCF 1000G et aux SHA-256 locaux. Le premier run
-   peuple le cache, les suivants le vérifient et le réutilisent sans réseau.
-4. Épingler les métadonnées officielles 3 202 individus/populations
-   (`SHA-256 4e164b...3c132`) et la liste 2 504 non apparentés
-   (`SHA-256 0ac5fd...08f2`). Ne jamais traiter les proxys 1000G comme une
-   attribution ethnique ou une représentation complète de La Réunion.
-5. Intégrer le nouveau domaine aux sensibilités, figures et rapport, puis lancer
-   uniquement les tests synthétiques ciblés conformément à la demande actuelle.
+1. Relire le diff non committé de `16A_analyze_reference_ancestry` et ses
+   contrats transversaux ; ne pas lancer de données réelles avant validation.
+2. Le profil DOCK6 active désormais `15`, `16` et `16A` ensemble ; laisser
+   l'utilisateur lancer la reprise du run après validation du diff.
+3. Examiner manuellement les audits global/local, les variants harmonisés et
+   les effectifs de référence avant toute interprétation scientifique.
+
+## Implémentation 16A en attente de commit
+
+- `16A_analyze_reference_ancestry` est enregistrée après `16_analyze_roh` et
+  avant `17_run_sensitivity_analyses`, sans renumérotation de `17–19`.
+- La branche globale ajuste les axes sur les 2 504 références 1000G non
+  apparentées et projette les individus de l'étude ; la branche locale ajuste
+  les axes sur 5 008 haplotypes de référence et projette séparément `H1/H2`.
+- La cible, le chromosome et la région viennent exclusivement des métadonnées
+  et du BCF phasé du run. Aucun élément DOCK6/chr19 n'est codé en dur.
+- Le cache immuable lie les MD5 officiels, la sélection de variants et les
+  échantillons aux SHA-256 locaux ; le mode hors ligne bloque en cas de manque
+  ou corruption. Aucune donnée d'étude n'est envoyée au serveur de référence.
+- L'harmonisation bloque les doublons et incompatibilités, accepte uniquement
+  les orientations directes/inversées, audite les exclusions et interdit de
+  traiter une imputation PCA comme un génotype observé.
+- Les sensibilités connaissent désormais `REFERENCE_ANCESTRY`; les figures et
+  le rapport séparent `REFERENCE_ANCESTRY_GLOBAL` et
+  `REFERENCE_ANCESTRY_LOCAL`, soit huit domaines graphiques au total.
+- Validation synthétique ciblée en cours ; aucun pipeline complet ni run réel
+  n'a été lancé et aucune modification n'a été commitée ou poussée.
 
 ## Décisions à conserver
 

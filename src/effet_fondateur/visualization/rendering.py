@@ -21,6 +21,8 @@ DOMAIN_ORDER = (
     "VARIANT_AGE",
     "LOCAL_LD",
     "ROH",
+    "REFERENCE_ANCESTRY_GLOBAL",
+    "REFERENCE_ANCESTRY_LOCAL",
     "SENSITIVITY",
 )
 
@@ -30,6 +32,8 @@ DOMAIN_TITLES = {
     "VARIANT_AGE": "Datation du variant",
     "LOCAL_LD": "LD local secondaire",
     "ROH": "ROH et autozygotie",
+    "REFERENCE_ANCESTRY_GLOBAL": "Positionnement global sur références 1000G",
+    "REFERENCE_ANCESTRY_LOCAL": "Positionnement haplotypique local sur références 1000G",
     "SENSITIVITY": "Analyses de sensibilité",
 }
 
@@ -39,6 +43,8 @@ DOMAIN_LIMITS = {
     "VARIANT_AGE": "La datation est conditionnelle aux hypothèses Gamma, à la phase et à la carte génétique.",
     "LOCAL_LD": "Le LD est descriptif et ne démontre pas une origine fondatrice unique.",
     "ROH": "L'autozygotie individuelle reste distincte de l'IBS ou de l'IBD entre individus.",
+    "REFERENCE_ANCESTRY_GLOBAL": "Positionnement relatif uniquement ; aucune attribution ethnique ou généalogique.",
+    "REFERENCE_ANCESTRY_LOCAL": "Positionnement haplotypique relatif ; aucune preuve d'ascendance locale, d'IBD ou d'effet fondateur.",
     "SENSITIVITY": "La robustesse aux scénarios testés n'est ni une validation externe ni une preuve causale.",
 }
 

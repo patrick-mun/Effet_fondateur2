@@ -22,6 +22,9 @@ STAGES = {
     "estimate_variant_age": ("14", "variant_age_summary", "variant_age_summary.schema.json"),
     "analyze_local_ld": ("15", "local_ld_analysis_summary", "local_ld_analysis_summary.schema.json"),
     "analyze_roh": ("16", "roh_analysis_summary", "roh_analysis_summary.schema.json"),
+    "analyze_reference_ancestry": (
+        "16A", "reference_ancestry_summary", "reference_ancestry_summary.schema.json"
+    ),
 }
 
 
@@ -58,6 +61,28 @@ def _summaries(founder_status: str = "SUPPORTED_IBS_CANDIDATE", age: float = 10.
             "target_variant_id": "target_GRCh38_1_100000_A_G", "target_in_roh_count": 1,
             "f_roh_calculated": False, "feeds_founder_haplotype": False,
             "feeds_variant_age": False, "consumes_local_ld": False,
+        },
+        "reference_ancestry_summary": {
+            "schema_version": "1.0.0", "method_id": "reference_only_global_local_pca_v1",
+            "assembly": "GRCh38",
+            "target": {"variant_id": "target_GRCh38_1_100000_A_G", "chromosome": 1,
+                       "position_bp": 100000, "ref": "A", "alt": "G"},
+            "global": {"reference_entity_count": 2504, "study_entity_count": 8,
+                       "candidate_variant_count": 20000, "informative_variant_count": 18000,
+                       "component_count": 10},
+            "local": {"reference_entity_count": 5008, "study_entity_count": 16,
+                      "candidate_variant_count": 500, "informative_variant_count": 450,
+                      "component_count": 10, "region_start_bp": 90000,
+                      "region_end_bp": 110000},
+            "cache": {"metadata_status": "HIT", "extract_hits": 2,
+                      "extract_populated": 0, "offline": True},
+            "interpretation": {"policy": "RELATIVE_REFERENCE_POSITIONING_ONLY",
+                               "ethnic_identity_assigned": False,
+                               "genealogical_ancestor_identified": False,
+                               "local_ancestry_proven": False, "ibd_proven": False},
+            "checks": {"reference_unrelated_only": "PASS", "study_not_used_for_axes": "PASS",
+                       "global_local_separated": "PASS", "target_and_region_resolved": "PASS",
+                       "cache_integrity": "PASS", "variant_harmonization": "PASS"},
         },
     }
 
@@ -106,7 +131,7 @@ def _write_source_run(
             artifact_path = stage_dir / f"{artifact_id}.json"
             artifact_path.write_text(json.dumps(summaries[artifact_id], sort_keys=True) + "\n", encoding="utf-8")
             media_type = "application/json"
-        signature = (stage_id * 32)[:64]
+        signature = "a6" * 32 if stage_id == "16A" else (stage_id * 32)[:64]
         artifact = build_file_artifact(
             physical_path=artifact_path,
             published_path=f"stages/{stage_id}_{stage_name}/{artifact_path.name}",
@@ -145,10 +170,10 @@ def _write_source_run(
 
 
 def _write_registry(path: Path, primary: tuple[Path, str], scenario: tuple[Path, str]) -> None:
-    columns = ["SCENARIO_ID", "ROLE", "DESIGN", "CHANGED_FACTOR", "CHANGED_VALUE", "RUN_DIR", "RUN_ID", "MANIFEST_SHA256", "EXPECT_FOUNDER_IBS", "EXPECT_VARIANT_AGE", "EXPECT_LOCAL_LD", "EXPECT_ROH"]
+    columns = ["SCENARIO_ID", "ROLE", "DESIGN", "CHANGED_FACTOR", "CHANGED_VALUE", "RUN_DIR", "RUN_ID", "MANIFEST_SHA256", "EXPECT_FOUNDER_IBS", "EXPECT_VARIANT_AGE", "EXPECT_LOCAL_LD", "EXPECT_ROH", "EXPECT_REFERENCE_ANCESTRY"]
     rows = [
-        ["primary", "PRIMARY", "BASELINE", "PRIMARY", "baseline", str(primary[0]), "primary_run", primary[1], "true", "true", "true", "true"],
-        ["window_wide", "SENSITIVITY", "SINGLE_FACTOR", "LOCAL_WINDOW", "left_plus_1000bp", str(scenario[0]), "scenario_run", scenario[1], "true", "true", "true", "true"],
+        ["primary", "PRIMARY", "BASELINE", "PRIMARY", "baseline", str(primary[0]), "primary_run", primary[1], "true", "true", "true", "true", "true"],
+        ["window_wide", "SENSITIVITY", "SINGLE_FACTOR", "LOCAL_WINDOW", "left_plus_1000bp", str(scenario[0]), "scenario_run", scenario[1], "true", "true", "true", "true", "true"],
     ]
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.writer(handle, delimiter="\t", lineterminator="\n")
@@ -163,16 +188,16 @@ def test_cross_run_sensitivity_publishes_separate_stability_domains(tmp_path: Pa
     _write_registry(registry, (primary_dir, primary_manifest), (scenario_dir, scenario_manifest))
     publication = publish_sensitivity_analysis(
         registry_path=registry, output_dir=tmp_path / "out",
-        relative_change_tolerances={"FOUNDER_IBS": None, "VARIANT_AGE": 0.25, "LOCAL_LD": None, "ROH": None},
+        relative_change_tolerances={"FOUNDER_IBS": None, "VARIANT_AGE": 0.25, "LOCAL_LD": None, "ROH": None, "REFERENCE_ANCESTRY": None},
         consolidation_config=primary_config,
     )
     comparisons = validate_tsv_table(publication.comparisons_path, "sensitivity_comparisons.schema.json")
     stability = validate_tsv_table(publication.stability_path, "sensitivity_stability.schema.json")
-    assert len(comparisons.rows) == 8
+    assert len(comparisons.rows) == 10
     assert {row["CATEGORICAL_STABILITY"] for row in stability.rows} == {"STABLE"}
     age_row = next(row for row in comparisons.rows if row["SCENARIO_ID"] == "window_wide" and row["DOMAIN"] == "VARIANT_AGE")
     assert age_row["QUANTITATIVE_CLASSIFICATION"] == "WITHIN_TOLERANCE"
-    assert publication.domain_stability == {domain: "STABLE" for domain in ("FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH")}
+    assert publication.domain_stability == {domain: "STABLE" for domain in ("FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY")}
 
 
 def test_status_change_is_variable_not_a_composite_conclusion(tmp_path: Path) -> None:
@@ -184,7 +209,7 @@ def test_status_change_is_variable_not_a_composite_conclusion(tmp_path: Path) ->
     _write_registry(registry, (primary_dir, primary_manifest), (scenario_dir, scenario_manifest))
     publication = publish_sensitivity_analysis(
         registry_path=registry, output_dir=tmp_path / "out",
-        relative_change_tolerances={domain: None for domain in ("FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH")},
+        relative_change_tolerances={domain: None for domain in ("FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY")},
         consolidation_config=primary_config,
     )
     summary = json.loads(publication.summary_path.read_text(encoding="utf-8"))

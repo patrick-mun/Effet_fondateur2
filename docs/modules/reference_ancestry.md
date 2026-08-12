@@ -2,7 +2,8 @@
 
 ## Portée générale
 
-L'étape planifiée `16A_analyze_reference_ancestry` est générique pour toute
+L'étape `16A_analyze_reference_ancestry`, méthode
+`reference_only_global_local_pca_v1`, est générique pour toute
 variation cible autosomique décrite par la configuration du run. `DOCK6` et la
 coordonnée du chromosome 19 constituent un cas d'étude, pas une dépendance de
 la méthode.
@@ -43,6 +44,53 @@ entrée de cache est liée à l'identité et au MD5 officiels du VCF source ains
 qu'à un SHA-256 local ; un passage ultérieur doit la vérifier et la réutiliser
 sans réseau. Une entrée absente en mode hors ligne ou une empreinte discordante
 bloque l'étape.
+
+Le cache contient uniquement les variants demandés et les 2 504 références
+publiques. Aucun génotype, identifiant ou fichier de l'étude n'est transmis au
+serveur 1000 Genomes. Sa clé lie le panel, l'assemblage, le chromosome, l'URL et
+les MD5 officiels du VCF et de son index, ainsi que les SHA-256 des positions et
+de la liste d'échantillons. Les fichiers publiés sont en lecture seule et leur
+SHA-256 est revalidé à chaque accès.
+
+## Harmonisation et modèle
+
+La PCA globale utilise les variants autosomiques du panel indépendant de
+l'étape 06. PLINK exporte seulement les dosages de l'étude ; bcftools extrait
+les mêmes positions chez les références publiques, chromosome par chromosome.
+La PCA locale utilise le BCF final phasé de l'étape 12 et décompose chaque
+individu en `H1` et `H2`. La variation cible doit être présente et complètement
+évaluable dans le BCF d'étude, mais elle peut être absente de la référence et
+ne doit pas être inventée.
+
+L'harmonisation exige une égalité de coordonnée GRCh38 et une concordance
+directe ou inversée REF/ALT. Une inversion corrige le dosage ; les compléments
+de brin et les correspondances fondées uniquement sur un identifiant sont
+refusés. Les variants monomorphes, trop manquants, absents ou incompatibles sont
+audités séparément. Les valeurs manquantes restantes sont imputées uniquement
+à la fréquence de la référence pour le calcul des coordonnées PCA ; elles ne
+deviennent jamais des observations publiées.
+
+Les fréquences, échelles et axes sont ajustés exclusivement sur les références.
+Les individus de l'étude, puis leurs haplotypes locaux, sont projetés dans ce
+modèle figé. Les centroïdes de population et superpopulation sont descriptifs.
+
+## Sorties versionnées
+
+- `ancestry_scores.tsv` : références utilisées et entités d'étude projetées,
+  globales ou locales, avec copie porteuse explicitement distinguée ;
+- `ancestry_eigenvalues.tsv` et `ancestry_variant_loadings.tsv` : modèle de
+  référence reproductible ;
+- `ancestry_variant_audit.tsv` : chaque variant candidat et sa décision ;
+- `ancestry_population_centroids.tsv` : repères agrégés 1000 Genomes ;
+- `reference_ancestry_summary.json` : effectifs, région, cache, contrôles et
+  interdictions d'interprétation ;
+- `audit.json`, `stage_outputs.json` et `checksums.sha256` : provenance et
+  intégrité orchestrées.
+
+Les coordonnées individuelles restent `sensitive_genetic`. Les figures 18
+séparent obligatoirement `REFERENCE_ANCESTRY_GLOBAL` et
+`REFERENCE_ANCESTRY_LOCAL`, et l'étape 17 compare le domaine technique
+`REFERENCE_ANCESTRY` sans score composite.
 
 ## Contrôles obligatoires
 

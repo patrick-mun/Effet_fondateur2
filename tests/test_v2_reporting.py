@@ -58,7 +58,7 @@ def test_stage_19_builds_editable_pseudonymized_report_without_ai_call(tmp_path:
     kinship_artifacts = _kinship_outputs(run_dir)
     config_path = run_dir / "config.resolved.yaml"
     config = yaml.safe_load(Path("config/pipeline.example.yaml").read_text(encoding="utf-8"))
-    for stage_name in ("qc_preliminary", "build_kinship_panel", "infer_kinship", "analyze_population_structure", "prepare_target_region", "infer_founder_haplotype", "estimate_variant_age", "analyze_local_ld", "analyze_roh", "run_sensitivity_analyses"):
+    for stage_name in ("qc_preliminary", "build_kinship_panel", "infer_kinship", "analyze_population_structure", "prepare_target_region", "infer_founder_haplotype", "estimate_variant_age", "analyze_local_ld", "analyze_roh", "analyze_reference_ancestry", "run_sensitivity_analyses"):
         config["stages"][stage_name]["enabled"] = True
     config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
@@ -71,8 +71,8 @@ def test_stage_19_builds_editable_pseudonymized_report_without_ai_call(tmp_path:
     atomic_write_json(run_dir / "manifest.json", manifest)
     required_ids = {
         "figure_index", "visualization_completeness", "visualization_render_manifest",
-        *[f"figure_{name}" for name in ("population_structure", "founder_ibs", "variant_age", "local_ld", "roh", "sensitivity")],
-        *[f"figure_provenance_{name}" for name in ("population_structure", "founder_ibs", "variant_age", "local_ld", "roh", "sensitivity")],
+        *[f"figure_{name}" for name in ("population_structure", "founder_ibs", "variant_age", "local_ld", "roh", "reference_ancestry_global", "reference_ancestry_local", "sensitivity")],
+        *[f"figure_provenance_{name}" for name in ("population_structure", "founder_ibs", "variant_age", "local_ld", "roh", "reference_ancestry_global", "reference_ancestry_local", "sensitivity")],
     }
     inputs = kinship_artifacts + [item for item in stage_18_outputs["artifacts"] if item["artifact_id"] in required_ids]
     report_dir = run_dir / "stages" / "19_build_report"; report_dir.mkdir()

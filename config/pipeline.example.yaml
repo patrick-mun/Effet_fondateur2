@@ -213,6 +213,21 @@ stages:
       autosomal_denominator_kb: null
       autosomal_denominator_source: null
       plink_timeout_seconds: 300
+  analyze_reference_ancestry:
+    enabled: false
+    parameters:
+      method: reference_only_global_local_pca_v1
+      reference_panel_id: 1kg_3202_high_coverage_20220422
+      ancestry_cache_dir: data/cache/references
+      ancestry_cache_offline: false
+      global_requested_components: 10
+      local_requested_components: 10
+      minimum_global_variants: 100
+      minimum_local_variants: 10
+      minimum_reference_call_rate: 0.95
+      download_timeout_seconds: 7200
+      bcftools_timeout_seconds: 7200
+      plink_timeout_seconds: 300
   run_sensitivity_analyses:
     enabled: false
     parameters:
@@ -222,6 +237,7 @@ stages:
         VARIANT_AGE: null
         LOCAL_LD: null
         ROH: null
+        REFERENCE_ANCESTRY: null
   build_visualizations:
     enabled: false
     parameters:

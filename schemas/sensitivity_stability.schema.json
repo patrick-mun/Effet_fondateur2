@@ -15,7 +15,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["DOMAIN", "PRIMARY_STATUS", "EXPECTED_SCENARIO_COUNT", "EVALUATED_SCENARIO_COUNT", "STABLE_SCENARIO_COUNT", "VARIABLE_SCENARIO_COUNT", "NOT_EVALUATED_SCENARIO_COUNT", "CATEGORICAL_STABILITY", "QUANTITATIVE_STABILITY", "MANUAL_REVIEW_REQUIRED"],
       "properties": {
-        "DOMAIN": {"enum": ["FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH"]}, "PRIMARY_STATUS": {"$ref": "#/$defs/nullableText"},
+        "DOMAIN": {"enum": ["FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY"]}, "PRIMARY_STATUS": {"$ref": "#/$defs/nullableText"},
         "EXPECTED_SCENARIO_COUNT": {"$ref": "#/$defs/count"}, "EVALUATED_SCENARIO_COUNT": {"$ref": "#/$defs/count"},
         "STABLE_SCENARIO_COUNT": {"$ref": "#/$defs/count"}, "VARIABLE_SCENARIO_COUNT": {"$ref": "#/$defs/count"},
         "NOT_EVALUATED_SCENARIO_COUNT": {"$ref": "#/$defs/count"},

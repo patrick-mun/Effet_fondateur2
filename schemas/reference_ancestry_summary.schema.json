@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/reference_ancestry_summary.schema.json",
+  "title": "Résumé des analyses d'ascendance de référence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "method_id", "assembly", "target", "global", "local", "cache", "interpretation", "checks"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "method_id": {"const": "reference_only_global_local_pca_v1"},
+    "assembly": {"const": "GRCh38"},
+    "target": {
+      "type": "object", "additionalProperties": false,
+      "required": ["variant_id", "chromosome", "position_bp", "ref", "alt"],
+      "properties": {
+        "variant_id": {"type": "string", "minLength": 1},
+        "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+        "position_bp": {"type": "integer", "minimum": 1},
+        "ref": {"type": "string", "minLength": 1},
+        "alt": {"type": "string", "minLength": 1}
+      }
+    },
+    "global": {"$ref": "#/$defs/scope"},
+    "local": {"$ref": "#/$defs/localScope"},
+    "cache": {
+      "type": "object", "additionalProperties": false,
+      "required": ["metadata_status", "extract_hits", "extract_populated", "offline"],
+      "properties": {
+        "metadata_status": {"enum": ["HIT", "POPULATED"]},
+        "extract_hits": {"type": "integer", "minimum": 0},
+        "extract_populated": {"type": "integer", "minimum": 0},
+        "offline": {"type": "boolean"}
+      }
+    },
+    "interpretation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["policy", "ethnic_identity_assigned", "genealogical_ancestor_identified", "local_ancestry_proven", "ibd_proven"],
+      "properties": {
+        "policy": {"const": "RELATIVE_REFERENCE_POSITIONING_ONLY"},
+        "ethnic_identity_assigned": {"const": false},
+        "genealogical_ancestor_identified": {"const": false},
+        "local_ancestry_proven": {"const": false},
+        "ibd_proven": {"const": false}
+      }
+    },
+    "checks": {
+      "type": "object", "additionalProperties": false,
+      "required": ["reference_unrelated_only", "study_not_used_for_axes", "global_local_separated", "target_and_region_resolved", "cache_integrity", "variant_harmonization"],
+      "properties": {
+        "reference_unrelated_only": {"const": "PASS"},
+        "study_not_used_for_axes": {"const": "PASS"},
+        "global_local_separated": {"const": "PASS"},
+        "target_and_region_resolved": {"const": "PASS"},
+        "cache_integrity": {"const": "PASS"},
+        "variant_harmonization": {"const": "PASS"}
+      }
+    }
+  },
+  "$defs": {
+    "scopeProperties": {
+      "reference_entity_count": {"type": "integer", "minimum": 1},
+      "study_entity_count": {"type": "integer", "minimum": 1},
+      "candidate_variant_count": {"type": "integer", "minimum": 1},
+      "informative_variant_count": {"type": "integer", "minimum": 1},
+      "component_count": {"type": "integer", "minimum": 1, "maximum": 10}
+    },
+    "scope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["reference_entity_count", "study_entity_count", "candidate_variant_count", "informative_variant_count", "component_count"],
+      "properties": {
+        "reference_entity_count": {"type": "integer", "minimum": 1},
+        "study_entity_count": {"type": "integer", "minimum": 1},
+        "candidate_variant_count": {"type": "integer", "minimum": 1},
+        "informative_variant_count": {"type": "integer", "minimum": 1},
+        "component_count": {"type": "integer", "minimum": 1, "maximum": 10}
+      }
+    },
+    "localScope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["reference_entity_count", "study_entity_count", "candidate_variant_count", "informative_variant_count", "component_count", "region_start_bp", "region_end_bp"],
+      "properties": {
+        "reference_entity_count": {"type": "integer", "minimum": 1},
+        "study_entity_count": {"type": "integer", "minimum": 1},
+        "candidate_variant_count": {"type": "integer", "minimum": 1},
+        "informative_variant_count": {"type": "integer", "minimum": 1},
+        "component_count": {"type": "integer", "minimum": 1, "maximum": 10},
+        "region_start_bp": {"type": "integer", "minimum": 1},
+        "region_end_bp": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

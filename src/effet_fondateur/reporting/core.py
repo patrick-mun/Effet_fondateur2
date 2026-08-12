@@ -19,13 +19,15 @@ DOMAIN_TITLES = {
     "VARIANT_AGE": "Datation du variant",
     "LOCAL_LD": "LD local secondaire",
     "ROH": "ROH et autozygotie",
+    "REFERENCE_ANCESTRY_GLOBAL": "Positionnement global sur références 1000G",
+    "REFERENCE_ANCESTRY_LOCAL": "Positionnement haplotypique local sur références 1000G",
     "SENSITIVITY": "Analyses de sensibilité",
 }
 PARAMETER_STAGES = (
     "qc_preliminary", "build_kinship_panel", "infer_kinship",
     "analyze_population_structure", "prepare_target_region",
     "infer_founder_haplotype", "estimate_variant_age", "analyze_local_ld",
-    "analyze_roh", "run_sensitivity_analyses",
+    "analyze_roh", "analyze_reference_ancestry", "run_sensitivity_analyses",
 )
 
 

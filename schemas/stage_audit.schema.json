@@ -8,7 +8,7 @@
   "properties": {
     "schema_version": {"const": "1.0.0"},
     "run_id": {"type": "string", "minLength": 1},
-    "stage_id": {"type": "string", "pattern": "^(0[0-9]|1[0-9]|T[0-9]{2})$"},
+    "stage_id": {"type": "string", "pattern": "^(0[0-9]|1[0-9]|16A|T[0-9]{2})$"},
     "stage_name": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
     "method_id": {"type": "string", "minLength": 1},
     "signature": {"type": "string", "pattern": "^[a-f0-9]{64}$"},

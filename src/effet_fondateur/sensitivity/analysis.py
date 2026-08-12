@@ -18,18 +18,24 @@ from effet_fondateur.contracts import (
 )
 
 
-DOMAINS = ("FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH")
+DOMAINS = ("FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY")
 DOMAIN_STAGE = {
     "FOUNDER_IBS": ("infer_founder_haplotype", "founder_analysis_summary", "founder_analysis_summary.schema.json"),
     "VARIANT_AGE": ("estimate_variant_age", "variant_age_summary", "variant_age_summary.schema.json"),
     "LOCAL_LD": ("analyze_local_ld", "local_ld_analysis_summary", "local_ld_analysis_summary.schema.json"),
     "ROH": ("analyze_roh", "roh_analysis_summary", "roh_analysis_summary.schema.json"),
+    "REFERENCE_ANCESTRY": (
+        "analyze_reference_ancestry",
+        "reference_ancestry_summary",
+        "reference_ancestry_summary.schema.json",
+    ),
 }
 EXPECT_COLUMNS = {
     "FOUNDER_IBS": "EXPECT_FOUNDER_IBS",
     "VARIANT_AGE": "EXPECT_VARIANT_AGE",
     "LOCAL_LD": "EXPECT_LOCAL_LD",
     "ROH": "EXPECT_ROH",
+    "REFERENCE_ANCESTRY": "EXPECT_REFERENCE_ANCESTRY",
 }
 COMPARISON_COLUMNS = (
     "SCENARIO_ID", "SCENARIO_SIGNATURE", "ROLE", "DESIGN", "CHANGED_FACTOR",
@@ -196,7 +202,12 @@ ALLOWED_FACTOR_PREFIXES = {
     "GENOMEWIDE_LD_PRUNING": ("stages.build_kinship_panel.parameters",),
     "DISTANT_RELATIVE_POLICY": ("stages.infer_kinship.parameters", "stages.freeze_cohorts.parameters"),
     "ROH_PROFILE": ("stages.analyze_roh.parameters",),
-    "REFERENCE_POPULATION": ("inputs.reference_panel_catalog", "stages.phase_target_region.parameters"),
+    "REFERENCE_POPULATION": (
+        "inputs.reference_panel_catalog",
+        "inputs.ancestry_reference_catalog",
+        "stages.phase_target_region.parameters",
+        "stages.analyze_reference_ancestry.parameters",
+    ),
 }
 
 
@@ -231,6 +242,13 @@ def _technical_endpoint(domain: str, summary: dict[str, Any]) -> tuple[str, str 
     if domain == "LOCAL_LD":
         statuses = summary["cohort_statuses"]
         status = ";".join(f"{key}={statuses[key]}" for key in sorted(statuses))
+        return status, None, None
+    if domain == "REFERENCE_ANCESTRY":
+        status = (
+            f"GLOBAL_PROJECTED={summary['global']['study_entity_count']};"
+            f"LOCAL_HAPLOTYPES_PROJECTED={summary['local']['study_entity_count']};"
+            f"REFERENCE_ONLY_AXES={summary['checks']['study_not_used_for_axes']}"
+        )
         return status, None, None
     statuses = summary["scope_statuses"]
     status = ";".join(f"{key}={statuses[key]}" for key in sorted(statuses))
@@ -274,6 +292,8 @@ def _is_conclusive(domain: str, status: str | None) -> bool:
         return status == "PRIMARY_ESTIMATE"
     if domain == "LOCAL_LD":
         return "DESCRIPTIVE_PRIMARY" in status
+    if domain == "REFERENCE_ANCESTRY":
+        return "REFERENCE_ONLY_AXES=PASS" in status
     return "EVALUATED" in status
 
 

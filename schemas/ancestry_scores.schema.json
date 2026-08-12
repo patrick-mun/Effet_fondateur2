@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/ancestry_scores.schema.json",
+  "title": "Scores PCA globaux et haplotypiques locaux",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["ANALYSIS_SCOPE", "ENTITY_TYPE", "ENTITY_ID", "SAMPLE_ID", "HAPLOTYPE", "POPULATION", "SUPERPOPULATION", "TARGET_COPY_STATUS", "REFERENCE_INCLUDED", "PROJECTED", "PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8", "PC9", "PC10"],
+    "null_value": "",
+    "primary_key": ["ANALYSIS_SCOPE", "ENTITY_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1},
+    "nullable": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]},
+    "decimal": {"oneOf": [{"type": "string", "pattern": "^-?[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$"}, {"type": "null"}]},
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ANALYSIS_SCOPE", "ENTITY_TYPE", "ENTITY_ID", "SAMPLE_ID", "HAPLOTYPE", "POPULATION", "SUPERPOPULATION", "TARGET_COPY_STATUS", "REFERENCE_INCLUDED", "PROJECTED", "PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8", "PC9", "PC10"],
+      "properties": {
+        "ANALYSIS_SCOPE": {"enum": ["GLOBAL", "LOCAL"]},
+        "ENTITY_TYPE": {"enum": ["REFERENCE_INDIVIDUAL", "STUDY_INDIVIDUAL", "REFERENCE_HAPLOTYPE", "STUDY_HAPLOTYPE"]},
+        "ENTITY_ID": {"$ref": "#/$defs/id"}, "SAMPLE_ID": {"$ref": "#/$defs/id"},
+        "HAPLOTYPE": {"oneOf": [{"enum": ["H1", "H2"]}, {"type": "null"}]},
+        "POPULATION": {"$ref": "#/$defs/nullable"}, "SUPERPOPULATION": {"$ref": "#/$defs/nullable"},
+        "TARGET_COPY_STATUS": {"enum": ["NOT_APPLICABLE", "REFERENCE_UNKNOWN", "NON_CARRIER_COPY", "CARRIER_COPY", "CARRIER_COPY_UNRELIABLE"]},
+        "REFERENCE_INCLUDED": {"type": "boolean"}, "PROJECTED": {"type": "boolean"},
+        "PC1": {"$ref": "#/$defs/decimal"}, "PC2": {"$ref": "#/$defs/decimal"}, "PC3": {"$ref": "#/$defs/decimal"}, "PC4": {"$ref": "#/$defs/decimal"}, "PC5": {"$ref": "#/$defs/decimal"}, "PC6": {"$ref": "#/$defs/decimal"}, "PC7": {"$ref": "#/$defs/decimal"}, "PC8": {"$ref": "#/$defs/decimal"}, "PC9": {"$ref": "#/$defs/decimal"}, "PC10": {"$ref": "#/$defs/decimal"}
+      }
+    }
+  }
+}

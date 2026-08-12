@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/ancestry_extract_cache_manifest.schema.json",
+  "title": "Manifeste d'un extrait 1000 Genomes pour l'ascendance",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "created_at", "cache_key", "method_id", "panel_id", "assembly", "chromosome", "source_url", "source_vcf_md5", "source_index_md5", "positions_sha256", "samples_sha256", "files", "checks"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "cache_key": {"$ref": "#/$defs/sha256"},
+    "method_id": {"const": "bcftools_remote_variant_extract_v1"},
+    "panel_id": {"type": "string", "minLength": 1},
+    "assembly": {"const": "GRCh38"},
+    "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+    "source_url": {"type": "string", "pattern": "^https://ftp\\.1000genomes\\.ebi\\.ac\\.uk/"},
+    "source_vcf_md5": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+    "source_index_md5": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+    "positions_sha256": {"$ref": "#/$defs/sha256"},
+    "samples_sha256": {"$ref": "#/$defs/sha256"},
+    "files": {
+      "type": "object", "additionalProperties": false, "required": ["vcf", "index"],
+      "properties": {"vcf": {"$ref": "#/$defs/file"}, "index": {"$ref": "#/$defs/file"}}
+    },
+    "checks": {
+      "type": "object", "additionalProperties": false,
+      "required": ["official_source_identity", "selection_identity", "local_extract_integrity", "study_data_transmitted"],
+      "properties": {
+        "official_source_identity": {"const": "PASS"},
+        "selection_identity": {"const": "PASS"},
+        "local_extract_integrity": {"const": "PASS"},
+        "study_data_transmitted": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "file": {
+      "type": "object", "additionalProperties": false, "required": ["filename", "sha256", "size_bytes"],
+      "properties": {"filename": {"type": "string", "pattern": "^[^/\\\\]+$"}, "sha256": {"$ref": "#/$defs/sha256"}, "size_bytes": {"type": "integer", "minimum": 1}}
+    }
+  }
+}
