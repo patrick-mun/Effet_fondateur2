@@ -1,6 +1,6 @@
 # Suivi de session
 
-Dernière mise à jour : 11 août 2026
+Dernière mise à jour : 12 août 2026
 
 ## État du dépôt
 
@@ -420,6 +420,26 @@ Dernière mise à jour : 11 août 2026
   la figure PCA consolidée et le rapport révisable : 189 tests réussis.
 - Contrôle ciblé final de la fenêtre, du cache, du catalogue, de la
   configuration, de l'orchestrateur et de SHAPEIT5 : 45 réussis.
+- Correctif synthétique de remasquage des GT après SHAPEIT5 : 19 tests ciblés
+  de l'étape `12` et 210 tests modernes réussis. Les GT observés sont contrôlés
+  indépendamment de la phase, les complétions internes sont comptées puis
+  retirées des BCF publiés, et les masques restaurés sont relus et vérifiés.
+- Le run réel `2026-08-12T045841Z_dock6_reunion_founder_effect_b92312e6`
+  a validé les étapes `00–13`. L'étape `13` consomme désormais explicitement
+  les exclusions mendéliennes auditées de `12` : seules ces absences sont
+  autorisées entre la carte complète et le BCF phasé, et la cible reste
+  inexcluable. Validation ciblée : 5 tests réussis. Le résultat réel retient
+  3 unités porteuses indépendantes et publie un candidat IBS partagé sur 5
+  marqueurs à gauche et 13 à droite ; 7 haplotypes de fond sur 120 portent la
+  signature. Aucune revendication IBD n'est faite et une revue manuelle reste
+  obligatoire.
+- La revue humaine de l'étape `13` a été approuvée pour permettre l'étape `14`,
+  sans requalifier l'IBS en IBD. L'approbation est liée au SHA-256 du résumé
+  `f8d8b140...65849c5` et accepte explicitement la fréquence de fond `7/120`,
+  les incertitudes de phase/carte/résolution et le caractère exploratoire de la
+  datation avec trois unités indépendantes. La configuration de continuation
+  ignorée `data/runs/configs/phase14_dock6_2026-08-12.yaml` active uniquement
+  les étapes `00–14`; les étapes `15–19` restent désactivées.
 - Dernière exécution combinée antérieure des suites modernes et historiques :
   129 réussis et 4 échecs historiques sans rapport avec les étapes `05` à `11` ;
   la suite historique n'a pas été relancée pour `12.0`.
@@ -676,10 +696,14 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
    Le mode catalogue et le mode TSV explicite sont exclusifs et rétrocompatibles.
    Validation synthétique : tests ciblés réussis, configuration réelle de phase
    10 valide et suite moderne complète à `199 passed`.
-2. Le run réel `2026-08-10T103912Z_dock6_reunion_founder_effect_810e49ba` est
-   `BLOCKED` après deux anciennes tentatives de `04`, sans `--allow-no-sex`
-   puis avec le tri naturel PLINK ; il est destiné à être repris après
-   validation du correctif complet.
+2. Le run de continuation réel
+   `2026-08-12T045841Z_dock6_reunion_founder_effect_b92312e6` est
+   `TECHNICALLY_VALID` jusqu'à l'étape `13`. Sa première tentative de `13` a
+   révélé que la comparaison carte–BCF ignorait les trois exclusions
+   mendéliennes auditées de `12`. Le contrat exige désormais une égalité exacte
+   entre les variants absents de la carte complète et cette table d'exclusions,
+   tout en bloquant toute autre absence et toute exclusion de la cible. La
+   seconde tentative a réussi sans recalculer `00–12`.
 3. `run_pipeline.py` utilise encore des chemins fixes dans
    `data/input/complex_simulation/` et ouvre automatiquement le rapport HTML.
 4. L'interface Streamlit écrit `user_input.ped/map`, tandis que le pipeline lit
@@ -705,16 +729,29 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 
 ## Priorités de la prochaine session
 
-1. Lancer manuellement `phase10_target_region.yaml`, puis contrôler l'audit de
-   l'étape `11`, la provenance et le statut `POPULATED` ou `HIT` du cache.
-2. Vérifier que le variant cible est dans les bornes de la carte et que toutes
-   les interpolations respectent l'intervalle maximal configuré.
-3. N'activer l'étape `12` qu'après validation de la région, de la carte et des
-   effectifs ; ne pas lancer le phasage automatiquement.
+1. Implémenter `16A_analyze_reference_ancestry`, après ROH et avant les
+   sensibilités, sans renuméroter les étapes historiques `17–19`.
+2. Séparer une PCA globale de référence ajustée sur les 2 504 individus 1000G
+   non apparentés et une analyse haplotypique locale autour de la variation
+   cible configurée ; chromosome, position, allèles et fenêtre viennent du run,
+   sans dépendance à DOCK6. Les individus de l'étude sont projetés et ne peuvent
+   pas modifier les axes.
+3. Ajouter un cache immuable d'extraits autosomiques limités aux variants utiles,
+   lié aux MD5 officiels des VCF 1000G et aux SHA-256 locaux. Le premier run
+   peuple le cache, les suivants le vérifient et le réutilisent sans réseau.
+4. Épingler les métadonnées officielles 3 202 individus/populations
+   (`SHA-256 4e164b...3c132`) et la liste 2 504 non apparentés
+   (`SHA-256 0ac5fd...08f2`). Ne jamais traiter les proxys 1000G comme une
+   attribution ethnique ou une représentation complète de La Réunion.
+5. Intégrer le nouveau domaine aux sensibilités, figures et rapport, puis lancer
+   uniquement les tests synthétiques ciblés conformément à la demande actuelle.
 
 ## Décisions à conserver
 
 - Ne jamais déduire silencieusement un génotype de mutation du statut clinique.
+- L'analyse haplotypique locale d'ascendance est générique pour la région de
+  toute variation cible autosomique configurée. DOCK6/chr19 est un exemple et
+  aucune coordonnée, aucun gène ni aucun allèle ne doit être codé en dur.
 - Utiliser les témoins synthétiques uniquement pour tester le fonctionnement.
 - Ne pas écraser `data/input/` ou `data/output/` sans demande explicite et
   `--force` lorsque l'outil le prévoit.
@@ -752,5 +789,6 @@ git status -sb
 ```
 
 Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action est le lancement manuel de `phase10_target_region.yaml`, suivi du contrôle
-de l'audit de l'étape `11` avant toute activation du phasage.
+action est la revue manuelle des sorties IBS du run
+`2026-08-12T045841Z_dock6_reunion_founder_effect_b92312e6`, avant toute
+activation de la datation de l'étape `14`.

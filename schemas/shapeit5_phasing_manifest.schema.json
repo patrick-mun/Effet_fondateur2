@@ -4,7 +4,7 @@
   "title": "Manifest de l'exécution SHAPEIT5",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "created_at", "method_id", "adapter_id", "software_version", "assembly", "chromosome", "input_region", "scaffold_region", "seed", "threads", "effective_size", "minimum_phase_confidence", "sample_count", "variant_count", "common_variant_count", "carrier_count", "reliable_carrier_count", "pedigree_record_count", "target_variant_id", "target_variant_role", "files", "checks"],
+  "required": ["schema_version", "created_at", "method_id", "adapter_id", "software_version", "assembly", "chromosome", "input_region", "scaffold_region", "seed", "threads", "effective_size", "minimum_phase_confidence", "sample_count", "variant_count", "common_variant_count", "carrier_count", "reliable_carrier_count", "pedigree_record_count", "input_missing_genotype_count", "shapeit5_completed_genotype_count", "common_remasked_genotype_count", "final_remasked_genotype_count", "completed_genotypes_published_as_observed", "mendel_evaluable_records_before", "mendel_not_evaluated_records_before", "mendel_evaluable_records_after", "mendel_not_evaluated_records_after", "target_variant_id", "target_variant_role", "files", "checks"],
   "properties": {
     "schema_version": {"const": "1.0.0"},
     "created_at": {"type": "string", "format": "date-time"},
@@ -25,14 +25,23 @@
     "carrier_count": {"type": "integer", "minimum": 0},
     "reliable_carrier_count": {"type": "integer", "minimum": 0},
     "pedigree_record_count": {"type": "integer", "minimum": 0},
+    "input_missing_genotype_count": {"type": "integer", "minimum": 0},
+    "shapeit5_completed_genotype_count": {"type": "integer", "minimum": 0},
+    "common_remasked_genotype_count": {"type": "integer", "minimum": 0},
+    "final_remasked_genotype_count": {"type": "integer", "minimum": 0},
+    "completed_genotypes_published_as_observed": {"const": false},
+    "mendel_evaluable_records_before": {"type": "integer", "minimum": 0},
+    "mendel_not_evaluated_records_before": {"type": "integer", "minimum": 0},
+    "mendel_evaluable_records_after": {"type": "integer", "minimum": 0},
+    "mendel_not_evaluated_records_after": {"type": "integer", "minimum": 0},
     "target_variant_id": {"type": "string", "minLength": 1},
     "target_variant_role": {"enum": ["COMMON_TARGET", "RARE_TARGET"]},
     "files": {"type": "object", "additionalProperties": {"$ref": "#/$defs/file"}, "minProperties": 9},
     "checks": {
       "type": "object", "additionalProperties": false,
-      "required": ["input_integrity", "common_phase", "rare_phase", "sample_order", "genotype_preservation", "target_preservation", "explicit_target_genotypes", "mendel_before", "mendel_after", "carrier_assignment"],
+      "required": ["input_integrity", "common_phase", "rare_phase", "sample_order", "observed_genotype_preservation", "missing_mask_restoration", "completed_genotypes_not_published", "target_preservation", "explicit_target_genotypes", "mendel_before", "mendel_after", "carrier_assignment"],
       "properties": {
-        "input_integrity": {"const": "PASS"}, "common_phase": {"const": "PASS"}, "rare_phase": {"const": "PASS"}, "sample_order": {"const": "PASS"}, "genotype_preservation": {"const": "PASS"}, "target_preservation": {"const": "PASS"}, "explicit_target_genotypes": {"const": "PASS"}, "mendel_before": {"const": "PASS"}, "mendel_after": {"const": "PASS"}, "carrier_assignment": {"const": "PASS"}
+        "input_integrity": {"const": "PASS"}, "common_phase": {"const": "PASS"}, "rare_phase": {"const": "PASS"}, "sample_order": {"const": "PASS"}, "observed_genotype_preservation": {"const": "PASS"}, "missing_mask_restoration": {"const": "PASS"}, "completed_genotypes_not_published": {"const": "PASS"}, "target_preservation": {"const": "PASS"}, "explicit_target_genotypes": {"const": "PASS"}, "mendel_before": {"const": "PASS"}, "mendel_after": {"const": "PASS"}, "carrier_assignment": {"const": "PASS"}
       }
     }
   },

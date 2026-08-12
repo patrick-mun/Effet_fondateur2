@@ -116,7 +116,7 @@ def _nonempty_string(parameters: dict[str, Any], name: str) -> str:
 
 
 def _parameters(parameters: dict[str, Any]) -> dict[str, Any]:
-    return {
+    resolved = {
         "reference_panel_id": _nonempty_string(parameters, "reference_panel_id"),
         "reference_cache_dir": _nonempty_string(parameters, "reference_cache_dir"),
         "reference_cache_offline": _boolean(
@@ -154,7 +154,14 @@ def _parameters(parameters: dict[str, Any]) -> dict[str, Any]:
         "minimum_phase_confidence": _bounded_number(
             parameters, "minimum_phase_confidence", 0.9, 0.5, 1.0
         ),
+        "mendel_error_policy": parameters.get("mendel_error_policy", "block"),
     }
+    if resolved["mendel_error_policy"] not in {
+        "block",
+        "exclude_non_target_variants",
+    }:
+        raise PhaseTargetRegionInputError("invalid_parameter:mendel_error_policy")
+    return resolved
 
 
 def _resolve_input_path(artifact: dict[str, Any], run_dir: Path) -> Path:
@@ -399,6 +406,13 @@ def _shapeit5_input_artifacts(
             "shapeit5_sample_mapping.schema.json",
         ),
         (
+            "shapeit5_mendel_exclusions",
+            "shapeit5_mendel_exclusions",
+            prepared.mendel_exclusions_path,
+            "text/tab-separated-values",
+            "shapeit5_mendel_exclusions.schema.json",
+        ),
+        (
             "shapeit5_inputs_manifest",
             "shapeit5_inputs_manifest",
             prepared.manifest_path,
@@ -591,6 +605,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         plink_command=config["tools"]["plink"],
         bcftools_command=bcftools_command,
         timeout_seconds=parameters["shapeit5_input_timeout_seconds"],
+        mendel_error_policy=parameters["mendel_error_policy"],
     )
     phasing_adapter = parse_shapeit5_adapter_config(config["tools"]["phasing_adapter"])
     phased_shapeit5 = run_shapeit5_phasing(
@@ -706,6 +721,38 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             "harmonization_statuses": dict(sorted(status_counts.items())),
             "shapeit5_study_variants": prepared_shapeit5.study_variant_count,
             "shapeit5_pedigree_records": prepared_shapeit5.pedigree_record_count,
+            "shapeit5_mendel_excluded_variants": (
+                prepared_shapeit5.mendel_excluded_variant_count
+            ),
+            "mendel_evaluable_records_before": shapeit5_phasing_manifest[
+                "mendel_evaluable_records_before"
+            ],
+            "mendel_not_evaluated_records_before": shapeit5_phasing_manifest[
+                "mendel_not_evaluated_records_before"
+            ],
+            "mendel_evaluable_records_after": shapeit5_phasing_manifest[
+                "mendel_evaluable_records_after"
+            ],
+            "mendel_not_evaluated_records_after": shapeit5_phasing_manifest[
+                "mendel_not_evaluated_records_after"
+            ],
+            "shapeit5_input_missing_genotypes": shapeit5_phasing_manifest[
+                "input_missing_genotype_count"
+            ],
+            "shapeit5_internal_completed_genotypes": shapeit5_phasing_manifest[
+                "shapeit5_completed_genotype_count"
+            ],
+            "shapeit5_common_remasked_genotypes": shapeit5_phasing_manifest[
+                "common_remasked_genotype_count"
+            ],
+            "shapeit5_final_remasked_genotypes": shapeit5_phasing_manifest[
+                "final_remasked_genotype_count"
+            ],
+            "shapeit5_completed_genotypes_published_as_observed": (
+                shapeit5_phasing_manifest[
+                    "completed_genotypes_published_as_observed"
+                ]
+            ),
             "shapeit5_carriers": phased_shapeit5.carrier_count,
             "shapeit5_reliable_carriers": phased_shapeit5.reliable_carrier_count,
             "phasing_qc_warnings": published_phasing_qc.warning_count,
@@ -731,7 +778,12 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
                 "count": count,
             }
             for status, count in sorted(ineligible_counts.items())
-        ],
+        ]
+        + ([{
+            "scope": "study_phasing_variants",
+            "reason": "mendelian_incompatibility_before_phasing",
+            "count": prepared_shapeit5.mendel_excluded_variant_count,
+        }] if prepared_shapeit5.mendel_excluded_variant_count else []),
         "warnings": ([
                 {
                     "code": "target_variant_absent_from_reference",

@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/shapeit5_mendel_exclusions.schema.json",
+  "title": "Exclusions mendéliennes avant phasage SHAPEIT5",
+  "x-tsv": {
+    "schema_version": "1.0.0",
+    "columns": ["VARIANT_ID", "CHROMOSOME", "POSITION_BP", "AFFECTED_PEDIGREE_RECORD_COUNT", "POLICY", "REASON", "IS_TARGET_VARIANT"],
+    "null_value": "",
+    "primary_key": ["VARIANT_ID"],
+    "boolean_values": {"true": true, "false": false}
+  },
+  "$defs": {
+    "actualRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["VARIANT_ID", "CHROMOSOME", "POSITION_BP", "AFFECTED_PEDIGREE_RECORD_COUNT", "POLICY", "REASON", "IS_TARGET_VARIANT"],
+      "properties": {
+        "VARIANT_ID": {"type": "string", "minLength": 1},
+        "CHROMOSOME": {"type": "string", "pattern": "^([1-9]|1[0-9]|2[0-2])$"},
+        "POSITION_BP": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "AFFECTED_PEDIGREE_RECORD_COUNT": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+        "POLICY": {"const": "exclude_non_target_variants"},
+        "REASON": {"const": "mendelian_incompatibility_before_phasing"},
+        "IS_TARGET_VARIANT": {"type": "boolean", "const": false}
+      }
+    },
+    "notApplicableRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["VARIANT_ID", "CHROMOSOME", "POSITION_BP", "AFFECTED_PEDIGREE_RECORD_COUNT", "POLICY", "REASON", "IS_TARGET_VARIANT"],
+      "properties": {
+        "VARIANT_ID": {"const": "NOT_APPLICABLE"},
+        "CHROMOSOME": {"type": "null"},
+        "POSITION_BP": {"type": "null"},
+        "AFFECTED_PEDIGREE_RECORD_COUNT": {"const": "0"},
+        "POLICY": {"enum": ["block", "exclude_non_target_variants"]},
+        "REASON": {"const": "no_mendelian_incompatibility"},
+        "IS_TARGET_VARIANT": {"const": false}
+      }
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["VARIANT_ID", "CHROMOSOME", "POSITION_BP", "AFFECTED_PEDIGREE_RECORD_COUNT", "POLICY", "REASON", "IS_TARGET_VARIANT"],
+      "properties": {
+        "VARIANT_ID": {"type": "string", "minLength": 1},
+        "CHROMOSOME": {"oneOf": [{"type": "string", "pattern": "^([1-9]|1[0-9]|2[0-2])$"}, {"type": "null"}]},
+        "POSITION_BP": {"oneOf": [{"type": "string", "pattern": "^[1-9][0-9]*$"}, {"type": "null"}]},
+        "AFFECTED_PEDIGREE_RECORD_COUNT": {"type": "string", "pattern": "^[0-9]+$"},
+        "POLICY": {"enum": ["block", "exclude_non_target_variants"]},
+        "REASON": {"enum": ["mendelian_incompatibility_before_phasing", "no_mendelian_incompatibility"]},
+        "IS_TARGET_VARIANT": {"type": "boolean", "const": false}
+      },
+      "oneOf": [
+        {"$ref": "#/$defs/actualRow"},
+        {"$ref": "#/$defs/notApplicableRow"}
+      ]
+    }
+  }
+}

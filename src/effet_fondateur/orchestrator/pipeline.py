@@ -247,6 +247,7 @@ INFER_FOUNDER_HAPLOTYPE_STAGE = StageDefinition(
         "shapeit5_final_bcf",
         "shapeit5_final_index",
         "carrier_haplotypes",
+        "shapeit5_mendel_exclusions",
         "target_genetic_map",
         "cohorts_frozen",
         "samples_master",

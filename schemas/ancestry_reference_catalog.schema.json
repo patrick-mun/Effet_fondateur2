@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/ancestry_reference_catalog.schema.json",
+  "title": "Catalogue des métadonnées d'ascendance 1000 Genomes",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "catalog_id", "panel_id", "assembly", "population_metadata", "unrelated_sample_index", "model_scope", "projection_scope", "interpretation_policy", "prohibited_interpretations"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "catalog_id": {"const": "1kg_ancestry_reference_grch38_v1"},
+    "panel_id": {"const": "1kg_3202_high_coverage_20220422"},
+    "assembly": {"const": "GRCh38"},
+    "population_metadata": {"$ref": "#/$defs/asset3202"},
+    "unrelated_sample_index": {"$ref": "#/$defs/asset2504"},
+    "model_scope": {"const": "UNRELATED_REFERENCE_SAMPLES_ONLY"},
+    "projection_scope": {"const": "STUDY_SAMPLES_AND_TARGET_HAPLOTYPES"},
+    "interpretation_policy": {"const": "RELATIVE_REFERENCE_POSITIONING_ONLY"},
+    "prohibited_interpretations": {
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 3,
+      "items": {"enum": ["ETHNIC_IDENTITY_ASSIGNMENT", "GENEALOGICAL_ANCESTOR_IDENTIFICATION", "LOCAL_ANCESTRY_PROOF_FROM_PCA"]},
+      "allOf": [{"contains": {"const": "ETHNIC_IDENTITY_ASSIGNMENT"}}, {"contains": {"const": "GENEALOGICAL_ANCESTOR_IDENTIFICATION"}}, {"contains": {"const": "LOCAL_ANCESTRY_PROOF_FROM_PCA"}}]
+    }
+  },
+  "$defs": {
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "sha256", "sample_count"],
+      "properties": {
+        "url": {"type": "string", "pattern": "^https://ftp\\.1000genomes\\.ebi\\.ac\\.uk/"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "sample_count": {"type": "integer"}
+      }
+    },
+    "asset3202": {"allOf": [{"$ref": "#/$defs/asset"}, {"properties": {"sample_count": {"const": 3202}}}]},
+    "asset2504": {"allOf": [{"$ref": "#/$defs/asset"}, {"properties": {"sample_count": {"const": 2504}}}]}
+  }
+}

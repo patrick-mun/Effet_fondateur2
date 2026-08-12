@@ -1,4 +1,10 @@
-from effet_fondateur.phasing.inputs import _sample_rows
+import pytest
+
+from effet_fondateur.phasing.inputs import (
+    Shapeit5InputBlockError,
+    _mendel_exclusion_rows,
+    _sample_rows,
+)
 
 
 def test_shapeit5_pedigree_uses_master_sample_ids_for_trios_and_duos() -> None:
@@ -27,3 +33,50 @@ def test_shapeit5_pedigree_uses_master_sample_ids_for_trios_and_duos() -> None:
         True,
         True,
     ]
+
+
+def test_mendel_policy_excludes_only_incompatible_non_target_variant() -> None:
+    samples = ["father", "mother", "child"]
+    pedigree = [("child", "father", "mother")]
+    records = [
+        ("chr19", 100, "probe_bad", ("0/0", "0/0", "1/1")),
+        ("chr19", 200, "target", ("0/0", "0/1", "0/1")),
+    ]
+
+    rows = _mendel_exclusion_rows(
+        records,
+        samples,
+        pedigree,
+        "target",
+        "exclude_non_target_variants",
+    )
+
+    assert [row["VARIANT_ID"] for row in rows] == ["probe_bad"]
+    assert rows[0]["AFFECTED_PEDIGREE_RECORD_COUNT"] == 1
+    assert rows[0]["IS_TARGET_VARIANT"] is False
+
+
+def test_mendel_policy_blocks_without_explicit_exclusion_approval() -> None:
+    records = [("chr19", 100, "probe_bad", ("0/0", "0/0", "1/1"))]
+
+    with pytest.raises(Shapeit5InputBlockError, match="mendel_errors_before_phasing"):
+        _mendel_exclusion_rows(
+            records,
+            ["father", "mother", "child"],
+            [("child", "father", "mother")],
+            "target",
+            "block",
+        )
+
+
+def test_mendel_policy_never_excludes_target_variant() -> None:
+    records = [("chr19", 100, "target", ("0/0", "0/0", "1/1"))]
+
+    with pytest.raises(Shapeit5InputBlockError, match="target_variant_mendel_error"):
+        _mendel_exclusion_rows(
+            records,
+            ["father", "mother", "child"],
+            [("child", "father", "mother")],
+            "target",
+            "exclude_non_target_variants",
+        )

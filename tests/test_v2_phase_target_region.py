@@ -94,6 +94,19 @@ if arguments[:2] == ["view", "--header-only"]:
     print("##contig=<ID=chr19,length=58617616>")
     print('##FORMAT=<ID=GT,Number=1,Type=String,Description="Phased genotypes">')
     raise SystemExit(0)
+if arguments[0] == "view" and "--output-type" in arguments and arguments[arguments.index("--output-type") + 1] == "v":
+    input_name = pathlib.Path(arguments[-1]).name
+    print("##fileformat=VCFv4.2")
+    print('##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">')
+    print('##FORMAT=<ID=PP,Number=1,Type=Float,Description="Phase probability">')
+    print("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tsample_1\tsample_2\tsample_3")
+    print("chr19\t1900\trs19\tA\tG\t.\tPASS\t.\tGT:PP\t1|0:.\t0|0:.\t0|0:.")
+    if input_name == "target.phased.bcf":
+        print("chr19\t100000\ttarget_GRCh38_1_100000_A_G\tA\tG\t.\tPASS\t.\tGT:PP\t1|0:{target_confidence}\t0|0:.\t0|0:.")
+    raise SystemExit(0)
+if arguments[0] == "view" and "--output-type" in arguments and arguments[arguments.index("--output-type") + 1] == "b":
+    pathlib.Path(arguments[arguments.index("--output") + 1]).write_bytes(b"remasked bcf")
+    raise SystemExit(0)
 if arguments[:2] == ["query", "--list-samples"]:
     sample_sidecar = pathlib.Path(arguments[-1] + ".samples")
     if sample_sidecar.is_file():
@@ -112,6 +125,9 @@ if arguments[0] == "view" and "--regions" in arguments:
     raise SystemExit(0)
 if arguments[:2] == ["index", "--tbi"]:
     pathlib.Path(arguments[-1] + ".tbi").write_bytes(b"tabix index")
+    raise SystemExit(0)
+if arguments[:2] == ["index", "--csi"]:
+    pathlib.Path(arguments[-1] + ".csi").write_bytes(b"csi index")
     raise SystemExit(0)
 if arguments[:2] == ["index", "--nrecords"]:
     print("1")
@@ -140,6 +156,10 @@ if arguments[0] == "query" and "--format" in arguments:
         raise SystemExit(0)
     format_text = arguments[arguments.index("--format") + 1]
     input_name = pathlib.Path(arguments[-1]).name
+    if format_text == "%CHROM\\\\t%POS\\\\t%ID[\\\\t%GT]\\\\n" and input_name == "study.shapeit5.vcf.gz":
+        print("chr19\\t1900\\tprobe_19\\t0/1\\t0/0\\t0/0")
+        print("chr19\\t100000\\ttarget_GRCh38_1_100000_A_G\\t0/1\\t0/0\\t0/0")
+        raise SystemExit(0)
     if format_text == "%ID\\\\t%POS[\\\\t%GT]\\\\n" and input_name == "target.phased.bcf":
         print("probe_19\\t1900\\t1|0\\t0|0\\t0|0")
         print("target_GRCh38_1_100000_A_G\\t100000\\t1|0\\t0|0\\t0|0")
@@ -315,6 +335,7 @@ def test_stage_12_publishes_reference_and_harmonization_then_reuses(
         "shapeit5_pedigree",
         "shapeit5_variant_selection",
         "shapeit5_sample_mapping",
+        "shapeit5_mendel_exclusions",
         "shapeit5_inputs_manifest",
         "shapeit5_common_bcf",
         "shapeit5_common_index",
@@ -379,9 +400,19 @@ def test_stage_12_publishes_reference_and_harmonization_then_reuses(
     assert phasing_manifest["carrier_count"] == 1
     assert phasing_manifest["reliable_carrier_count"] == 1
     qc_rows = _read_tsv(stage_dir / "phasing_qc" / "phasing_qc.tsv")
-    assert len(qc_rows) == 12
+    assert len(qc_rows) == 18
+    assert {
+        row["CHECK_ID"] for row in qc_rows if row["SCOPE"] == "PEDIGREE"
+    } >= {
+        "mendel_not_evaluated_before",
+        "mendel_not_evaluated_after",
+    }
     assert qc_rows[-1]["CHECK_ID"] == "carrier_phase_confidence"
     assert qc_rows[-1]["STATUS"] == "PASS"
+    assert phasing_manifest["input_missing_genotype_count"] == 0
+    assert phasing_manifest["shapeit5_completed_genotype_count"] == 0
+    assert phasing_manifest["final_remasked_genotype_count"] == 0
+    assert phasing_manifest["completed_genotypes_published_as_observed"] is False
     summary = json.loads(
         (stage_dir / "phasing_qc" / "phase_target_region_summary.json").read_text(
             encoding="utf-8"

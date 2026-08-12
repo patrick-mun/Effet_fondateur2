@@ -9,6 +9,7 @@
     "chromosome", "input_region", "scaffold_region", "sample_set_id",
     "study_variant_set_id", "reference_variant_set_id", "sample_count",
     "study_variant_count", "common_variant_count", "pedigree_record_count",
+    "mendel_error_policy", "mendel_excluded_variant_count",
     "target_variant_id", "target_variant_role", "tools", "files", "checks"
   ],
   "properties": {
@@ -27,6 +28,8 @@
     "study_variant_count": {"type": "integer", "minimum": 2},
     "common_variant_count": {"type": "integer", "minimum": 1},
     "pedigree_record_count": {"type": "integer", "minimum": 0},
+    "mendel_error_policy": {"enum": ["block", "exclude_non_target_variants"]},
+    "mendel_excluded_variant_count": {"type": "integer", "minimum": 0},
     "target_variant_id": {"type": "string", "minLength": 1},
     "target_variant_role": {"enum": ["COMMON_TARGET", "RARE_TARGET"]},
     "tools": {
@@ -41,7 +44,7 @@
     "files": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["study_vcf", "study_index", "reference_vcf", "reference_index", "genetic_map", "pedigree", "variant_selection", "sample_mapping"],
+      "required": ["study_vcf", "study_index", "reference_vcf", "reference_index", "genetic_map", "pedigree", "variant_selection", "sample_mapping", "mendel_exclusions"],
       "properties": {
         "study_vcf": {"$ref": "#/$defs/localFile"},
         "study_index": {"$ref": "#/$defs/localFile"},
@@ -50,13 +53,14 @@
         "genetic_map": {"$ref": "#/$defs/localFile"},
         "pedigree": {"$ref": "#/$defs/possiblyEmptyLocalFile"},
         "variant_selection": {"$ref": "#/$defs/localFile"},
-        "sample_mapping": {"$ref": "#/$defs/localFile"}
+        "sample_mapping": {"$ref": "#/$defs/localFile"},
+        "mendel_exclusions": {"$ref": "#/$defs/localFile"}
       }
     },
     "checks": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["sample_identity_and_order", "pedigree_identity", "canonical_ref_alt", "allele_counts", "reference_common_variants", "target_variant_retained", "genetic_map", "tabix_index"],
+      "required": ["sample_identity_and_order", "pedigree_identity", "canonical_ref_alt", "allele_counts", "reference_common_variants", "target_variant_retained", "genetic_map", "tabix_index", "mendel_variant_policy"],
       "properties": {
         "sample_identity_and_order": {"const": "PASS"},
         "pedigree_identity": {"const": "PASS"},
@@ -65,7 +69,8 @@
         "reference_common_variants": {"const": "PASS"},
         "target_variant_retained": {"const": "PASS"},
         "genetic_map": {"const": "PASS"},
-        "tabix_index": {"const": "PASS"}
+        "tabix_index": {"const": "PASS"},
+        "mendel_variant_policy": {"const": "PASS"}
       }
     }
   },

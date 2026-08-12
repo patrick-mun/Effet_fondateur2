@@ -130,7 +130,8 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         raise InferFounderInputError("bcftools_not_configured")
     artifact_ids = (
         "shapeit5_final_bcf", "shapeit5_final_index", "carrier_haplotypes",
-        "target_genetic_map", "cohorts_frozen", "samples_master",
+        "shapeit5_mendel_exclusions", "target_genetic_map", "cohorts_frozen",
+        "samples_master",
     )
     input_artifacts = {
         artifact_id: _artifact_by_id(stage_inputs, artifact_id)
@@ -143,6 +144,15 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
     bcftools_version = _bcftools_version(
         bcftools_command, parameters["bcftools_timeout_seconds"]
     )
+    mendel_exclusion_rows = validate_tsv_table(
+        paths["shapeit5_mendel_exclusions"],
+        "shapeit5_mendel_exclusions.schema.json",
+    ).rows
+    excluded_variant_ids = frozenset(
+        row["VARIANT_ID"]
+        for row in mendel_exclusion_rows
+        if row["REASON"] == "mendelian_incompatibility_before_phasing"
+    )
     result = infer_target_centered_ibs(
         phased_bcf_path=paths["shapeit5_final_bcf"],
         carrier_haplotypes_path=paths["carrier_haplotypes"],
@@ -152,6 +162,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         timeout_seconds=parameters["bcftools_timeout_seconds"],
         minimum_independent_carriers=parameters["minimum_independent_carriers"],
         minimum_flank_markers=parameters["minimum_flank_markers"],
+        excluded_variant_ids=excluded_variant_ids,
     )
     validate_tsv_table(result.segments_path, "founder_segments.schema.json")
     validate_tsv_table(result.consensus_path, "founder_consensus.schema.json")
@@ -193,6 +204,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         "tools": [{"tool": "bcftools", "configured": bcftools_command, "version": bcftools_version}],
         "counts": {
             "selected_carrier_units": result.selected_carrier_count,
+            "mendel_excluded_variants": len(excluded_variant_ids),
             "background_haplotypes": result.background_haplotype_count,
             "matching_background_haplotypes": result.matching_background_haplotype_count,
         },
@@ -201,6 +213,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         "warnings": [] if warning_code is None else [{"code": warning_code, "count": 1}],
         "checks": [
             {"check": "input_artifact_integrity", "status": "PASS"},
+            {"check": "mendel_exclusion_alignment", "status": "PASS"},
             {"check": "phased_sample_identity", "status": "PASS"},
             {"check": "target_carrier_assignment", "status": "PASS"},
             {"check": "ibs_ibd_distinction", "status": "PASS"},

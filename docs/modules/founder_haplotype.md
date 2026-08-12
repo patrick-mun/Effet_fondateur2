@@ -22,6 +22,10 @@ explicitement qu'aucun appel IBD n'est effectué.
   conformément au cas récessif de la méthode Gamma ; les marqueurs hétérozygotes
   ne sont pas transformés artificiellement en allèle ancestral.
 - La copie ALT du GT cible phasé est recontrôlée avant l'analyse.
+- La carte de l'étape 11 reste complète. Un variant absent du BCF phasé n'est
+  accepté que s'il figure exactement dans la table versionnée des exclusions
+  mendéliennes de l'étape 12. Toute autre différence carte–BCF, ainsi qu'une
+  exclusion de la cible, bloque l'analyse.
 
 ## Détection du segment
 
