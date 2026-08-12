@@ -3,8 +3,10 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 from effet_fondateur.contracts import validate_tsv_table
-from effet_fondateur.founder import infer_target_centered_ibs
+from effet_fondateur.founder import FounderAnalysisError, infer_target_centered_ibs
 
 
 def _write_tsv(path: Path, columns: list[str], rows: list[list[str]]) -> None:
@@ -161,3 +163,71 @@ def test_exact_ibs_refuses_founder_conclusion_when_carriers_are_insufficient(
         result.consensus_path, "founder_consensus.schema.json"
     ).rows[0]
     assert consensus["INTERPRETATION"] == "NO_FOUNDER_CONCLUSION"
+
+
+def test_exact_ibs_accepts_only_audited_mendel_variant_absences(
+    tmp_path: Path,
+) -> None:
+    paths = _prepare_inputs(tmp_path)
+    with paths["map"].open("a", encoding="utf-8", newline="") as handle:
+        csv.writer(handle, delimiter="\t", lineterminator="\n").writerow(
+            [
+                "dataset", "6", "excluded_mendel", "19", "130", "1.3",
+                "EXACT", "130", "1.3", "130", "1.3", "1", "false",
+            ]
+        )
+
+    with pytest.raises(
+        FounderAnalysisError, match="phased_variant_map_set_mismatch"
+    ):
+        infer_target_centered_ibs(
+            phased_bcf_path=paths["bcf"],
+            carrier_haplotypes_path=paths["carriers"],
+            cohorts_path=paths["cohorts"],
+            samples_master_path=paths["samples"],
+            genetic_map_path=paths["map"],
+            output_dir=tmp_path / "blocked",
+            bcftools_command=str(paths["bcftools"]),
+            timeout_seconds=30,
+            minimum_independent_carriers=3,
+            minimum_flank_markers=1,
+        )
+
+    result = infer_target_centered_ibs(
+        phased_bcf_path=paths["bcf"],
+        carrier_haplotypes_path=paths["carriers"],
+        cohorts_path=paths["cohorts"],
+        samples_master_path=paths["samples"],
+        genetic_map_path=paths["map"],
+        output_dir=tmp_path / "accepted",
+        bcftools_command=str(paths["bcftools"]),
+        timeout_seconds=30,
+        minimum_independent_carriers=3,
+        minimum_flank_markers=1,
+        excluded_variant_ids=frozenset({"excluded_mendel"}),
+    )
+
+    assert result.status == "SUPPORTED_IBS_CANDIDATE"
+
+
+def test_exact_ibs_never_accepts_target_as_phasing_exclusion(
+    tmp_path: Path,
+) -> None:
+    paths = _prepare_inputs(tmp_path)
+
+    with pytest.raises(
+        FounderAnalysisError, match="target_variant_listed_as_phasing_exclusion"
+    ):
+        infer_target_centered_ibs(
+            phased_bcf_path=paths["bcf"],
+            carrier_haplotypes_path=paths["carriers"],
+            cohorts_path=paths["cohorts"],
+            samples_master_path=paths["samples"],
+            genetic_map_path=paths["map"],
+            output_dir=tmp_path / "blocked_target",
+            bcftools_command=str(paths["bcftools"]),
+            timeout_seconds=30,
+            minimum_independent_carriers=3,
+            minimum_flank_markers=1,
+            excluded_variant_ids=frozenset({"target"}),
+        )

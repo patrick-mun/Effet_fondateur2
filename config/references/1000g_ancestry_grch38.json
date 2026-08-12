@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0.0",
+  "catalog_id": "1kg_ancestry_reference_grch38_v1",
+  "panel_id": "1kg_3202_high_coverage_20220422",
+  "assembly": "GRCh38",
+  "population_metadata": {
+    "url": "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/20130606_g1k_3202_samples_ped_population.txt",
+    "sha256": "4e164b717433fc9bfc16e29b20e5b4659b4216185b3275322d421fe3d323c132",
+    "sample_count": 3202
+  },
+  "unrelated_sample_index": {
+    "url": "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/1000G_2504_high_coverage.sequence.index",
+    "sha256": "0ac5fdda0b60b6575b1867827f53e39d723f915b325b10bf023b2dc3d71c08f2",
+    "sample_count": 2504
+  },
+  "model_scope": "UNRELATED_REFERENCE_SAMPLES_ONLY",
+  "projection_scope": "STUDY_SAMPLES_AND_TARGET_HAPLOTYPES",
+  "interpretation_policy": "RELATIVE_REFERENCE_POSITIONING_ONLY",
+  "prohibited_interpretations": [
+    "ETHNIC_IDENTITY_ASSIGNMENT",
+    "GENEALOGICAL_ANCESTOR_IDENTIFICATION",
+    "LOCAL_ANCESTRY_PROOF_FROM_PCA"
+  ]
+}

@@ -141,6 +141,14 @@ def publish_phasing_qc(
         raise PhasingPublicationError("phasing_qc_sample_count_mismatch")
     if transmission_table.row_count != phasing_manifest["pedigree_record_count"]:
         raise PhasingPublicationError("phasing_qc_transmission_count_mismatch")
+    input_missing_count = phasing_manifest["input_missing_genotype_count"]
+    if (
+        phasing_manifest["shapeit5_completed_genotype_count"] > input_missing_count
+        or phasing_manifest["common_remasked_genotype_count"] > input_missing_count
+        or phasing_manifest["final_remasked_genotype_count"] != input_missing_count
+        or phasing_manifest["completed_genotypes_published_as_observed"]
+    ):
+        raise PhasingPublicationError("phasing_qc_missing_mask_accounting_mismatch")
 
     haplotype_counts = Counter(
         row["CARRIER_HAPLOTYPE"] for row in carrier_table.rows
@@ -191,16 +199,72 @@ def publish_phasing_qc(
         ),
         _qc_row(5, "sample_order", "RARE_PHASE", "PASS", "PASS", "PASS"),
         _qc_row(
-            6, "genotype_preservation", "RARE_PHASE", "PASS", "PASS", "PASS"
+            6,
+            "observed_genotype_preservation",
+            "RARE_PHASE",
+            "PASS",
+            "PASS",
+            "PASS",
         ),
-        _qc_row(7, "target_preservation", "TARGET", "PASS", "1", "1"),
         _qc_row(
-            8, "explicit_target_genotypes", "TARGET", "PASS", "PASS", "PASS"
+            7,
+            "input_missing_genotypes",
+            "INPUT",
+            "PASS",
+            phasing_manifest["input_missing_genotype_count"],
+            phasing_manifest["input_missing_genotype_count"],
         ),
-        _qc_row(9, "mendel_before", "PEDIGREE", "PASS", "0", "0"),
-        _qc_row(10, "mendel_after", "PEDIGREE", "PASS", "0", "0"),
         _qc_row(
-            11,
+            8,
+            "shapeit5_internal_completions",
+            "RARE_PHASE",
+            "PASS",
+            phasing_manifest["shapeit5_completed_genotype_count"],
+            phasing_manifest["input_missing_genotype_count"],
+            "internal_only_not_observed",
+        ),
+        _qc_row(
+            9,
+            "missing_mask_restoration",
+            "RARE_PHASE",
+            "PASS",
+            phasing_manifest["final_remasked_genotype_count"],
+            phasing_manifest["input_missing_genotype_count"],
+        ),
+        _qc_row(
+            10,
+            "completed_genotypes_not_published",
+            "RARE_PHASE",
+            "PASS",
+            "false",
+            "false",
+        ),
+        _qc_row(11, "target_preservation", "TARGET", "PASS", "1", "1"),
+        _qc_row(
+            12, "explicit_target_genotypes", "TARGET", "PASS", "PASS", "PASS"
+        ),
+        _qc_row(13, "mendel_before", "PEDIGREE", "PASS", "0", "0"),
+        _qc_row(
+            14,
+            "mendel_not_evaluated_before",
+            "PEDIGREE",
+            "NOT_APPLICABLE" if phasing_manifest["mendel_not_evaluated_records_before"] else "PASS",
+            phasing_manifest["mendel_not_evaluated_records_before"],
+            "0",
+            "missing_genotype" if phasing_manifest["mendel_not_evaluated_records_before"] else None,
+        ),
+        _qc_row(15, "mendel_after", "PEDIGREE", "PASS", "0", "0"),
+        _qc_row(
+            16,
+            "mendel_not_evaluated_after",
+            "PEDIGREE",
+            "NOT_APPLICABLE" if phasing_manifest["mendel_not_evaluated_records_after"] else "PASS",
+            phasing_manifest["mendel_not_evaluated_records_after"],
+            "0",
+            "missing_genotype" if phasing_manifest["mendel_not_evaluated_records_after"] else None,
+        ),
+        _qc_row(
+            17,
             "pedigree_transmissions",
             "PEDIGREE",
             "PASS" if transmission_table.row_count else "NOT_APPLICABLE",
@@ -209,7 +273,7 @@ def publish_phasing_qc(
             None if transmission_table.row_count else "no_pedigree_record",
         ),
         _qc_row(
-            12,
+            18,
             "carrier_phase_confidence",
             "CONFIDENCE",
             "WARN" if unreliable_carrier_count else "PASS",
@@ -262,6 +326,31 @@ def publish_phasing_qc(
             "unreliable_carrier_count": unreliable_carrier_count,
             "pedigree_record_count": phasing_manifest["pedigree_record_count"],
             "transmission_record_count": transmission_table.row_count,
+            "input_missing_genotype_count": phasing_manifest[
+                "input_missing_genotype_count"
+            ],
+            "shapeit5_completed_genotype_count": phasing_manifest[
+                "shapeit5_completed_genotype_count"
+            ],
+            "common_remasked_genotype_count": phasing_manifest[
+                "common_remasked_genotype_count"
+            ],
+            "final_remasked_genotype_count": phasing_manifest[
+                "final_remasked_genotype_count"
+            ],
+            "completed_genotypes_published_as_observed": False,
+            "mendel_evaluable_records_before": phasing_manifest[
+                "mendel_evaluable_records_before"
+            ],
+            "mendel_not_evaluated_records_before": phasing_manifest[
+                "mendel_not_evaluated_records_before"
+            ],
+            "mendel_evaluable_records_after": phasing_manifest[
+                "mendel_evaluable_records_after"
+            ],
+            "mendel_not_evaluated_records_after": phasing_manifest[
+                "mendel_not_evaluated_records_after"
+            ],
             "manual_validation_required": unreliable_carrier_count > 0,
             "source_manifests": {
                 "shapeit5_inputs": {
@@ -285,6 +374,9 @@ def publish_phasing_qc(
             },
             "checks": {
                 "source_integrity": "PASS",
+                "observed_genotypes_preserved": "PASS",
+                "missing_mask_restored": "PASS",
+                "completed_genotypes_not_published": "PASS",
                 "qc_complete": "PASS",
                 "haplotype_accounting": "PASS",
                 "warning_accounting": "PASS",

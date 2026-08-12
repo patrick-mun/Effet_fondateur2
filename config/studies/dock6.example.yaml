@@ -22,6 +22,7 @@ inputs:
   genetic_map: null
   genetic_map_catalog: config/references/shapeit4_hapmap_grch38.json
   reference_panel_catalog: config/references/1000g_high_coverage_grch38_phased.json
+  ancestry_reference_catalog: config/references/1000g_ancestry_grch38.json
   sensitivity_scenarios: null
 
 tools:
@@ -163,6 +164,7 @@ stages:
       shapeit5_seed: 15052011
       shapeit5_effective_size: 15000
       minimum_phase_confidence: 0.9
+      mendel_error_policy: block
   infer_founder_haplotype:
     enabled: false
     parameters:

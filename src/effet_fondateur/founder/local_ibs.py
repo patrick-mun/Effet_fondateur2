@@ -112,7 +112,11 @@ def _run_bcftools(command: str, arguments: list[str], timeout_seconds: float) ->
 
 
 def _load_variants(
-    bcf_path: Path, map_path: Path, bcftools_command: str, timeout_seconds: float
+    bcf_path: Path,
+    map_path: Path,
+    bcftools_command: str,
+    timeout_seconds: float,
+    excluded_variant_ids: frozenset[str],
 ) -> tuple[tuple[str, ...], tuple[Variant, ...], str]:
     map_table = validate_tsv_table(map_path, "target_genetic_map.schema.json")
     map_rows = {row["VARIANT_ID"]: row for row in map_table.rows}
@@ -153,7 +157,11 @@ def _load_variants(
             )
         )
         observed_ids.add(variant_id)
-    if observed_ids != set(map_rows):
+    target_variant_id = target_rows[0]["VARIANT_ID"]
+    if target_variant_id in excluded_variant_ids:
+        raise FounderAnalysisError("target_variant_listed_as_phasing_exclusion")
+    missing_map_ids = set(map_rows) - observed_ids
+    if missing_map_ids != set(excluded_variant_ids):
         raise FounderAnalysisError("phased_variant_map_set_mismatch")
     variants.sort(key=lambda variant: (variant.position_bp, variant.variant_id))
     if sum(variant.is_target for variant in variants) != 1:
@@ -220,12 +228,17 @@ def infer_target_centered_ibs(
     cohorts_path: Path, samples_master_path: Path, genetic_map_path: Path,
     output_dir: Path, bcftools_command: str, timeout_seconds: float,
     minimum_independent_carriers: int, minimum_flank_markers: int,
+    excluded_variant_ids: frozenset[str] = frozenset(),
 ) -> FounderAnalysisResult:
     """Publie une analyse IBS exacte, centrée sur la mutation et sans prétention IBD."""
     if minimum_independent_carriers < 2 or minimum_flank_markers < 1:
         raise FounderAnalysisError("invalid_founder_analysis_threshold")
     sample_ids, variants, map_version = _load_variants(
-        phased_bcf_path, genetic_map_path, bcftools_command, timeout_seconds
+        phased_bcf_path,
+        genetic_map_path,
+        bcftools_command,
+        timeout_seconds,
+        excluded_variant_ids,
     )
     sample_indexes = {sample_id: index for index, sample_id in enumerate(sample_ids)}
     carrier_rows = validate_tsv_table(

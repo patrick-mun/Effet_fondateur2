@@ -56,6 +56,15 @@ SAMPLE_MAPPING_COLUMNS = (
     "VCF_FATHER_ID",
     "VCF_MOTHER_ID",
 )
+MENDEL_EXCLUSION_COLUMNS = (
+    "VARIANT_ID",
+    "CHROMOSOME",
+    "POSITION_BP",
+    "AFFECTED_PEDIGREE_RECORD_COUNT",
+    "POLICY",
+    "REASON",
+    "IS_TARGET_VARIANT",
+)
 
 
 class Shapeit5InputError(ValueError):
@@ -82,10 +91,12 @@ class PreparedShapeit5Inputs:
     pedigree_path: Path
     variant_selection_path: Path
     sample_mapping_path: Path
+    mendel_exclusions_path: Path
     sample_count: int
     study_variant_count: int
     common_variant_count: int
     pedigree_record_count: int
+    mendel_excluded_variant_count: int
 
 
 def _default_runner(
@@ -405,6 +416,110 @@ def _validate_allele_counts(
         raise Shapeit5InputBlockError("shapeit5_allele_counts_invalid")
 
 
+def _complete_gt(genotype: str) -> tuple[str, str] | None:
+    separator = "|" if "|" in genotype else "/"
+    alleles = genotype.split(separator)
+    if len(alleles) != 2 or any(allele not in {"0", "1", "."} for allele in alleles):
+        raise Shapeit5InputBlockError("unsupported_phasing_genotype")
+    return None if "." in alleles else (alleles[0], alleles[1])
+
+
+def _mendel_exclusion_rows(
+    records: list[tuple[str, int, str, tuple[str, ...]]],
+    samples: list[str],
+    pedigree: list[tuple[str, str, str]],
+    target_variant_id: str,
+    policy: str,
+) -> list[dict[str, Any]]:
+    sample_index = {sample: index for index, sample in enumerate(samples)}
+    error_counts: dict[tuple[str, int, str], int] = {}
+    for chromosome, position_bp, variant_id, genotypes in records:
+        for child, father, mother in pedigree:
+            child_gt = _complete_gt(genotypes[sample_index[child]])
+            father_gt = (
+                None
+                if father == "NA"
+                else _complete_gt(genotypes[sample_index[father]])
+            )
+            mother_gt = (
+                None
+                if mother == "NA"
+                else _complete_gt(genotypes[sample_index[mother]])
+            )
+            if (
+                child_gt is None
+                or (father != "NA" and father_gt is None)
+                or (mother != "NA" and mother_gt is None)
+            ):
+                continue
+            father_alleles = set(father_gt) if father_gt else None
+            mother_alleles = set(mother_gt) if mother_gt else None
+            if father_alleles is not None and mother_alleles is not None:
+                compatible = any(
+                    first in father_alleles and second in mother_alleles
+                    for first, second in (child_gt, child_gt[::-1])
+                )
+            else:
+                known = father_alleles or mother_alleles
+                compatible = known is not None and any(
+                    allele in known for allele in child_gt
+                )
+            if not compatible:
+                key = (chromosome, position_bp, variant_id)
+                error_counts[key] = error_counts.get(key, 0) + 1
+    rows = [
+        {
+            "VARIANT_ID": variant_id,
+            "CHROMOSOME": chromosome.removeprefix("chr"),
+            "POSITION_BP": position_bp,
+            "AFFECTED_PEDIGREE_RECORD_COUNT": count,
+            "POLICY": policy,
+            "REASON": "mendelian_incompatibility_before_phasing",
+            "IS_TARGET_VARIANT": variant_id == target_variant_id,
+        }
+        for (chromosome, position_bp, variant_id), count in sorted(
+            error_counts.items(), key=lambda item: (item[0][1], item[0][2])
+        )
+    ]
+    if any(row["IS_TARGET_VARIANT"] for row in rows):
+        raise Shapeit5InputBlockError("target_variant_mendel_error")
+    if rows and policy == "block":
+        raise Shapeit5InputBlockError("mendel_errors_before_phasing")
+    return rows
+
+
+def _query_mendel_records(
+    executable: str,
+    path: Path,
+    sample_count: int,
+    runner: CommandRunner,
+    timeout_seconds: float,
+) -> list[tuple[str, int, str, tuple[str, ...]]]:
+    result = _run_checked(
+        runner,
+        [
+            executable,
+            "query",
+            "--format",
+            "%CHROM\\t%POS\\t%ID[\\t%GT]\\n",
+            str(path),
+        ],
+        timeout_seconds,
+        "bcftools_query_mendel_genotypes",
+    )
+    records: list[tuple[str, int, str, tuple[str, ...]]] = []
+    for line in result.stdout.splitlines():
+        fields = line.split("\t")
+        if len(fields) != 3 + sample_count:
+            raise Shapeit5InputBlockError("mendel_genotype_record_malformed")
+        try:
+            position_bp = int(fields[1])
+        except ValueError as error:
+            raise Shapeit5InputBlockError("mendel_variant_position_invalid") from error
+        records.append((fields[0], position_bp, fields[2], tuple(fields[3:])))
+    return records
+
+
 def _result(output_dir: Path, manifest: dict[str, Any]) -> PreparedShapeit5Inputs:
     files = manifest["files"]
     return PreparedShapeit5Inputs(
@@ -416,10 +531,12 @@ def _result(output_dir: Path, manifest: dict[str, Any]) -> PreparedShapeit5Input
         pedigree_path=output_dir / files["pedigree"]["filename"],
         variant_selection_path=output_dir / files["variant_selection"]["filename"],
         sample_mapping_path=output_dir / files["sample_mapping"]["filename"],
+        mendel_exclusions_path=output_dir / files["mendel_exclusions"]["filename"],
         sample_count=manifest["sample_count"],
         study_variant_count=manifest["study_variant_count"],
         common_variant_count=manifest["common_variant_count"],
         pedigree_record_count=manifest["pedigree_record_count"],
+        mendel_excluded_variant_count=manifest["mendel_excluded_variant_count"],
     )
 
 
@@ -442,10 +559,13 @@ def build_shapeit5_inputs(
     plink_command: str = "plink",
     bcftools_command: str = "bcftools",
     timeout_seconds: float = 300,
+    mendel_error_policy: str = "block",
     command_runner: CommandRunner = _default_runner,
 ) -> PreparedShapeit5Inputs:
     """Construit les fichiers 12.5 sans exécuter le logiciel de phasage."""
     timeout = _positive_number(timeout_seconds, "timeout_seconds")
+    if mendel_error_policy not in {"block", "exclude_non_target_variants"}:
+        raise Shapeit5InputError("invalid_shapeit5_input_parameter:mendel_error_policy")
     if output_dir.exists() or output_dir.is_symlink():
         raise Shapeit5InputError("shapeit5_inputs_output_exists")
     source_paths = (
@@ -571,6 +691,7 @@ def build_shapeit5_inputs(
         sample_mapping_path = staging_dir / "shapeit5_sample_mapping.tsv"
         pedigree_path = staging_dir / "shapeit5.pedigree.tsv"
         genetic_map_path = staging_dir / "shapeit5.genetic_map.tsv.gz"
+        mendel_exclusions_path = staging_dir / "shapeit5_mendel_exclusions.tsv"
         _write_tsv(selection_path, VARIANT_SELECTION_COLUMNS, selection_rows)
         _write_tsv(sample_mapping_path, SAMPLE_MAPPING_COLUMNS, sample_rows)
         validate_tsv_table(selection_path, "shapeit5_variant_selection.schema.json")
@@ -669,6 +790,97 @@ def build_shapeit5_inputs(
         )
         if observed_samples != expected_samples:
             raise Shapeit5InputBlockError("shapeit5_study_sample_set_or_order_mismatch")
+        mendel_records = _query_mendel_records(
+            bcftools_executable,
+            study_vcf_path,
+            len(observed_samples),
+            command_runner,
+            timeout,
+        )
+        mendel_exclusions = _mendel_exclusion_rows(
+            mendel_records,
+            observed_samples,
+            pedigree_rows,
+            target_metadata["project_variant_id"],
+            mendel_error_policy,
+        )
+        mendel_exclusion_count = len(mendel_exclusions)
+        if mendel_exclusions:
+            excluded_ids = {row["VARIANT_ID"] for row in mendel_exclusions}
+            for row in selection_rows:
+                if row["VARIANT_ID"] in excluded_ids:
+                    row.update(
+                        {
+                            "SHAPEIT_ROLE": "EXCLUDED",
+                            "INCLUDED": False,
+                            "CANONICAL_REF": None,
+                            "CANONICAL_ALT": None,
+                            "EXCLUSION_CODE": "mendelian_incompatibility_before_phasing",
+                        }
+                    )
+            included_rows = [row for row in selection_rows if row["INCLUDED"]]
+            common_rows = [
+                row
+                for row in included_rows
+                if row["SHAPEIT_ROLE"] in {"COMMON", "COMMON_TARGET"}
+            ]
+            target_row = next(row for row in included_rows if row["IS_TARGET_VARIANT"])
+            if len(included_rows) < 2 or not common_rows:
+                raise Shapeit5InputBlockError(
+                    "insufficient_variants_after_mendel_exclusions"
+                )
+            exclude_path = staging_dir / "mendel_variants.exclude.txt"
+            exclude_path.write_text(
+                "".join(f"{variant_id}\n" for variant_id in sorted(excluded_ids)),
+                encoding="utf-8",
+            )
+            filtered_path = staging_dir / "study.mendel_filtered.vcf.gz"
+            _run_checked(
+                command_runner,
+                [
+                    bcftools_executable,
+                    "view",
+                    "--exclude",
+                    f"ID=@{exclude_path}",
+                    "--output-type",
+                    "z",
+                    "--output",
+                    str(filtered_path),
+                    str(study_vcf_path),
+                ],
+                timeout,
+                "bcftools_exclude_mendel_variants",
+            )
+            _run_checked(
+                command_runner,
+                [bcftools_executable, "index", "--tbi", str(filtered_path)],
+                timeout,
+                "bcftools_index_mendel_filtered_study",
+            )
+            study_vcf_path.unlink()
+            study_index_path.unlink()
+            os.replace(filtered_path, study_vcf_path)
+            os.replace(Path(f"{filtered_path}.tbi"), study_index_path)
+            exclude_path.unlink()
+        _write_tsv(selection_path, VARIANT_SELECTION_COLUMNS, selection_rows)
+        _write_tsv(
+            mendel_exclusions_path,
+            MENDEL_EXCLUSION_COLUMNS,
+            mendel_exclusions
+            or [{
+                "VARIANT_ID": "NOT_APPLICABLE",
+                "CHROMOSOME": None,
+                "POSITION_BP": None,
+                "AFFECTED_PEDIGREE_RECORD_COUNT": 0,
+                "POLICY": mendel_error_policy,
+                "REASON": "no_mendelian_incompatibility",
+                "IS_TARGET_VARIANT": False,
+            }],
+        )
+        validate_tsv_table(selection_path, "shapeit5_variant_selection.schema.json")
+        validate_tsv_table(
+            mendel_exclusions_path, "shapeit5_mendel_exclusions.schema.json"
+        )
         expected_variants = [
             (
                 f"chr{chromosome}",
@@ -768,6 +980,8 @@ def build_shapeit5_inputs(
             "study_variant_count": len(observed_variants),
             "common_variant_count": len(common_rows),
             "pedigree_record_count": len(pedigree_rows),
+            "mendel_error_policy": mendel_error_policy,
+            "mendel_excluded_variant_count": mendel_exclusion_count,
             "target_variant_id": target_metadata["project_variant_id"],
             "target_variant_role": target_row["SHAPEIT_ROLE"],
             "tools": {
@@ -783,6 +997,7 @@ def build_shapeit5_inputs(
                 "pedigree": _file_record(pedigree_path),
                 "variant_selection": _file_record(selection_path),
                 "sample_mapping": _file_record(sample_mapping_path),
+                "mendel_exclusions": _file_record(mendel_exclusions_path),
             },
             "checks": {
                 "sample_identity_and_order": "PASS",
@@ -793,6 +1008,7 @@ def build_shapeit5_inputs(
                 "target_variant_retained": "PASS",
                 "genetic_map": "PASS",
                 "tabix_index": "PASS",
+                "mendel_variant_policy": "PASS",
             },
         }
         validate_json_document(manifest, "shapeit5_inputs_manifest.schema.json")

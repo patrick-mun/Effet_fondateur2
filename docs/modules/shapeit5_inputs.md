@@ -23,6 +23,22 @@ BCFtools calcule ensuite les tags INFO `AC` et `AN`, exigés par
 `SHAPEIT5_phase_common`, puis le pipeline vérifie qu'ils sont présents et
 cohérents pour chaque variant.
 
+## Incompatibilités mendéliennes
+
+La politique par défaut `mendel_error_policy: block` interdit toute exclusion
+implicite. Après approbation scientifique explicite,
+`exclude_non_target_variants` retire du VCF de phasage uniquement les variants
+présentant au moins une incompatibilité mendélienne. Le jeu PLINK régional reste
+intact. Une incompatibilité sur le variant cible bloque toujours, quelle que
+soit la politique. Les variants retirés sont marqués `EXCLUDED` dans la table de
+sélection et consignés dans `shapeit5_mendel_exclusions.tsv` avec leur position,
+le nombre de pedigrees concernés et la raison. Les appels manquants sont
+`NOT_EVALUATED` et ne déclenchent pas cette exclusion.
+
+Les variants comportant un appel manquant restent dans le VCF d'étude. Ils ne
+sont pas assimilés aux exclusions mendéliennes : leur masque est conservé pour
+être restauré dans les artefacts publiés après les deux passes SHAPEIT5.
+
 ## Carte et pedigree
 
 La carte génétique SHAPEIT est un fichier gzip déterministe à trois colonnes :
@@ -45,6 +61,7 @@ Le dossier `shapeit5_inputs/` publie atomiquement :
 - `shapeit5.pedigree.tsv` ;
 - `shapeit5_variant_selection.tsv` ;
 - `shapeit5_sample_mapping.tsv` ;
+- `shapeit5_mendel_exclusions.tsv` ;
 - `shapeit5_inputs_manifest.json`.
 
 Le manifeste lie ces fichiers aux empreintes de la référence harmonisée,

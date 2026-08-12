@@ -78,6 +78,7 @@
         "genetic_map": {"$ref": "#/$defs/pathOrNull"},
         "genetic_map_catalog": {"$ref": "#/$defs/pathOrNull"},
         "reference_panel_catalog": {"$ref": "#/$defs/pathOrNull"},
+        "ancestry_reference_catalog": {"$ref": "#/$defs/pathOrNull"},
         "sensitivity_scenarios": {"$ref": "#/$defs/pathOrNull"}
       }
     },

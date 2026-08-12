@@ -262,6 +262,17 @@ chromosome cible. Elle ne redéfinit ni l'IBS fondateur ni la datation, et ne
 calcule `F_ROH` qu'avec un dénominateur autosomique explicite et sourcé. Le
 contrat est documenté dans `docs/modules/roh.md`.
 
+L'étape planifiée `16A_analyze_reference_ancestry` séparera ensuite une PCA
+globale de référence d'un positionnement haplotypique local. La branche locale
+est définie autour de la variation cible configurée et de sa région phasée :
+elle n'est liée ni à `DOCK6`, ni au chromosome 19, ni à une coordonnée codée en
+dur. `DOCK6` est uniquement le premier cas d'étude. Les axes seront ajustés sur
+les références 1000 Genomes non apparentées, puis les individus ou haplotypes
+de l'étude seront projetés sans modifier ces axes. Ces résultats resteront des
+positionnements relatifs et ne constitueront ni une attribution ethnique ni une
+preuve d'ascendance généalogique ou d'IBD. Le contrat est documenté dans
+`docs/modules/reference_ancestry.md`.
+
 L'étape `17_run_sensitivity_analyses` consolide ensuite un run primaire et des
 runs de sensibilité distincts, déclarés dans un registre TSV. Elle vérifie les
 manifestes, configurations, signatures, résumés et ancrages moléculaires avant

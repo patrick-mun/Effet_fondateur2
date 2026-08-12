@@ -43,6 +43,29 @@ Les trios distinguent une orientation `DIRECT`, `SWAPPED` ou `AMBIGUOUS`; les
 duos sont signalés `DUO_COMPATIBLE` sans inventer l'origine du second
 haplotype.
 
+Les contrôles mendéliens distinguent les appels diploïdes complets des appels
+contenant un allèle manquant (`.`). Une transmission avec un génotype manquant
+est comptée `NOT_EVALUATED` et n'est jamais transformée en erreur mendélienne.
+Un allèle autre que `0`, `1` ou `.` reste bloquant. Les nombres de transmissions
+évaluables et non évaluables sont publiés avant et après phasage.
+
+SHAPEIT5 peut compléter temporairement un appel manquant pour construire la
+phase. Cette valeur n'est pas une observation : le contrôle de conservation
+compare séparément tous les GT initialement observés, à l'allèle près et sans
+tenir compte de l'ordre phasé. Après la passe rare, le masque de l'entrée est
+réappliqué au seul champ `GT` des sorties commune et finale ; les autres champs
+`FORMAT` sont conservés. Le BCF commun n'est remasqué qu'après avoir servi de
+scaffold. Les deux BCF sont ensuite réindexés et relus afin de vérifier la
+restauration exacte. Un variant, un échantillon ou un `GT` absent, un doublon,
+un GT observé modifié ou un remasquage incomplet bloque la publication.
+
+Le manifeste et le QC publient le nombre de GT manquants en entrée, le nombre
+de complétions internes SHAPEIT5, les nombres remasqués dans les BCF commun et
+final, ainsi que l'indicateur explicite
+`completed_genotypes_published_as_observed: false`. Le variant cible reste
+soumis à une exigence plus stricte : tous ses GT doivent être complets et
+évaluables avant comme après le phasage.
+
 ## Sorties
 
 - `common.phased.bcf` et son index ;
