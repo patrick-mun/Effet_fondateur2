@@ -36,10 +36,32 @@ class CachedReferenceExtract:
     manifest_path: Path
 
 
-def _approved_source(url: str) -> None:
+def _md5_file(path: Path) -> str:
+    digest = hashlib.md5(usedforsecurity=False)
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(8 * 1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _approved_source(url: str, expected_vcf_md5: str, expected_index_md5: str) -> str:
     parsed = urlparse(url)
-    if parsed.scheme != "https" or parsed.hostname != "ftp.1000genomes.ebi.ac.uk":
-        raise AncestryExtractCacheError("ancestry_extract_source_url_not_approved")
+    if parsed.scheme == "https" and parsed.hostname == "ftp.1000genomes.ebi.ac.uk":
+        return "bcftools_remote_variant_extract_v1"
+    source = Path(url)
+    index = Path(f"{url}.tbi")
+    if (
+        parsed.scheme
+        or not source.is_absolute()
+        or source.is_symlink()
+        or not source.is_file()
+        or index.is_symlink()
+        or not index.is_file()
+    ):
+        raise AncestryExtractCacheError("ancestry_extract_source_not_approved")
+    if _md5_file(source) != expected_vcf_md5 or _md5_file(index) != expected_index_md5:
+        raise AncestryExtractCacheError("ancestry_extract_local_source_checksum_mismatch")
+    return "bcftools_local_variant_extract_v1"
 
 
 def cache_reference_extract(
@@ -63,7 +85,6 @@ def cache_reference_extract(
     l'extrait publié ; il n'est jamais présenté comme le SHA du fichier source.
     """
 
-    _approved_source(source_url)
     if (
         assembly != "GRCh38"
         or not 1 <= chromosome <= 22
@@ -76,10 +97,11 @@ def cache_reference_extract(
         or timeout_seconds <= 0
     ):
         raise AncestryExtractCacheError("invalid_ancestry_extract_specification")
+    method_id = _approved_source(source_url, source_vcf_md5, source_index_md5)
     positions_sha = sha256_file(positions_path)
     samples_sha = sha256_file(samples_path)
     identity = {
-        "method_id": "bcftools_remote_variant_extract_v1",
+        "method_id": method_id,
         "panel_id": panel_id,
         "assembly": assembly,
         "chromosome": chromosome,

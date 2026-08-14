@@ -1,4 +1,5 @@
 import hashlib
+import json
 from pathlib import Path
 
 import pytest
@@ -71,3 +72,36 @@ def test_reference_extract_offline_miss_and_corruption_block(tmp_path: Path) -> 
     cached.entry_dir.chmod(0o555)
     with pytest.raises(AncestryExtractCacheError, match="corrupt"):
         _call(tmp_path, offline=True, extractor=lambda *_: None)
+
+
+def test_reference_extract_accepts_only_checksum_verified_absolute_local_source(tmp_path: Path) -> None:
+    positions, samples = _selection(tmp_path)
+    source = (tmp_path / "reference.chr2.vcf.gz").resolve()
+    index = Path(f"{source}.tbi")
+    source.write_bytes(b"official local source")
+    index.write_bytes(b"official local index")
+
+    def call(vcf_md5: str):
+        return cache_reference_extract(
+            cache_root=tmp_path / "cache-local",
+            panel_id="panel",
+            assembly="GRCh38",
+            chromosome=2,
+            source_url=str(source),
+            source_vcf_md5=vcf_md5,
+            source_index_md5=hashlib.md5(index.read_bytes(), usedforsecurity=False).hexdigest(),
+            positions_path=positions,
+            samples_path=samples,
+            offline=False,
+            timeout_seconds=30,
+            extractor=lambda source_url, positions_path, samples_path, vcf, tbi, timeout: (
+                vcf.write_bytes(b"vcf"), tbi.write_bytes(b"index")
+            ),
+        )
+
+    cached = call(hashlib.md5(source.read_bytes(), usedforsecurity=False).hexdigest())
+    assert cached.status == "POPULATED"
+    manifest = json.loads(cached.manifest_path.read_text(encoding="utf-8"))
+    assert manifest["method_id"] == "bcftools_local_variant_extract_v1"
+    with pytest.raises(AncestryExtractCacheError, match="checksum_mismatch"):
+        call("0" * 32)
