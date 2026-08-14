@@ -375,6 +375,24 @@ EVALUATE_FOUNDER_HAPLOTYPE_ENRICHMENT_STAGE = StageDefinition(
     ),
 )
 
+CALL_EXPLICIT_IBD_STAGE = StageDefinition(
+    stage_id="16C",
+    stage_name="call_explicit_ibd",
+    module="effet_fondateur.stages.call_explicit_ibd",
+    critical=False,
+    dependencies=(
+        "build_sample_registry", "freeze_cohorts", "qc_final",
+        "prepare_target_region", "phase_target_region",
+        "infer_founder_haplotype", "analyze_reference_ancestry",
+    ),
+    config_input_files=("target_variant_metadata",),
+    required_artifact_ids=(
+        "samples_master", "cohorts_frozen", "target_genetic_map",
+        "shapeit5_final_bcf", "shapeit5_final_index", "carrier_haplotypes",
+        "founder_analysis_summary",
+    ),
+)
+
 RUN_SENSITIVITY_ANALYSES_STAGE = StageDefinition(
     stage_id="17",
     stage_name="run_sensitivity_analyses",
@@ -446,6 +464,7 @@ DEFAULT_STAGE_DEFINITIONS = (
     ANALYZE_ROH_STAGE,
     ANALYZE_REFERENCE_ANCESTRY_STAGE,
     EVALUATE_FOUNDER_HAPLOTYPE_ENRICHMENT_STAGE,
+    CALL_EXPLICIT_IBD_STAGE,
     RUN_SENSITIVITY_ANALYSES_STAGE,
     BUILD_VISUALIZATIONS_STAGE,
     BUILD_REPORT_STAGE,

@@ -36,6 +36,7 @@ tools:
     phase_rare_command: SHAPEIT5_phase_rare
     expected_version: 5.1.1
   local_ibd_adapter: null
+  explicit_ibd_adapters: null
 
 policies:
   overwrite_inputs: false
@@ -245,6 +246,20 @@ stages:
       empirical_classification_threshold: null
       run_superpopulation_sensitivities: true
       bcftools_timeout_seconds: 300
+  call_explicit_ibd:
+    enabled: false
+    parameters:
+      method: dual_target_centered_explicit_ibd_v1
+      input_scope: TARGET_CHROMOSOME
+      primary: {scenario_id: primary, role: PRIMARY, minimum_cm: 2.0, minimum_markers: 100, calibrated: false, calibration_specificity_acceptable: false, control_frequency: null}
+      sensitivities:
+        - {scenario_id: sensitivity_1_5cm, role: SENSITIVITY, minimum_cm: 1.5, minimum_markers: 50, calibrated: false, calibration_specificity_acceptable: false, control_frequency: null}
+        - {scenario_id: sensitivity_1cm, role: SENSITIVITY, minimum_cm: 1.0, minimum_markers: 30, calibrated: false, calibration_specificity_acceptable: false, control_frequency: null}
+      boundary_tolerance_bp: 250000
+      maximum_control_frequency: 0.05
+      tool_timeout_seconds: 3600
+      java_memory_mb: 4096
+      threads: 4
   run_sensitivity_analyses:
     enabled: false
     parameters:

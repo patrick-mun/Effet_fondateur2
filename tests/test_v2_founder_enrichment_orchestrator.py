@@ -7,4 +7,6 @@ def test_founder_enrichment_is_between_16a_and_17() -> None:
     enrichment_index = names.index("evaluate_founder_haplotype_enrichment")
     assert stages[enrichment_index] == ("16B", "evaluate_founder_haplotype_enrichment")
     assert names[enrichment_index - 1] == "analyze_reference_ancestry"
-    assert names[enrichment_index + 1] == "run_sensitivity_analyses"
+    assert names[enrichment_index + 1] == "call_explicit_ibd"
+    assert stages[enrichment_index + 1] == ("16C", "call_explicit_ibd")
+    assert names[enrichment_index + 2] == "run_sensitivity_analyses"

@@ -23,6 +23,9 @@ Dernière mise à jour : 14 août 2026
   `SHAPEIT5_phase_rare` démarrent correctement.
   Les commandes `Gamma`/`gamma` présentes dans le `PATH` pointent actuellement
   vers un document HTML invalide et ne sont pas utilisables.
+- Pour 16C, `/usr/bin/java` est présent mais aucun runtime Java n'est installé ;
+  aucun JAR Hap-IBD ou Refined IBD n'a été trouvé localement. Aucun téléchargement
+  ni installation n'a été effectué sans autorisation.
 
 ## Bilan des avancées
 
@@ -776,14 +779,13 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 
 ## Priorités de la prochaine session
 
-1. Relire et valider scientifiquement le plan
-   `PLAN_ETAPE_16C_IBD_EXPLICITE_PUCE_SNP.md`, puis l'implémenter uniquement
-   sur instruction de l'utilisateur, sans modifier le run réel terminé.
-2. Commencer par le rapport de faisabilité 16C : densité chromosome 19,
-   marqueurs complets, puissance attendue à `1–5 cM` et compatibilité avec les
-   paramètres standards de Hap-IBD/Refined IBD.
-3. Préparer séparément l'extension genome-wide sur les variants de puce et ERSA
-   seulement après validation de la branche ciblée.
+1. Après autorisation explicite, installer/configurer Java 17 et des versions
+   officielles épinglées de Hap-IBD/Refined IBD, puis exécuter un smoke
+   synthétique non sensible.
+2. Étendre le phasage 12 au chromosome 19 complet et exécuter le rapport de
+   faisabilité : densité, marqueurs complets et puissance attendue à 1–5 cM.
+3. Réaliser les simulations de calibration avant le run réel, puis raccorder la
+   figure et la section de rapport 16C sans modifier le run de référence.
 
 Le plan `PLAN_ETAPE_16B_ENRICHISSEMENT_HAPLOTYPE_FONDATEUR.md` est maintenant
 implémenté : `16B_evaluate_founder_haplotype_enrichment` préserve 15 comme LD de
@@ -815,6 +817,20 @@ confirmation IBD complémentaire sans WGS : Hap-IBD et Refined IBD sur les
 données de puce, calibration synthétique, règles multi-familles, témoins,
 contrats, tests et extension ultérieure genome-wide/ERSA. Aucun outil Java n'a
 été installé et aucune analyse 16C n'a été lancée.
+
+Le premier socle logiciel `16C_call_explicit_ibd` est implémenté sans toucher au
+run réel : noyau scientifique Hap-IBD/Refined IBD, cible et trois paires,
+assignation mutante globale, limites, fond et statuts ; refus d'un primaire sous
+2 cM/100 marqueurs ; sensibilités 1–1,5 cM séparées ; adaptateurs Java/JAR avec
+versions, SHA-256, mémoire, threads, timeout et logs ; retrait commun audité des
+GT absents ou non phasés sans imputation ; huit contrats, configuration stricte,
+catalogue orchestrateur, reprise générique, documentation et tests simulés. Les
+exemples restent désactivés avec calibration `false`. La galerie 18 et le
+rapport 19 ne rendent pas encore 16C obligatoire afin de préserver les runs
+historiques ; leur raccord doit accompagner le panel chromosome 19 complet.
+Validation de ce socle : 25 tests ciblés réussis, import de `run_pipeline`,
+schémas JSON valides, `git diff --check` propre et suite moderne complète à
+`275 passed` en 10 min 43 s.
 
 La configuration validée du prochain run est
 `config/studies/dock6.16b.next.yaml`. Elle active 16B avec 100 000 tirages

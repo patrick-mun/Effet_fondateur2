@@ -299,6 +299,24 @@ préspécifié, le statut est `NOT_CLASSIFIED`; aucun résultat ne constitue une
 preuve IBD ou automatique d'effet fondateur. Le contrat est documenté dans
 `docs/modules/founder_haplotype_enrichment.md`.
 
+L'étape optionnelle `16C_call_explicit_ibd` appelle ensuite Hap-IBD et
+Refined IBD sur un VCF phasé commun et une carte génétique commune. Le scénario
+primaire ne peut pas descendre sous `2 cM` et `100` marqueurs ; les scénarios
+`1,5 cM` et `1 cM` restent des sensibilités et exigent une calibration
+préspécifiée. Les marqueurs ayant au moins un génotype manquant ou non phasé
+sont retirés des deux outils et audités, jamais imputés silencieusement.
+Une assignation mutante globale cohérente par famille est exigée : des choix
+H1/H2 différents selon les paires ne peuvent pas produire un résultat positif.
+Quel que soit le statut, `founder_effect_proven` reste faux et une absence
+d'appel sur puce SNP n'est jamais présentée comme une réfutation. Voir
+`docs/modules/explicit_ibd.md`.
+
+16C est désactivée dans les exemples tant que Java, les deux JAR et leurs
+SHA-256 ne sont pas configurés. Aucun téléchargement n'est automatique. Le
+bloc `tools.explicit_ibd_adapters` doit épingler Java, les versions et les
+empreintes des JAR avant une exécution réelle. L'environnement actuel peut
+donc exécuter les tests simulés sans disposer des logiciels externes.
+
 L'étape `17_run_sensitivity_analyses` consolide ensuite un run primaire et des
 runs de sensibilité distincts, déclarés dans un registre TSV. Elle vérifie les
 manifestes, configurations, signatures, résumés et ancrages moléculaires avant
