@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import csv
+import gzip
 import json
+import re
 import subprocess
 import sys
 from collections import defaultdict
@@ -42,6 +45,66 @@ class FounderEnrichmentInputError(ValueError):
 
 class FounderEnrichmentExternalError(RuntimeError):
     """Signale un échec contrôlé de bcftools."""
+
+
+_IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+_POSITIVE_PATTERN = re.compile(r"^[1-9][0-9]*$")
+_COUNT_PATTERN = re.compile(r"^[0-9]+$")
+_DECIMAL_PATTERN = re.compile(r"^[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$")
+
+
+def _validate_null_draws_streaming(path: Path) -> int:
+    """Valide le gros fichier de tirages en mémoire constante.
+
+    Le générateur publie des blocs contigus par `(source, strate)` avec des
+    indices strictement croissants. Cette propriété permet de contrôler la clé
+    primaire sans conserver plusieurs millions de lignes ou de clés en RAM.
+    """
+
+    row_count = 0
+    current_group: tuple[str, str] | None = None
+    completed_groups: set[tuple[str, str]] = set()
+    previous_draw_index = 0
+    if not path.is_file():
+        raise TableValidationError(f"Table TSV introuvable : {path}")
+    try:
+        input_file = gzip.open(path, "rt", encoding="utf-8", newline="")
+    except OSError as error:
+        raise TableValidationError(f"Table TSV introuvable : {path}") from error
+    with input_file:
+        reader = csv.DictReader(input_file, delimiter="\t")
+        if tuple(reader.fieldnames or ()) != tuple(NULL_DRAW_COLUMNS):
+            raise TableValidationError(f"En-tête invalide pour {path}; ordre ou colonnes non conformes.")
+        for line_number, row in enumerate(reader, start=2):
+            if None in row or any(row[column] is None for column in NULL_DRAW_COLUMNS):
+                raise TableValidationError(f"Ligne {line_number} : nombre de champs différent de l'en-tête.")
+            source, stratum = row["NULL_SOURCE"], row["STRATUM"]
+            group = (source, stratum)
+            if group != current_group:
+                if group in completed_groups:
+                    raise TableValidationError(f"Ligne {line_number} : bloc de clé primaire TSV répété.")
+                completed_groups.add(group)
+                current_group, previous_draw_index = group, 0
+            if source not in {"INTERNAL", "EXTERNAL"} or not _IDENTIFIER_PATTERN.fullmatch(stratum):
+                raise TableValidationError(f"Ligne {line_number} : source ou strate invalide.")
+            positive_fields = ("DRAW_INDEX", "ATTEMPT_INDEX", "UNIT_COUNT")
+            if any(not _POSITIVE_PATTERN.fullmatch(row[column]) for column in positive_fields):
+                raise TableValidationError(f"Ligne {line_number} : entier positif invalide.")
+            draw_index = int(row["DRAW_INDEX"])
+            if draw_index <= previous_draw_index:
+                raise TableValidationError(f"Ligne {line_number} : clé primaire TSV dupliquée ou désordonnée.")
+            previous_draw_index = draw_index
+            if row["EVALUATION_STATUS"] not in {"EVALUATED", "NOT_EVALUATED"}:
+                raise TableValidationError(f"Ligne {line_number} : statut d'évaluation invalide.")
+            if any(value and not _DECIMAL_PATTERN.fullmatch(value) for value in (row["LEFT_SHARED_CM"], row["RIGHT_SHARED_CM"], row["TOTAL_SHARED_CM"])):
+                raise TableValidationError(f"Ligne {line_number} : valeur décimale invalide.")
+            if any(value and not _COUNT_PATTERN.fullmatch(value) for value in (row["LEFT_MARKER_COUNT"], row["RIGHT_MARKER_COUNT"])):
+                raise TableValidationError(f"Ligne {line_number} : nombre de marqueurs invalide.")
+            reason = row["NON_EVALUABLE_REASON"]
+            if reason and not _IDENTIFIER_PATTERN.fullmatch(reason):
+                raise TableValidationError(f"Ligne {line_number} : motif de non-évaluation invalide.")
+            row_count += 1
+    return row_count
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -353,8 +416,9 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
     # Le fichier des tirages contient plusieurs millions de lignes : valider
     # d'abord toutes les petites sorties évite une longue passe inutile si leur
     # sérialisation ou leur contrat présente une erreur.
-    contracts = ((units_path, "founder_haplotype_units.schema.json"), (boundaries_path, "founder_haplotype_boundaries.schema.json"), (consistency_path, "founder_haplotype_family_consistency.schema.json"), (variant_path, "founder_haplotype_variant_audit.schema.json"), (summary_table_path, "founder_haplotype_enrichment_summary_table.schema.json"), (draws_path, "founder_haplotype_null_draws.schema.json"))
+    contracts = ((units_path, "founder_haplotype_units.schema.json"), (boundaries_path, "founder_haplotype_boundaries.schema.json"), (consistency_path, "founder_haplotype_family_consistency.schema.json"), (variant_path, "founder_haplotype_variant_audit.schema.json"), (summary_table_path, "founder_haplotype_enrichment_summary_table.schema.json"))
     for path, schema in contracts: validate_tsv_table(path, schema)
+    _validate_null_draws_streaming(draws_path)
 
     specs = (("founder_haplotype_units", units_path, "founder_haplotype_units.schema.json", "sensitive_genetic"), ("founder_haplotype_boundaries", boundaries_path, "founder_haplotype_boundaries.schema.json", "sensitive_genetic"), ("founder_haplotype_family_consistency", consistency_path, "founder_haplotype_family_consistency.schema.json", "sensitive_genetic"), ("founder_haplotype_null_draws", draws_path, "founder_haplotype_null_draws.schema.json", "internal"), ("founder_haplotype_variant_audit", variant_path, "founder_haplotype_variant_audit.schema.json", "internal"), ("founder_haplotype_enrichment_summary", summary_table_path, "founder_haplotype_enrichment_summary_table.schema.json", "internal"), ("founder_haplotype_enrichment_summary_json", summary_json_path, "founder_haplotype_enrichment_summary.schema.json", "internal"))
     output_artifacts = [build_file_artifact(physical_path=path, published_path=f"{stage_inputs['published_output_dir']}/{path.relative_to(output_dir).as_posix()}", artifact_id=artifact_id, artifact_type=artifact_id, media_type="application/gzip" if path.suffix == ".gz" else ("application/json" if path.suffix == ".json" else "text/tab-separated-values"), producer_stage=stage_inputs["stage_name"], producer_signature=stage_inputs["signature"], schema_name=schema, schema_version="1.0.0", assembly=target["assembly"], sample_set_id=None, variant_set_id=target["project_variant_id"], sensitivity=sensitivity) for artifact_id, path, schema, sensitivity in specs]

@@ -8,8 +8,9 @@ from effet_fondateur.contracts import TableValidationError, validate_json_docume
 from effet_fondateur.contracts.documents import DocumentValidationError
 from effet_fondateur.stages.evaluate_founder_haplotype_enrichment import (
     _load_target_metadata,
+    _validate_null_draws_streaming,
 )
-from effet_fondateur.founder_enrichment.publication import write_tsv
+from effet_fondateur.founder_enrichment.publication import NULL_DRAW_COLUMNS, write_tsv
 
 
 def _write(path: Path, columns: list[str], row: list[str]) -> None:
@@ -54,6 +55,25 @@ def test_null_draw_contract_can_be_validated_while_gzipped(tmp_path: Path) -> No
         writer.writerow(columns)
         writer.writerow(["EXTERNAL", "ALL", "1", "1", "3", "EVALUATED", "0.4", "0.9", "1.3", "5", "9", ""])
     assert validate_tsv_table(path, "founder_haplotype_null_draws.schema.json").row_count == 1
+    assert _validate_null_draws_streaming(path) == 1
+
+
+def test_streaming_null_draw_validation_rejects_duplicate_or_revisited_keys(tmp_path: Path) -> None:
+    path = tmp_path / "draws.tsv.gz"
+    columns = list(NULL_DRAW_COLUMNS)
+    with gzip.open(path, "wt", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle, delimiter="\t", lineterminator="\n")
+        writer.writerow(columns)
+        row = ["EXTERNAL", "ALL", "1", "1", "3", "EVALUATED", "0.4", "0.9", "1.3", "5", "9", ""]
+        writer.writerow(row)
+        writer.writerow(row)
+    with pytest.raises(TableValidationError, match="dupliquée ou désordonnée"):
+        _validate_null_draws_streaming(path)
+
+
+def test_streaming_null_draw_validation_reports_missing_file(tmp_path: Path) -> None:
+    with pytest.raises(TableValidationError, match="introuvable"):
+        _validate_null_draws_streaming(tmp_path / "missing.tsv.gz")
 
 
 def test_founder_enrichment_loads_target_metadata_from_yaml(tmp_path: Path) -> None:
