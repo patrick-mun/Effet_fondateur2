@@ -7,6 +7,7 @@ import csv
 import json
 import math
 import sys
+import tempfile
 from itertools import combinations
 from pathlib import Path, PurePosixPath
 from time import monotonic
@@ -80,6 +81,22 @@ def _query_complete_variants(
     if not rows:
         raise ExplicitIbdInputError("phased_variant_query_empty")
     return tuple(rows)
+
+
+def _validate_tool_vcf_universe(
+    variants: Sequence[tuple[str, str, int, bool]],
+    marker_rows: Sequence[dict[str, Any]],
+    chromosome: int,
+) -> None:
+    """Exige le même univers ordonné dans le VCF temporaire et la carte IBD."""
+
+    expected = tuple(
+        (row["VARIANT_ID"], row["CHROMOSOME"], row["POSITION_BP"])
+        for row in marker_rows
+    )
+    observed = tuple((variant_id, chrom, position) for variant_id, chrom, position, _ in variants)
+    if observed != expected or any(not complete for *_, complete in variants):
+        raise ExplicitIbdInputError(f"ibd_tool_vcf_universe_mismatch:chr{chromosome}")
 
 
 def _scenario(raw: dict[str, Any], calibrated: bool = False) -> Scenario:
@@ -272,14 +289,22 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         marker_rows.extend(chromosome_marker_rows)
         if chromosome == target_chromosome:
             target_map = (cm_at_bp, marker_positions)
-        for scenario in declared:
-            for tool in ("HAP_IBD", "REFINED_IBD"):
-                prefix = analysis_dir / "tool_outputs" / f"chr{chromosome}" / f"{scenario.scenario_id}.{tool.lower()}"; prefix.parent.mkdir(parents=True, exist_ok=True)
-                run = run_tool(tool=tool, adapters=adapters, vcf_path=bcf, map_path=map_path, output_prefix=prefix, minimum_cm=scenario.minimum_cm, minimum_markers=scenario.minimum_markers, threads=int(parameters["threads"]), memory_mb=int(parameters["java_memory_mb"]), timeout_seconds=timeout)
-                parsed = parse_hap_ibd(run.output_path, scenario.scenario_id, family_by_sample, cm_at_bp, marker_positions) if tool == "HAP_IBD" else parse_refined_ibd(run.output_path, scenario.scenario_id, family_by_sample, cm_at_bp, marker_positions)
-                all_segments.extend(parsed)
-                tool_records.append({"tool": tool, "scenario": scenario.scenario_id, "chromosome": chromosome, "command": list(run.command), "version": adapters["hap_ibd_version" if tool == "HAP_IBD" else "refined_ibd_version"]})
-                raw_output_specs.extend(((f"raw_{tool.lower()}_{scenario.scenario_id}_chr{chromosome}", run.output_path, "sensitive_genetic"), (f"log_{tool.lower()}_{scenario.scenario_id}_chr{chromosome}", run.log_path, "internal")))
+        with tempfile.TemporaryDirectory(prefix=f".explicit_ibd_chr{chromosome}_", dir=output_dir) as temporary_name:
+            tool_vcf = Path(temporary_name) / f"chr{chromosome}.study.phased.vcf.gz"
+            _run([config["tools"]["bcftools"], "view", "-Oz", "-o", str(tool_vcf), str(bcf)], timeout)
+            _validate_tool_vcf_universe(
+                _query_complete_variants(config["tools"]["bcftools"], tool_vcf, timeout),
+                chromosome_marker_rows,
+                chromosome,
+            )
+            for scenario in declared:
+                for tool in ("HAP_IBD", "REFINED_IBD"):
+                    prefix = analysis_dir / "tool_outputs" / f"chr{chromosome}" / f"{scenario.scenario_id}.{tool.lower()}"; prefix.parent.mkdir(parents=True, exist_ok=True)
+                    run = run_tool(tool=tool, adapters=adapters, vcf_path=tool_vcf, map_path=map_path, output_prefix=prefix, minimum_cm=scenario.minimum_cm, minimum_markers=scenario.minimum_markers, threads=int(parameters["threads"]), memory_mb=int(parameters["java_memory_mb"]), timeout_seconds=timeout)
+                    parsed = parse_hap_ibd(run.output_path, scenario.scenario_id, family_by_sample, cm_at_bp, marker_positions) if tool == "HAP_IBD" else parse_refined_ibd(run.output_path, scenario.scenario_id, family_by_sample, cm_at_bp, marker_positions)
+                    all_segments.extend(parsed)
+                    tool_records.append({"tool": tool, "scenario": scenario.scenario_id, "chromosome": chromosome, "command": list(run.command), "version": adapters["hap_ibd_version" if tool == "HAP_IBD" else "refined_ibd_version"]})
+                    raw_output_specs.extend(((f"raw_{tool.lower()}_{scenario.scenario_id}_chr{chromosome}", run.output_path, "sensitive_genetic"), (f"log_{tool.lower()}_{scenario.scenario_id}_chr{chromosome}", run.log_path, "internal")))
     if target_map is None:
         raise ExplicitIbdInputError("target_chromosome_map_missing")
     control_results: dict[str, tuple[int, int, float | None]] = {scenario.scenario_id: _control_frequency(all_segments, scenario.scenario_id, controls, target_bp) for scenario in declared}

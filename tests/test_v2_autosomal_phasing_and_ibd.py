@@ -8,6 +8,7 @@ from effet_fondateur.stages.call_explicit_ibd import (
     _align_mutant_haplotypes,
     _control_frequency,
     _map,
+    _validate_tool_vcf_universe,
 )
 from effet_fondateur.stages.phase_autosomal_panel import (
     AutosomalPhasingInputError,
@@ -60,6 +61,20 @@ def test_ibd_map_requires_vcf_compatible_chr_label_and_is_monotonic(tmp_path: Pa
     assert cm_at_bp == {100: 1.25, 200: 1.75}
     assert positions == (100, 200)
     assert [row["CHROMOSOME"] for row in rows] == ["19", "19"]
+
+
+def test_ibd_tool_vcf_must_match_map_and_have_complete_phased_genotypes():
+    markers = [
+        {"VARIANT_ID": "v1", "CHROMOSOME": "19", "POSITION_BP": 100},
+        {"VARIANT_ID": "v2", "CHROMOSOME": "19", "POSITION_BP": 200},
+    ]
+    _validate_tool_vcf_universe(
+        (("v1", "19", 100, True), ("v2", "19", 200, True)), markers, 19
+    )
+    with pytest.raises(call_explicit_ibd.ExplicitIbdInputError, match="universe_mismatch"):
+        _validate_tool_vcf_universe(
+            (("v1", "19", 100, True), ("v2", "19", 200, False)), markers, 19
+        )
 
 
 def test_interpolated_map_uses_bp_fraction_and_flat_extrapolation(tmp_path: Path):
