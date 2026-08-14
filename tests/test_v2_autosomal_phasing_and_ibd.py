@@ -108,6 +108,36 @@ def test_regional_h1_is_swapped_when_whole_chromosome_labels_are_reversed(monkey
     assert {row["ORIENTATION"] for row in audit} == {"SWAPPED"}
 
 
+def test_homozygous_alternate_carriers_do_not_require_phase_orientation(monkeypatch, tmp_path: Path):
+    samples = ["C1", "C2", "C3"]
+    regional = {("19", 100, "A", "G"): ("0|0", "0|0", "0|0")}
+    whole = {("19", 100, "A", "G"): ("0|0", "0|0", "0|0")}
+    calls = iter(((samples, regional), (samples, whole)))
+    monkeypatch.setattr(call_explicit_ibd, "_query_phased", lambda *args: next(calls))
+    carriers = [
+        {
+            "SAMPLE_ID": sample,
+            "RELIABILITY_STATUS": "PASS",
+            "ALT_COPY_COUNT": "2",
+            "CARRIER_HAPLOTYPE": "BOTH",
+        }
+        for sample in samples
+    ]
+
+    mutant, audit = _align_mutant_haplotypes(
+        "bcftools",
+        tmp_path / "regional.bcf",
+        tmp_path / "whole.bcf",
+        carriers,
+        {"C1": "F1", "C2": "F2", "C3": "F3"},
+        10,
+    )
+
+    assert mutant == {"F1": {"H1", "H2"}, "F2": {"H1", "H2"}, "F3": {"H1", "H2"}}
+    assert {row["ORIENTATION"] for row in audit} == {"NOT_REQUIRED_HOMOZYGOUS"}
+    assert {row["CONCORDANCE"] for row in audit} == {None}
+
+
 def test_control_frequency_is_computed_from_both_tools_at_target():
     segments = [
         IbdSegment(tool, "primary", "C1", "H1", "C1", "C2", "H2", "C2", "19", 100, 300, 1.0, 3.0, 120)

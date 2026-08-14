@@ -164,14 +164,24 @@ def _align_mutant_haplotypes(
             same += left_alleles == right_alleles
             swapped += left_alleles == right_alleles[::-1]
         informative = same + swapped
-        if informative < minimum_informative or max(same, swapped) / informative < minimum_concordance:
-            raise ExplicitIbdInputError(f"carrier_phase_alignment_unreliable:{sample}")
-        orientation = "SAME" if same > swapped else "SWAPPED"
-        regional_haps = {"H1", "H2"} if row["CARRIER_HAPLOTYPE"] == "BOTH" else {row["CARRIER_HAPLOTYPE"]}
-        whole_haps = regional_haps if orientation == "SAME" else {"H2" if hap == "H1" else "H1" for hap in regional_haps}
+        homozygous_alternate = row["ALT_COPY_COUNT"] == "2" and row["CARRIER_HAPLOTYPE"] == "BOTH"
+        if homozygous_alternate:
+            # L'orientation H1/H2 ne change pas l'attribution : les deux copies
+            # portent explicitement l'allèle alternatif. Imposer une concordance
+            # de phase entre deux runs indépendants serait un faux garde-fou.
+            orientation = "NOT_REQUIRED_HOMOZYGOUS"
+            regional_haps = whole_haps = {"H1", "H2"}
+            concordance: str | None = None
+        else:
+            if informative < minimum_informative or max(same, swapped) / informative < minimum_concordance:
+                raise ExplicitIbdInputError(f"carrier_phase_alignment_unreliable:{sample}")
+            orientation = "SAME" if same > swapped else "SWAPPED"
+            regional_haps = {row["CARRIER_HAPLOTYPE"]}
+            whole_haps = regional_haps if orientation == "SAME" else {"H2" if hap == "H1" else "H1" for hap in regional_haps}
+            concordance = f"{max(same, swapped) / informative:.12g}"
         family = family_by_sample[sample]
         mutant.setdefault(family, set()).update(whole_haps)
-        audit.append({"SAMPLE_ID": sample, "FAMILY_ID": family, "INFORMATIVE_MARKERS": informative, "SAME_COUNT": same, "SWAPPED_COUNT": swapped, "ORIENTATION": orientation, "CONCORDANCE": f"{max(same, swapped) / informative:.12g}", "REGIONAL_MUTANT_HAPLOTYPE": row["CARRIER_HAPLOTYPE"], "AUTOSOMAL_MUTANT_HAPLOTYPE": "BOTH" if whole_haps == {"H1", "H2"} else next(iter(whole_haps))})
+        audit.append({"SAMPLE_ID": sample, "FAMILY_ID": family, "INFORMATIVE_MARKERS": informative, "SAME_COUNT": same, "SWAPPED_COUNT": swapped, "ORIENTATION": orientation, "CONCORDANCE": concordance, "REGIONAL_MUTANT_HAPLOTYPE": row["CARRIER_HAPLOTYPE"], "AUTOSOMAL_MUTANT_HAPLOTYPE": "BOTH" if whole_haps == {"H1", "H2"} else next(iter(whole_haps))})
     if len(mutant) < 3:
         raise ExplicitIbdInputError("insufficient_aligned_carrier_families")
     return mutant, audit
