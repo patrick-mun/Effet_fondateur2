@@ -5,6 +5,7 @@ import pytest
 
 from effet_fondateur.audit import sha256_file
 from effet_fondateur.explicit_ibd.execution import ExplicitIbdExternalError, run_tool, validate_adapters
+from effet_fondateur.orchestrator.environment import build_environment
 
 
 def _adapters(tmp_path: Path):
@@ -33,3 +34,18 @@ def test_nonzero_tool_exit_is_controlled(tmp_path: Path):
         return subprocess.CompletedProcess(args[0], 7, "", "failure")
     with pytest.raises(ExplicitIbdExternalError, match="failed:7"):
         run_tool(tool="REFINED_IBD", adapters=_adapters(tmp_path), vcf_path=tmp_path / "x.vcf.gz", map_path=tmp_path / "map", output_prefix=tmp_path / "out", minimum_cm=2.0, minimum_markers=100, threads=1, memory_mb=256, timeout_seconds=1, runner=failed)
+
+
+def test_environment_handles_structured_explicit_ibd_adapter(tmp_path: Path):
+    adapters = _adapters(tmp_path)
+    config = {
+        "tools": {
+            "explicit_ibd_adapters": adapters,
+        }
+    }
+
+    environment = build_environment(config)["tools"]["explicit_ibd_adapters"]
+
+    assert environment["expected_java_major"] == 17
+    assert environment["hap_ibd"]["sha256"] == adapters["hap_ibd_sha256"]
+    assert environment["refined_ibd"]["version"] == "1.0"

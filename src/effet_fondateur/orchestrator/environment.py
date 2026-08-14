@@ -76,6 +76,26 @@ def build_environment(config: dict[str, Any]) -> dict[str, Any]:
                     tool_config["phase_rare_command"], "shapeit5_phase_rare"
                 ),
             }
+        elif tool_key == "explicit_ibd_adapters" and isinstance(tool_config, dict):
+            # Le bloc est une configuration structurée, pas une commande. Les
+            # empreintes déclarées sont enregistrées sans lire de génotype ni
+            # inclure le contenu des JAR dans l'inventaire du run.
+            tools_environment[tool_key] = {
+                "expected_java_major": tool_config["expected_java_major"],
+                "java": capture_tool_environment(
+                    tool_config["java_command"], "java"
+                ),
+                "hap_ibd": {
+                    "configured": tool_config["hap_ibd_jar"],
+                    "version": tool_config["hap_ibd_version"],
+                    "sha256": tool_config["hap_ibd_sha256"],
+                },
+                "refined_ibd": {
+                    "configured": tool_config["refined_ibd_jar"],
+                    "version": tool_config["refined_ibd_version"],
+                    "sha256": tool_config["refined_ibd_sha256"],
+                },
+            }
         else:
             tools_environment[tool_key] = capture_tool_environment(tool_config, tool_key)
     return {
