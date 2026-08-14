@@ -11,7 +11,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path, PurePosixPath
 from time import monotonic
 from typing import Any, Callable, Sequence
@@ -222,8 +222,26 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
                 timeout_seconds=extract_timeout, extractor=extractor,
             )
 
-        with ThreadPoolExecutor(max_workers=min(extract_workers, 22)) as executor:
-            cached_references = dict(executor.map(cache_one, range(1, 23)))
+        # Consommer les résultats par ordre d'achèvement rend une panne réseau
+        # immédiatement visible. `executor.map()` attendrait sinon le premier
+        # chromosome dans l'ordre tout en lançant inutilement les 22 tâches.
+        executor = ThreadPoolExecutor(max_workers=min(extract_workers, 22))
+        futures = {
+            executor.submit(cache_one, chromosome): chromosome
+            for chromosome in range(1, 23)
+        }
+        cached_references: dict[int, Any] = {}
+        try:
+            for future in as_completed(futures):
+                chromosome, cached = future.result()
+                cached_references[chromosome] = cached
+        except Exception:
+            for future in futures:
+                future.cancel()
+            executor.shutdown(wait=True, cancel_futures=True)
+            raise
+        else:
+            executor.shutdown(wait=True)
         chromosome_records: list[dict[str, Any]] = []
         output_artifacts: list[dict[str, Any]] = []
         producer = f"{stage_inputs['stage_id']}_{stage_inputs['stage_name']}"
