@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/autosomal_phasing_manifest.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "method_id", "assembly", "sample_set_id", "variant_set_id", "sample_count", "variant_count", "chromosomes", "checks"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "method_id": {"const": "shapeit5_reference_common_autosomes_v1"},
+    "assembly": {"const": "GRCh38"},
+    "sample_set_id": {"type": "string", "minLength": 1},
+    "variant_set_id": {"type": "string", "minLength": 1},
+    "sample_count": {"type": "integer", "minimum": 1},
+    "variant_count": {"type": "integer", "minimum": 1},
+    "chromosomes": {
+      "type": "array", "minItems": 22, "maxItems": 22,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["chromosome", "study_input_variants", "reference_matched_variants", "phased_variants", "reference_cache_status", "bcf", "index", "ibd_map", "log"],
+        "properties": {
+          "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+          "study_input_variants": {"type": "integer", "minimum": 1},
+          "reference_matched_variants": {"type": "integer", "minimum": 2},
+          "phased_variants": {"type": "integer", "minimum": 2},
+          "reference_cache_status": {"enum": ["HIT", "POPULATED"]},
+          "bcf": {"$ref": "#/$defs/file"},
+          "index": {"$ref": "#/$defs/file"},
+          "ibd_map": {"$ref": "#/$defs/file"},
+          "log": {"$ref": "#/$defs/file"}
+        }
+      }
+    },
+    "checks": {
+      "type": "object", "additionalProperties": {"const": "PASS"},
+      "required": ["same_samples_all_chromosomes", "complete_genotypes", "all_genotypes_phased", "reference_alleles", "maps_monotonic", "all_22_autosomes"]
+    }
+  },
+  "$defs": {
+    "file": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256", "size_bytes"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "size_bytes": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

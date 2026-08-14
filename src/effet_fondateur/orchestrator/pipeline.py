@@ -192,6 +192,32 @@ QC_FINAL_STAGE = StageDefinition(
     ),
 )
 
+PREPARE_AUTOSOMAL_PHASING_PANEL_STAGE = StageDefinition(
+    stage_id="10A",
+    stage_name="prepare_autosomal_phasing_panel",
+    module="effet_fondateur.stages.prepare_autosomal_phasing_panel",
+    critical=True,
+    dependencies=("qc_preliminary", "freeze_cohorts", "qc_final"),
+    required_artifact_ids=(
+        "genomewide_pre_qc_bed", "genomewide_pre_qc_bim",
+        "genomewide_pre_qc_fam", "genomewide_pre_qc_dataset",
+        "cohort_keep_target_chromosome_all_qc",
+    ),
+)
+
+PHASE_AUTOSOMAL_PANEL_STAGE = StageDefinition(
+    stage_id="12A",
+    stage_name="phase_autosomal_panel",
+    module="effet_fondateur.stages.phase_autosomal_panel",
+    critical=True,
+    dependencies=("build_sample_registry", "prepare_autosomal_phasing_panel"),
+    config_input_files=("reference_panel_catalog", "ancestry_reference_catalog", "genetic_map_catalog"),
+    required_artifact_ids=(
+        "samples_master", "autosomal_phasing_panel_bed", "autosomal_phasing_panel_bim",
+        "autosomal_phasing_panel_fam", "autosomal_phasing_panel_dataset",
+    ),
+)
+
 PREPARE_TARGET_REGION_STAGE = StageDefinition(
     stage_id="11",
     stage_name="prepare_target_region",
@@ -383,13 +409,14 @@ CALL_EXPLICIT_IBD_STAGE = StageDefinition(
     dependencies=(
         "build_sample_registry", "freeze_cohorts", "qc_final",
         "prepare_target_region", "phase_target_region",
-        "infer_founder_haplotype", "analyze_reference_ancestry",
+        "phase_autosomal_panel", "infer_founder_haplotype", "analyze_reference_ancestry",
     ),
     config_input_files=("target_variant_metadata",),
     required_artifact_ids=(
-        "samples_master", "cohorts_frozen", "target_genetic_map",
+        "samples_master", "cohorts_frozen",
         "shapeit5_final_bcf", "shapeit5_final_index", "carrier_haplotypes",
-        "founder_analysis_summary",
+        "founder_analysis_summary", "autosomal_phasing_manifest",
+        *(f"autosomal_phased_chr{chromosome}_{kind}" for chromosome in range(1, 23) for kind in ("bcf", "index", "ibd_map")),
     ),
 )
 
@@ -456,8 +483,10 @@ DEFAULT_STAGE_DEFINITIONS = (
     ANALYZE_POPULATION_STRUCTURE_STAGE,
     FREEZE_COHORTS_STAGE,
     QC_FINAL_STAGE,
+    PREPARE_AUTOSOMAL_PHASING_PANEL_STAGE,
     PREPARE_TARGET_REGION_STAGE,
     PHASE_TARGET_REGION_STAGE,
+    PHASE_AUTOSOMAL_PANEL_STAGE,
     INFER_FOUNDER_HAPLOTYPE_STAGE,
     ESTIMATE_VARIANT_AGE_STAGE,
     ANALYZE_LOCAL_LD_STAGE,

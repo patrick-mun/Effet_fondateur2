@@ -196,14 +196,15 @@
           "required": ["method", "input_scope", "primary", "sensitivities", "boundary_tolerance_bp", "maximum_control_frequency", "tool_timeout_seconds", "java_memory_mb", "threads"],
           "properties": {
             "method": {"const": "dual_target_centered_explicit_ibd_v1"},
-            "input_scope": {"enum": ["TARGET_REGION", "TARGET_CHROMOSOME"]},
+            "input_scope": {"enum": ["TARGET_REGION", "TARGET_CHROMOSOME", "AUTOSOMAL_GENOMEWIDE"]},
             "primary": {"$ref": "#/$defs/ibdScenario"},
             "sensitivities": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/ibdScenario"}},
             "boundary_tolerance_bp": {"type": "integer", "minimum": 0},
             "maximum_control_frequency": {"type": "number", "minimum": 0, "maximum": 1},
             "tool_timeout_seconds": {"type": "integer", "minimum": 1},
             "java_memory_mb": {"type": "integer", "minimum": 256},
-            "threads": {"type": "integer", "minimum": 1}
+            "threads": {"type": "integer", "minimum": 1},
+            "minimum_control_pairs": {"type": "integer", "minimum": 1}
           }
         }
       }
