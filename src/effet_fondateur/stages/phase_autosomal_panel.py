@@ -81,6 +81,12 @@ def _write_lines(path: Path, lines: Sequence[str]) -> None:
     path.write_text("".join(f"{line}\n" for line in lines), encoding="utf-8")
 
 
+def _plink_bgz_vcf_path(prefix: Path) -> Path:
+    """Conserve intégralement le préfixe PLINK avant d'ajouter `.vcf.gz`."""
+
+    return Path(f"{prefix}.vcf.gz")
+
+
 def _md5_file(path: Path) -> str:
     digest = hashlib.md5(usedforsecurity=False)
     with path.open("rb") as handle:
@@ -310,7 +316,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             rename = temporary / f"chr{chromosome}.rename.tsv"
             _write_lines(rename, [f"{chromosome}\tchr{chromosome}"])
             study_vcf = chromosome_dir / "study.harmonized.vcf.gz"
-            _run([bcftools, "annotate", "--rename-chrs", str(rename), "-Oz", "-o", str(study_vcf), str(raw_prefix.with_suffix(".vcf.gz"))], tool_timeout, f"study_contig_normalization_failed:chr{chromosome}")
+            _run([bcftools, "annotate", "--rename-chrs", str(rename), "-Oz", "-o", str(study_vcf), str(_plink_bgz_vcf_path(raw_prefix))], tool_timeout, f"study_contig_normalization_failed:chr{chromosome}")
             _run([bcftools, "index", "--tbi", str(study_vcf)], tool_timeout, f"study_index_failed:chr{chromosome}")
             study_query = _run([bcftools, "query", "-f", "%POS\t%REF\t%ALT\n", str(study_vcf)], tool_timeout, f"study_allele_query_failed:chr{chromosome}")
             if any(reference_by_position.get(int(fields[0])) != (fields[1], fields[2]) for fields in (line.split("\t") for line in study_query.stdout.splitlines())):

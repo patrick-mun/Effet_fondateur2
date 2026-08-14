@@ -14,6 +14,7 @@ from effet_fondateur.stages.phase_autosomal_panel import (
     _interpolate,
     _map_points,
     _md5_file,
+    _plink_bgz_vcf_path,
     _validated_local_reference_source,
 )
 
@@ -31,6 +32,10 @@ def test_local_autosomal_reference_requires_matching_vcf_and_index(tmp_path: Pat
         _validated_local_reference_source(
             tmp_path, "panel.vcf.gz", "0" * 32, _md5_file(index)
         )
+
+
+def test_plink_bgz_vcf_path_preserves_dotted_prefix(tmp_path: Path):
+    assert _plink_bgz_vcf_path(tmp_path / "chr1.study") == tmp_path / "chr1.study.vcf.gz"
 
 
 def test_ibd_map_requires_vcf_compatible_chr_label_and_is_monotonic(tmp_path: Path):
