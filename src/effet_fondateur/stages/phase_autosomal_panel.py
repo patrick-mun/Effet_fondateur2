@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import bisect
 import csv
+import hashlib
 import json
 import math
 import shutil
@@ -78,6 +79,31 @@ def _file(path: Path, root: Path) -> dict[str, Any]:
 
 def _write_lines(path: Path, lines: Sequence[str]) -> None:
     path.write_text("".join(f"{line}\n" for line in lines), encoding="utf-8")
+
+
+def _md5_file(path: Path) -> str:
+    digest = hashlib.md5(usedforsecurity=False)
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(8 * 1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _validated_local_reference_source(
+    source_dir: Path,
+    filename: str,
+    expected_vcf_md5: str,
+    expected_index_md5: str,
+) -> Path:
+    """Retourne un VCF local uniquement s'il correspond au manifeste officiel."""
+
+    vcf_path = source_dir / filename
+    index_path = source_dir / f"{filename}.tbi"
+    if not vcf_path.is_file() or not index_path.is_file():
+        raise AutosomalPhasingInputError(f"local_reference_source_missing:{filename}")
+    if _md5_file(vcf_path) != expected_vcf_md5 or _md5_file(index_path) != expected_index_md5:
+        raise AutosomalPhasingInputError(f"local_reference_source_checksum_mismatch:{filename}")
+    return vcf_path.resolve()
 
 
 def _study_variants(bim: Path) -> dict[int, list[tuple[str, int, str, str]]]:
@@ -161,6 +187,14 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
     cache_root = Path(parameters.get("reference_cache_dir", "data/cache/references"))
     if not cache_root.is_absolute():
         cache_root = Path.cwd() / cache_root
+    source_dir_value = parameters.get("reference_source_dir")
+    if source_dir_value is not None and (not isinstance(source_dir_value, str) or not source_dir_value):
+        raise AutosomalPhasingInputError("invalid_parameter:reference_source_dir")
+    source_dir = Path(source_dir_value) if source_dir_value is not None else None
+    if source_dir is not None and not source_dir.is_absolute():
+        source_dir = Path.cwd() / source_dir
+    if source_dir is not None and not source_dir.is_dir():
+        raise AutosomalPhasingInputError("local_reference_source_dir_missing")
     offline = parameters.get("reference_cache_offline", False)
     if not isinstance(offline, bool):
         raise AutosomalPhasingInputError("invalid_parameter:reference_cache_offline")
@@ -208,7 +242,16 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         def cache_one(chromosome: int):
             source = sources[chromosome]
             filename = panel["vcf_filename_template"].format(chromosome=chromosome)
-            source_url = f"{panel['base_url']}/{filename}"
+            source_url = (
+                str(_validated_local_reference_source(
+                    source_dir,
+                    filename,
+                    source["vcf_md5"],
+                    source["index_md5"],
+                ))
+                if source_dir is not None
+                else f"{panel['base_url']}/{filename}"
+            )
 
             def extractor(url: str, positions_path: Path, samples_path: Path, vcf: Path, index: Path, timeout: int) -> None:
                 def runner(command: list[str], command_timeout: int, code: str):

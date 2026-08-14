@@ -9,7 +9,28 @@ from effet_fondateur.stages.call_explicit_ibd import (
     _control_frequency,
     _map,
 )
-from effet_fondateur.stages.phase_autosomal_panel import _interpolate, _map_points
+from effet_fondateur.stages.phase_autosomal_panel import (
+    AutosomalPhasingInputError,
+    _interpolate,
+    _map_points,
+    _md5_file,
+    _validated_local_reference_source,
+)
+
+
+def test_local_autosomal_reference_requires_matching_vcf_and_index(tmp_path: Path):
+    vcf = tmp_path / "panel.vcf.gz"
+    index = tmp_path / "panel.vcf.gz.tbi"
+    vcf.write_bytes(b"reference-vcf")
+    index.write_bytes(b"reference-index")
+
+    assert _validated_local_reference_source(
+        tmp_path, "panel.vcf.gz", _md5_file(vcf), _md5_file(index)
+    ) == vcf.resolve()
+    with pytest.raises(AutosomalPhasingInputError, match="checksum_mismatch"):
+        _validated_local_reference_source(
+            tmp_path, "panel.vcf.gz", "0" * 32, _md5_file(index)
+        )
 
 
 def test_ibd_map_requires_vcf_compatible_chr_label_and_is_monotonic(tmp_path: Path):
