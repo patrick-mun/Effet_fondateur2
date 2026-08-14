@@ -261,7 +261,7 @@ stages:
       genetic_map_id: shapeit4_hapmap_grch38_7a0cab7
       genetic_map_cache_dir: data/cache/references/genetic_maps
       minimum_matched_variants_per_autosome: 100
-      shapeit5_threads: 2
+      shapeit5_threads: 1
       shapeit5_seed: 15052011
       tool_timeout_seconds: 7200
   infer_founder_haplotype:

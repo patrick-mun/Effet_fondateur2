@@ -12,9 +12,11 @@ from effet_fondateur.stages.call_explicit_ibd import (
 from effet_fondateur.stages.phase_autosomal_panel import (
     AutosomalPhasingInputError,
     _interpolate,
+    _fill_shapeit5_info_tags_command,
     _map_points,
     _md5_file,
     _plink_bgz_vcf_path,
+    _shapeit5_thread_arguments,
     _validated_local_reference_source,
 )
 
@@ -36,6 +38,19 @@ def test_local_autosomal_reference_requires_matching_vcf_and_index(tmp_path: Pat
 
 def test_plink_bgz_vcf_path_preserves_dotted_prefix(tmp_path: Path):
     assert _plink_bgz_vcf_path(tmp_path / "chr1.study") == tmp_path / "chr1.study.vcf.gz"
+
+
+def test_shapeit5_input_command_fills_ac_and_an_tags(tmp_path: Path):
+    command = _fill_shapeit5_info_tags_command(
+        "bcftools", tmp_path / "renamed.vcf.gz", tmp_path / "study.vcf.gz"
+    )
+    assert command[:2] == ["bcftools", "+fill-tags"]
+    assert command[-2:] == ["-t", "AC,AN"]
+
+
+def test_shapeit5_single_thread_does_not_enable_multithread_mode():
+    assert _shapeit5_thread_arguments(1) == []
+    assert _shapeit5_thread_arguments(4) == ["--thread", "4"]
 
 
 def test_ibd_map_requires_vcf_compatible_chr_label_and_is_monotonic(tmp_path: Path):

@@ -68,7 +68,7 @@ def _run(command: Sequence[str], timeout: int, code: str) -> subprocess.Complete
     except (OSError, subprocess.TimeoutExpired) as error:
         raise AutosomalPhasingExternalError(code) from error
     if result.returncode != 0:
-        detail = (result.stderr or result.stdout or "")[-600:].replace("\n", " ")
+        detail = f"{result.stdout or ''}\n{result.stderr or ''}"[-2000:].replace("\n", " ")
         raise AutosomalPhasingExternalError(f"{code}:{result.returncode}:{detail}")
     return result
 
@@ -85,6 +85,32 @@ def _plink_bgz_vcf_path(prefix: Path) -> Path:
     """Conserve intégralement le préfixe PLINK avant d'ajouter `.vcf.gz`."""
 
     return Path(f"{prefix}.vcf.gz")
+
+
+def _fill_shapeit5_info_tags_command(
+    bcftools: str,
+    source_vcf: Path,
+    output_vcf: Path,
+) -> list[str]:
+    """Construit la commande qui ajoute les champs AC/AN requis par SHAPEIT5."""
+
+    return [
+        bcftools,
+        "+fill-tags",
+        str(source_vcf),
+        "-Oz",
+        "-o",
+        str(output_vcf),
+        "--",
+        "-t",
+        "AC,AN",
+    ]
+
+
+def _shapeit5_thread_arguments(threads: int) -> list[str]:
+    """Évite d'activer le mode multithread quand une graine reproductible suffit."""
+
+    return [] if threads == 1 else ["--thread", str(threads)]
 
 
 def _md5_file(path: Path) -> str:
@@ -315,8 +341,10 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             _run([plink, "--bfile", str(paths["autosomal_phasing_panel_bed"].with_suffix("")), "--chr", str(chromosome), "--extract", str(extract_ids), "--a2-allele", str(reference_alleles), "2", "1", "--recode", "vcf-iid", "bgz", "--out", str(raw_prefix)], tool_timeout, f"plink_vcf_export_failed:chr{chromosome}")
             rename = temporary / f"chr{chromosome}.rename.tsv"
             _write_lines(rename, [f"{chromosome}\tchr{chromosome}"])
+            renamed_vcf = temporary / f"chr{chromosome}.study.renamed.vcf.gz"
             study_vcf = chromosome_dir / "study.harmonized.vcf.gz"
-            _run([bcftools, "annotate", "--rename-chrs", str(rename), "-Oz", "-o", str(study_vcf), str(_plink_bgz_vcf_path(raw_prefix))], tool_timeout, f"study_contig_normalization_failed:chr{chromosome}")
+            _run([bcftools, "annotate", "--rename-chrs", str(rename), "-Oz", "-o", str(renamed_vcf), str(_plink_bgz_vcf_path(raw_prefix))], tool_timeout, f"study_contig_normalization_failed:chr{chromosome}")
+            _run(_fill_shapeit5_info_tags_command(bcftools, renamed_vcf, study_vcf), tool_timeout, f"study_info_tags_failed:chr{chromosome}")
             _run([bcftools, "index", "--tbi", str(study_vcf)], tool_timeout, f"study_index_failed:chr{chromosome}")
             study_query = _run([bcftools, "query", "-f", "%POS\t%REF\t%ALT\n", str(study_vcf)], tool_timeout, f"study_allele_query_failed:chr{chromosome}")
             if any(reference_by_position.get(int(fields[0])) != (fields[1], fields[2]) for fields in (line.split("\t") for line in study_query.stdout.splitlines())):
@@ -324,7 +352,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             cached_map = ensure_genetic_map_cached(resolved=resolved_map, chromosome=chromosome, cache_root=Path(parameters.get("genetic_map_cache_dir", "data/cache/references/genetic_maps")), offline=offline)
             source_map = cached_map.map_path.parent.parent / "source" / resolved_map.member_template.format(chromosome=chromosome)
             phased_bcf, log_path = chromosome_dir / "study.phased.bcf", chromosome_dir / "shapeit5.phase_common.log"
-            phase = _run([shapeit5.phase_common_path, "--input", str(study_vcf), "--reference", str(reference.vcf_path), "--map", str(source_map), "--region", f"chr{chromosome}", "--output", str(phased_bcf), "--output-format", "bcf", "--log", str(log_path), "--thread", str(threads), "--seed", str(seed + chromosome)], tool_timeout, f"shapeit5_phase_common_failed:chr{chromosome}")
+            phase = _run([shapeit5.phase_common_path, "--input", str(study_vcf), "--reference", str(reference.vcf_path), "--map", str(source_map), "--region", f"chr{chromosome}", "--output", str(phased_bcf), "--output-format", "bcf", "--log", str(log_path), *_shapeit5_thread_arguments(threads), "--seed", str(seed + chromosome)], tool_timeout, f"shapeit5_phase_common_failed:chr{chromosome}")
             if not log_path.is_file():
                 log_path.write_text(phase.stdout + phase.stderr, encoding="utf-8")
             phased_index = Path(f"{phased_bcf}.csi")
