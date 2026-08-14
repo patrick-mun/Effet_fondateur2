@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from effet_fondateur.contracts import validate_json_document
 from effet_fondateur.explicit_ibd.analysis import IbdSegment
 from effet_fondateur.stages import call_explicit_ibd
 from effet_fondateur.stages.call_explicit_ibd import (
@@ -20,6 +21,36 @@ from effet_fondateur.stages.phase_autosomal_panel import (
     _shapeit5_thread_arguments,
     _validated_local_reference_source,
 )
+
+
+def test_explicit_ibd_summary_contract_accepts_genomewide_scope():
+    validate_json_document(
+        {
+            "schema_version": "1.0.0",
+            "method_id": "dual_target_centered_explicit_ibd_v1",
+            "status": "NOT_EVALUABLE",
+            "primary_status": "NOT_EVALUABLE",
+            "sensitivity_statuses": [],
+            "input_scope": "AUTOSOMAL_GENOMEWIDE",
+            "target": {
+                "assembly": "GRCh38",
+                "chromosome": "19",
+                "position_bp": 1,
+                "project_variant_id": "target",
+            },
+            "family_count": 3,
+            "interpretation": {
+                "ibs_only_from_step13": True,
+                "explicit_ibd_supported": False,
+                "ibd_proven": False,
+                "founder_effect_proven": False,
+                "geographic_origin_inferred": False,
+                "composite_score_calculated": False,
+            },
+            "limitations": ["SNP array resolution"],
+        },
+        "explicit_ibd_summary.schema.json",
+    )
 
 
 def test_local_autosomal_reference_requires_matching_vcf_and_index(tmp_path: Path):
