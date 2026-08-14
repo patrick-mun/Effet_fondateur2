@@ -58,7 +58,7 @@ def test_stage_19_builds_editable_pseudonymized_report_without_ai_call(tmp_path:
     kinship_artifacts = _kinship_outputs(run_dir)
     config_path = run_dir / "config.resolved.yaml"
     config = yaml.safe_load(Path("config/pipeline.example.yaml").read_text(encoding="utf-8"))
-    for stage_name in ("qc_preliminary", "build_kinship_panel", "infer_kinship", "analyze_population_structure", "prepare_target_region", "infer_founder_haplotype", "estimate_variant_age", "analyze_local_ld", "analyze_roh", "analyze_reference_ancestry", "run_sensitivity_analyses"):
+    for stage_name in ("qc_preliminary", "build_kinship_panel", "infer_kinship", "analyze_population_structure", "prepare_target_region", "infer_founder_haplotype", "estimate_variant_age", "analyze_local_ld", "analyze_roh", "analyze_reference_ancestry", "evaluate_founder_haplotype_enrichment", "run_sensitivity_analyses"):
         config["stages"][stage_name]["enabled"] = True
     config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
@@ -71,10 +71,11 @@ def test_stage_19_builds_editable_pseudonymized_report_without_ai_call(tmp_path:
     atomic_write_json(run_dir / "manifest.json", manifest)
     required_ids = {
         "figure_index", "visualization_completeness", "visualization_render_manifest",
-        *[f"figure_{name}" for name in ("population_structure", "founder_ibs", "variant_age", "local_ld", "roh", "reference_ancestry_global", "reference_ancestry_local", "sensitivity")],
-        *[f"figure_provenance_{name}" for name in ("population_structure", "founder_ibs", "variant_age", "local_ld", "roh", "reference_ancestry_global", "reference_ancestry_local", "sensitivity")],
+        *[f"figure_{name}" for name in ("population_structure", "founder_ibs", "variant_age", "local_ld", "roh", "reference_ancestry_global", "reference_ancestry_local", "founder_haplotype_enrichment", "sensitivity")],
+        *[f"figure_provenance_{name}" for name in ("population_structure", "founder_ibs", "variant_age", "local_ld", "roh", "reference_ancestry_global", "reference_ancestry_local", "founder_haplotype_enrichment", "sensitivity")],
     }
-    inputs = kinship_artifacts + [item for item in stage_18_outputs["artifacts"] if item["artifact_id"] in required_ids]
+    enrichment_summary = next(item for item in stage_18_inputs["artifacts"] if item["artifact_id"] == "founder_haplotype_enrichment_summary_json")
+    inputs = kinship_artifacts + [enrichment_summary] + [item for item in stage_18_outputs["artifacts"] if item["artifact_id"] in required_ids]
     report_dir = run_dir / "stages" / "19_build_report"; report_dir.mkdir()
     stage_inputs = {"schema_version": "1.0.0", "run_id": "synthetic_visual_run", "stage_id": "19", "stage_name": "build_report", "signature": "19" * 32, "attempt_number": 1, "published_output_dir": "stages/19_build_report", "parameters": {"method": "reviewable_scientific_report_v1", "ai_provider": "disabled"}, "artifacts": inputs}
     atomic_write_json(report_dir / "stage_inputs.json", stage_inputs)
@@ -94,6 +95,9 @@ def test_stage_19_builds_editable_pseudonymized_report_without_ai_call(tmp_path:
     assert validation["status"] == "AWAITING_HUMAN_REVIEW"
     assert facts["scientific_recalculation_performed"] is False
     assert facts["composite_founder_score_calculated"] is False
+    enrichment = next(section for section in facts["sections"] if section["section_id"] == "founder_haplotype_enrichment")
+    assert any("3 familles indépendantes" in fact for fact in enrichment["facts"])
+    assert all("PRIVATE" not in fact for fact in enrichment["facts"])
     review = {
         "schema_version": "1.0.0", "run_id": facts["run_id"], "review_status": "APPROVED",
         "reviewer": "synthetic-reviewer", "reviewed_at": "2026-08-07T12:00:00Z",

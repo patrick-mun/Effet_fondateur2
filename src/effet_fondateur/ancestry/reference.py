@@ -190,7 +190,10 @@ def load_reference_samples(cached: CachedAncestryMetadata) -> tuple[ReferenceSam
     for line in cached.unrelated_index_path.read_text(encoding="utf-8").splitlines():
         if line.startswith("##"):
             continue
-        fields = line.split("\t")
+        # Trois SAMPLE_NAME du fichier officiel sont suivis d'un espace. Les
+        # champs tabulés sont normalisés sans modifier le fichier public mis en
+        # cache ni relâcher les contrôles d'effectif et d'appartenance.
+        fields = [field.strip() for field in line.split("\t")]
         if line.startswith("#ENA_FILE_PATH"):
             header = [field.removeprefix("#") for field in fields]
             continue

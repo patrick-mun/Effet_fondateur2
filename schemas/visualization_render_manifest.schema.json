@@ -15,7 +15,7 @@
     "method_id": {"const": "validated_current_run_rendering_v1"},
     "source_figure_index_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "domain_order": {
-      "const": ["POPULATION_STRUCTURE", "FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY_GLOBAL", "REFERENCE_ANCESTRY_LOCAL", "SENSITIVITY"]
+      "const": ["POPULATION_STRUCTURE", "FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY_GLOBAL", "REFERENCE_ANCESTRY_LOCAL", "FOUNDER_HAPLOTYPE_ENRICHMENT", "SENSITIVITY"]
     },
     "html": {"$ref": "#/$defs/renderedFile"},
     "pdf": {"$ref": "#/$defs/renderedFile"},

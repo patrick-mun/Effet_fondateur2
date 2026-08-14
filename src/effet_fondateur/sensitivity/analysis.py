@@ -18,7 +18,7 @@ from effet_fondateur.contracts import (
 )
 
 
-DOMAINS = ("FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY")
+DOMAINS = ("FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY", "FOUNDER_HAPLOTYPE_ENRICHMENT")
 DOMAIN_STAGE = {
     "FOUNDER_IBS": ("infer_founder_haplotype", "founder_analysis_summary", "founder_analysis_summary.schema.json"),
     "VARIANT_AGE": ("estimate_variant_age", "variant_age_summary", "variant_age_summary.schema.json"),
@@ -29,6 +29,11 @@ DOMAIN_STAGE = {
         "reference_ancestry_summary",
         "reference_ancestry_summary.schema.json",
     ),
+    "FOUNDER_HAPLOTYPE_ENRICHMENT": (
+        "evaluate_founder_haplotype_enrichment",
+        "founder_haplotype_enrichment_summary_json",
+        "founder_haplotype_enrichment_summary.schema.json",
+    ),
 }
 EXPECT_COLUMNS = {
     "FOUNDER_IBS": "EXPECT_FOUNDER_IBS",
@@ -36,6 +41,7 @@ EXPECT_COLUMNS = {
     "LOCAL_LD": "EXPECT_LOCAL_LD",
     "ROH": "EXPECT_ROH",
     "REFERENCE_ANCESTRY": "EXPECT_REFERENCE_ANCESTRY",
+    "FOUNDER_HAPLOTYPE_ENRICHMENT": "EXPECT_FOUNDER_HAPLOTYPE_ENRICHMENT",
 }
 COMPARISON_COLUMNS = (
     "SCENARIO_ID", "SCENARIO_SIGNATURE", "ROLE", "DESIGN", "CHANGED_FACTOR",
@@ -207,7 +213,9 @@ ALLOWED_FACTOR_PREFIXES = {
         "inputs.ancestry_reference_catalog",
         "stages.phase_target_region.parameters",
         "stages.analyze_reference_ancestry.parameters",
+        "stages.evaluate_founder_haplotype_enrichment.parameters",
     ),
+    "HAPLOTYPE_ENRICHMENT_NULL": ("stages.evaluate_founder_haplotype_enrichment.parameters",),
 }
 
 
@@ -250,6 +258,10 @@ def _technical_endpoint(domain: str, summary: dict[str, Any]) -> tuple[str, str 
             f"REFERENCE_ONLY_AXES={summary['checks']['study_not_used_for_axes']}"
         )
         return status, None, None
+    if domain == "FOUNDER_HAPLOTYPE_ENRICHMENT":
+        external = next((item for item in summary["null_results"] if item["source"] == "EXTERNAL" and item["stratum"] == "ALL"), None)
+        value = None if external is None else external["empirical_probability"]
+        return summary["status"], "external_empirical_probability", None if value is None else float(value)
     statuses = summary["scope_statuses"]
     status = ";".join(f"{key}={statuses[key]}" for key in sorted(statuses))
     return status, "target_in_roh_count", float(summary["target_in_roh_count"])
@@ -294,6 +306,8 @@ def _is_conclusive(domain: str, status: str | None) -> bool:
         return "DESCRIPTIVE_PRIMARY" in status
     if domain == "REFERENCE_ANCESTRY":
         return "REFERENCE_ONLY_AXES=PASS" in status
+    if domain == "FOUNDER_HAPLOTYPE_ENRICHMENT":
+        return status not in {"NOT_EVALUATED", "MULTIPLE_CARRIER_BACKGROUNDS"}
     return "EVALUATED" in status
 
 

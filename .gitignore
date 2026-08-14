@@ -32,6 +32,9 @@ data/runs/
 data/cache/
 test/
 
+# Index locaux des panneaux de référence 1000 Genomes
+/1kGP_high_coverage_Illumina.chr*.vcf.gz.tbi
+
 # Résultats finaux à ne pas traquer
 rapport_tests.html
 rapport_final.pdf

@@ -109,6 +109,9 @@
     "stages": {
       "type": "object",
       "minProperties": 1,
+      "properties": {
+        "evaluate_founder_haplotype_enrichment": {"$ref": "#/$defs/founderEnrichmentStage"}
+      },
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
@@ -158,6 +161,33 @@
           }
         }
       ]
+    },
+    "founderEnrichmentStage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "parameters"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method", "primary_statistic", "minimum_independent_units", "minimum_flank_markers", "internal_null_mode", "external_null_draws", "external_null_max_attempts", "random_seed", "minimum_evaluable_null_draws", "empirical_classification_threshold", "run_superpopulation_sensitivities", "bcftools_timeout_seconds"],
+          "properties": {
+            "method": {"const": "target_centered_empirical_haplotype_sharing_v1"},
+            "primary_statistic": {"const": "total_shared_cm"},
+            "minimum_independent_units": {"type": "integer", "minimum": 3},
+            "minimum_flank_markers": {"type": "integer", "minimum": 1},
+            "internal_null_mode": {"const": "exhaustive"},
+            "external_null_draws": {"type": "integer", "minimum": 1},
+            "external_null_max_attempts": {"type": "integer", "minimum": 1},
+            "random_seed": {"type": "integer", "minimum": 0},
+            "minimum_evaluable_null_draws": {"type": "integer", "minimum": 1},
+            "empirical_classification_threshold": {"type": ["number", "null"], "exclusiveMinimum": 0, "maximum": 1},
+            "run_superpopulation_sensitivities": {"type": "boolean"},
+            "bcftools_timeout_seconds": {"type": "integer", "minimum": 1}
+          }
+        }
+      }
     }
   }
 }

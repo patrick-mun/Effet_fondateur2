@@ -9,7 +9,7 @@
     "schema_version": {"const": "1.0.0"},
     "run_id": {"type": "string", "minLength": 1},
     "figure_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
-    "domain": {"enum": ["POPULATION_STRUCTURE", "FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY_GLOBAL", "REFERENCE_ANCESTRY_LOCAL", "SENSITIVITY"]},
+    "domain": {"enum": ["POPULATION_STRUCTURE", "FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY_GLOBAL", "REFERENCE_ANCESTRY_LOCAL", "FOUNDER_HAPLOTYPE_ENRICHMENT", "SENSITIVITY"]},
     "status": {"enum": ["RENDERED", "NOT_EVALUATED", "BLOCKED"]},
     "method_id": {"const": "validated_current_run_figures_v1"},
     "script_version": {"const": "1.0.0"},

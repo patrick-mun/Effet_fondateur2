@@ -37,7 +37,7 @@ def _parameters(parameters: dict[str, Any]) -> dict[str, Any]:
     if parameters.get("method", "cross_run_sensitivity_consolidation_v1") != "cross_run_sensitivity_consolidation_v1":
         raise SensitivityStageInputError("invalid_parameter:method")
     raw_tolerances = parameters.get("relative_change_tolerances", {})
-    domains = ("FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY")
+    domains = ("FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY", "FOUNDER_HAPLOTYPE_ENRICHMENT")
     if not isinstance(raw_tolerances, dict) or set(raw_tolerances) - set(domains):
         raise SensitivityStageInputError("invalid_parameter:relative_change_tolerances")
     tolerances: dict[str, float | None] = {}

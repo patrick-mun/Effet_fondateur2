@@ -45,6 +45,14 @@ qu'à un SHA-256 local ; un passage ultérieur doit la vérifier et la réutilis
 sans réseau. Une entrée absente en mode hors ligne ou une empreinte discordante
 bloque l'étape.
 
+Pour éviter les lectures HTTP indexées, les VCF complets et leurs index peuvent
+être exposés localement dans
+`data/cache/references/source_panels/<panel_id>/`, en conservant exactement les
+noms du catalogue. Le pipeline recalcule les MD5 du VCF et du TBI et bloque si
+l'un d'eux ne correspond pas à la publication officielle. L'URL officielle
+reste l'identité auditée de la source et la copie locale ne change donc ni la
+clé ni le contenu scientifique du cache d'extraits.
+
 Le cache contient uniquement les variants demandés et les 2 504 références
 publiques. Aucun génotype, identifiant ou fichier de l'étude n'est transmis au
 serveur 1000 Genomes. Sa clé lie le panel, l'assemblage, le chromosome, l'URL et
@@ -65,7 +73,10 @@ ne doit pas être inventée.
 L'harmonisation exige une égalité de coordonnée GRCh38 et une concordance
 directe ou inversée REF/ALT. Une inversion corrige le dosage ; les compléments
 de brin et les correspondances fondées uniquement sur un identifiant sont
-refusés. Les variants monomorphes, trop manquants, absents ou incompatibles sont
+refusés. Lorsque la référence publie plusieurs enregistrements bialléliques à
+une même position, la paire REF/ALT de l'étude doit en désigner exactement un ;
+une absence ou plusieurs correspondances compatibles restent bloquantes. Les
+variants monomorphes, trop manquants, absents ou incompatibles sont
 audités séparément. Les valeurs manquantes restantes sont imputées uniquement
 à la fréquence de la référence pour le calcul des coordonnées PCA ; elles ne
 deviennent jamais des observations publiées.

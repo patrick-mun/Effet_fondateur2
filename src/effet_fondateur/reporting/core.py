@@ -21,13 +21,15 @@ DOMAIN_TITLES = {
     "ROH": "ROH et autozygotie",
     "REFERENCE_ANCESTRY_GLOBAL": "Positionnement global sur références 1000G",
     "REFERENCE_ANCESTRY_LOCAL": "Positionnement haplotypique local sur références 1000G",
+    "FOUNDER_HAPLOTYPE_ENRICHMENT": "Rareté du partage haplotypique exact",
     "SENSITIVITY": "Analyses de sensibilité",
 }
 PARAMETER_STAGES = (
     "qc_preliminary", "build_kinship_panel", "infer_kinship",
     "analyze_population_structure", "prepare_target_region",
     "infer_founder_haplotype", "estimate_variant_age", "analyze_local_ld",
-    "analyze_roh", "analyze_reference_ancestry", "run_sensitivity_analyses",
+    "analyze_roh", "analyze_reference_ancestry",
+    "evaluate_founder_haplotype_enrichment", "run_sensitivity_analyses",
 )
 
 
@@ -122,16 +124,35 @@ def _section_facts(run_dir: Path, artifacts: dict[str, dict[str, Any]]) -> list[
         provenance_id = f"figure_provenance_{figure['figure_id']}"
         provenance = read_json(_artifact_path(run_dir, artifacts[provenance_id])); validate_json_document(provenance, "figure_provenance.schema.json")
         status = {"RENDERED": "VALID", "NOT_EVALUATED": "NOT_EVALUATED", "BLOCKED": "BLOCKED"}[figure["status"]]
+        controlled_facts = [
+            f"Effectif représenté : {provenance['represented_count']}.",
+            f"Exclusions : {provenance['excluded_count']}.",
+            f"Valeurs manquantes : {provenance['missing_value_count']}.",
+            f"Résultats non évalués : {provenance['not_evaluated_count']}.",
+        ]
+        source_ids = ["figure_index", provenance_id, f"figure_{figure['figure_id']}"] if figure["figure_path"] else ["figure_index", provenance_id]
+        if figure["domain"] == "FOUNDER_HAPLOTYPE_ENRICHMENT":
+            summary_id = "founder_haplotype_enrichment_summary_json"
+            summary = read_json(_artifact_path(run_dir, artifacts[summary_id]))
+            validate_json_document(summary, "founder_haplotype_enrichment_summary.schema.json")
+            observed = summary["observed"]
+            controlled_facts = [
+                f"Unité primaire : {summary['independent_family_count']} familles indépendantes.",
+                f"Statistique préspécifiée T_TOTAL_CM : {observed['total_shared_cm']} cM (gauche {observed['left_shared_cm']} cM ; droite {observed['right_shared_cm']} cM).",
+                f"Statut : {summary['status']}.",
+            ]
+            for null_result in summary["null_results"]:
+                if null_result["stratum"] == "ALL":
+                    controlled_facts.append(
+                        f"Fond {null_result['source'].lower()} : p empirique {null_result['empirical_probability']}, intervalle {null_result['interval_low']}–{null_result['interval_high']}, {null_result['evaluable_draws']} tirages évaluables et {null_result['non_evaluable_draws']} non évaluables."
+                    )
+            controlled_facts.append("Partage IBS centré cible ; aucune preuve IBD, d'effet fondateur automatique ou d'origine géographique.")
+            source_ids.append(summary_id)
         sections.append({
             "section_id": figure["figure_id"], "title": DOMAIN_TITLES[figure["domain"]], "status": status,
-            "facts": [
-                f"Effectif représenté : {provenance['represented_count']}.",
-                f"Exclusions : {provenance['excluded_count']}.",
-                f"Valeurs manquantes : {provenance['missing_value_count']}.",
-                f"Résultats non évalués : {provenance['not_evaluated_count']}.",
-            ],
+            "facts": controlled_facts,
             "limits": provenance["known_limits"] + provenance["interpretation_warnings"],
-            "source_artifact_ids": ["figure_index", provenance_id, f"figure_{figure['figure_id']}"] if figure["figure_path"] else ["figure_index", provenance_id],
+            "source_artifact_ids": source_ids,
         })
     return sections
 

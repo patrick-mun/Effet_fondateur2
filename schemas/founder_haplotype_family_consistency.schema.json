@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/founder_haplotype_family_consistency.schema.json",
+  "title": "Cohérence intrafamiliale des copies mutantes",
+  "x-tsv": {"schema_version": "1.0.0", "columns": ["FAMILY_ID", "EXPLICIT_MUTANT_COPY_COUNT", "EVALUABLE_MUTANT_COPY_COUNT", "COMPATIBLE_COPY_COUNT", "BACKGROUND_COUNT", "STATUS", "DETAIL_CODE"], "null_value": "", "primary_key": ["FAMILY_ID"], "boolean_values": {"true": true, "false": false}},
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"}, "count": {"type": "string", "pattern": "^[0-9]+$"},
+    "nullableIdentifier": {"oneOf": [{"$ref": "#/$defs/identifier"}, {"type": "null"}]},
+    "row": {"type": "object", "additionalProperties": false, "required": ["FAMILY_ID", "EXPLICIT_MUTANT_COPY_COUNT", "EVALUABLE_MUTANT_COPY_COUNT", "COMPATIBLE_COPY_COUNT", "BACKGROUND_COUNT", "STATUS", "DETAIL_CODE"], "properties": {
+      "FAMILY_ID": {"$ref": "#/$defs/identifier"}, "EXPLICIT_MUTANT_COPY_COUNT": {"$ref": "#/$defs/count"}, "EVALUABLE_MUTANT_COPY_COUNT": {"$ref": "#/$defs/count"},
+      "COMPATIBLE_COPY_COUNT": {"$ref": "#/$defs/count"}, "BACKGROUND_COUNT": {"$ref": "#/$defs/count"},
+      "STATUS": {"enum": ["CONSISTENT", "MULTIPLE_CARRIER_BACKGROUNDS", "NOT_EVALUATED"]}, "DETAIL_CODE": {"$ref": "#/$defs/nullableIdentifier"}
+    }}
+  }
+}

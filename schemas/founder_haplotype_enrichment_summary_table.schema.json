@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/founder_haplotype_enrichment_summary_table.schema.json",
+  "title": "Résultats agrégés par fond nul",
+  "x-tsv": {"schema_version": "1.0.0", "columns": ["NULL_SOURCE", "STRATUM", "ANALYSIS_STATUS", "INDEPENDENT_FAMILY_COUNT", "OBSERVED_LEFT_CM", "OBSERVED_RIGHT_CM", "OBSERVED_TOTAL_CM", "REQUESTED_DRAWS", "ATTEMPTED_DRAWS", "EVALUABLE_DRAWS", "NON_EVALUABLE_DRAWS", "EXCEEDANCE_COUNT", "EMPIRICAL_PROBABILITY", "EXACT_PROBABILITY", "INTERVAL_LOW", "INTERVAL_HIGH", "CLASSIFICATION_THRESHOLD"], "null_value": "", "primary_key": ["NULL_SOURCE", "STRATUM"], "boolean_values": {"true": true, "false": false}, "allow_empty": true},
+  "$defs": {
+    "count": {"type": "string", "pattern": "^[0-9]+$"}, "decimal": {"type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$"},
+    "nullableDecimal": {"oneOf": [{"$ref": "#/$defs/decimal"}, {"type": "null"}]}, "nullableCount": {"oneOf": [{"$ref": "#/$defs/count"}, {"type": "null"}]},
+    "row": {"type": "object", "additionalProperties": false, "required": ["NULL_SOURCE", "STRATUM", "ANALYSIS_STATUS", "INDEPENDENT_FAMILY_COUNT", "OBSERVED_LEFT_CM", "OBSERVED_RIGHT_CM", "OBSERVED_TOTAL_CM", "REQUESTED_DRAWS", "ATTEMPTED_DRAWS", "EVALUABLE_DRAWS", "NON_EVALUABLE_DRAWS", "EXCEEDANCE_COUNT", "EMPIRICAL_PROBABILITY", "EXACT_PROBABILITY", "INTERVAL_LOW", "INTERVAL_HIGH", "CLASSIFICATION_THRESHOLD"], "properties": {
+      "NULL_SOURCE": {"enum": ["INTERNAL", "EXTERNAL"]}, "STRATUM": {"type": "string", "minLength": 1},
+      "ANALYSIS_STATUS": {"enum": ["NOT_EVALUATED", "NOT_CLASSIFIED", "NO_UNUSUAL_SHARING_DETECTED", "UNUSUAL_TARGET_CENTERED_SHARING", "MULTIPLE_CARRIER_BACKGROUNDS"]},
+      "INDEPENDENT_FAMILY_COUNT": {"$ref": "#/$defs/count"}, "OBSERVED_LEFT_CM": {"$ref": "#/$defs/nullableDecimal"}, "OBSERVED_RIGHT_CM": {"$ref": "#/$defs/nullableDecimal"}, "OBSERVED_TOTAL_CM": {"$ref": "#/$defs/nullableDecimal"},
+      "REQUESTED_DRAWS": {"$ref": "#/$defs/nullableCount"}, "ATTEMPTED_DRAWS": {"$ref": "#/$defs/count"}, "EVALUABLE_DRAWS": {"$ref": "#/$defs/count"}, "NON_EVALUABLE_DRAWS": {"$ref": "#/$defs/count"}, "EXCEEDANCE_COUNT": {"$ref": "#/$defs/count"},
+      "EMPIRICAL_PROBABILITY": {"$ref": "#/$defs/nullableDecimal"}, "EXACT_PROBABILITY": {"$ref": "#/$defs/nullableDecimal"}, "INTERVAL_LOW": {"$ref": "#/$defs/nullableDecimal"}, "INTERVAL_HIGH": {"$ref": "#/$defs/nullableDecimal"}, "CLASSIFICATION_THRESHOLD": {"$ref": "#/$defs/nullableDecimal"}
+    }}
+  }
+}

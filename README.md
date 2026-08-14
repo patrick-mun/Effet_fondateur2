@@ -270,24 +270,49 @@ dur. `DOCK6` est uniquement le premier cas d'étude. Les axes sont ajustés sur
 les 2 504 références 1000 Genomes non apparentées, puis les individus ou
 haplotypes de l'étude sont projetés sans modifier ces axes. Les extraits par
 chromosome sont mis en cache de façon immuable et vérifiés avant réutilisation.
+Une copie locale complète du panel officiel peut être placée sous
+`data/cache/references/source_panels/<panel_id>/`, avec les noms VCF et TBI du
+catalogue. Les MD5 officiels sont alors contrôlés avant toute extraction et
+`bcftools` n'accède pas au réseau.
 Ces résultats restent des
 positionnements relatifs et ne constitueront ni une attribution ethnique ni une
 preuve d'ascendance généalogique ou d'IBD. Le contrat est documenté dans
 `docs/modules/reference_ancestry.md`.
 
+Après publication de `16A`, les vues exploratoires pseudonymisées peuvent être
+recréées sans recalcul scientifique avec :
+
+```bash
+.venv/bin/python -m scripts.plot_reference_ancestry --run-dir <dossier-du-run>
+```
+
+Les PNG, SVG, la galerie HTML et leur résumé de provenance sont écrits sous
+`derived/reference_ancestry_visualizations/` dans le run.
+
+L'étape secondaire `16B_evaluate_founder_haplotype_enrichment` teste ensuite
+la rareté du partage IBS exact observé par 13, avec la famille indépendante
+comme unité primaire. Elle exclut la cible de la signature, réutilise les
+représentants présélectionnés par 13, énumère le fond interne non porteur et
+effectue un Monte-Carlo reproductible sur les 5 008 haplotypes 1000G. Les fonds
+interne et externe restent séparés du LD général de 15. Sans seuil
+préspécifié, le statut est `NOT_CLASSIFIED`; aucun résultat ne constitue une
+preuve IBD ou automatique d'effet fondateur. Le contrat est documenté dans
+`docs/modules/founder_haplotype_enrichment.md`.
+
 L'étape `17_run_sensitivity_analyses` consolide ensuite un run primaire et des
 runs de sensibilité distincts, déclarés dans un registre TSV. Elle vérifie les
 manifestes, configurations, signatures, résumés et ancrages moléculaires avant
-de comparer séparément IBS, datation, LD, ROH et ascendance de référence. Elle ne relance aucun calcul,
+de comparer séparément IBS, datation, LD, ROH, ascendance de référence et
+enrichissement haplotypique. Elle ne relance aucun calcul,
 ne calcule aucun score composite d'effet fondateur et ne classe une variation
 numérique que si une tolérance a été préspécifiée. Copier
 `config/sensitivity/scenarios.example.tsv`, remplacer les chemins, identifiants
 et SHA-256 des manifestes, puis renseigner `inputs.sensitivity_scenarios`. Le
 contrat complet est documenté dans `docs/modules/sensitivity.md`.
 
-L'étape `18_build_visualizations` produit huit vues SVG séparées pour la PCA
+L'étape `18_build_visualizations` produit neuf vues SVG séparées pour la PCA
 interne, l'IBS, la datation, le LD, les ROH, les positionnements 1000G global
-et local, et les sensibilités. Elle consomme uniquement
+et local, l'enrichissement haplotypique 16B et les sensibilités. Elle consomme uniquement
 les tables et résumés versionnés des étapes 08 et 13–17 dans le run courant, valide leurs
 empreintes, signatures, schémas, effectifs et unités, puis publie une provenance
 par figure, un index et un contrôle de complétude. Les non-évaluations et petits
@@ -301,7 +326,7 @@ formats sont pseudonymisés, classés `sensitive_genetic`, autonomes hors résea
 et liés par `visualization_render_manifest.json`.
 
 L'étape `19_build_report` assemble ensuite un rapport HTML révisable depuis les
-seuls artefacts signés des étapes 07 et 18. Il contient la fiche des paramètres
+seuls artefacts signés des étapes 07, 16B et 18. Il contient la fiche des paramètres
 effectivement utilisés, le tableau et le réseau KING pseudonymisés, les figures,
 les faits contrôlés et des commentaires modifiables. Le prompt prudent est
 publié avec son empreinte ; aucun fournisseur IA externe n'est appelé par

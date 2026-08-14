@@ -18,6 +18,7 @@ SIGNATURES = {
     "analyze_local_ld": "15" * 32,
     "analyze_roh": "16" * 32,
     "analyze_reference_ancestry": "a6" * 32,
+    "evaluate_founder_haplotype_enrichment": "b6" * 32,
     "run_sensitivity_analyses": "17" * 32,
 }
 
@@ -93,7 +94,18 @@ def _fixture(run_dir: Path, *, founder_count_mismatch: bool = False, ld_not_eval
         "interpretation": {"policy": "RELATIVE_REFERENCE_POSITIONING_ONLY", "ethnic_identity_assigned": False, "genealogical_ancestor_identified": False, "local_ancestry_proven": False, "ibd_proven": False},
         "checks": {"reference_unrelated_only": "PASS", "study_not_used_for_axes": "PASS", "global_local_separated": "PASS", "target_and_region_resolved": "PASS", "cache_integrity": "PASS", "variant_harmonization": "PASS"},
     }))
-    domains = ["FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY"]
+    definitions.append(("founder_haplotype_null_draws", "evaluate_founder_haplotype_enrichment", "founder_haplotype_null_draws.schema.json",
+        ["NULL_SOURCE", "STRATUM", "DRAW_INDEX", "ATTEMPT_INDEX", "UNIT_COUNT", "EVALUATION_STATUS", "LEFT_SHARED_CM", "RIGHT_SHARED_CM", "TOTAL_SHARED_CM", "LEFT_MARKER_COUNT", "RIGHT_MARKER_COUNT", "NON_EVALUABLE_REASON"],
+        [["INTERNAL", "ALL", 1, 1, 3, "EVALUATED", 0.1, 0.2, 0.3, 1, 1, ""], ["EXTERNAL", "ALL", 1, 1, 3, "EVALUATED", 0.05, 0.1, 0.15, 1, 1, ""]]))
+    definitions.append(("founder_haplotype_enrichment_summary_json", "evaluate_founder_haplotype_enrichment", "founder_haplotype_enrichment_summary.schema.json", None, {
+        "schema_version": "1.0.0", "method_id": "target_centered_empirical_haplotype_sharing_v1", "primary_statistic": "total_shared_cm", "status": "NOT_CLASSIFIED", "independent_family_count": 3,
+        "observed": {"evaluation_status": "EVALUATED", "left_shared_cm": 0.1, "right_shared_cm": 0.2, "total_shared_cm": 0.3, "left_marker_count": 1, "right_marker_count": 1},
+        "null_results": [{"source": "INTERNAL", "stratum": "ALL", "requested_draws": None, "attempted_draws": 1, "evaluable_draws": 1, "non_evaluable_draws": 0, "exceedance_count": 1, "empirical_probability": 1.0, "exact_probability": 1.0, "interval_low": 0.2, "interval_high": 1.0}, {"source": "EXTERNAL", "stratum": "ALL", "requested_draws": 1, "attempted_draws": 1, "evaluable_draws": 1, "non_evaluable_draws": 0, "exceedance_count": 0, "empirical_probability": 0.5, "exact_probability": None, "interval_low": 0.0, "interval_high": 0.8}],
+        "classification_threshold": None, "random_seed": 42,
+        "provenance": {"assembly": "GRCh38", "target_variant_id": "target_v1", "target_ref": "A", "target_alt": "G", "map_sha256": "aa" * 32, "study_bcf_sha256": "aa" * 32, "reference_vcf_sha256": "aa" * 32, "step13_summary_sha256": "aa" * 32, "step16a_summary_sha256": "aa" * 32},
+        "interpretation": {"ibs_only": True, "ibd_proven": False, "founder_effect_proven": False, "geographic_origin_inferred": False, "composite_score_calculated": False, "statement": "Partage IBS centré cible, pas preuve IBD."},
+    }))
+    domains = ["FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY", "FOUNDER_HAPLOTYPE_ENRICHMENT"]
     comparison_columns = ["SCENARIO_ID", "SCENARIO_SIGNATURE", "ROLE", "DESIGN", "CHANGED_FACTOR", "DOMAIN", "EXPECTED", "SOURCE_RUN_ID", "SOURCE_MANIFEST_SHA256", "SOURCE_CONFIG_SHA256", "SOURCE_STAGE_SIGNATURE", "SOURCE_SUMMARY_SHA256", "EVALUATION_STATUS", "TECHNICAL_STATUS", "PRIMARY_TECHNICAL_STATUS", "CATEGORICAL_COMPARISON", "NUMERIC_METRIC", "PRIMARY_NUMERIC_VALUE", "SCENARIO_NUMERIC_VALUE", "RELATIVE_CHANGE", "QUANTITATIVE_CLASSIFICATION"]
     comparison_rows = [["primary", "aa" * 32, "PRIMARY", "BASELINE", "PRIMARY", domain, "true", "primary_run", "bb" * 32, "cc" * 32, "dd" * 32, "ee" * 32, "EVALUATED", "PRIMARY_STATUS", "PRIMARY_STATUS", "PRIMARY", "metric", 1, 1, 0, "PRIMARY"] for domain in domains]
     comparison_rows += [["window_wide", "ab" * 32, "SENSITIVITY", "SINGLE_FACTOR", "LOCAL_WINDOW", domain, "true", "scenario_run", "bc" * 32, "cd" * 32, "de" * 32, "ef" * 32, "EVALUATED", "PRIMARY_STATUS", "PRIMARY_STATUS", "STABLE", "metric", 1, 1.1, 0.1, "NOT_CLASSIFIED"] for domain in domains]
@@ -122,7 +134,7 @@ def _fixture(run_dir: Path, *, founder_count_mismatch: bool = False, ld_not_eval
 
 
 def _producer_controls(run_dir: Path, stage_inputs: dict[str, Any]) -> None:
-    stage_ids = {"analyze_population_structure": "08", "infer_founder_haplotype": "13", "estimate_variant_age": "14", "analyze_local_ld": "15", "analyze_roh": "16", "analyze_reference_ancestry": "16A", "run_sensitivity_analyses": "17"}
+    stage_ids = {"analyze_population_structure": "08", "infer_founder_haplotype": "13", "estimate_variant_age": "14", "analyze_local_ld": "15", "analyze_roh": "16", "analyze_reference_ancestry": "16A", "evaluate_founder_haplotype_enrichment": "16B", "run_sensitivity_analyses": "17"}
     records = []
     for producer, stage_id in stage_ids.items():
         artifacts = [item for item in stage_inputs["artifacts"] if item["producer_stage"] == producer]
@@ -138,7 +150,7 @@ def _producer_controls(run_dir: Path, stage_inputs: dict[str, Any]) -> None:
 def test_consolidated_figures_are_separate_pseudonymized_and_non_causal(tmp_path: Path) -> None:
     stage_inputs = _fixture(tmp_path)
     results = build_consolidated_figures(run_dir=tmp_path, output_dir=tmp_path / "rendered", stage_inputs=stage_inputs)
-    assert {result.domain for result in results} == {"POPULATION_STRUCTURE", "FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY_GLOBAL", "REFERENCE_ANCESTRY_LOCAL", "SENSITIVITY"}
+    assert {result.domain for result in results} == {"POPULATION_STRUCTURE", "FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY_GLOBAL", "REFERENCE_ANCESTRY_LOCAL", "FOUNDER_HAPLOTYPE_ENRICHMENT", "SENSITIVITY"}
     assert all(result.status == "RENDERED" for result in results)
     combined = "".join(result.figure_path.read_text(encoding="utf-8") for result in results if result.figure_path)
     assert "PRIVATE_SAMPLE" not in combined
@@ -154,6 +166,7 @@ def test_consolidated_figures_are_separate_pseudonymized_and_non_causal(tmp_path
     assert "intervalle de confiance" in rendered["VARIANT_AGE"] and rendered["VARIANT_AGE"].count("<circle") >= 2
     assert "r² génotypique" in rendered["LOCAL_LD"] and rendered["LOCAL_LD"].count("<rect") >= 3
     assert "Charge ROH médiane" in rendered["ROH"] and rendered["ROH"].count("<rect") >= 3
+    assert "Fonction de survie" in rendered["FOUNDER_HAPLOTYPE_ENRICHMENT"] and "3 familles indépendantes" in rendered["FOUNDER_HAPLOTYPE_ENRICHMENT"]
     assert "Variation relative" in rendered["SENSITIVITY"] and rendered["SENSITIVITY"].count("<circle") >= 8
 
 
@@ -210,7 +223,7 @@ def test_stage_18_publishes_versioned_index_completeness_and_audit(tmp_path: Pat
     render_manifest = json.loads((output_dir / "visualization_render_manifest.json").read_text(encoding="utf-8"))
     validate_json_document(index, "figure_index.schema.json")
     validate_json_document(render_manifest, "visualization_render_manifest.schema.json")
-    assert completeness == {"schema_version": "1.0.0", "run_id": "synthetic_visual_run", "expected_domain_count": 8, "rendered_count": 8, "not_evaluated_count": 0, "blocked_count": 0, "complete_for_scientific_report": True}
+    assert completeness == {"schema_version": "1.0.0", "run_id": "synthetic_visual_run", "expected_domain_count": 9, "rendered_count": 9, "not_evaluated_count": 0, "blocked_count": 0, "complete_for_scientific_report": True}
     assert audit["metrics"]["composite_founder_score_calculated"] is False
     assert audit["metrics"]["sensitivity"] == "sensitive_genetic"
     assert audit["metrics"]["html_rendered"] is True
@@ -219,7 +232,7 @@ def test_stage_18_publishes_versioned_index_completeness_and_audit(tmp_path: Pat
     assert {"visualization_gallery_html", "visualization_gallery_pdf", "visualization_render_manifest"} <= artifact_ids
     html_document = (output_dir / "visualization_gallery.html").read_text(encoding="utf-8")
     assert html_document.startswith("<!doctype html>")
-    assert html_document.count("<section id=") == 8
+    assert html_document.count("<section id=") == 9
     assert "PRIVATE_SAMPLE" not in html_document and "PRIVATE_PCA" not in html_document
     assert html_document.index("population_structure") < html_document.index("founder_ibs")
     assert (output_dir / "visualization_gallery.pdf").read_bytes().startswith(b"%PDF-")

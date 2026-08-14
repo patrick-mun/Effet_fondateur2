@@ -63,6 +63,15 @@ def test_generic_example_is_valid() -> None:
         "leave_one_family_out": True,
         "chance_sharing_correction": False,
     }
+    assert config["stages"]["evaluate_founder_haplotype_enrichment"]["parameters"]["random_seed"] == 161602026
+
+
+def test_founder_enrichment_configuration_is_strict(tmp_path: Path) -> None:
+    example = (REPOSITORY_ROOT / "config" / "pipeline.example.yaml").read_text(encoding="utf-8")
+    config_path = tmp_path / "invalid-enrichment.yaml"
+    config_path.write_text(example.replace("external_null_draws: 100000", "external_null_draws: 0"), encoding="utf-8")
+    with pytest.raises(ConfigurationError, match="external_null_draws"):
+        load_pipeline_config(config_path)
 
 
 def test_dock6_profile_accepts_unconfirmed_target_fields() -> None:

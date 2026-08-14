@@ -81,7 +81,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
     rendered_count = sum(item.status == "RENDERED" for item in results)
     not_evaluated_count = sum(item.status == "NOT_EVALUATED" for item in results)
     blocked_count = sum(item.status == "BLOCKED" for item in results)
-    completeness = {"schema_version": "1.0.0", "run_id": stage_inputs["run_id"], "expected_domain_count": 8, "rendered_count": rendered_count, "not_evaluated_count": not_evaluated_count, "blocked_count": blocked_count, "complete_for_scientific_report": blocked_count == 0}
+    completeness = {"schema_version": "1.0.0", "run_id": stage_inputs["run_id"], "expected_domain_count": 9, "rendered_count": rendered_count, "not_evaluated_count": not_evaluated_count, "blocked_count": blocked_count, "complete_for_scientific_report": blocked_count == 0}
     validate_json_document(completeness, "visualization_completeness.schema.json")
     completeness_path = output_dir / "visualization_completeness.json"; atomic_write_json(completeness_path, completeness)
     render_publication = publish_renderings(
@@ -120,7 +120,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             {"tool": "python_svg_html_renderer", "configured": Path(sys.executable).name, "version": sys.version.split()[0]},
             {"tool": "fpdf2", "configured": "Python package", "version": importlib.metadata.version("fpdf2")},
         ],
-        "counts": {"expected_domains": 8, "rendered": rendered_count, "not_evaluated": not_evaluated_count, "blocked": blocked_count},
+        "counts": {"expected_domains": 9, "rendered": rendered_count, "not_evaluated": not_evaluated_count, "blocked": blocked_count},
         "metrics": {"complete_for_scientific_report": blocked_count == 0, "pseudonymized": True, "sensitivity": "sensitive_genetic", "html_rendered": True, "pdf_rendered": True, "scientific_recalculation_performed": False, "composite_founder_score_calculated": False},
         "exclusions": [], "warnings": [{"code": "figure_blocked", "count": blocked_count}] if blocked_count else [],
         "checks": [{"check": "current_run_only", "status": "PASS"}, {"check": "source_checksums_and_signatures", "status": "PASS" if blocked_count == 0 else "WARN"}, {"check": "domain_separation", "status": "PASS"}, {"check": "primary_exploratory_separation", "status": "PASS"}, {"check": "html_render_from_figure_index", "status": "PASS"}, {"check": "pdf_render_from_same_figure_index", "status": "PASS"}, {"check": "no_scientific_recalculation", "status": "PASS"}, {"check": "no_composite_founder_score", "status": "PASS"}],

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Sequence
 
 import numpy as np
 
@@ -42,6 +42,30 @@ def read_bim_variants(path: Path) -> tuple[Variant, ...]:
     return tuple(variants)
 
 
+def _dosage_column_indexes(
+    header: Sequence[str], variants: tuple[Variant, ...],
+) -> list[int]:
+    """Résout les colonnes de dosage en temps linéaire dans la taille du panel."""
+
+    column_by_name: dict[str, int] = {}
+    duplicate_names: set[str] = set()
+    for index, name in enumerate(header):
+        if name in column_by_name:
+            duplicate_names.add(name)
+        else:
+            column_by_name[name] = index
+
+    dosage_indexes: list[int] = []
+    for variant in variants:
+        expected = f"{variant.variant_id}_{variant.alt}"
+        if expected not in column_by_name or expected in duplicate_names:
+            raise AncestryAnalysisError(
+                "plink_ancestry_dosage_column_missing_or_ambiguous"
+            )
+        dosage_indexes.append(column_by_name[expected])
+    return dosage_indexes
+
+
 def read_plink_raw_panel(
     path: Path,
     variants: tuple[Variant, ...],
@@ -57,13 +81,7 @@ def read_plink_raw_panel(
             raise AncestryAnalysisError("empty_plink_ancestry_raw") from error
         if header[:6] != ["FID", "IID", "PAT", "MAT", "SEX", "PHENOTYPE"]:
             raise AncestryAnalysisError("invalid_plink_ancestry_raw_header")
-        dosage_indexes: list[int] = []
-        for variant in variants:
-            expected = f"{variant.variant_id}_{variant.alt}"
-            indexes = [index for index, value in enumerate(header) if value == expected]
-            if len(indexes) != 1:
-                raise AncestryAnalysisError("plink_ancestry_dosage_column_missing_or_ambiguous")
-            dosage_indexes.append(indexes[0])
+        dosage_indexes = _dosage_column_indexes(header, variants)
         sample_ids: list[str] = []
         matrix: list[list[float]] = []
         for fields in reader:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import importlib.metadata
 import json
 import math
@@ -12,9 +13,10 @@ import subprocess
 import sys
 import tempfile
 from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path, PurePosixPath
 from time import monotonic
-from typing import Any, Iterable, Sequence
+from typing import Any, Callable, Iterable, Sequence
 
 import numpy as np
 import yaml
@@ -24,6 +26,7 @@ from effet_fondateur.ancestry import (
     AncestryExtractCacheError,
     AncestryPcaError,
     AncestryReferenceError,
+    CachedReferenceExtract,
     GenotypePanel,
     HarmonizedPca,
     ReferenceSample,
@@ -121,6 +124,10 @@ def _parameters(parameters: dict[str, Any]) -> dict[str, Any]:
         "minimum_reference_call_rate": _probability(parameters, "minimum_reference_call_rate", 0.95),
         "download_timeout_seconds": _positive_integer(parameters, "download_timeout_seconds", 7200),
         "bcftools_timeout_seconds": _positive_integer(parameters, "bcftools_timeout_seconds", 7200),
+        "reference_extract_workers": _positive_integer(parameters, "reference_extract_workers", 4),
+        "reference_extract_chunk_variants": _positive_integer(
+            parameters, "reference_extract_chunk_variants", 1000
+        ),
         "plink_timeout_seconds": _positive_integer(parameters, "plink_timeout_seconds", 300),
     }
     if (
@@ -131,6 +138,8 @@ def _parameters(parameters: dict[str, Any]) -> dict[str, Any]:
         or not isinstance(result["ancestry_cache_offline"], bool)
         or result["global_requested_components"] > MAX_COMPONENTS
         or result["local_requested_components"] > MAX_COMPONENTS
+        or result["reference_extract_workers"] > 22
+        or result["reference_extract_chunk_variants"] > 100_000
     ):
         raise AnalyzeReferenceAncestryInputError("invalid_ancestry_configuration")
     return result
@@ -175,11 +184,108 @@ def _run(command: list[str], timeout: int, code: str, stdout_path: Path | None =
             with stdout_path.open("x", encoding="utf-8") as handle:
                 binary = subprocess.run(command, stdout=handle, stderr=subprocess.PIPE, text=True, check=False, timeout=timeout)
             completed = binary
-    except (OSError, subprocess.TimeoutExpired) as error:
+    except subprocess.TimeoutExpired as error:
+        raise AnalyzeReferenceAncestryExternalError(f"{code}:timeout:{timeout}") from error
+    except OSError as error:
         raise AnalyzeReferenceAncestryExternalError(code) from error
     if completed.returncode != 0:
         raise AnalyzeReferenceAncestryExternalError(f"{code}:{(completed.stderr or '')[:300]}")
     return completed if stdout_path is None else None
+
+
+def _extract_remote_reference(
+    *,
+    bcftools: str,
+    source_url: str,
+    positions: Path,
+    samples: Path,
+    vcf: Path,
+    index: Path,
+    timeout: int,
+    chunk_size: int,
+    runner: Callable[[list[str], int, str], object],
+) -> None:
+    """Extrait une sélection distante par lots bornés puis l'indexe.
+
+    Le délai s'applique à chaque lot. Cela évite de perdre un chromosome
+    complet lorsque des milliers de lectures HTTP indexées dépassent le délai.
+    Une source locale est extraite en une seule passe, sans concaténation.
+    """
+
+    if Path(source_url).is_file():
+        runner([
+            bcftools, "view", "--samples-file", str(samples), "--force-samples",
+            "--regions-file", str(positions), "--types", "snps", "--min-alleles", "2",
+            "--max-alleles", "2", "--output-type", "z", "--output", str(vcf), source_url,
+        ], timeout, "bcftools_global_reference_extract_failed:local")
+        runner([bcftools, "index", "--tbi", str(vcf)], timeout, "bcftools_global_reference_index_failed")
+        generated = Path(f"{vcf}.tbi")
+        if generated != index:
+            generated.replace(index)
+        return
+
+    position_lines = positions.read_text(encoding="utf-8").splitlines(keepends=True)
+    chunk_vcfs: list[Path] = []
+    for chunk_index, line_index in enumerate(range(0, len(position_lines), chunk_size), start=1):
+        chunk_positions = positions.with_name(f"{positions.stem}.chunk{chunk_index}.tsv")
+        chunk_positions.write_text(
+            "".join(position_lines[line_index:line_index + chunk_size]), encoding="utf-8"
+        )
+        chunk_vcf = vcf.with_name(f"{vcf.name}.chunk{chunk_index}.vcf.gz")
+        runner([
+            bcftools, "view", "--samples-file", str(samples), "--force-samples",
+            "--regions-file", str(chunk_positions), "--types", "snps", "--min-alleles", "2",
+            "--max-alleles", "2", "--output-type", "z", "--output", str(chunk_vcf), source_url,
+        ], timeout, f"bcftools_global_reference_extract_failed:chunk{chunk_index}")
+        runner(
+            [bcftools, "index", "--tbi", str(chunk_vcf)],
+            timeout,
+            f"bcftools_global_reference_chunk_index_failed:chunk{chunk_index}",
+        )
+        chunk_vcfs.append(chunk_vcf)
+    if not chunk_vcfs:
+        raise AnalyzeReferenceAncestryInputError("global_reference_positions_empty")
+    if len(chunk_vcfs) == 1:
+        chunk_vcfs[0].replace(vcf)
+    else:
+        runner([
+            bcftools, "concat", "--allow-overlaps", "--output-type", "z",
+            "--output", str(vcf), *(str(path) for path in chunk_vcfs),
+        ], timeout, "bcftools_global_reference_concat_failed")
+    runner([bcftools, "index", "--tbi", str(vcf)], timeout, "bcftools_global_reference_index_failed")
+    generated = Path(f"{vcf}.tbi")
+    if generated != index:
+        generated.replace(index)
+
+
+def _validated_local_reference_source(
+    *,
+    source_dir: Path,
+    filename: str,
+    expected_vcf_md5: str,
+    expected_index_md5: str,
+) -> Path:
+    """Valide une copie locale complète contre les MD5 officiels du panel."""
+
+    vcf_path = source_dir / filename
+    index_path = source_dir / f"{filename}.tbi"
+    if not vcf_path.is_file() or not index_path.is_file():
+        raise AnalyzeReferenceAncestryInputError(
+            f"local_reference_source_missing:{filename}"
+        )
+
+    def md5_file(path: Path) -> str:
+        digest = hashlib.md5(usedforsecurity=False)
+        with path.open("rb") as handle:
+            for block in iter(lambda: handle.read(8 * 1024 * 1024), b""):
+                digest.update(block)
+        return digest.hexdigest()
+
+    if md5_file(vcf_path) != expected_vcf_md5 or md5_file(index_path) != expected_index_md5:
+        raise AnalyzeReferenceAncestryInputError(
+            f"local_reference_source_checksum_mismatch:{filename}"
+        )
+    return vcf_path
 
 
 def _samples(bcftools: str, path: Path, timeout: int) -> tuple[str, ...]:
@@ -322,15 +428,26 @@ def _variant_audit_rows(
     result: HarmonizedPca,
     minimum_call_rate: float,
 ) -> list[dict[str, Any]]:
-    reference_by_locus = {variant.locus: (index, variant) for index, variant in enumerate(reference.variants)}
+    reference_by_locus: dict[tuple[str, int], list[tuple[int, Variant]]] = defaultdict(list)
+    for index, reference_variant in enumerate(reference.variants):
+        reference_by_locus[reference_variant.locus].append((index, reference_variant))
     informative = {variant.locus for variant in result.variants}
     rows: list[dict[str, Any]] = []
     for variant in study.variants:
-        match = reference_by_locus.get(variant.locus)
+        locus_matches = reference_by_locus.get(variant.locus, [])
+        compatible_matches = [
+            match
+            for match in locus_matches
+            if (variant.ref, variant.alt)
+            in ((match[1].ref, match[1].alt), (match[1].alt, match[1].ref))
+        ]
+        if len(compatible_matches) > 1:
+            raise AnalyzeReferenceAncestryInputError("ambiguous_reference_variant")
+        match = compatible_matches[0] if compatible_matches else None
         reference_variant = match[1] if match else None
-        if match is None:
+        if not locus_matches:
             status, exclusion = "ABSENT_FROM_REFERENCE", "absent_from_reference"
-        elif {variant.ref, variant.alt} != {reference_variant.ref, reference_variant.alt}:
+        elif match is None:
             status, exclusion = "ALLELE_MISMATCH", "allele_mismatch"
         elif variant.locus in informative:
             status, exclusion = "INFORMATIVE", None
@@ -499,18 +616,21 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             variants_by_chromosome[chromosome].append(variant)
         source_by_chromosome = {row["chromosome"]: row for row in reference_panel["chromosomes"]}
         global_reference_parts: list[GenotypePanel] = []
+        local_source_dir = (
+            cache_root / "source_panels" / reference_panel["panel_id"]
+        )
+        local_source_locations: dict[str, Path] = {}
 
         def extractor(source_url: str, positions: Path, samples: Path, vcf: Path, index: Path, timeout: int) -> None:
-            _run([
-                bcftools, "view", "--samples-file", str(samples), "--force-samples",
-                "--regions-file", str(positions), "--types", "snps", "--min-alleles", "2",
-                "--max-alleles", "2", "--output-type", "z", "--output", str(vcf), source_url,
-            ], timeout, "bcftools_global_reference_extract_failed")
-            _run([bcftools, "index", "--tbi", str(vcf)], timeout, "bcftools_global_reference_index_failed")
-            generated = Path(f"{vcf}.tbi")
-            if generated != index:
-                generated.replace(index)
+            _extract_remote_reference(
+                bcftools=bcftools,
+                source_url=str(local_source_locations.get(source_url, source_url)),
+                positions=positions, samples=samples,
+                vcf=vcf, index=index, timeout=timeout,
+                chunk_size=parameters["reference_extract_chunk_variants"], runner=_run,
+            )
 
+        extract_specs: list[tuple[int, Path, dict[str, Any], str]] = []
         for chromosome in sorted(variants_by_chromosome):
             positions = temporary / f"chr{chromosome}.positions.tsv"
             positions.write_text("".join(
@@ -519,6 +639,20 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             ), encoding="utf-8")
             source = source_by_chromosome[chromosome]
             filename = reference_panel["vcf_filename_template"].format(chromosome=chromosome)
+            official_url = f"{reference_panel['base_url']}/{filename}"
+            if local_source_dir.is_dir():
+                local_source_locations[official_url] = _validated_local_reference_source(
+                    source_dir=local_source_dir,
+                    filename=filename,
+                    expected_vcf_md5=source["vcf_md5"],
+                    expected_index_md5=source["index_md5"],
+                )
+            extract_specs.append((chromosome, positions, source, filename))
+
+        def cache_extract(
+            spec: tuple[int, Path, dict[str, Any], str]
+        ) -> tuple[int, CachedReferenceExtract]:
+            chromosome, positions, source, filename = spec
             cached = cache_reference_extract(
                 cache_root=cache_root, panel_id=reference_panel["panel_id"], assembly=reference_panel["assembly"],
                 chromosome=chromosome, source_url=f"{reference_panel['base_url']}/{filename}",
@@ -527,6 +661,16 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
                 offline=parameters["ancestry_cache_offline"], timeout_seconds=parameters["bcftools_timeout_seconds"],
                 extractor=extractor,
             )
+            return chromosome, cached
+
+        # Ces extractions indexées sont surtout limitées par la latence HTTP.
+        # Le cache est atomique par chromosome et executor.map conserve l'ordre
+        # des chromosomes, indépendamment de leur ordre de fin.
+        worker_count = min(parameters["reference_extract_workers"], len(extract_specs))
+        with ThreadPoolExecutor(max_workers=worker_count) as executor:
+            cached_extracts = list(executor.map(cache_extract, extract_specs))
+
+        for chromosome, cached in cached_extracts:
             cache_statuses.append(cached.status)
             if _samples(bcftools, cached.vcf_path, parameters["bcftools_timeout_seconds"]) != reference_sample_ids:
                 raise AnalyzeReferenceAncestryInputError("global_reference_extract_sample_mismatch")

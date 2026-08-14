@@ -1,5 +1,6 @@
 import json
 import csv
+import hashlib
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -19,10 +20,12 @@ from effet_fondateur.stages.analyze_reference_ancestry import (
     SCORE_COLUMNS,
     _centroid_rows,
     _eigenvalue_rows,
+    _extract_remote_reference,
     _loading_rows,
     _parameters,
     _require_complete_local_target,
     _score_rows,
+    _validated_local_reference_source,
     _variant_audit_rows,
     _write_tsv,
     execute,
@@ -63,6 +66,95 @@ def test_stage_16a_parameters_cover_global_local_and_offline_cache() -> None:
     assert parameters["global_requested_components"] == 10
     assert parameters["local_requested_components"] == 10
     assert parameters["ancestry_cache_offline"] is True
+    assert parameters["reference_extract_workers"] == 4
+    assert parameters["reference_extract_chunk_variants"] == 1000
+
+
+def test_stage_16a_rejects_too_many_reference_extract_workers() -> None:
+    with pytest.raises(ValueError, match="invalid_ancestry_configuration"):
+        _parameters({"reference_extract_workers": 23})
+
+
+def test_remote_reference_extraction_is_split_into_bounded_chunks(tmp_path: Path) -> None:
+    positions = tmp_path / "positions.tsv"
+    positions.write_text("".join(f"chr2\t{i}\t{i}\n" for i in range(5)), encoding="utf-8")
+    samples = tmp_path / "samples.txt"
+    samples.write_text("R1\n", encoding="utf-8")
+    output = tmp_path / "reference.vcf.gz"
+    index = tmp_path / "reference.vcf.gz.tbi"
+    commands: list[list[str]] = []
+
+    def runner(command: list[str], timeout: int, code: str) -> object:
+        commands.append(command)
+        if "--output" in command:
+            Path(command[command.index("--output") + 1]).write_bytes(b"vcf")
+        if command[1] == "index":
+            Path(f"{command[-1]}.tbi").write_bytes(b"index")
+        return object()
+
+    _extract_remote_reference(
+        bcftools="bcftools", source_url="https://example.invalid/reference.vcf.gz",
+        positions=positions, samples=samples, vcf=output, index=index,
+        timeout=7200, chunk_size=2, runner=runner,
+    )
+
+    assert [command[1] for command in commands] == [
+        "view", "index", "view", "index", "view", "index", "concat", "index"
+    ]
+    assert output.read_bytes() == b"vcf"
+    assert index.read_bytes() == b"index"
+
+
+def test_local_reference_extraction_does_not_concat(tmp_path: Path) -> None:
+    source = tmp_path / "source.vcf.gz"
+    source.write_bytes(b"source")
+    positions = tmp_path / "positions.tsv"
+    positions.write_text("chr2\t1\t1\nchr2\t2\t2\n", encoding="utf-8")
+    samples = tmp_path / "samples.txt"
+    samples.write_text("R1\n", encoding="utf-8")
+    output = tmp_path / "output.vcf.gz"
+    index = tmp_path / "output.vcf.gz.tbi"
+    commands: list[list[str]] = []
+
+    def runner(command: list[str], timeout: int, code: str) -> object:
+        commands.append(command)
+        if "--output" in command:
+            Path(command[command.index("--output") + 1]).write_bytes(b"vcf")
+        if command[1] == "index":
+            Path(f"{command[-1]}.tbi").write_bytes(b"index")
+        return object()
+
+    _extract_remote_reference(
+        bcftools="bcftools", source_url=str(source), positions=positions,
+        samples=samples, vcf=output, index=index, timeout=30,
+        chunk_size=1, runner=runner,
+    )
+
+    assert [command[1] for command in commands] == ["view", "index"]
+    assert output.read_bytes() == b"vcf"
+    assert index.read_bytes() == b"index"
+
+
+def test_local_reference_source_requires_official_checksums(tmp_path: Path) -> None:
+    filename = "reference.chr2.vcf.gz"
+    vcf = tmp_path / filename
+    index = tmp_path / f"{filename}.tbi"
+    vcf.write_bytes(b"official vcf")
+    index.write_bytes(b"official index")
+
+    assert _validated_local_reference_source(
+        source_dir=tmp_path,
+        filename=filename,
+        expected_vcf_md5=hashlib.md5(b"official vcf", usedforsecurity=False).hexdigest(),
+        expected_index_md5=hashlib.md5(b"official index", usedforsecurity=False).hexdigest(),
+    ) == vcf
+    with pytest.raises(ValueError, match="checksum_mismatch"):
+        _validated_local_reference_source(
+            source_dir=tmp_path,
+            filename=filename,
+            expected_vcf_md5="0" * 32,
+            expected_index_md5=hashlib.md5(b"official index", usedforsecurity=False).hexdigest(),
+        )
 
 
 def test_stage_16a_versioned_tables_validate(tmp_path: Path) -> None:

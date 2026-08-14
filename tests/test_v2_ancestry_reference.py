@@ -21,7 +21,10 @@ def _contents() -> dict[str, bytes]:
         for index in range(3202)
     )
     unrelated = "##FileDate=synthetic\n#ENA_FILE_PATH\tSAMPLE_NAME\n"
-    unrelated += "".join(f"file{index}\tS{index:04d}\n" for index in range(2504))
+    unrelated += "".join(
+        f"file{index}\tS{index:04d}{' ' if index < 3 else ''}\n"
+        for index in range(2504)
+    )
     return {"population.txt": metadata.encode(), "unrelated.index": unrelated.encode()}
 
 
@@ -81,6 +84,7 @@ def test_ancestry_metadata_is_downloaded_once_then_reused(tmp_path: Path) -> Non
     assert len(calls) == 2
     samples = load_reference_samples(reused)
     assert len(samples) == 2504
+    assert samples[0].sample_id == "S0000"
     assert samples[0].population == "POP"
 
 

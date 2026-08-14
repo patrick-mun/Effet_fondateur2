@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/founder_haplotype_variant_audit.schema.json",
+  "title": "Audit des variants de l'enrichissement haplotypique",
+  "x-tsv": {"schema_version": "1.0.0", "columns": ["VARIANT_ORDER", "VARIANT_ID", "CHROMOSOME", "POSITION_BP", "POSITION_CM", "IS_TARGET", "OBSERVED_USE", "INTERNAL_NULL_USE", "EXTERNAL_NULL_USE", "DECISION_REASON"], "null_value": "", "primary_key": ["VARIANT_ID"], "boolean_values": {"true": true, "false": false}},
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"}, "positive": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+    "decimal": {"type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$"},
+    "row": {"type": "object", "additionalProperties": false, "required": ["VARIANT_ORDER", "VARIANT_ID", "CHROMOSOME", "POSITION_BP", "POSITION_CM", "IS_TARGET", "OBSERVED_USE", "INTERNAL_NULL_USE", "EXTERNAL_NULL_USE", "DECISION_REASON"], "properties": {
+      "VARIANT_ORDER": {"$ref": "#/$defs/positive"}, "VARIANT_ID": {"$ref": "#/$defs/identifier"}, "CHROMOSOME": {"type": "string", "pattern": "^(?:[1-9]|1[0-9]|2[0-2])$"},
+      "POSITION_BP": {"$ref": "#/$defs/positive"}, "POSITION_CM": {"$ref": "#/$defs/decimal"}, "IS_TARGET": {"type": "boolean"},
+      "OBSERVED_USE": {"enum": ["ANCHOR_ONLY", "TESTED", "EXCLUDED"]}, "INTERNAL_NULL_USE": {"enum": ["ANCHOR_ONLY", "TESTED", "EXCLUDED"]},
+      "EXTERNAL_NULL_USE": {"enum": ["ANCHOR_ONLY", "TESTED", "EXCLUDED"]}, "DECISION_REASON": {"$ref": "#/$defs/identifier"}
+    }}
+  }
+}

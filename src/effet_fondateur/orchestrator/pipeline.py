@@ -354,6 +354,27 @@ ANALYZE_REFERENCE_ANCESTRY_STAGE = StageDefinition(
     ),
 )
 
+EVALUATE_FOUNDER_HAPLOTYPE_ENRICHMENT_STAGE = StageDefinition(
+    stage_id="16B",
+    stage_name="evaluate_founder_haplotype_enrichment",
+    module="effet_fondateur.stages.evaluate_founder_haplotype_enrichment",
+    critical=False,
+    dependencies=(
+        "build_sample_registry", "freeze_cohorts", "prepare_target_region",
+        "phase_target_region", "infer_founder_haplotype",
+        "analyze_reference_ancestry",
+    ),
+    config_input_files=("target_variant_metadata",),
+    required_artifact_ids=(
+        "samples_master", "cohorts_frozen", "target_genetic_map",
+        "shapeit5_final_bcf", "shapeit5_final_index", "carrier_haplotypes",
+        "harmonized_reference_vcf", "harmonized_reference_index",
+        "reference_harmonization_manifest", "founder_segments",
+        "founder_consensus", "founder_sharing_matrix", "founder_analysis_summary",
+        "ancestry_scores", "ancestry_variant_audit", "reference_ancestry_summary",
+    ),
+)
+
 RUN_SENSITIVITY_ANALYSES_STAGE = StageDefinition(
     stage_id="17",
     stage_name="run_sensitivity_analyses",
@@ -370,7 +391,7 @@ BUILD_VISUALIZATIONS_STAGE = StageDefinition(
     critical=True,
     dependencies=(
         "analyze_population_structure", "infer_founder_haplotype", "estimate_variant_age", "analyze_local_ld",
-        "analyze_roh", "analyze_reference_ancestry", "run_sensitivity_analyses",
+        "analyze_roh", "analyze_reference_ancestry", "evaluate_founder_haplotype_enrichment", "run_sensitivity_analyses",
     ),
     required_artifact_ids=(
         "population_scores", "population_eigenvalues", "population_outliers",
@@ -378,6 +399,7 @@ BUILD_VISUALIZATIONS_STAGE = StageDefinition(
         "variant_age_estimates", "variant_age_scenarios", "local_ld_summary",
         "roh_cohort_summary", "ancestry_scores", "ancestry_eigenvalues",
         "ancestry_population_centroids", "reference_ancestry_summary",
+        "founder_haplotype_null_draws", "founder_haplotype_enrichment_summary_json",
         "sensitivity_comparisons", "sensitivity_stability",
     ),
 )
@@ -387,17 +409,20 @@ BUILD_REPORT_STAGE = StageDefinition(
     stage_name="build_report",
     module="effet_fondateur.stages.build_report",
     critical=True,
-    dependencies=("infer_kinship", "build_visualizations"),
+    dependencies=("infer_kinship", "evaluate_founder_haplotype_enrichment", "build_visualizations"),
     required_artifact_ids=(
         "kinship_pairs", "kinship_degree_summary", "kinship_report",
         "figure_index", "visualization_completeness", "visualization_render_manifest",
         "figure_population_structure", "figure_founder_ibs", "figure_variant_age",
         "figure_local_ld", "figure_roh", "figure_reference_ancestry_global",
         "figure_reference_ancestry_local", "figure_sensitivity",
+        "figure_founder_haplotype_enrichment",
         "figure_provenance_population_structure", "figure_provenance_founder_ibs",
         "figure_provenance_variant_age", "figure_provenance_local_ld",
         "figure_provenance_roh", "figure_provenance_reference_ancestry_global",
         "figure_provenance_reference_ancestry_local", "figure_provenance_sensitivity",
+        "figure_provenance_founder_haplotype_enrichment",
+        "founder_haplotype_enrichment_summary_json",
     ),
 )
 
@@ -420,6 +445,7 @@ DEFAULT_STAGE_DEFINITIONS = (
     ANALYZE_LOCAL_LD_STAGE,
     ANALYZE_ROH_STAGE,
     ANALYZE_REFERENCE_ANCESTRY_STAGE,
+    EVALUATE_FOUNDER_HAPLOTYPE_ENRICHMENT_STAGE,
     RUN_SENSITIVITY_ANALYSES_STAGE,
     BUILD_VISUALIZATIONS_STAGE,
     BUILD_REPORT_STAGE,

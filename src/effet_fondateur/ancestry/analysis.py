@@ -51,7 +51,9 @@ class HarmonizedPca:
     candidate_variant_count: int
 
 
-def _validate_panel(panel: GenotypePanel, name: str) -> None:
+def _validate_panel(
+    panel: GenotypePanel, name: str, *, allow_duplicate_loci: bool = False
+) -> None:
     matrix = np.asarray(panel.alt_dosages, dtype=float)
     if panel.ploidy not in {1, 2}:
         raise AncestryAnalysisError(f"invalid_panel_ploidy:{name}")
@@ -66,7 +68,7 @@ def _validate_panel(panel: GenotypePanel, name: str) -> None:
     ):
         raise AncestryAnalysisError(f"invalid_genotype_panel:{name}")
     loci = [variant.locus for variant in panel.variants]
-    if len(loci) != len(set(loci)):
+    if not allow_duplicate_loci and len(loci) != len(set(loci)):
         raise AncestryAnalysisError(f"duplicate_genotype_variant:{name}")
 
 
@@ -85,22 +87,39 @@ def harmonize_alt_dosages(
     volontairement interdits afin d'éviter une harmonisation ambiguë.
     """
 
-    _validate_panel(reference, "reference")
+    # Un VCF public peut représenter plusieurs variants bialléliques à la même
+    # position. Ils ne sont acceptés que si les allèles de l'étude désignent
+    # ensuite un enregistrement de référence unique.
+    _validate_panel(reference, "reference", allow_duplicate_loci=True)
     _validate_panel(study, "study")
     if reference.ploidy != study.ploidy:
         raise AncestryAnalysisError("ancestry_panel_ploidy_mismatch")
     if requested_components < 1 or minimum_variants < 1 or not 0 <= minimum_reference_call_rate <= 1:
         raise AncestryAnalysisError("invalid_ancestry_analysis_parameters")
 
-    reference_by_locus = {variant.locus: index for index, variant in enumerate(reference.variants)}
+    reference_by_locus: dict[tuple[str, int], list[int]] = {}
+    for index, variant in enumerate(reference.variants):
+        reference_by_locus.setdefault(variant.locus, []).append(index)
     reference_indexes: list[int] = []
     study_indexes: list[int] = []
     reverse_study: list[bool] = []
     selected_variants: list[Variant] = []
     for study_index, study_variant in enumerate(study.variants):
-        reference_index = reference_by_locus.get(study_variant.locus)
-        if reference_index is None:
+        locus_indexes = reference_by_locus.get(study_variant.locus, [])
+        compatible_indexes = [
+            index
+            for index in locus_indexes
+            if (study_variant.ref, study_variant.alt)
+            in (
+                (reference.variants[index].ref, reference.variants[index].alt),
+                (reference.variants[index].alt, reference.variants[index].ref),
+            )
+        ]
+        if not compatible_indexes:
             continue
+        if len(compatible_indexes) > 1:
+            raise AncestryAnalysisError("ambiguous_reference_variant")
+        reference_index = compatible_indexes[0]
         reference_variant = reference.variants[reference_index]
         if (study_variant.ref, study_variant.alt) == (reference_variant.ref, reference_variant.alt):
             reverse = False

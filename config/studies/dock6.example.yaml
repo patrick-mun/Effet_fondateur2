@@ -229,8 +229,25 @@ stages:
       minimum_local_variants: 10
       minimum_reference_call_rate: 0.95
       download_timeout_seconds: 7200
-      bcftools_timeout_seconds: 7200
+      bcftools_timeout_seconds: 21600
+      reference_extract_workers: 4
+      reference_extract_chunk_variants: 1000
       plink_timeout_seconds: 300
+  evaluate_founder_haplotype_enrichment:
+    enabled: false
+    parameters:
+      method: target_centered_empirical_haplotype_sharing_v1
+      primary_statistic: total_shared_cm
+      minimum_independent_units: 3
+      minimum_flank_markers: 2
+      internal_null_mode: exhaustive
+      external_null_draws: 100000
+      external_null_max_attempts: 1000000
+      random_seed: 161602026
+      minimum_evaluable_null_draws: 10000
+      empirical_classification_threshold: null
+      run_superpopulation_sensitivities: true
+      bcftools_timeout_seconds: 300
   run_sensitivity_analyses:
     enabled: false
     parameters:
@@ -241,6 +258,7 @@ stages:
         LOCAL_LD: null
         ROH: null
         REFERENCE_ANCESTRY: null
+        FOUNDER_HAPLOTYPE_ENRICHMENT: null
   build_visualizations:
     enabled: false
     parameters:

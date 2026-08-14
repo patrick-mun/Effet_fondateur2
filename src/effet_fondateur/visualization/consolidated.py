@@ -1,4 +1,4 @@
-"""Rendu SVG audité des huit domaines scientifiques consolidés."""
+"""Rendu SVG audité des neuf domaines scientifiques consolidés."""
 
 from __future__ import annotations
 
@@ -334,6 +334,31 @@ def _sensitivity_svg(subtitle: str, lines: list[str], footer: str) -> str:
     return _chart_footer(body, footer)
 
 
+def _founder_enrichment_svg(subtitle: str, lines: list[str], footer: str) -> str:
+    """Trace les survies empiriques interne/externe et l'observation primaire."""
+    observed = next((line.split("|") for line in lines if line.startswith("OBS|")), None)
+    survival = [line.split("|") for line in lines if line.startswith("SURV|")]
+    summaries = [line.removeprefix("SUMMARY|") for line in lines if line.startswith("SUMMARY|")]
+    if observed is None or not survival:
+        return _svg("FOUNDER HAPLOTYPE ENRICHMENT", subtitle, lines, footer)
+    observed_total, observed_left, observed_right = map(float, observed[1:4])
+    maximum = max([observed_total, *(float(row[2]) for row in survival)]) or 1.0
+    body = _chart_header("Rareté du partage haplotypique exact", subtitle)
+    body.extend(['<text x="55" y="112" font-family="sans-serif" font-size="15" font-weight="700">Fonction de survie empirique de T_TOTAL_CM</text>', '<line x1="100" y1="470" x2="760" y2="470" stroke="#64748b"/><line x1="100" y1="145" x2="100" y2="470" stroke="#64748b"/>'])
+    colors = {"INTERNAL": "#2563eb", "EXTERNAL": "#0f766e"}
+    for source in ("INTERNAL", "EXTERNAL"):
+        points = [(float(row[2]), float(row[3])) for row in survival if row[1] == source]
+        if points:
+            coordinates = " ".join(f"{100 + 660 * value / maximum:.2f},{470 - 300 * probability:.2f}" for value, probability in points)
+            body.append(f'<polyline points="{coordinates}" fill="none" stroke="{colors[source]}" stroke-width="3"/>')
+    observed_x = 100 + 660 * observed_total / maximum
+    arm_scale = max(observed_left, observed_right, 1e-12)
+    body.extend([f'<line x1="{observed_x:.2f}" y1="145" x2="{observed_x:.2f}" y2="470" stroke="#dc2626" stroke-width="3"/>', f'<text x="{observed_x + 7:.2f}" y="160" font-family="sans-serif" font-size="12" fill="#991b1b">observé {observed_total:g} cM</text>', '<line x1="830" y1="210" x2="830" y2="390" stroke="#dc2626" stroke-width="2"/>', f'<line x1="{830 - 130 * observed_left / arm_scale:.2f}" y1="300" x2="830" y2="300" stroke="#2563eb" stroke-width="12"/>', f'<line x1="830" y1="300" x2="{830 + 130 * observed_right / arm_scale:.2f}" y2="300" stroke="#0f766e" stroke-width="12"/>', f'<text x="775" y="420" font-family="sans-serif" font-size="12">gauche {observed_left:g} cM · droite {observed_right:g} cM</text>', '<line x1="555" y1="105" x2="590" y2="105" stroke="#2563eb" stroke-width="3"/><text x="600" y="110" font-family="sans-serif" font-size="12">nul interne</text>', '<line x1="700" y1="105" x2="735" y2="105" stroke="#0f766e" stroke-width="3"/><text x="745" y="110" font-family="sans-serif" font-size="12">nul externe 1000G</text>'])
+    for index, summary in enumerate(summaries[:4]):
+        body.append(f'<text x="55" y="{520 + 20 * index}" font-family="monospace" font-size="12" fill="#334155">{html.escape(summary)}</text>')
+    return _chart_footer(body, footer)
+
+
 DOMAIN_RENDERERS: dict[str, Callable[[str, list[str], str], str]] = {
     "POPULATION_STRUCTURE": _population_svg,
     "FOUNDER_IBS": _founder_svg,
@@ -342,6 +367,7 @@ DOMAIN_RENDERERS: dict[str, Callable[[str, list[str], str], str]] = {
     "ROH": _roh_svg,
     "REFERENCE_ANCESTRY_GLOBAL": _reference_ancestry_global_svg,
     "REFERENCE_ANCESTRY_LOCAL": _reference_ancestry_local_svg,
+    "FOUNDER_HAPLOTYPE_ENRICHMENT": _founder_enrichment_svg,
     "SENSITIVITY": _sensitivity_svg,
 }
 
@@ -570,6 +596,34 @@ def _sensitivity(paths: dict[str, Path]) -> tuple[str, list[str], tuple[int, int
     return ("NOT_EVALUATED" if not_eval == len(comparisons.rows) else "RENDERED", lines, (len(comparisons.rows), 0, missing, not_eval))
 
 
+def _founder_enrichment(paths: dict[str, Path]) -> tuple[str, list[str], tuple[int, int, int, int]]:
+    draws = validate_tsv_table(paths["founder_haplotype_null_draws"], "founder_haplotype_null_draws.schema.json")
+    summary = read_json(paths["founder_haplotype_enrichment_summary_json"])
+    validate_json_document(summary, "founder_haplotype_enrichment_summary.schema.json")
+    expected_counts = {(item["source"], item["stratum"]): item for item in summary["null_results"]}
+    for source in ("INTERNAL", "EXTERNAL"):
+        source_rows = [row for row in draws.rows if row["NULL_SOURCE"] == source and row["STRATUM"] == "ALL"]
+        expected = expected_counts.get((source, "ALL"))
+        if expected is None or len(source_rows) != expected["attempted_draws"] or sum(row["EVALUATION_STATUS"] == "EVALUATED" for row in source_rows) != expected["evaluable_draws"]:
+            raise VisualizationContractError("founder_enrichment_draw_count_mismatch")
+    observed = summary["observed"]
+    if observed["evaluation_status"] != "EVALUATED" or observed["total_shared_cm"] is None:
+        return "NOT_EVALUATED", [f"SUMMARY|status={summary['status']}"], (0, 0, 0, 1)
+    evaluated = [row for row in draws.rows if row["EVALUATION_STATUS"] == "EVALUATED" and row["STRATUM"] == "ALL"]
+    lines = [f"OBS|{observed['total_shared_cm']}|{observed['left_shared_cm']}|{observed['right_shared_cm']}"]
+    for source in ("INTERNAL", "EXTERNAL"):
+        values = sorted(float(row["TOTAL_SHARED_CM"]) for row in evaluated if row["NULL_SOURCE"] == source and row["TOTAL_SHARED_CM"] is not None)
+        if values:
+            indexes = sorted({round(index * (len(values) - 1) / 49) for index in range(50)})
+            lines.extend(f"SURV|{source}|{values[index]}|{(len(values) - index) / len(values)}" for index in indexes)
+    lines.append(f"SUMMARY|{summary['independent_family_count']} familles indépendantes · statut {summary['status']}")
+    for item in summary["null_results"]:
+        if item["stratum"] == "ALL":
+            lines.append(f"SUMMARY|{item['source']} p={item['empirical_probability']} IC={item['interval_low']}..{item['interval_high']} · évaluables={item['evaluable_draws']} · non évaluables={item['non_evaluable_draws']}")
+    missing = sum(row["EVALUATION_STATUS"] == "NOT_EVALUATED" for row in draws.rows)
+    return "RENDERED", lines, (len(evaluated), 0, missing, 0)
+
+
 DOMAIN_SPECS: tuple[tuple[str, str, dict[str, tuple[str, str]], Callable[[dict[str, Path]], tuple[str, list[str], tuple[int, int, int, int]]], list[str], list[str]], ...] = (
     ("population_structure", "POPULATION_STRUCTURE", {"population_scores": ("analyze_population_structure", "population_scores.schema.json"), "population_eigenvalues": ("analyze_population_structure", "population_eigenvalues.schema.json"), "population_outliers": ("analyze_population_structure", "population_outliers.schema.json")}, _population, ["PCA exploratoire interne à l'étude ; aucune attribution automatique d'ascendance."], ["Les axes dépendent de la référence indépendante, des variants informatifs et de la structure présente dans l'étude.", "Les p-values d'outlier reposent sur une approximation exploratoire et aucune exclusion n'est automatique."]),
     ("founder_ibs", "FOUNDER_IBS", {"founder_segments": ("infer_founder_haplotype", "founder_segments.schema.json"), "founder_analysis_summary": ("infer_founder_haplotype", "founder_analysis_summary.schema.json")}, _founder, ["Partage IBS uniquement ; aucune preuve IBD ou causale."], ["Les limites dépendent de la phase, de la carte et de la densité des marqueurs."]),
@@ -578,12 +632,13 @@ DOMAIN_SPECS: tuple[tuple[str, str, dict[str, tuple[str, str]], Callable[[dict[s
     ("roh", "ROH", {"roh_cohort_summary": ("analyze_roh", "roh_cohort_summary.schema.json")}, _roh, ["Autozygotie individuelle distincte de l'IBS/IBD entre individus."], ["La densité ACPA et les paramètres de scan limitent les ROH observables."]),
     ("reference_ancestry_global", "REFERENCE_ANCESTRY_GLOBAL", {"ancestry_scores": ("analyze_reference_ancestry", "ancestry_scores.schema.json"), "ancestry_eigenvalues": ("analyze_reference_ancestry", "ancestry_eigenvalues.schema.json"), "ancestry_population_centroids": ("analyze_reference_ancestry", "ancestry_population_centroids.schema.json"), "reference_ancestry_summary": ("analyze_reference_ancestry", "reference_ancestry_summary.schema.json")}, _reference_ancestry_global, ["Positionnement global relatif aux références 1000G ; aucune attribution ethnique ou généalogique."], ["Les populations 1000G ne représentent pas exhaustivement l'histoire démographique réunionnaise."]),
     ("reference_ancestry_local", "REFERENCE_ANCESTRY_LOCAL", {"ancestry_scores": ("analyze_reference_ancestry", "ancestry_scores.schema.json"), "ancestry_eigenvalues": ("analyze_reference_ancestry", "ancestry_eigenvalues.schema.json"), "ancestry_population_centroids": ("analyze_reference_ancestry", "ancestry_population_centroids.schema.json"), "reference_ancestry_summary": ("analyze_reference_ancestry", "reference_ancestry_summary.schema.json")}, _reference_ancestry_local, ["Positionnement haplotypique local relatif ; aucune preuve d'ascendance locale, d'IBD ou d'effet fondateur."], ["La projection dépend de la région phasée autour de la variation cible configurée et des variants harmonisés."]),
+    ("founder_haplotype_enrichment", "FOUNDER_HAPLOTYPE_ENRICHMENT", {"founder_haplotype_null_draws": ("evaluate_founder_haplotype_enrichment", "founder_haplotype_null_draws.schema.json"), "founder_haplotype_enrichment_summary_json": ("evaluate_founder_haplotype_enrichment", "founder_haplotype_enrichment_summary.schema.json")}, _founder_enrichment, ["Partage IBS centré cible, pas preuve IBD."], ["Trois familles indépendantes donnent une puissance limitée ; les fonds interne et 1000G restent séparés."]),
     ("sensitivity", "SENSITIVITY", {"sensitivity_comparisons": ("run_sensitivity_analyses", "sensitivity_comparisons.schema.json"), "sensitivity_stability": ("run_sensitivity_analyses", "sensitivity_stability.schema.json")}, _sensitivity, ["Robustesse aux scénarios testés, pas validation externe ni causalité."], ["Un biais partagé par tous les runs n'est pas détecté."]),
 )
 
 
 def build_consolidated_figures(*, run_dir: Path, output_dir: Path, stage_inputs: dict[str, Any]) -> list[FigureResult]:
-    """Construit les huit figures sans jamais lire hors du manifeste d'entrée."""
+    """Construit les neuf figures sans jamais lire hors du manifeste d'entrée."""
     output_dir.mkdir(parents=True, exist_ok=True)
     artifacts = {item["artifact_id"]: item for item in stage_inputs["artifacts"]}
     results: list[FigureResult] = []

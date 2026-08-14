@@ -87,6 +87,51 @@ def test_allele_mismatch_and_insufficient_overlap_block() -> None:
         harmonize_alt_dosages(reference, study, requested_components=1, minimum_variants=1)
 
 
+def test_unique_allele_match_resolves_multiple_reference_records_at_locus() -> None:
+    reference = GenotypePanel(
+        ("R1", "R2", "R3"),
+        (
+            Variant("chr3", 10, "other", "A", "T"),
+            Variant("chr3", 10, "matching", "A", "G"),
+        ),
+        np.array([[0, 0], [1, 1], [2, 2]], dtype=float),
+        2,
+    )
+    study = GenotypePanel(
+        ("S1",),
+        (Variant("chr3", 10, "study", "G", "A"),),
+        np.array([[1]], dtype=float),
+        2,
+    )
+
+    result = harmonize_alt_dosages(
+        reference, study, requested_components=1, minimum_variants=1
+    )
+
+    assert result.variants[0].variant_id == "matching"
+
+
+def test_multiple_allele_compatible_reference_records_remain_blocking() -> None:
+    reference = GenotypePanel(
+        ("R1", "R2"),
+        (
+            Variant("chr3", 10, "first", "A", "G"),
+            Variant("chr3", 10, "second", "G", "A"),
+        ),
+        np.array([[0, 2], [2, 0]], dtype=float),
+        2,
+    )
+    study = GenotypePanel(
+        ("S1",), (Variant("chr3", 10, "study", "A", "G"),),
+        np.array([[1]], dtype=float), 2,
+    )
+
+    with pytest.raises(AncestryAnalysisError, match="ambiguous_reference_variant"):
+        harmonize_alt_dosages(
+            reference, study, requested_components=1, minimum_variants=1
+        )
+
+
 def test_phased_local_genotype_and_centroids() -> None:
     assert genotype_to_alt_dosage("1/0", phased_required=False) == 1
     assert phased_genotype_to_haplotypes("1|0") == (1, 0)

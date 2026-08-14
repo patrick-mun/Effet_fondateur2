@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/founder_haplotype_boundaries.schema.json",
+  "title": "Bornes du partage IBS observé",
+  "x-tsv": {"schema_version": "1.0.0", "columns": ["ANALYSIS_ID", "SIDE", "BOUND_VARIANT_ID", "BOUND_BP", "TARGET_BP", "SHARED_CM", "SHARED_BP", "MARKER_COUNT", "STATUS", "STOP_REASON"], "null_value": "", "primary_key": ["ANALYSIS_ID", "SIDE"], "boolean_values": {"true": true, "false": false}},
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"}, "count": {"type": "string", "pattern": "^[0-9]+$"},
+    "decimal": {"type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$"}, "nullableIdentifier": {"oneOf": [{"$ref": "#/$defs/identifier"}, {"type": "null"}]},
+    "row": {"type": "object", "additionalProperties": false, "required": ["ANALYSIS_ID", "SIDE", "BOUND_VARIANT_ID", "BOUND_BP", "TARGET_BP", "SHARED_CM", "SHARED_BP", "MARKER_COUNT", "STATUS", "STOP_REASON"], "properties": {
+      "ANALYSIS_ID": {"const": "primary_exact_ibs"}, "SIDE": {"enum": ["LEFT", "RIGHT"]}, "BOUND_VARIANT_ID": {"$ref": "#/$defs/identifier"},
+      "BOUND_BP": {"$ref": "#/$defs/count"}, "TARGET_BP": {"$ref": "#/$defs/count"}, "SHARED_CM": {"$ref": "#/$defs/decimal"},
+      "SHARED_BP": {"$ref": "#/$defs/count"}, "MARKER_COUNT": {"$ref": "#/$defs/count"}, "STATUS": {"enum": ["EVALUATED", "NOT_EVALUATED"]},
+      "STOP_REASON": {"$ref": "#/$defs/nullableIdentifier"}
+    }}
+  }
+}
