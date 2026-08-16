@@ -1,6 +1,36 @@
 # Suivi de session
 
-Dernière mise à jour : 14 août 2026
+Dernière mise à jour : 16 août 2026
+
+## Reprise étapes 17–19 — 16 août 2026
+
+- Le raccord `EXPLICIT_IBD` de 17, l'analyse exploratoire de convergence
+  globale–locale, et les deux domaines graphiques correspondants de 18 sont
+  implémentés et couverts par les tests ciblés 17–19 (12 tests passés).
+- Le rapport 19 consomme désormais directement des résumés signés et publie la
+  provenance SHA-256. Les ressources MIT du skill `report-formater` (CSS,
+  Paged.js 0.4.3 et pagination) sont vendoriées avec provenance, sans dépendance
+  vers `~/.codex/skills`.
+- Configuration finale distincte : `config/studies/dock6.final.yaml`. Registre
+  primaire unique : `config/sensitivity/dock6.final.primary.tsv`; les
+  sensibilités inter-runs absentes resteront `NOT_EVALUATED`.
+- Le run final immuable
+  `2026-08-16T154147Z_dock6_reunion_founder_effect_13811a00` a réussi de 00 à
+  19. L'étape 18 rend les 11 domaines sans blocage et 19 publie un rapport en
+  statut `AWAITING_HUMAN_REVIEW`, sans appel d'IA externe ni recalcul
+  scientifique.
+- Deux incompatibilités découvertes pendant la reprise sont corrigées et
+  testées : résolution stricte des producteurs `nom`/`ID_nom` et acceptation
+  d'une datation entièrement exploratoire sans faux modèle primaire. Les
+  producteurs des faits directs de 19 sont désormais des dépendances
+  explicites.
+- La validation graphique des 6 366 080 tirages de 16B est réalisée en flux :
+  l'en-tête, l'ordre/les doublons, les statuts, comptes et statistiques utiles
+  sont vérifiés sans charger plusieurs gigaoctets. La galerie PCA historique a
+  aussi été régénérée avec les données du run final sous
+  `derived/reference_ancestry_visualizations/` (nuages global/local, zoom des
+  copies porteuses et variance expliquée).
+- Ne pas modifier le run diagnostique du 14 août.
 
 ## État du dépôt
 
@@ -23,9 +53,29 @@ Dernière mise à jour : 14 août 2026
   `SHAPEIT5_phase_rare` démarrent correctement.
   Les commandes `Gamma`/`gamma` présentes dans le `PATH` pointent actuellement
   vers un document HTML invalide et ne sont pas utilisables.
-- Pour 16C, `/usr/bin/java` est présent mais aucun runtime Java n'est installé ;
-  aucun JAR Hap-IBD ou Refined IBD n'a été trouvé localement. Aucun téléchargement
-  ni installation n'a été effectué sans autorisation.
+- Java 17 est installé dans l'environnement Conda isolé
+  `effet-fondateur-ibd`. Hap-IBD `1.0.0-15Jun23.92f` et Refined IBD
+  `17Jan20.102` sont installés sous le cache ignoré, avec SHA-256 vérifiés par
+  `scripts/install_explicit_ibd_tools.sh`.
+- Branche active `agent/phase-autosomes-explicit-ibd`, poussée sur GitHub. Elle
+  ajoute le phasage cohérent des 22 autosomes avant le calcul IBD explicite.
+
+## Correction phasage autosomique et IBD explicite — 14 août 2026
+
+- `10A` prépare 75 échantillons sur un même univers autosomique ; `12A` phase
+  les 22 autosomes avec SHAPEIT5 et les VCF 1000 Genomes officiels téléchargés
+  par l'utilisateur sur le Bureau. Les 44 fichiers VCF/TBI ont passé leurs MD5.
+- `16C` appelle Hap-IBD et Refined IBD genome-wide avant toute interrogation de
+  la mutation : 22 chromosomes × 3 scénarios × 2 outils, soit 132 appels.
+- Le run diagnostique
+  `2026-08-14T071259Z_dock6_reunion_founder_effect_a583e775` a réussi jusqu'à
+  `16C`. Son audit valide 22 autosomes, 160 186 variants complets, le même
+  univers et la même carte pour les deux outils et l'alignement de phase du
+  chromosome cible. Le statut scientifique est `METHOD_DISCORDANT` : aucune
+  preuve IBD ou d'effet fondateur n'est revendiquée.
+- La validation des 6 366 080 tirages de 16B est désormais streaming : contrôle
+  réel en 75 s et environ 23 Mo RSS, sans changement du calcul scientifique.
+- Les runs interrompus et tentatives échouées sont conservés pour retour arrière.
 
 ## Bilan des avancées
 
@@ -779,13 +829,12 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 
 ## Priorités de la prochaine session
 
-1. Après autorisation explicite, installer/configurer Java 17 et des versions
-   officielles épinglées de Hap-IBD/Refined IBD, puis exécuter un smoke
-   synthétique non sensible.
-2. Étendre le phasage 12 au chromosome 19 complet et exécuter le rapport de
-   faisabilité : densité, marqueurs complets et puissance attendue à 1–5 cM.
-3. Réaliser les simulations de calibration avant le run réel, puis raccorder la
-   figure et la section de rapport 16C sans modifier le run de référence.
+1. Lancer un nouveau run complet avec
+   `config/studies/dock6.16b.next.yaml` et le surveiller jusqu'à `16C`.
+2. Vérifier les audits, empreintes, effectifs agrégés et le statut 16C du nouveau
+   run sans exposer de données individuelles.
+3. Conserver les étapes 17–19 désactivées tant que leur raccord à 16C n'a pas
+   été spécifié et testé séparément.
 
 Le plan `PLAN_ETAPE_16B_ENRICHISSEMENT_HAPLOTYPE_FONDATEUR.md` est maintenant
 implémenté : `16B_evaluate_founder_haplotype_enrichment` préserve 15 comme LD de
@@ -812,11 +861,10 @@ observé de `1,43649051839 cM`, probabilité interne `0,0104371` et probabilité
 externe globale `0,0572540`, sans seuil de classification préspécifié. Le run
 est terminé jusqu'à `16B` et n'a pas été relancé par Codex.
 
-Le plan `PLAN_ETAPE_16C_IBD_EXPLICITE_PUCE_SNP.md` décrit désormais une
-confirmation IBD complémentaire sans WGS : Hap-IBD et Refined IBD sur les
-données de puce, calibration synthétique, règles multi-familles, témoins,
-contrats, tests et extension ultérieure genome-wide/ERSA. Aucun outil Java n'a
-été installé et aucune analyse 16C n'a été lancée.
+Le plan `PLAN_ETAPE_16C_IBD_EXPLICITE_PUCE_SNP.md` est maintenant prolongé par
+une implémentation genome-wide réelle : Hap-IBD et Refined IBD sur les données
+de puce phasées de manière homogène, règles multi-familles, témoins, contrats et
+tests. Java et les deux logiciels sont installés et contrôlés par empreinte.
 
 Le premier socle logiciel `16C_call_explicit_ibd` est implémenté sans toucher au
 run réel : noyau scientifique Hap-IBD/Refined IBD, cible et trois paires,

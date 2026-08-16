@@ -425,8 +425,9 @@ RUN_SENSITIVITY_ANALYSES_STAGE = StageDefinition(
     stage_name="run_sensitivity_analyses",
     module="effet_fondateur.stages.run_sensitivity_analyses",
     critical=False,
-    dependencies=("initialize_run",),
+    dependencies=("initialize_run", "freeze_cohorts", "analyze_reference_ancestry"),
     config_input_files=("sensitivity_scenarios",),
+    required_artifact_ids=("cohorts_frozen", "ancestry_scores"),
 )
 
 BUILD_VISUALIZATIONS_STAGE = StageDefinition(
@@ -436,7 +437,7 @@ BUILD_VISUALIZATIONS_STAGE = StageDefinition(
     critical=True,
     dependencies=(
         "analyze_population_structure", "infer_founder_haplotype", "estimate_variant_age", "analyze_local_ld",
-        "analyze_roh", "analyze_reference_ancestry", "evaluate_founder_haplotype_enrichment", "run_sensitivity_analyses",
+        "analyze_roh", "analyze_reference_ancestry", "evaluate_founder_haplotype_enrichment", "call_explicit_ibd", "run_sensitivity_analyses",
     ),
     required_artifact_ids=(
         "population_scores", "population_eigenvalues", "population_outliers",
@@ -446,6 +447,8 @@ BUILD_VISUALIZATIONS_STAGE = StageDefinition(
         "ancestry_population_centroids", "reference_ancestry_summary",
         "founder_haplotype_null_draws", "founder_haplotype_enrichment_summary_json",
         "sensitivity_comparisons", "sensitivity_stability",
+        "explicit_ibd_pair_results", "explicit_ibd_concordance", "explicit_ibd_control_frequency", "explicit_ibd_summary",
+        "population_convergence",
     ),
 )
 
@@ -454,7 +457,17 @@ BUILD_REPORT_STAGE = StageDefinition(
     stage_name="build_report",
     module="effet_fondateur.stages.build_report",
     critical=True,
-    dependencies=("infer_kinship", "evaluate_founder_haplotype_enrichment", "build_visualizations"),
+    dependencies=(
+        "infer_kinship",
+        "infer_founder_haplotype",
+        "estimate_variant_age",
+        "analyze_roh",
+        "analyze_reference_ancestry",
+        "evaluate_founder_haplotype_enrichment",
+        "call_explicit_ibd",
+        "run_sensitivity_analyses",
+        "build_visualizations",
+    ),
     required_artifact_ids=(
         "kinship_pairs", "kinship_degree_summary", "kinship_report",
         "figure_index", "visualization_completeness", "visualization_render_manifest",
@@ -467,7 +480,13 @@ BUILD_REPORT_STAGE = StageDefinition(
         "figure_provenance_roh", "figure_provenance_reference_ancestry_global",
         "figure_provenance_reference_ancestry_local", "figure_provenance_sensitivity",
         "figure_provenance_founder_haplotype_enrichment",
+        "figure_explicit_ibd", "figure_population_convergence",
+        "figure_provenance_explicit_ibd", "figure_provenance_population_convergence",
         "founder_haplotype_enrichment_summary_json",
+        "founder_analysis_summary", "variant_age_summary", "roh_analysis_summary",
+        "reference_ancestry_summary", "explicit_ibd_summary", "explicit_ibd_pair_results",
+        "explicit_ibd_concordance", "explicit_ibd_control_frequency",
+        "sensitivity_analysis_summary", "population_convergence",
     ),
 )
 

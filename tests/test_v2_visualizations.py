@@ -5,10 +5,13 @@ import json
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 from effet_fondateur.audit import atomic_write_json, sha256_file
 from effet_fondateur.contracts import build_file_artifact, validate_json_document
 from effet_fondateur.stages.build_visualizations import execute
 from effet_fondateur.visualization import build_consolidated_figures
+from effet_fondateur.visualization.consolidated import VisualizationContractError, _stream_founder_null_draws
 
 
 SIGNATURES = {
@@ -31,7 +34,7 @@ def _tsv(path: Path, columns: list[str], rows: list[list[Any]]) -> None:
         writer.writerows(rows)
 
 
-def _fixture(run_dir: Path, *, founder_count_mismatch: bool = False, ld_not_evaluated: bool = False, pca_reference_count_mismatch: bool = False) -> dict[str, Any]:
+def _fixture(run_dir: Path, *, founder_count_mismatch: bool = False, ld_not_evaluated: bool = False, pca_reference_count_mismatch: bool = False, qualified_population_producer: bool = False, exploratory_age_only: bool = False) -> dict[str, Any]:
     definitions: list[tuple[str, str, str, list[str] | None, list[list[Any]] | dict[str, Any]]] = []
     population_score_columns = ["SAMPLE_ID", "SAMPLE_SET_ID", "FID", "IID", "FAMILY_ID", "GROUP_LABEL", "ARRAY_BATCH", "REFERENCE_INCLUDED", "PROJECTED", "PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8", "PC9", "PC10", "OUTLIER_STATUS", "OUTLIER_REASON"]
     definitions.append(("population_scores", "analyze_population_structure", "population_scores.schema.json", population_score_columns, [
@@ -52,7 +55,7 @@ def _fixture(run_dir: Path, *, founder_count_mismatch: bool = False, ld_not_eval
         {"schema_version": "1.0.0", "method_id": "target_centered_exact_ibs_v1", "interpretation": "IBS_SHARED_CANDIDATE", "status": "SUPPORTED_IBS_CANDIDATE", "selected_carrier_count": 3 if founder_count_mismatch else 2, "excluded_carrier_count": 0, "background_haplotype_count": 8, "matching_background_haplotype_count": 0, "minimum_independent_carriers": 2, "minimum_flank_markers": 1, "ibd_claimed": False}))
     definitions.append(("variant_age_estimates", "estimate_variant_age", "variant_age_estimates.schema.json",
         ["METHOD_ID", "MODEL", "ANALYSIS_STATUS", "N_UNITS", "EFFECTIVE_N", "RHO", "ESTIMATE_GENERATIONS", "CI_LOWER_GENERATIONS", "CI_UPPER_GENERATIONS", "CONFIDENCE_LEVEL", "PRIMARY", "EXCLUSION_CODE"],
-        [["gamma_gandolfo_2014_v1", "CORRELATED", "EXPLORATORY", 3, 2.5, 0.1, 10, 5, 20, 0.95, "true", ""], ["gamma_gandolfo_2014_v1", "INDEPENDENT", "EXPLORATORY", 3, 3, 0, 9, 4, 18, 0.95, "false", ""]]))
+        [["gamma_gandolfo_2014_v1", "CORRELATED", "EXPLORATORY", 3, 2.5, 0.1, 10, 5, 20, 0.95, "false" if exploratory_age_only else "true", ""], ["gamma_gandolfo_2014_v1", "INDEPENDENT", "EXPLORATORY", 3, 3, 0, 9, 4, 18, 0.95, "false", ""]]))
     definitions.append(("variant_age_scenarios", "estimate_variant_age", "variant_age_scenarios.schema.json",
         ["SCENARIO_ID", "SCENARIO_TYPE", "MODEL", "OMITTED_INDEPENDENT_UNIT_ID", "N_UNITS", "ESTIMATE_GENERATIONS", "CI_LOWER_GENERATIONS", "CI_UPPER_GENERATIONS", "GENERATION_YEARS", "ESTIMATE_YEARS", "CI_LOWER_YEARS", "CI_UPPER_YEARS", "STATUS", "EXCLUSION_CODE"],
         [["model_independent", "MODEL", "INDEPENDENT", "", 3, 9, 4, 18, "", "", "", "", "ESTIMATED", ""]]))
@@ -121,11 +124,12 @@ def _fixture(run_dir: Path, *, founder_count_mismatch: bool = False, ld_not_eval
             path.parent.mkdir(parents=True, exist_ok=True); atomic_write_json(path, content)
         else:
             _tsv(path, columns, content)  # type: ignore[arg-type]
+        published_producer = "08_analyze_population_structure" if qualified_population_producer and producer == "analyze_population_structure" else producer
         artifacts.append(build_file_artifact(
             physical_path=path, published_path=path.relative_to(run_dir).as_posix(),
             artifact_id=artifact_id, artifact_type=artifact_id,
             media_type="application/json" if columns is None else "text/tab-separated-values",
-            producer_stage=producer, producer_signature=SIGNATURES[producer],
+            producer_stage=published_producer, producer_signature=SIGNATURES[producer],
             schema_name=schema_name, schema_version="1.0.0", assembly="GRCh38",
             sample_set_id="synthetic_samples", variant_set_id="target_v1",
             sensitivity="sensitive_genetic",
@@ -137,7 +141,8 @@ def _producer_controls(run_dir: Path, stage_inputs: dict[str, Any]) -> None:
     stage_ids = {"analyze_population_structure": "08", "infer_founder_haplotype": "13", "estimate_variant_age": "14", "analyze_local_ld": "15", "analyze_roh": "16", "analyze_reference_ancestry": "16A", "evaluate_founder_haplotype_enrichment": "16B", "run_sensitivity_analyses": "17"}
     records = []
     for producer, stage_id in stage_ids.items():
-        artifacts = [item for item in stage_inputs["artifacts"] if item["producer_stage"] == producer]
+        accepted_producers = {producer, f"{stage_id}_{producer}"}
+        artifacts = [item for item in stage_inputs["artifacts"] if item["producer_stage"] in accepted_producers]
         control_dir = run_dir / "stages" / f"source_{producer}"
         outputs = {"schema_version": "1.0.0", "run_id": stage_inputs["run_id"], "stage_id": stage_id, "stage_name": producer, "signature": SIGNATURES[producer], "artifacts": artifacts}
         outputs_path = control_dir / "stage_outputs.json"; atomic_write_json(outputs_path, outputs)
@@ -210,6 +215,31 @@ def test_not_evaluated_is_visible_and_missing_values_are_not_zeroed(tmp_path: Pa
     assert provenance["not_evaluated_count"] == 1
 
 
+def test_exploratory_only_variant_age_is_rendered_without_primary_claim(tmp_path: Path) -> None:
+    results = build_consolidated_figures(
+        run_dir=tmp_path,
+        output_dir=tmp_path / "rendered",
+        stage_inputs=_fixture(tmp_path, exploratory_age_only=True),
+    )
+    age = next(result for result in results if result.domain == "VARIANT_AGE")
+    assert age.status == "RENDERED"
+    svg = age.figure_path.read_text(encoding="utf-8")
+    assert "PRIMARY CORRELATED" not in svg
+    assert svg.count("EXPLORATORY") >= 2
+
+
+def test_streamed_founder_draw_validation_rejects_duplicate_draw_index(tmp_path: Path) -> None:
+    path = tmp_path / "draws.tsv"
+    columns = ["NULL_SOURCE", "STRATUM", "DRAW_INDEX", "ATTEMPT_INDEX", "UNIT_COUNT", "EVALUATION_STATUS", "LEFT_SHARED_CM", "RIGHT_SHARED_CM", "TOTAL_SHARED_CM", "LEFT_MARKER_COUNT", "RIGHT_MARKER_COUNT", "NON_EVALUABLE_REASON"]
+    _tsv(path, columns, [
+        ["INTERNAL", "ALL", 1, 1, 3, "EVALUATED", 0.1, 0.2, 0.3, 1, 1, ""],
+        ["INTERNAL", "ALL", 1, 2, 3, "NOT_EVALUATED", "", "", "", "", "", "NO_SHARED_FLANK"],
+    ])
+
+    with pytest.raises(VisualizationContractError, match="draw_order_or_duplicate"):
+        _stream_founder_null_draws(path)
+
+
 def test_stage_18_publishes_versioned_index_completeness_and_audit(tmp_path: Path) -> None:
     run_dir = tmp_path / "run"; output_dir = run_dir / "stages" / ".18_build_visualizations.tmp"; output_dir.mkdir(parents=True)
     stage_inputs = _fixture(run_dir)
@@ -238,3 +268,18 @@ def test_stage_18_publishes_versioned_index_completeness_and_audit(tmp_path: Pat
     assert (output_dir / "visualization_gallery.pdf").read_bytes().startswith(b"%PDF-")
     assert render_manifest["scientific_recalculation_performed"] is False
     assert render_manifest["composite_founder_score_calculated"] is False
+
+
+def test_stage_18_accepts_manifest_bound_qualified_producer_name(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    output_dir = run_dir / "stages" / ".18_build_visualizations.tmp"
+    output_dir.mkdir(parents=True)
+    stage_inputs = _fixture(run_dir, qualified_population_producer=True)
+    _producer_controls(run_dir, stage_inputs)
+    stage_inputs_path = output_dir / "stage_inputs.json"
+    atomic_write_json(stage_inputs_path, stage_inputs)
+
+    assert execute(stage_inputs_path, output_dir) == 0
+    completeness = json.loads((output_dir / "visualization_completeness.json").read_text(encoding="utf-8"))
+    assert completeness["blocked_count"] == 0
+    assert completeness["complete_for_scientific_report"] is True

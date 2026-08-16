@@ -228,6 +228,17 @@ les résultats aux manifestes `12.5–12.6`, publie atomiquement le résumé fin
 déclare les visualisations pseudonymisées attendues à l'étape 18. Le contrat est
 documenté dans `docs/modules/phasing_qc.md`.
 
+Pour les comparaisons IBD explicites, `10A_prepare_autosomal_phasing_panel`
+construit en amont un jeu commun couvrant les 22 autosomes, puis
+`12A_phase_autosomal_panel` phase séparément chaque chromosome avec SHAPEIT5 et
+le même panel 1000 Genomes GRCh38. Les VCF/TBI publics peuvent rester hors du
+dépôt et être exposés par un lien sous
+`data/cache/references/sources/1kg_3202_high_coverage_20220422` ; chaque VCF et
+index est contrôlé contre son MD5 officiel avant extraction. Le manifest 12A
+publie les 22 BCF phasés, leurs index et exactement la carte utilisée ensuite
+par les deux moteurs IBD. Cette branche genome-wide ne remplace pas le phasage
+ciblé de 12, nécessaire pour attribuer la copie mutante.
+
 L'étape `13_infer_founder_haplotype` applique ensuite la méthode conservatrice
 `target_centered_exact_ibs_v1` aux chromosomes porteurs fiables des unités
 indépendantes. Elle s'étend depuis la cible jusqu'au premier allèle manquant ou
@@ -300,7 +311,9 @@ preuve IBD ou automatique d'effet fondateur. Le contrat est documenté dans
 `docs/modules/founder_haplotype_enrichment.md`.
 
 L'étape optionnelle `16C_call_explicit_ibd` appelle ensuite Hap-IBD et
-Refined IBD sur un VCF phasé commun et une carte génétique commune. Le scénario
+Refined IBD à l'aveugle sur les 22 autosomes phasés, avant d'interroger les
+segments autour de la cible. Pour chaque chromosome et scénario, les deux
+outils reçoivent le même VCF phasé et la même carte génétique. Le scénario
 primaire ne peut pas descendre sous `2 cM` et `100` marqueurs ; les scénarios
 `1,5 cM` et `1 cM` restent des sensibilités et exigent une calibration
 préspécifiée. Les marqueurs ayant au moins un génotype manquant ou non phasé
@@ -311,11 +324,11 @@ Quel que soit le statut, `founder_effect_proven` reste faux et une absence
 d'appel sur puce SNP n'est jamais présentée comme une réfutation. Voir
 `docs/modules/explicit_ibd.md`.
 
-16C est désactivée dans les exemples tant que Java, les deux JAR et leurs
-SHA-256 ne sont pas configurés. Aucun téléchargement n'est automatique. Le
-bloc `tools.explicit_ibd_adapters` doit épingler Java, les versions et les
-empreintes des JAR avant une exécution réelle. L'environnement actuel peut
-donc exécuter les tests simulés sans disposer des logiciels externes.
+Le profil de production doit épingler Java, les deux JAR, leurs versions et
+leurs SHA-256 dans `tools.explicit_ibd_adapters`. L'installation reproductible
+des versions retenues se fait avec `scripts/install_explicit_ibd_tools.sh` ; le
+pipeline n'effectue lui-même aucun téléchargement. Les exemples génériques
+restent désactivés afin de pouvoir exécuter les tests simulés sans Java.
 
 L'étape `17_run_sensitivity_analyses` consolide ensuite un run primaire et des
 runs de sensibilité distincts, déclarés dans un registre TSV. Elle vérifie les
@@ -373,7 +386,9 @@ Les exécutables suivants doivent être accessibles depuis le `PATH` :
 - `plink` 1.9 ou compatible : filtrage, ROH, IBD, HWE et LD ;
 - `king` : estimation des relations de parenté ;
 - `bcftools` : cache, extraction et harmonisation de la référence phasée ;
-- `Rscript` : exécution de l'analyse Adegenet.
+- `Rscript` : exécution de l'analyse Adegenet ;
+- SHAPEIT5 5.1.1 : phasage ciblé et des 22 autosomes ;
+- Java 17, Hap-IBD et Refined IBD : appels IBD explicites de l'étape 16C.
 
 Le binaire `Gamma` est uniquement nécessaire pour utiliser la fonction
 `run_gamma()` ou l'ancien script shell. Le pipeline principal utilise
@@ -387,6 +402,7 @@ plink --version
 king --version
 bcftools --version
 Rscript --version
+scripts/install_explicit_ibd_tools.sh
 ```
 
 ### Packages R

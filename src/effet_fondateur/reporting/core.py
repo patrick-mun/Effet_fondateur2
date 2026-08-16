@@ -23,6 +23,8 @@ DOMAIN_TITLES = {
     "REFERENCE_ANCESTRY_LOCAL": "Positionnement haplotypique local sur références 1000G",
     "FOUNDER_HAPLOTYPE_ENRICHMENT": "Rareté du partage haplotypique exact",
     "SENSITIVITY": "Analyses de sensibilité",
+    "EXPLICIT_IBD": "IBD explicite autour de DOCK6",
+    "POPULATION_CONVERGENCE": "Convergence genome-wide versus région DOCK6",
 }
 PARAMETER_STAGES = (
     "qc_preliminary", "build_kinship_panel", "infer_kinship",
@@ -148,6 +150,30 @@ def _section_facts(run_dir: Path, artifacts: dict[str, dict[str, Any]]) -> list[
                     )
             controlled_facts.append("Partage IBS centré cible ; aucune preuve IBD, d'effet fondateur automatique ou d'origine géographique.")
             source_ids.append(summary_id)
+        direct_summaries = {
+            "FOUNDER_IBS": ("founder_analysis_summary", "founder_analysis_summary.schema.json"),
+            "VARIANT_AGE": ("variant_age_summary", "variant_age_summary.schema.json"),
+            "ROH": ("roh_analysis_summary", "roh_analysis_summary.schema.json"),
+            "EXPLICIT_IBD": ("explicit_ibd_summary", "explicit_ibd_summary.schema.json"),
+            "POPULATION_CONVERGENCE": ("population_convergence", "population_convergence.schema.json"),
+        }
+        if figure["domain"] in direct_summaries and direct_summaries[figure["domain"]][0] in artifacts:
+            direct_id, direct_schema = direct_summaries[figure["domain"]]
+            direct = read_json(_artifact_path(run_dir, artifacts[direct_id])); validate_json_document(direct, direct_schema)
+            source_ids.append(direct_id)
+            if figure["domain"] == "FOUNDER_IBS":
+                controlled_facts = [f"Statut primaire IBS : {direct['status']}.", f"Porteurs indépendants sélectionnés : {direct['selected_carrier_count']}.", f"Haplotypes compatibles dans le fond : {direct['matching_background_haplotype_count']}/{direct['background_haplotype_count']}."]
+            elif figure["domain"] == "VARIANT_AGE":
+                controlled_facts = [f"Statut : {direct['status']} (exploratoire si l'effectif primaire minimal n'est pas atteint).", f"Estimation : {direct['estimate_generations']} générations ; intervalle à {100 * direct['confidence_level']:.0f} % : {direct['confidence_lower_generations']}–{direct['confidence_upper_generations']} générations."]
+            elif figure["domain"] == "ROH":
+                controlled_facts = [f"Mutation incluse dans un ROH chez {direct['target_in_roh_count']} individu(s).", "ROH individuel distinct de l'IBD entre familles."]
+            elif figure["domain"] == "EXPLICIT_IBD":
+                controlled_facts = [f"Statut 16C : {direct['status']} ; statut primaire : {direct['primary_status']}.", f"Analyse {direct['input_scope']} sur {direct['family_count']} familles ; la mutation est chr{direct['target']['chromosome']}:{direct['target']['position_bp']}.", "METHOD_DISCORDANT ne doit pas être interprété comme une absence d'appel concordant par paire."]
+            else:
+                controlled_facts = [f"Analyse {direct['analysis_role']} : {direct['carrier_unit_count']} familles porteuses et {direct['control_unit_count']} témoins indépendants, {direct['component_count']} composantes."]
+                if direct["status"] == "EVALUATED":
+                    controlled_facts += [f"Convergence globale : p empirique {direct['global']['empirical_probability']} sur {direct['global']['triplet_count']} triplets.", f"Convergence locale : p empirique {direct['local']['empirical_probability']} ; conditionnelle à la compacité globale : {direct['conditional_local']['empirical_probability'] if direct['conditional_local'] else 'NOT_EVALUATED'}."]
+                controlled_facts.append(f"Fenêtres autosomiques négatives : {direct['negative_control_windows']['status']}.")
         sections.append({
             "section_id": figure["figure_id"], "title": DOMAIN_TITLES[figure["domain"]], "status": status,
             "facts": controlled_facts,
@@ -164,6 +190,7 @@ def _build_facts(run_dir: Path, stage_inputs: dict[str, Any]) -> dict[str, Any]:
         "sensitivity": "sensitive_genetic", "scientific_recalculation_performed": False,
         "composite_founder_score_calculated": False, "study_context": _study_context(run_dir),
         "kinship": _kinship_facts(run_dir, artifacts), "sections": _section_facts(run_dir, artifacts),
+        "sources": [{"artifact_id": artifact_id, "producer_stage": artifact["producer_stage"], "producer_signature": artifact["producer_signature"], "sha256": artifact["sha256"], "path": artifact["path"]} for artifact_id, artifact in sorted(artifacts.items())],
     }
     validate_json_document(facts, "interpretation_facts.schema.json")
     return facts
@@ -241,8 +268,12 @@ def _render_html(facts: dict[str, Any], draft: dict[str, Any], artifacts: dict[s
     context = facts["study_context"]
     sections_by_id = {item["section_id"]: item for item in draft["sections"]}
     styles = "body{margin:0;background:#f5f7fb;color:#172554;font:16px system-ui}header{padding:3rem 6%;color:white;background:linear-gradient(120deg,#172554,#0f766e)}main{max-width:1180px;margin:auto;padding:2rem}.card{background:white;border:1px solid #dbe4ee;border-radius:14px;padding:1.4rem;margin:1.4rem 0;box-shadow:0 8px 25px #0f172a10}table{width:100%;border-collapse:collapse}th,td{padding:.55rem;border:1px solid #cbd5e1;text-align:left}th{background:#e6fffb}textarea{width:100%;min-height:190px;padding:1rem;border:2px solid #94a3b8;border-radius:8px;font:15px system-ui;box-sizing:border-box}.facts{background:#f8fafc;padding:1rem;border-left:5px solid #0f766e}.limit{color:#9a3412}.badge{padding:.25rem .7rem;border-radius:2rem;background:#fef3c7}img.figure{width:100%}button{background:#0f766e;color:white;border:0;padding:1rem 1.5rem;border-radius:8px;font-weight:700;cursor:pointer}code{overflow-wrap:anywhere}"
+    asset_root = Path(__file__).with_name("assets")
+    styles = asset_root.joinpath("report-linear.css").read_text(encoding="utf-8") + styles
     target = context["target"]
     content = ["<!doctype html><html lang=\"fr\"><head><meta charset=\"utf-8\"><meta name=\"robots\" content=\"noindex,nofollow\"><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self'\"><title>Rapport V2 révisable</title>", f"<style>{styles}</style></head><body data-run-id=\"{esc(facts['run_id'])}\" data-facts-sha=\"{facts_sha}\" data-draft-sha=\"{draft_sha}\"><header><h1>Rapport V2 révisable</h1><p>Brouillon non validé · données pseudonymisées · sensitive_genetic</p></header><main>"]
+    pagination_scripts = "<script>" + asset_root.joinpath("paginate.js").read_text(encoding="utf-8") + "</script><script>" + asset_root.joinpath("vendor", "paged.polyfill.min.js").read_text(encoding="utf-8") + "</script>"
+    content[0] = content[0].replace("script-src 'self'", "script-src 'unsafe-inline'").replace("</head>", pagination_scripts + "</head>")
     content.append(f'<section class="card"><h2>Paramètres d’entrée de l’étude</h2><table><tr><th>Run</th><td>{esc(facts["run_id"])}</td></tr><tr><th>Projet</th><td>{esc(context["project_id"])}</td></tr><tr><th>Assemblage</th><td>{esc(context["assembly"])}</td></tr><tr><th>Cible</th><td>{esc(target.get("gene"))} · chr{esc(target.get("chromosome"))}:{esc(target.get("position_bp"))} · {esc(target.get("project_variant_id"))}</td></tr></table>')
     for stage, parameters in context["parameters_by_stage"].items():
         content.append(f'<details><summary>{esc(stage)}</summary><pre>{esc(json.dumps(parameters, ensure_ascii=False, indent=2, sort_keys=True))}</pre></details>')
@@ -265,7 +296,12 @@ def _render_html(facts: dict[str, Any], draft: dict[str, Any], artifacts: dict[s
         text = "\n\n".join((section_draft["observation"], section_draft["interpretation_prudente"], section_draft["limites"]))
         content.append(f'<section class="card"><h2>{esc(section["title"])} <span class="badge">{esc(section["status"])}</span></h2>{figure_html}<div class="facts"><strong>Faits contrôlés</strong><ul>{facts_html}</ul><strong>Limites</strong><ul class="limit">{limits_html}</ul></div><h3>Commentaire à relire</h3><textarea data-section="{esc(section["section_id"])}">{esc(text)}</textarea></section>')
     content.append('<section class="card" id="human-validation"><h2>Validation humaine</h2><label>Relecteur ou rôle <input id="reviewer" required></label><p><label><input class="approval-check" type="checkbox"> Faits et nombres contrôlés</label><br><label><input class="approval-check" type="checkbox"> Limites conservées</label><br><label><input class="approval-check" type="checkbox"> Aucun langage causal ou de preuve</label><br><label><input class="approval-check" type="checkbox"> Primaire et exploratoire distingués</label></p><button id="approve-report" type="button">Valider le rapport</button><p id="approval-result"></p></section><p>La validation éditoriale ne démontre pas un effet fondateur.</p></main><script src="report_editor.js"></script></body></html>')
-    return "".join(content)
+    document = "".join(content)
+    cover = f'<section class="cover"><h1>Effet fondateur autour de DOCK6 à La Réunion</h1><p>Rapport scientifique en couches · brouillon soumis à validation humaine</p><p>Run {esc(facts["run_id"])} · {esc(context["assembly"])} · sensitive_genetic</p></section><nav class="toc-page"><h2>Sommaire</h2><ol><li><a class="toc-entry" href="#study"><span class="toc-title">Contexte, cohortes et méthodes</span><span class="toc-dots"></span><span class="toc-page-num"></span></a></li><li><a class="toc-entry" href="#results"><span class="toc-title">Résultats et interprétation</span><span class="toc-dots"></span><span class="toc-page-num"></span></a></li><li><a class="toc-entry" href="#human-validation"><span class="toc-title">Validation humaine</span><span class="toc-dots"></span><span class="toc-page-num"></span></a></li></ol></nav>'
+    document = document.replace('<header><h1>Rapport V2 révisable</h1><p>Brouillon non validé · données pseudonymisées · sensitive_genetic</p></header><main>', cover + '<main><div id="study"></div><div id="results"></div>', 1)
+    document = document.replace('<img class="figure" src="kinship_network.svg" alt="Réseau KING pseudonymisé">', f'<div class="figure">{_network_svg(kin)}</div>')
+    document = document.replace('<script src="report_editor.js"></script>', f'<footer class="page-footer">Effet fondateur DOCK6 · rapport scientifique révisable</footer><script>{_editor_script()}</script>')
+    return document
 
 
 def build_report_draft(*, run_dir: Path, output_dir: Path, stage_inputs: dict[str, Any]) -> ReportDraftPublication:

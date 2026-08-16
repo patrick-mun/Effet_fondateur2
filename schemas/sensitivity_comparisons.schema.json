@@ -21,7 +21,7 @@
       "properties": {
         "SCENARIO_ID": {"$ref": "#/$defs/identifier"}, "SCENARIO_SIGNATURE": {"$ref": "#/$defs/sha256"},
         "ROLE": {"enum": ["PRIMARY", "SENSITIVITY"]}, "DESIGN": {"enum": ["BASELINE", "SINGLE_FACTOR", "MULTIFACTOR"]},
-        "CHANGED_FACTOR": {"type": "string", "minLength": 1}, "DOMAIN": {"enum": ["FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY", "FOUNDER_HAPLOTYPE_ENRICHMENT"]},
+        "CHANGED_FACTOR": {"type": "string", "minLength": 1}, "DOMAIN": {"enum": ["FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY", "FOUNDER_HAPLOTYPE_ENRICHMENT", "EXPLICIT_IBD"]},
         "EXPECTED": {"type": "boolean"}, "SOURCE_RUN_ID": {"type": "string", "minLength": 1},
         "SOURCE_MANIFEST_SHA256": {"$ref": "#/$defs/sha256"}, "SOURCE_CONFIG_SHA256": {"$ref": "#/$defs/sha256"},
         "SOURCE_STAGE_SIGNATURE": {"$ref": "#/$defs/nullableSha"}, "SOURCE_SUMMARY_SHA256": {"$ref": "#/$defs/nullableSha"},

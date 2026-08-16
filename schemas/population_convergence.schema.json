@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/population_convergence.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "method_id", "analysis_role", "component_count", "distance", "null_mode", "random_seed", "global_matching_relative_tolerance", "carrier_unit_count", "control_unit_count", "local_entity_definition", "status", "global", "local", "conditional_local", "negative_control_windows", "interpretation"],
+  "$defs": {"result": {"type": "object", "additionalProperties": false, "required": ["observed_distance", "triplet_count", "as_or_more_compact_count", "empirical_probability"], "properties": {"observed_distance": {"type": "number", "minimum": 0}, "triplet_count": {"type": "integer", "minimum": 1}, "as_or_more_compact_count": {"type": "integer", "minimum": 0}, "empirical_probability": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}}}},
+  "properties": {
+    "schema_version": {"const": "1.0.0"}, "method_id": {"const": "global_local_triplet_convergence_v1"},
+    "analysis_role": {"const": "EXPLORATORY_POST_HOC"}, "component_count": {"const": 10},
+    "distance": {"const": "MEAN_PAIRWISE_EUCLIDEAN"}, "null_mode": {"const": "EXHAUSTIVE_CONTROL_TRIPLETS"},
+    "random_seed": {"type": "null"}, "global_matching_relative_tolerance": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+    "carrier_unit_count": {"type": "integer", "minimum": 0}, "control_unit_count": {"type": "integer", "minimum": 0},
+    "local_entity_definition": {"const": "MEAN_OF_PROJECTED_HAPLOTYPE_SCORES_PER_SAMPLE"},
+    "status": {"enum": ["EVALUATED", "NOT_EVALUATED"]},
+    "global": {"anyOf": [{"$ref": "#/$defs/result"}, {"type": "null"}]},
+    "local": {"anyOf": [{"$ref": "#/$defs/result"}, {"type": "null"}]},
+    "conditional_local": {"anyOf": [{"$ref": "#/$defs/result"}, {"type": "null"}]},
+    "negative_control_windows": {"type": "object", "additionalProperties": false, "required": ["status", "reason"], "properties": {"status": {"const": "NOT_EVALUATED"}, "reason": {"type": "string", "minLength": 1}}},
+    "interpretation": {"type": "string", "minLength": 1}
+  }
+}

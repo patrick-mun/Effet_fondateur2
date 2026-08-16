@@ -1,4 +1,4 @@
-from effet_fondateur.orchestrator.pipeline import DEFAULT_STAGE_DEFINITIONS
+from effet_fondateur.orchestrator.pipeline import BUILD_REPORT_STAGE, DEFAULT_STAGE_DEFINITIONS
 
 
 def test_founder_enrichment_is_between_16a_and_17() -> None:
@@ -10,3 +10,14 @@ def test_founder_enrichment_is_between_16a_and_17() -> None:
     assert names[enrichment_index + 1] == "call_explicit_ibd"
     assert stages[enrichment_index + 1] == ("16C", "call_explicit_ibd")
     assert names[enrichment_index + 2] == "run_sensitivity_analyses"
+
+
+def test_report_direct_fact_producers_are_explicit_dependencies() -> None:
+    assert {
+        "infer_founder_haplotype",
+        "estimate_variant_age",
+        "analyze_roh",
+        "analyze_reference_ancestry",
+        "call_explicit_ibd",
+        "run_sensitivity_analyses",
+    } <= set(BUILD_REPORT_STAGE.dependencies)

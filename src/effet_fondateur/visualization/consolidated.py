@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import csv
+import gzip
 import html
 import re
 from dataclasses import dataclass
@@ -50,6 +52,16 @@ def _source_record(artifact: dict[str, Any]) -> dict[str, str]:
     return {key: artifact[key] for key in ("artifact_id", "producer_stage", "producer_signature", "schema_name", "schema_version", "sha256")}
 
 
+def _producer_matches(observed: Any, expected_stage_name: str) -> bool:
+    """Accepte les deux formes contractuelles : nom court ou ``ID_nom`` exact."""
+    if observed == expected_stage_name:
+        return True
+    if not isinstance(observed, str):
+        return False
+    stage_id, separator, stage_name = observed.partition("_")
+    return bool(separator and re.fullmatch(r"\d{2}[A-Z]?", stage_id) and stage_name == expected_stage_name)
+
+
 def _validate_sources(run_dir: Path, artifacts: dict[str, dict[str, Any]], expected: dict[str, tuple[str, str]]) -> dict[str, Path]:
     paths: dict[str, Path] = {}
     signatures: dict[str, str] = {}
@@ -58,7 +70,7 @@ def _validate_sources(run_dir: Path, artifacts: dict[str, dict[str, Any]], expec
     }
     for artifact_id, (producer, schema_name) in expected.items():
         artifact = artifacts.get(artifact_id)
-        if artifact is None or artifact.get("producer_stage") != producer:
+        if artifact is None or not _producer_matches(artifact.get("producer_stage"), producer):
             raise VisualizationContractError("source_producer_mismatch")
         if artifact.get("schema_name") != schema_name or artifact.get("schema_version") != "1.0.0":
             raise VisualizationContractError("source_schema_mismatch")
@@ -446,7 +458,12 @@ def _age(paths: dict[str, Path]) -> tuple[str, list[str], tuple[int, int, int, i
     estimates = validate_tsv_table(paths["variant_age_estimates"], "variant_age_estimates.schema.json")
     scenarios = validate_tsv_table(paths["variant_age_scenarios"], "variant_age_scenarios.schema.json")
     primary_rows = [row for row in estimates.rows if row["PRIMARY"]]
-    if len(primary_rows) != 1 or primary_rows[0]["MODEL"] != "CORRELATED":
+    exploratory_only = not primary_rows and all(
+        row["ANALYSIS_STATUS"] == "EXPLORATORY" for row in estimates.rows
+    )
+    if len(primary_rows) > 1 or (
+        len(primary_rows) == 1 and primary_rows[0]["MODEL"] != "CORRELATED"
+    ) or (not primary_rows and not exploratory_only):
         raise VisualizationContractError("variant_age_primary_model_mismatch")
     evaluated_unit_counts = {
         row["N_UNITS"] for row in estimates.rows
@@ -596,23 +613,75 @@ def _sensitivity(paths: dict[str, Path]) -> tuple[str, list[str], tuple[int, int
     return ("NOT_EVALUATED" if not_eval == len(comparisons.rows) else "RENDERED", lines, (len(comparisons.rows), 0, missing, not_eval))
 
 
+def _stream_founder_null_draws(
+    path: Path,
+) -> tuple[dict[str, int], dict[str, int], dict[str, list[float]], int]:
+    """Contrôle les tirages massifs en flux sans matérialiser des millions de lignes."""
+    expected_columns = [
+        "NULL_SOURCE", "STRATUM", "DRAW_INDEX", "ATTEMPT_INDEX", "UNIT_COUNT",
+        "EVALUATION_STATUS", "LEFT_SHARED_CM", "RIGHT_SHARED_CM", "TOTAL_SHARED_CM",
+        "LEFT_MARKER_COUNT", "RIGHT_MARKER_COUNT", "NON_EVALUABLE_REASON",
+    ]
+    attempted = {"INTERNAL": 0, "EXTERNAL": 0}
+    evaluable = {"INTERNAL": 0, "EXTERNAL": 0}
+    values: dict[str, list[float]] = {"INTERNAL": [], "EXTERNAL": []}
+    last_draw_index: dict[tuple[str, str], int] = {}
+    not_evaluated_count = 0
+    opener = gzip.open if path.suffix == ".gz" else Path.open
+    with opener(path, "rt", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle, delimiter="\t")
+        if reader.fieldnames != expected_columns:
+            raise VisualizationContractError("founder_enrichment_draw_header_mismatch")
+        for raw_row in reader:
+            if None in raw_row or any(raw_row[column] is None for column in expected_columns):
+                raise VisualizationContractError("founder_enrichment_draw_field_count_mismatch")
+            source = raw_row["NULL_SOURCE"]
+            stratum = raw_row["STRATUM"]
+            status = raw_row["EVALUATION_STATUS"]
+            if source not in attempted or not stratum or status not in {"EVALUATED", "NOT_EVALUATED"}:
+                raise VisualizationContractError("founder_enrichment_draw_value_invalid")
+            try:
+                draw_index = int(raw_row["DRAW_INDEX"])
+            except ValueError as error:
+                raise VisualizationContractError("founder_enrichment_draw_index_invalid") from error
+            draw_key = (source, stratum)
+            if draw_index <= last_draw_index.get(draw_key, 0):
+                raise VisualizationContractError("founder_enrichment_draw_order_or_duplicate")
+            last_draw_index[draw_key] = draw_index
+            if status == "NOT_EVALUATED":
+                not_evaluated_count += 1
+            if stratum != "ALL":
+                continue
+            attempted[source] += 1
+            if status == "EVALUATED":
+                try:
+                    total_shared_cm = float(raw_row["TOTAL_SHARED_CM"])
+                except ValueError as error:
+                    raise VisualizationContractError("founder_enrichment_draw_statistic_invalid") from error
+                if total_shared_cm < 0:
+                    raise VisualizationContractError("founder_enrichment_draw_statistic_invalid")
+                evaluable[source] += 1
+                values[source].append(total_shared_cm)
+    return attempted, evaluable, values, not_evaluated_count
+
+
 def _founder_enrichment(paths: dict[str, Path]) -> tuple[str, list[str], tuple[int, int, int, int]]:
-    draws = validate_tsv_table(paths["founder_haplotype_null_draws"], "founder_haplotype_null_draws.schema.json")
     summary = read_json(paths["founder_haplotype_enrichment_summary_json"])
     validate_json_document(summary, "founder_haplotype_enrichment_summary.schema.json")
+    attempted, evaluable, values_by_source, missing = _stream_founder_null_draws(
+        paths["founder_haplotype_null_draws"]
+    )
     expected_counts = {(item["source"], item["stratum"]): item for item in summary["null_results"]}
     for source in ("INTERNAL", "EXTERNAL"):
-        source_rows = [row for row in draws.rows if row["NULL_SOURCE"] == source and row["STRATUM"] == "ALL"]
         expected = expected_counts.get((source, "ALL"))
-        if expected is None or len(source_rows) != expected["attempted_draws"] or sum(row["EVALUATION_STATUS"] == "EVALUATED" for row in source_rows) != expected["evaluable_draws"]:
+        if expected is None or attempted[source] != expected["attempted_draws"] or evaluable[source] != expected["evaluable_draws"]:
             raise VisualizationContractError("founder_enrichment_draw_count_mismatch")
     observed = summary["observed"]
     if observed["evaluation_status"] != "EVALUATED" or observed["total_shared_cm"] is None:
         return "NOT_EVALUATED", [f"SUMMARY|status={summary['status']}"], (0, 0, 0, 1)
-    evaluated = [row for row in draws.rows if row["EVALUATION_STATUS"] == "EVALUATED" and row["STRATUM"] == "ALL"]
     lines = [f"OBS|{observed['total_shared_cm']}|{observed['left_shared_cm']}|{observed['right_shared_cm']}"]
     for source in ("INTERNAL", "EXTERNAL"):
-        values = sorted(float(row["TOTAL_SHARED_CM"]) for row in evaluated if row["NULL_SOURCE"] == source and row["TOTAL_SHARED_CM"] is not None)
+        values = sorted(values_by_source[source])
         if values:
             indexes = sorted({round(index * (len(values) - 1) / 49) for index in range(50)})
             lines.extend(f"SURV|{source}|{values[index]}|{(len(values) - index) / len(values)}" for index in indexes)
@@ -620,8 +689,31 @@ def _founder_enrichment(paths: dict[str, Path]) -> tuple[str, list[str], tuple[i
     for item in summary["null_results"]:
         if item["stratum"] == "ALL":
             lines.append(f"SUMMARY|{item['source']} p={item['empirical_probability']} IC={item['interval_low']}..{item['interval_high']} · évaluables={item['evaluable_draws']} · non évaluables={item['non_evaluable_draws']}")
-    missing = sum(row["EVALUATION_STATUS"] == "NOT_EVALUATED" for row in draws.rows)
-    return "RENDERED", lines, (len(evaluated), 0, missing, 0)
+    return "RENDERED", lines, (sum(evaluable.values()), 0, missing, 0)
+
+
+def _explicit_ibd(paths: dict[str, Path]) -> tuple[str, list[str], tuple[int, int, int, int]]:
+    pairs = validate_tsv_table(paths["explicit_ibd_pair_results"], "explicit_ibd_pair_results.schema.json")
+    concordance = validate_tsv_table(paths["explicit_ibd_concordance"], "explicit_ibd_concordance.schema.json")
+    frequencies = validate_tsv_table(paths["explicit_ibd_control_frequency"], "explicit_ibd_control_frequency.schema.json")
+    summary = read_json(paths["explicit_ibd_summary"]); validate_json_document(summary, "explicit_ibd_summary.schema.json")
+    primary_pairs = [row for row in pairs.rows if row["ROLE"] == "PRIMARY"]
+    primary_common = next(row for row in concordance.rows if row["SCENARIO_ID"] == "primary")
+    primary_frequency = next(row for row in frequencies.rows if row["SCENARIO_ID"] == "primary")
+    families = sorted({row[key] for row in primary_pairs for key in ("FAMILY_1", "FAMILY_2")})
+    pseudonyms = {family: f"FAM-{index:03d}" for index, family in enumerate(families, 1)}
+    lines = [f"PAIR|{pseudonyms[row['FAMILY_1']]}–{pseudonyms[row['FAMILY_2']]}|{row['HAP_IBD_STATUS']}|{row['REFINED_IBD_STATUS']}|{str(row['BOTH_METHODS']).lower()}|{row['DETAIL_CODE']}" for row in primary_pairs]
+    lines += [f"COMMON|{primary_common['COMMON_START_BP']}|{primary_common['COMMON_END_BP']}|{str(primary_common['TARGET_IN_COMMON_INTERSECTION']).lower()}|{str(primary_common['BOUNDARIES_CONCORDANT']).lower()}", f"TARGET|{summary['target']['position_bp']}", f"FREQUENCY|{primary_frequency['POSITIVE_UNIT_COUNT']}|{primary_frequency['EVALUABLE_UNIT_COUNT']}|{primary_frequency['FREQUENCY']}|{primary_frequency['PRESPECIFIED_MAXIMUM']}", f"STATUS|{summary['status']}|{summary['primary_status']}"]
+    rendered = len(primary_pairs) == summary["family_count"] and all(row["BOTH_METHODS"] for row in primary_pairs)
+    return ("RENDERED" if rendered else "NOT_EVALUATED", lines, (len(primary_pairs), 0, 0, int(not rendered)))
+
+
+def _population_convergence(paths: dict[str, Path]) -> tuple[str, list[str], tuple[int, int, int, int]]:
+    summary = read_json(paths["population_convergence"]); validate_json_document(summary, "population_convergence.schema.json")
+    if summary["status"] != "EVALUATED":
+        return "NOT_EVALUATED", ["STATUS|NOT_EVALUATED"], (0, 0, 0, 1)
+    lines = [f"SCOPE|GLOBAL|{summary['global']['observed_distance']}|{summary['global']['empirical_probability']}|{summary['global']['triplet_count']}", f"SCOPE|LOCAL|{summary['local']['observed_distance']}|{summary['local']['empirical_probability']}|{summary['local']['triplet_count']}", f"SCOPE|CONDITIONAL_LOCAL|{summary['conditional_local']['observed_distance']}|{summary['conditional_local']['empirical_probability']}|{summary['conditional_local']['triplet_count']}" if summary["conditional_local"] else "SCOPE|CONDITIONAL_LOCAL|NA|NA|0", f"UNITS|{summary['carrier_unit_count']}|{summary['control_unit_count']}|{summary['component_count']}", f"NEGATIVE_WINDOWS|{summary['negative_control_windows']['status']}|{summary['negative_control_windows']['reason']}"]
+    return "RENDERED", lines, (summary["carrier_unit_count"] + summary["control_unit_count"], 0, 0, 1)
 
 
 DOMAIN_SPECS: tuple[tuple[str, str, dict[str, tuple[str, str]], Callable[[dict[str, Path]], tuple[str, list[str], tuple[int, int, int, int]]], list[str], list[str]], ...] = (
@@ -634,6 +726,8 @@ DOMAIN_SPECS: tuple[tuple[str, str, dict[str, tuple[str, str]], Callable[[dict[s
     ("reference_ancestry_local", "REFERENCE_ANCESTRY_LOCAL", {"ancestry_scores": ("analyze_reference_ancestry", "ancestry_scores.schema.json"), "ancestry_eigenvalues": ("analyze_reference_ancestry", "ancestry_eigenvalues.schema.json"), "ancestry_population_centroids": ("analyze_reference_ancestry", "ancestry_population_centroids.schema.json"), "reference_ancestry_summary": ("analyze_reference_ancestry", "reference_ancestry_summary.schema.json")}, _reference_ancestry_local, ["Positionnement haplotypique local relatif ; aucune preuve d'ascendance locale, d'IBD ou d'effet fondateur."], ["La projection dépend de la région phasée autour de la variation cible configurée et des variants harmonisés."]),
     ("founder_haplotype_enrichment", "FOUNDER_HAPLOTYPE_ENRICHMENT", {"founder_haplotype_null_draws": ("evaluate_founder_haplotype_enrichment", "founder_haplotype_null_draws.schema.json"), "founder_haplotype_enrichment_summary_json": ("evaluate_founder_haplotype_enrichment", "founder_haplotype_enrichment_summary.schema.json")}, _founder_enrichment, ["Partage IBS centré cible, pas preuve IBD."], ["Trois familles indépendantes donnent une puissance limitée ; les fonds interne et 1000G restent séparés."]),
     ("sensitivity", "SENSITIVITY", {"sensitivity_comparisons": ("run_sensitivity_analyses", "sensitivity_comparisons.schema.json"), "sensitivity_stability": ("run_sensitivity_analyses", "sensitivity_stability.schema.json")}, _sensitivity, ["Robustesse aux scénarios testés, pas validation externe ni causalité."], ["Un biais partagé par tous les runs n'est pas détecté."]),
+    ("explicit_ibd", "EXPLICIT_IBD", {"explicit_ibd_pair_results": ("call_explicit_ibd", "explicit_ibd_pair_results.schema.json"), "explicit_ibd_concordance": ("call_explicit_ibd", "explicit_ibd_concordance.schema.json"), "explicit_ibd_control_frequency": ("call_explicit_ibd", "explicit_ibd_control_frequency.schema.json"), "explicit_ibd_summary": ("call_explicit_ibd", "explicit_ibd_summary.schema.json")}, _explicit_ibd, ["Concordance des outils par paire distincte de la concordance des limites entre familles."], ["METHOD_DISCORDANT reflète ici la tolérance de limites inter-familles et non une absence d'appel par les deux outils."]),
+    ("population_convergence", "POPULATION_CONVERGENCE", {"population_convergence": ("run_sensitivity_analyses", "population_convergence.schema.json")}, _population_convergence, ["Analyse exploratoire post hoc sur dix composantes ajustées exclusivement sur 1000G."], ["Les fenêtres autosomiques négatives comparables ne sont pas évaluées faute de plan préspécifié."]),
 )
 
 
@@ -644,6 +738,8 @@ def build_consolidated_figures(*, run_dir: Path, output_dir: Path, stage_inputs:
     results: list[FigureResult] = []
     for figure_id, domain, expected, builder, warnings, limits in DOMAIN_SPECS:
         source_items = [artifacts[item] for item in expected if item in artifacts]
+        if domain in {"EXPLICIT_IBD", "POPULATION_CONVERGENCE"} and not source_items:
+            continue
         try:
             paths = _validate_sources(run_dir, artifacts, expected)
             status, lines, counts = builder(paths)

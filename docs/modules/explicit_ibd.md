@@ -2,8 +2,10 @@
 
 ## Portée scientifique
 
-`16C_call_explicit_ibd` recherche des segments contenant le variant cible avec
-deux méthodes indépendantes, Hap-IBD et Refined IBD. Elle ne remplace ni l'IBS
+`16C_call_explicit_ibd` appelle d'abord les segments sur les 22 autosomes avec
+deux méthodes indépendantes, Hap-IBD et Refined IBD, sans utiliser la mutation
+pour guider les appels. Elle interroge ensuite seulement les segments autour de
+la cible. Elle ne remplace ni l'IBS
 strict de 13, ni la datation de 14, ni l'enrichissement empirique de 16B. Un
 appel primaire concordant apporte un support IBD explicite ; il ne prouve pas à
 lui seul un effet fondateur, un ancêtre unique ou une origine géographique.
@@ -14,18 +16,20 @@ primaire à haute spécificité de 2 cM et 100 marqueurs.
 
 ## Préparation commune
 
-Les deux outils consomment exactement le même VCF phasé et la même carte
-génétique. Chaque variant est joint par identifiant, chromosome et position à
-la carte validée. Un variant comportant un GT absent, partiellement absent ou
-non phasé est retiré des deux entrées avec le motif `TRUE_MISSING_CALL`. Aucun
-génotype n'est complété ou requalifié en observation.
+`10A` prépare un univers d'étude commun, puis `12A` phase chaque autosome avec
+SHAPEIT5 et la référence 1000 Genomes GRCh38 vérifiée. Les deux outils IBD
+consomment exactement le même VCF phasé et la même carte génétique par
+chromosome. Chaque variant est joint par identifiant, chromosome et position à
+la carte validée. Un GT absent, partiellement absent ou non phasé bloque
+l'univers autosomique publié ; aucun génotype n'est complété ou requalifié en
+observation.
 
-Le premier jalon sait consommer le BCF produit par 12 et publie un rapport de
-faisabilité. Pour l'analyse scientifique prévue, `input_scope` doit être
-`TARGET_CHROMOSOME` et le producteur de phasage doit fournir le chromosome
-cible complet. Un panel régional peut servir aux tests techniques, mais sa
-densité insuffisante doit conduire à `NOT_EVALUABLE` ou à une sensibilité, pas
-à `NO_PRIMARY_IBD_CALL` interprété biologiquement.
+Le BCF régional produit par 12 reste la source de l'attribution H1/H2 de la
+mutation. Un contrôle d'alignement confronte cette orientation au chromosome 19
+de 12A ; les homozygotes alternatifs sont explicitement `BOTH`. Le rapport de
+faisabilité 16C exige `AUTOSOMAL_GENOMEWIDE`, les 22 autosomes et un chromosome
+cible complet. Un panel régional peut servir aux tests techniques, mais ne doit
+pas être interprété comme une analyse IBD genome-wide.
 
 ## Seuils et calibration
 
@@ -77,8 +81,10 @@ Le bloc `tools.explicit_ibd_adapters` exige la commande Java, sa version majeure
 attendue, les chemins des deux JAR, leurs versions déclarées et leurs SHA-256.
 Les chemins sont refusés s'ils sont absents, symboliques ou si l'empreinte
 diffère. Les appels sont bornés en mémoire, threads et temps ; stdout/stderr est
-conservé par scénario. Aucun téléchargement ou installation n'est effectué par
-le pipeline.
+conservé par scénario et chromosome. Le script
+`scripts/install_explicit_ibd_tools.sh` installe Java 17, construit Hap-IBD
+depuis le commit officiel retenu, télécharge Refined IBD et contrôle les deux
+SHA-256. Aucun téléchargement ou installation n'est effectué par le pipeline.
 
 ## Artefacts
 
@@ -102,6 +108,7 @@ seule, GT manquant/non phasé, chromosome mutant non assignable, fond trop
 fréquent, calibration absente, seuil primaire post hoc, échec et timeout.
 
 Java et les JAR ne sont pas des dépendances Python et ne figurent pas dans
-`requirements.txt`. Un smoke test avec les vrais outils reste obligatoire
-avant tout run scientifique. Le run de référence du 13 août 2026 est immuable
-et ne doit jamais recevoir manuellement des artefacts 16C.
+`requirements.txt`. Le run diagnostique du 14 août 2026 a exercé 132 appels
+réels (22 chromosomes, trois scénarios, deux outils), avec univers et carte
+identiques contrôlés. Tout run antérieur reste immuable et ne doit jamais
+recevoir manuellement des artefacts 16C.
