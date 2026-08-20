@@ -19,9 +19,15 @@ combine PLINK, KING, Python, R/Adegenet et une estimation Gamma.
 
 ## Points d'entrée
 
-- Pipeline : `.venv/bin/python run_pipeline.py`
-- Interface : `.venv/bin/streamlit run interface_effet_fondateur.py`
-- Tests : `.venv/bin/python -m pytest test/`
+Le pipeline actif est la V2 (`src/effet_fondateur/`), pilotée par la CLI
+`effet-fondateur`. Le pipeline historique (`run_pipeline.py`, `scripts/`,
+`interface_effet_fondateur.py`, `Module_WIKI/`) est archivé dans `archive/`
+(voir `archive/README.md`) : il ne doit plus être exécuté pour produire un
+résultat scientifique et n'est plus un point d'entrée du dépôt.
+
+- Pipeline V2 : `.venv/bin/effet-fondateur run --config <config.yaml> --runs-dir <dossier>`
+- Validation de configuration V2 : `.venv/bin/effet-fondateur validate-config <config.yaml>`
+- Tests : `.venv/bin/python -m pytest tests/`
 - Conversion multi-échantillons ACPA vers PLINK :
   `.venv/bin/python -m simulation_genotype_famille.acpa_to_plink`
 - Conversion historique ACPA vers VCF sans génotypes individuels :
@@ -39,8 +45,9 @@ combine PLINK, KING, Python, R/Adegenet et une estimation Gamma.
   explicite de l'utilisateur.
 - Ne pas considérer les fichiers de `data/output/` comme des sources : ce sont
   des résultats générés, parfois historiques.
-- Ne pas lancer le pipeline complet sans prévenir l'utilisateur : il réécrit
-  des sorties et ouvre le rapport HTML dans le navigateur.
+- Ne pas lancer le pipeline archivé (`archive/run_pipeline.py`) : il réécrit
+  des sorties, ouvre le rapport HTML dans le navigateur et ne doit plus servir
+  à produire un résultat scientifique.
 - Ne jamais inclure de données génétiques, jetons ou secrets dans les commits,
   les rapports de session ou les messages GitHub.
 - Ne jamais inférer automatiquement les génotypes de la mutation à partir du
@@ -132,7 +139,7 @@ combine PLINK, KING, Python, R/Adegenet et une estimation Gamma.
 ## Validation
 
 - Commencer par `git diff --check`.
-- Vérifier les imports avec `.venv/bin/python -c "import run_pipeline"`.
+- Vérifier les imports avec `.venv/bin/python -c "import effet_fondateur"`.
 - Lancer les tests ciblés avant la suite complète.
 - Pour une modification liée à PLINK, utiliser une sortie temporaire et ne pas
   écraser les résultats existants.
