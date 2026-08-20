@@ -133,3 +133,69 @@ pour du transitoire.
 **Reste à faire** : choisir l'infrastructure cible (fournisseur, isolation
 par tenant, dimensionnement du `tmpfs`/volume selon la taille des runs
 réels), et confirmer le cadre réglementaire applicable.
+
+## 4. Estimation de coût — hébergement, installation, fonctionnement
+
+Ordre de grandeur, pas un devis : dépend surtout de la fréquence réelle des
+runs et de l'usage visé (labo interne vs SaaS multi-clients). Découpé en
+postes de nature différente.
+
+### Partie toujours active (app web + API + base de métadonnées)
+
+Légère par construction : aucune donnée génétique n'y transite, seulement
+l'interface et les statuts de run. Un petit serveur géré (Scaleway, OVH,
+Hetzner) suffit.
+
+**~15–50 €/mois**
+
+### Calcul à la demande (le run lui-même) — poste dominant et variable
+
+Aucune machine allumée en permanence : un worker éphémère se lève pour la
+durée du run puis disparaît. Un run avec phasage SHAPEIT5 + KING + PCA sur
+une instance correcte (8–16 vCPU, 32–64 Go RAM pour le `tmpfs`) coûte de
+l'ordre de 1 à 6 € par run (quelques heures de calcul facturées à l'usage).
+Pour un usage recherche ponctuel (quelques runs/semaine) le total mensuel
+suit linéairement le nombre de runs, pas le nombre d'utilisateurs inactifs.
+
+**~20–150 €/mois** pour un usage recherche modéré (quelques runs/semaine)
+
+### Stockage
+
+Quasi nul si la purge automatique fonctionne comme prévu (le stockage
+éphémère par run n'existe que le temps du run). Prévoir un petit espace
+tampon pour que l'utilisateur récupère son résultat final avant purge.
+
+**Quelques €/mois**
+
+### Outils externes (PLINK, KING, SHAPEIT5, bcftools, R)
+
+Open source, aucun coût de licence.
+
+**0 €**
+
+### Facteur pouvant multiplier significativement la facture : conformité HDS
+
+Si l'hébergement doit être certifié HDS (hébergeur de données de santé,
+potentiellement requis en France pour des données génétiques individuelles
+selon le contexte), les offres certifiées coûtent nettement plus cher que
+l'offre standard. Si le projet devient lui-même responsable de traitement
+plutôt que de s'appuyer sur un hébergeur déjà certifié, l'audit de
+conformité peut représenter plusieurs milliers d'euros. **À vérifier avant
+tout chiffrage définitif** — c'est le facteur qui peut multiplier le budget
+par un facteur important, indépendamment du volume d'usage.
+
+### Non inclus dans cette estimation
+
+Le temps de développement pour construire l'API et brancher l'orchestrateur
+V2 derrière (`effet-fondateur run/resume`) n'est pas un coût d'hébergement :
+c'est un travail d'ingénierie one-shot, à chiffrer séparément.
+
+### Total, ordre de grandeur
+
+Usage labo/recherche modéré, hors HDS et hors développement :
+
+**~50–250 €/mois**
+
+**Reste à faire** : préciser le scénario réel (nombre de runs/mois, usage
+interne ou multi-clients) pour affiner la fourchette, et confirmer si un
+hébergement certifié HDS est requis.
