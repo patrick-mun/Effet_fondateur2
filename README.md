@@ -44,9 +44,9 @@ Le chemin affiché par `which python` doit se terminer par `.venv/bin/python`.
 Une fois l'environnement activé, les commandes peuvent être lancées simplement :
 
 ```bash
-python run_pipeline.py
-streamlit run interface_effet_fondateur.py
-pytest test/
+python archive/run_pipeline.py  # pipeline historique, archivé — ne plus utiliser
+streamlit run archive/interface_effet_fondateur.py  # idem
+pytest tests/
 ```
 
 Pour quitter l'environnement :
@@ -391,8 +391,8 @@ Les exécutables suivants doivent être accessibles depuis le `PATH` :
 - Java 17, Hap-IBD et Refined IBD : appels IBD explicites de l'étape 16C.
 
 Le binaire `Gamma` est uniquement nécessaire pour utiliser la fonction
-`run_gamma()` ou l'ancien script shell. Le pipeline principal utilise
-actuellement l'estimation Python de `scripts/gamma_age_estimation.py`.
+`run_gamma()` ou l'ancien script shell. Le pipeline V1 archivé utilisait
+l'estimation Python de `archive/scripts/gamma_age_estimation.py`.
 
 Vérification rapide :
 
@@ -797,52 +797,31 @@ plink \
 ```
 
 Toute erreur mendélienne au marqueur `rsMUT...` doit être résolue ou documentée
-avant le pipeline. Pour l'analyse actuelle, copier ensuite de façon contrôlée
-le PED, le MAP, `groupes.txt`, `cas.txt`, `temoins.txt` et `project_info.json`
-dans `data/input/complex_simulation/`, car `run_pipeline.py` lit encore ce
-dossier fixe.
+avant le pipeline.
 
 ## Exécution
 
-### Pipeline complet
+### Pipeline V2 (actif)
 
-Depuis la racine du projet :
+Voir la section « Configuration V2 » ci-dessus : `effet-fondateur validate-config`,
+`effet-fondateur run` et `effet-fondateur resume`.
 
-```bash
-.venv/bin/python run_pipeline.py
-```
+### Pipeline V1 (archivé, ne plus utiliser pour un résultat scientifique)
 
-Le script exécute successivement :
-
-1. le filtrage et le contrôle qualité PLINK ;
-2. la détection et la visualisation des ROH ;
-3. les analyses IBD avec KING et PLINK ;
-4. le calcul du LD global et autour de la mutation ;
-5. la préparation des fréquences et l'estimation de l'âge de la mutation ;
-6. l'analyse DAPC avec R/Adegenet ;
-7. la génération des rapports HTML et PDF.
-
-Les résultats sont écrits dans `data/output/complex_simulation/`.
-
-Le script ne possède pas encore d'options pour exécuter une seule étape.
-
-### Interface Streamlit
-
-```bash
-.venv/bin/streamlit run interface_effet_fondateur.py
-```
-
-L'interface permet de consulter le wiki et les résultats et de lancer le
-pipeline. Le raccordement des fichiers uploadés au pipeline doit encore être
-corrigé : le pipeline continue actuellement à lire `genotype_data.ped/map`.
+Le pipeline historique (`archive/run_pipeline.py`, `archive/scripts/`,
+`archive/interface_effet_fondateur.py`, `archive/Module_WIKI/`) est conservé
+pour référence dans `archive/` (voir `archive/README.md`). Il lisait un
+dossier fixe `data/input/complex_simulation/` et écrivait dans
+`data/output/complex_simulation/`. Ne pas le relancer pour produire un
+résultat scientifique.
 
 ### Tests
 
 ```bash
-.venv/bin/python -m pytest test tests
+.venv/bin/python -m pytest tests
 ```
 
-Pour produire le rapport HTML et l'ouvrir sur macOS :
+Pour produire le rapport HTML :
 
 ```bash
 ./run_all_tests.sh
@@ -851,18 +830,18 @@ Pour produire le rapport HTML et l'ouvrir sur macOS :
 ## Organisation
 
 ```text
-run_pipeline.py                 orchestration principale
-interface_effet_fondateur.py    interface Streamlit
-scripts/                        modules d'analyse
+src/effet_fondateur/            pipeline V2 (orchestrateur, étapes, contrats)
+schemas/                        schémas JSON des artefacts V2
+docs/modules/                   documentation des modules V2
 simulation_genotype_famille/    préparation ACPA, simulation et injection
-Module_WIKI/                    documentation scientifique des outils
+archive/                        pipeline V1 archivé (voir archive/README.md)
 data/input/                     données sources et métadonnées
 data/output/                    résultats générés
-test/                           tests automatisés
+tests/                          tests automatisés
 ```
 
-La description détaillée de PLINK, KING, Gamma et Adegenet se trouve dans
-`Module_WIKI/`.
+La description détaillée de PLINK, KING, Gamma et Adegenet du pipeline V1 se
+trouve dans `archive/Module_WIKI/`.
 
 ## État du projet
 
