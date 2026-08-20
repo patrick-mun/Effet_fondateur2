@@ -1,0 +1,135 @@
+# Demandes d'amélioration — interface SaaS du pipeline V2
+
+Ce fichier consigne les demandes exprimées lors de l'échange du 20 août 2026
+sur l'évolution du pipeline V2 vers un usage SaaS. Il complète
+`PIPELINE_V2_PRECODE.md` et `SESSION.md` sans les remplacer : il capture des
+intentions produit/architecture encore à trancher, pas des contrats d'étape
+validés.
+
+## 1. Interface utilisateur (maquettes)
+
+Une première direction visuelle a été validée comme point de départ :
+- Page d'accueil publique (vitrine, présentation du logiciel).
+- Tableau de bord (études, runs récents, statuts).
+- Préparation des données (import des sources, table maître des échantillons,
+  validation avant run).
+- Assistant de lancement d'un run (sélection étude/profil, vérification,
+  lancement).
+- Suivi d'un run étape par étape (groupes d'audit `00–04`, `05–09`, `10–14`,
+  `15–19`).
+- Rapport de résultats (PCA d'ascendance, ROH, parenté, datation).
+
+Maquette publiée (Artifact Claude) : à retrouver via `/artifacts` dans la
+session ayant servi à la générer. Statique, direction éditoriale/clinique
+(Newsreader + Public Sans + IBM Plex Mono, accent sarcelle) — non figée,
+modifiable.
+
+**Reste à faire** : valider la navigation entre écrans, décider si un
+prototype cliquable est nécessaire avant développement.
+
+## 2. Support de plusieurs types de puces en entrée
+
+**Constat actuel** : le seul convertisseur d'entrée existant
+(`03_convert_acpa`) est spécifique aux exports ACPA/ChAS (Affymetrix
+ChromosomeAnalysisSuite, `Forward Strand Base Calls`). Rien d'autre n'est
+branché aujourd'hui.
+
+**Ce qui joue en faveur du changement** : à partir de l'étape `04`, le
+pipeline identifie chaque variant par assemblage/chromosome/position/REF/ALT
+et non par identifiant de sonde propriétaire — l'architecture aval est déjà
+agnostique de la puce.
+
+**Demande** : pouvoir constituer les fichiers d'entrée du pipeline à partir
+de formats d'export différents (Illumina GenomeStudio, autres panels
+Affymetrix, VCF de séquençage direct, etc.), pas seulement ACPA/ChAS.
+
+**Ce que ça implique concrètement** :
+- Un convertisseur dédié par format source, produisant la même sortie
+  normalisée que `03_convert_acpa` (mêmes triplets PLINK, mêmes tables
+  d'audit `sample_alignment.tsv` / `*_variant_audit.tsv`).
+- Chaque convertisseur doit gérer les pièges propres à son format :
+  orientation de brin, build génomique natif de la puce (liftover éventuel
+  vers GRCh38), mapping sonde → coordonnée physique.
+- Le contrat de sortie commun (`schemas/plink_dataset.schema.json` et
+  assimilés) ne change pas — seul l'amont est à multiplier.
+
+**Priorité et formats à couvrir** : à préciser (quelle puce/format est le
+plus urgent après ACPA ?).
+
+## 3. Architecture cloud / SaaS — confidentialité des données
+
+### Proposition initiale de l'utilisateur
+
+- Aucune donnée d'entrée ou de sortie stockée en base de données.
+- La base de données ne conserve que le nom du run (et un pointeur vers le
+  dossier local de l'utilisateur ayant les droits de connexion).
+- Le logiciel s'exécute dans le cloud.
+- Les fichiers produits à chaque étape sont rapatriés en local dès leur
+  création, et placés en RAM serveur si le run en cours en a besoin pour
+  l'étape suivante.
+
+### Lecture de cette proposition
+
+**L'intention est la bonne et cohérente avec les décisions déjà actées dans
+le dépôt** (`SESSION.md` : *« ne jamais envoyer les données privées de
+l'étude vers un service externe »*, données individuelles classées
+sensibles). Une base de données qui ne contient que des métadonnées de run
+(nom, statut, horodatage, empreintes — pas les génotypes) est un bon
+principe, et correspond déjà à ce que le manifest de run V2
+(`schemas/run_manifest.schema.json`) fait conceptuellement.
+
+**Deux points de la mise en œuvre littérale posent un problème pratique,
+indépendamment de l'intention** :
+
+1. **« Tout en RAM »** est irréaliste au sens strict. Le pipeline manipule
+   des fichiers volumineux (VCF/BCF phasés, extraits 1000G, panels de
+   parenté) sur ~20 étapes séquentielles, et les outils externes (PLINK,
+   KING, SHAPEIT5, bcftools, R) lisent et écrivent des fichiers réels sur
+   disque — ils ne savent pas travailler sur un objet mémoire abstrait. Un
+   run réel peut nécessiter des dizaines de Go cumulés ; les garder tous en
+   RAM pour toute la durée d'un run de plusieurs heures est coûteux et
+   fragile (perte totale en cas de redémarrage du worker).
+   → **Raffinement réaliste** : monter le répertoire de travail du run sur
+   un `tmpfs` (système de fichiers en RAM) le temps du run. Les outils
+   externes voient de vrais fichiers, mais rien ne touche jamais un disque
+   physique, et tout disparaît à l'arrêt du conteneur. Ça conserve l'esprit
+   de la demande sans casser la compatibilité avec les outils externes.
+
+2. **« Rapatrié en local dès la création de chaque fichier »** (à chaque
+   étape, pas seulement à la fin) crée une dépendance forte à la connexion
+   de la machine locale de l'utilisateur pendant tout le run : si elle est
+   déconnectée, ou si une étape ultérieure a besoin de relire un artefact
+   d'une étape bien antérieure, il faut soit le garder aussi côté serveur,
+   soit le retélécharger depuis le poste local — ce qui double les
+   transferts et rend le pipeline dépendant d'un aller-retour réseau à
+   chaque étape (20 étapes × fichiers parfois volumineux).
+   → **Raffinement réaliste** : stockage éphémère isolé par run côté cloud
+   (bucket ou volume dédié, chiffré, accessible uniquement au run et à son
+   propriétaire), qui vit uniquement pendant l'exécution et est purgé
+   immédiatement à la fin (succès ou échec). Le rapatriement vers
+   l'utilisateur se fait une fois, à la fin du run (ou à la demande), pas à
+   chaque étape.
+
+**Point non couvert par la proposition, à trancher** : des données
+génétiques individuelles hébergées dans le cloud, même de façon éphémère,
+peuvent relever de régimes réglementaires spécifiques (données de santé/
+génétiques au sens RGPD, hébergement de données de santé en France si le
+contexte médical l'exige). À vérifier avant tout choix d'hébergeur, même
+pour du transitoire.
+
+### Recommandation de synthèse
+
+- Base de données : métadonnées de run uniquement (nom, statut par étape,
+  empreintes, chemin de sortie). Jamais de génotype, jamais de contenu.
+- Répertoire de travail par run : `tmpfs` ou volume chiffré isolé par
+  tenant/run, jamais partagé entre études.
+- Purge automatique et systématique du répertoire de travail à la fin du
+  run (succès ou échec), sans action manuelle requise.
+- Rapatriement des résultats vers l'utilisateur en une fois à la fin du run
+  (ou export à la demande), pas fichier par fichier à chaque étape.
+- Vérifier le cadre réglementaire applicable (RGPD données sensibles,
+  hébergement de données de santé) avant choix d'infrastructure.
+
+**Reste à faire** : choisir l'infrastructure cible (fournisseur, isolation
+par tenant, dimensionnement du `tmpfs`/volume selon la taille des runs
+réels), et confirmer le cadre réglementaire applicable.
