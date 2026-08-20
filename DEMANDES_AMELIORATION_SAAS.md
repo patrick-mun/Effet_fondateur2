@@ -251,3 +251,39 @@ conception plutôt qu'à découvrir après coup.
 **Reste à faire** : concevoir le modèle d'autorisation serveur (paiement →
 déblocage export) avant tout développement de la facturation, et décider du
 niveau d'aperçu gratuit acceptable.
+
+## 6. Maintenance assistée par une unité IA indépendante
+
+**Idée proposée** : une unité indépendante liée à une IA qui surveille la
+façon dont fonctionne le logiciel (pas le contenu des runs — durées par
+étape, ressources utilisées, goulots d'étranglement), va chercher des pistes
+d'amélioration, les propose avec une garantie stricte de respecter le
+comportement/l'UX existant, et peut implémenter les demandes retenues.
+Objectif : réduire la charge de maintenance humaine et obtenir des
+indicateurs sur les étapes les plus coûteuses en temps.
+
+### Deux catégories de changements, deux niveaux de confiance
+
+**Automatisable sans risque particulier** : optimisations de performance
+pure qui ne changent pas le résultat scientifique (parallélisation,
+cache, structures de données plus efficaces, mise à jour de librairie avec
+sortie vérifiée identique). La source de données naturelle pour ce
+profilage existe déjà dans le projet : durées, effectifs et empreintes des
+audits d'étape — pas besoin d'accéder au contenu génétique des runs, cohérent
+avec le principe déjà posé de ne jamais exposer les données individuelles.
+
+**Jamais à automatiser sans garde-fou** : tout changement touchant une
+méthode scientifique ou statistique (parenté KING, datation Gamma, PCA
+d'ascendance). Une implémentation « plus rapide » peut changer silencieusement
+un résultat numérique (approximation, arrondi différents) sans que rien ne
+le signale. Le projet a déjà la règle qui s'applique ici (`AGENTS.md` :
+*« Ne pas modifier une méthode scientifique ou son interprétation sans test,
+comparaison avec un résultat de référence et signalement explicite »*) —
+l'unité IA doit être contrainte par cette règle existante, jamais fusionner
+seule ce type de changement. Elle peut préparer et prouver la
+non-régression, la validation finale reste humaine.
+
+**Reste à faire** : définir le périmètre exact de télémétrie autorisé pour
+cette unité (quelles métriques, jamais quel contenu), et le workflow de
+revue humaine obligatoire avant fusion pour tout changement touchant une
+méthode scientifique.
