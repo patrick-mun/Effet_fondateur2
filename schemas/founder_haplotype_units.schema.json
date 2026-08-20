@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/founder_haplotype_units.schema.json",
+  "title": "Unités familiales de l'enrichissement haplotypique",
+  "x-tsv": {"schema_version": "1.0.0", "columns": ["UNIT_ID", "FAMILY_ID", "SAMPLE_ID", "HAPLOTYPE_ID", "ROLE", "SELECTION_SOURCE", "STATUS", "EXCLUSION_CODE"], "null_value": "", "primary_key": ["UNIT_ID"], "boolean_values": {"true": true, "false": false}},
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "nullableIdentifier": {"oneOf": [{"$ref": "#/$defs/identifier"}, {"type": "null"}]},
+    "row": {"type": "object", "additionalProperties": false, "required": ["UNIT_ID", "FAMILY_ID", "SAMPLE_ID", "HAPLOTYPE_ID", "ROLE", "SELECTION_SOURCE", "STATUS", "EXCLUSION_CODE"], "properties": {
+      "UNIT_ID": {"$ref": "#/$defs/identifier"}, "FAMILY_ID": {"$ref": "#/$defs/identifier"}, "SAMPLE_ID": {"$ref": "#/$defs/identifier"},
+      "HAPLOTYPE_ID": {"enum": ["H1", "H2", "BOTH"]}, "ROLE": {"const": "INDEPENDENT_CARRIER_FAMILY"},
+      "SELECTION_SOURCE": {"const": "STEP13_PRESELECTED_REPRESENTATIVE"}, "STATUS": {"enum": ["INCLUDED", "EXCLUDED"]},
+      "EXCLUSION_CODE": {"$ref": "#/$defs/nullableIdentifier"}
+    }}
+  }
+}

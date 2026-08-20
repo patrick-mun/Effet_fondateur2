@@ -1,6 +1,36 @@
 # Suivi de session
 
-Dernière mise à jour : 12 août 2026
+Dernière mise à jour : 16 août 2026
+
+## Reprise étapes 17–19 — 16 août 2026
+
+- Le raccord `EXPLICIT_IBD` de 17, l'analyse exploratoire de convergence
+  globale–locale, et les deux domaines graphiques correspondants de 18 sont
+  implémentés et couverts par les tests ciblés 17–19 (12 tests passés).
+- Le rapport 19 consomme désormais directement des résumés signés et publie la
+  provenance SHA-256. Les ressources MIT du skill `report-formater` (CSS,
+  Paged.js 0.4.3 et pagination) sont vendoriées avec provenance, sans dépendance
+  vers `~/.codex/skills`.
+- Configuration finale distincte : `config/studies/dock6.final.yaml`. Registre
+  primaire unique : `config/sensitivity/dock6.final.primary.tsv`; les
+  sensibilités inter-runs absentes resteront `NOT_EVALUATED`.
+- Le run final immuable
+  `2026-08-16T154147Z_dock6_reunion_founder_effect_13811a00` a réussi de 00 à
+  19. L'étape 18 rend les 11 domaines sans blocage et 19 publie un rapport en
+  statut `AWAITING_HUMAN_REVIEW`, sans appel d'IA externe ni recalcul
+  scientifique.
+- Deux incompatibilités découvertes pendant la reprise sont corrigées et
+  testées : résolution stricte des producteurs `nom`/`ID_nom` et acceptation
+  d'une datation entièrement exploratoire sans faux modèle primaire. Les
+  producteurs des faits directs de 19 sont désormais des dépendances
+  explicites.
+- La validation graphique des 6 366 080 tirages de 16B est réalisée en flux :
+  l'en-tête, l'ordre/les doublons, les statuts, comptes et statistiques utiles
+  sont vérifiés sans charger plusieurs gigaoctets. La galerie PCA historique a
+  aussi été régénérée avec les données du run final sous
+  `derived/reference_ancestry_visualizations/` (nuages global/local, zoom des
+  copies porteuses et variance expliquée).
+- Ne pas modifier le run diagnostique du 14 août.
 
 ## État du dépôt
 
@@ -10,7 +40,8 @@ Dernière mise à jour : 12 août 2026
 - La PR `#5` a livré l'étape `15`, la PR `#6` l'étape `16` et la PR `#7`
   l'étape `17`. La branche `#6` a été avancée en fast-forward vers le commit
   d'intégration existant `fbc6398`, sans rebase ni réécriture destructive.
-- La PR `#8` a livré l'étape `18` avec les six domaines graphiques, dont la PCA.
+- La PR `#8` a livré l'étape `18` avec les six domaines graphiques initiaux,
+  dont la PCA interne.
   Les branches de livraison sont conservées et aucune n'a été supprimée.
 - PR `#3` fusionnée dans `main` le 6 août 2026 ; elle valide les étapes `08–13`.
 - PR V2 `#2` fusionnée dans `main` le 5 août 2026.
@@ -22,6 +53,29 @@ Dernière mise à jour : 12 août 2026
   `SHAPEIT5_phase_rare` démarrent correctement.
   Les commandes `Gamma`/`gamma` présentes dans le `PATH` pointent actuellement
   vers un document HTML invalide et ne sont pas utilisables.
+- Java 17 est installé dans l'environnement Conda isolé
+  `effet-fondateur-ibd`. Hap-IBD `1.0.0-15Jun23.92f` et Refined IBD
+  `17Jan20.102` sont installés sous le cache ignoré, avec SHA-256 vérifiés par
+  `scripts/install_explicit_ibd_tools.sh`.
+- Branche active `agent/phase-autosomes-explicit-ibd`, poussée sur GitHub. Elle
+  ajoute le phasage cohérent des 22 autosomes avant le calcul IBD explicite.
+
+## Correction phasage autosomique et IBD explicite — 14 août 2026
+
+- `10A` prépare 75 échantillons sur un même univers autosomique ; `12A` phase
+  les 22 autosomes avec SHAPEIT5 et les VCF 1000 Genomes officiels téléchargés
+  par l'utilisateur sur le Bureau. Les 44 fichiers VCF/TBI ont passé leurs MD5.
+- `16C` appelle Hap-IBD et Refined IBD genome-wide avant toute interrogation de
+  la mutation : 22 chromosomes × 3 scénarios × 2 outils, soit 132 appels.
+- Le run diagnostique
+  `2026-08-14T071259Z_dock6_reunion_founder_effect_a583e775` a réussi jusqu'à
+  `16C`. Son audit valide 22 autosomes, 160 186 variants complets, le même
+  univers et la même carte pour les deux outils et l'alignement de phase du
+  chromosome cible. Le statut scientifique est `METHOD_DISCORDANT` : aucune
+  preuve IBD ou d'effet fondateur n'est revendiquée.
+- La validation des 6 366 080 tirages de 16B est désormais streaming : contrôle
+  réel en 75 s et environ 23 Mo RSS, sans changement du calcul scientifique.
+- Les runs interrompus et tentatives échouées sont conservés pour retour arrière.
 
 ## Bilan des avancées
 
@@ -433,13 +487,59 @@ Dernière mise à jour : 12 août 2026
   marqueurs à gauche et 13 à droite ; 7 haplotypes de fond sur 120 portent la
   signature. Aucune revendication IBD n'est faite et une revue manuelle reste
   obligatoire.
+- Le nouveau run réel
+  `2026-08-12T072902Z_dock6_reunion_founder_effect_b2075d52` a validé les
+  étapes `00–14`. Sa première tentative de `15` a échoué avant publication : PLINK 1.9
+  refusait la combinaison `--freq`/`--recode A-transpose` en présence de sexes
+  inconnus avec phénotype renseigné. La commande utilise désormais
+  `--allow-no-sex`, sans inférer ni modifier le sexe. La régression unitaire et
+  le smoke PLINK réel sur données synthétiques couvrent ce cas. La reprise a
+  publié `15` et `16`, puis la première tentative de `16A` a bloqué parce que
+  trois `SAMPLE_NAME` du fichier officiel 1000G portent un espace terminal. Le
+  parseur normalise désormais les champs tabulés sans modifier le cache ; le
+  contrôle hors ligne retrouve exactement 2 504 références uniques et les 22
+  tests synthétiques de `16A` passent. Le run n'a pas encore été repris après
+  ce second correctif. Une reprise ultérieure a révélé une complexité
+  quadratique dans la résolution des quelque 70 000 colonnes du fichier PLINK
+  `.raw` global : chaque variant reparcourait tout l'en-tête avant les
+  extractions des chromosomes suivants. Le parseur construit désormais un
+  index unique des colonnes, conserve le blocage des absences/doublons et
+  dispose d'une régression à 10 000 variants. Les 24 tests de la branche 16A
+  passent. La quatrième tentative de `16A` a ensuite dépassé les 7 200 secondes
+  pendant l'extraction distante de `chr2` (`bcftools_global_reference_extract_failed`,
+  code 3), après publication immuable de `chr1`. L'extraction est désormais
+  découpée par défaut en lots de 1 000 positions et quatre chromosomes sont
+  traités en parallèle ; chaque chromosome achevé reste réutilisable dans le
+  cache. Les délais sont rapportés explicitement, les exemples configurent six
+  heures par lot. Les 22 VCF et 22 TBI officiels 2022 fournis localement sous
+  `/Users/utilisateur/Desktop/dossier sans titre` correspondent tous aux MD5 du
+  catalogue. Ils sont exposés sans copie par 44 liens sous le cache de sources ;
+  `bcftools` a extrait cinq variants de `chr2` et 2 504 références en 1,1 s sans
+  réseau. La sixième tentative a révélé que `bcftools concat` exigeait les
+  index des lots intermédiaires. Le mode local extrait désormais chaque
+  chromosome directement en une passe, sans lots ni concaténation ; le chemin
+  HTTP conserve les lots et indexe chacun avant concaténation. Le mode local
+  vérifie les MD5 avant extraction. La septième tentative a publié les 22
+  extraits, puis a rencontré 1 032 positions ayant plusieurs enregistrements
+  bialléliques 1000G. Pour chacune, les allèles de l'étude désignent exactement
+  un enregistrement compatible. L'harmonisation accepte désormais ce cas
+  non ambigu et continue de bloquer plusieurs correspondances compatibles ;
+  les 27 tests ciblés d'ascendance passent.
+  La huitième tentative a publié `16A` en 2 899 s : 70 082 variants globaux et
+  361 locaux informatifs, 75 individus et 150 haplotypes projetés, avec tous
+  les contrôles à `PASS`. Quatre visualisations pseudonymisées PNG/SVG et une
+  galerie HTML sont générées sous `derived/reference_ancestry_visualizations`.
+  Sur les dix PC locales, la distance médiane au centroïde propre est de 4,59
+  pour les 13 copies porteuses fiables contre 7,18 pour les 136 non porteuses ;
+  ce signal descriptif de compacité ne constitue ni un test IBD ni une preuve
+  d'effet fondateur et motive le test d'enrichissement prévu en 16B.
 - La revue humaine de l'étape `13` a été approuvée pour permettre l'étape `14`,
   sans requalifier l'IBS en IBD. L'approbation est liée au SHA-256 du résumé
   `f8d8b140...65849c5` et accepte explicitement la fréquence de fond `7/120`,
   les incertitudes de phase/carte/résolution et le caractère exploratoire de la
   datation avec trois unités indépendantes. La configuration de continuation
-  ignorée `data/runs/configs/phase14_dock6_2026-08-12.yaml` active uniquement
-  les étapes `00–14`; les étapes `15–19` restent désactivées.
+  ignorée `data/runs/configs/phase14_dock6_2026-08-12.yaml` active désormais
+  les étapes `00–16A`; les étapes `17–19` restent désactivées.
 - Dernière exécution combinée antérieure des suites modernes et historiques :
   129 réussis et 4 échecs historiques sans rapport avec les étapes `05` à `11` ;
   la suite historique n'a pas été relancée pour `12.0`.
@@ -729,22 +829,88 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 
 ## Priorités de la prochaine session
 
-1. Implémenter `16A_analyze_reference_ancestry`, après ROH et avant les
-   sensibilités, sans renuméroter les étapes historiques `17–19`.
-2. Séparer une PCA globale de référence ajustée sur les 2 504 individus 1000G
-   non apparentés et une analyse haplotypique locale autour de la variation
-   cible configurée ; chromosome, position, allèles et fenêtre viennent du run,
-   sans dépendance à DOCK6. Les individus de l'étude sont projetés et ne peuvent
-   pas modifier les axes.
-3. Ajouter un cache immuable d'extraits autosomiques limités aux variants utiles,
-   lié aux MD5 officiels des VCF 1000G et aux SHA-256 locaux. Le premier run
-   peuple le cache, les suivants le vérifient et le réutilisent sans réseau.
-4. Épingler les métadonnées officielles 3 202 individus/populations
-   (`SHA-256 4e164b...3c132`) et la liste 2 504 non apparentés
-   (`SHA-256 0ac5fd...08f2`). Ne jamais traiter les proxys 1000G comme une
-   attribution ethnique ou une représentation complète de La Réunion.
-5. Intégrer le nouveau domaine aux sensibilités, figures et rapport, puis lancer
-   uniquement les tests synthétiques ciblés conformément à la demande actuelle.
+1. Lancer un nouveau run complet avec
+   `config/studies/dock6.16b.next.yaml` et le surveiller jusqu'à `16C`.
+2. Vérifier les audits, empreintes, effectifs agrégés et le statut 16C du nouveau
+   run sans exposer de données individuelles.
+3. Conserver les étapes 17–19 désactivées tant que leur raccord à 16C n'a pas
+   été spécifié et testé séparément.
+
+Le plan `PLAN_ETAPE_16B_ENRICHISSEMENT_HAPLOTYPE_FONDATEUR.md` est maintenant
+implémenté : `16B_evaluate_founder_haplotype_enrichment` préserve 15 comme LD de
+fond et teste séparément la rareté du partage IBS exact centré cible. Le cœur
+scientifique pur réutilise les représentants de 13, l'unité familiale, la cible
+exclue de la signature, l'énumération interne par individus distincts et un
+Monte-Carlo 1000G reproductible avec correction `+1`, intervalle et
+non-évaluations conservées. Les six contrats minimaux, la publication gzip,
+les audits, l'ordre `16A–16B–17`, le sixième domaine de sensibilité, la neuvième
+figure et les faits agrégés du rapport sont raccordés. Le run réel
+`2026-08-13T120222Z_dock6_reunion_founder_effect_8333bf0d` a réussi `00–16A`,
+puis `16B` a échoué immédiatement parce que son lecteur traitait à tort les
+métadonnées cible YAML comme du JSON. Le lecteur accepte désormais YAML/JSON,
+le vrai fichier cible est validé. La reprise utilisateur a calculé les
+6 366 080 tirages, puis a échoué pendant la validation finale parce que
+`IS_TARGET` était sérialisé en `True/False` au lieu de `true/false`. L'écrivain
+TSV 16B normalise désormais les booléens et les petites sorties sont validées
+avant le volumineux fichier de tirages. Les résultats de la tentative restent
+dans son dossier `.failed`; ils ne sont pas publiés comme résultats du run.
+Les 14 tests ciblés/scientifiques passent, ainsi que la validation séparée des
+quatre autres petites tables réelles. La troisième tentative utilisateur a
+réussi et publié officiellement `16B` : `3` familles indépendantes, partage
+observé de `1,43649051839 cM`, probabilité interne `0,0104371` et probabilité
+externe globale `0,0572540`, sans seuil de classification préspécifié. Le run
+est terminé jusqu'à `16B` et n'a pas été relancé par Codex.
+
+Le plan `PLAN_ETAPE_16C_IBD_EXPLICITE_PUCE_SNP.md` est maintenant prolongé par
+une implémentation genome-wide réelle : Hap-IBD et Refined IBD sur les données
+de puce phasées de manière homogène, règles multi-familles, témoins, contrats et
+tests. Java et les deux logiciels sont installés et contrôlés par empreinte.
+
+Le premier socle logiciel `16C_call_explicit_ibd` est implémenté sans toucher au
+run réel : noyau scientifique Hap-IBD/Refined IBD, cible et trois paires,
+assignation mutante globale, limites, fond et statuts ; refus d'un primaire sous
+2 cM/100 marqueurs ; sensibilités 1–1,5 cM séparées ; adaptateurs Java/JAR avec
+versions, SHA-256, mémoire, threads, timeout et logs ; retrait commun audité des
+GT absents ou non phasés sans imputation ; huit contrats, configuration stricte,
+catalogue orchestrateur, reprise générique, documentation et tests simulés. Les
+exemples restent désactivés avec calibration `false`. La galerie 18 et le
+rapport 19 ne rendent pas encore 16C obligatoire afin de préserver les runs
+historiques ; leur raccord doit accompagner le panel chromosome 19 complet.
+Validation de ce socle : 25 tests ciblés réussis, import de `run_pipeline`,
+schémas JSON valides, `git diff --check` propre et suite moderne complète à
+`275 passed` en 10 min 43 s.
+
+La configuration validée du prochain run est
+`config/studies/dock6.16b.next.yaml`. Elle active 16B avec 100 000 tirages
+externes, graine `161602026`, sensibilités par superpopulation et cache 16A en
+mode hors ligne. Elle ne doit pas être exécutée sans autorisation explicite.
+Validation du développement : import de `run_pipeline`, `git diff --check`,
+37 tests ciblés puis 252 tests modernes réussis. Après une optimisation mémoire
+de la publication gzip et l'ajout du test scientifique synthétique bout en
+bout, les 9 tests scientifiques 16B et les validations ciblées associées
+passent également.
+
+## Implémentation 16A commitée
+
+- `16A_analyze_reference_ancestry` est enregistrée après `16_analyze_roh` et
+  avant `17_run_sensitivity_analyses`, sans renumérotation de `17–19`.
+- La branche globale ajuste les axes sur les 2 504 références 1000G non
+  apparentées et projette les individus de l'étude ; la branche locale ajuste
+  les axes sur 5 008 haplotypes de référence et projette séparément `H1/H2`.
+- La cible, le chromosome et la région viennent exclusivement des métadonnées
+  et du BCF phasé du run. Aucun élément DOCK6/chr19 n'est codé en dur.
+- Le cache immuable lie les MD5 officiels, la sélection de variants et les
+  échantillons aux SHA-256 locaux ; le mode hors ligne bloque en cas de manque
+  ou corruption. Aucune donnée d'étude n'est envoyée au serveur de référence.
+- L'harmonisation bloque les doublons et incompatibilités, accepte uniquement
+  les orientations directes/inversées, audite les exclusions et interdit de
+  traiter une imputation PCA comme un génotype observé.
+- Les sensibilités connaissent désormais `REFERENCE_ANCESTRY`; les figures et
+  le rapport séparent `REFERENCE_ANCESTRY_GLOBAL` et
+  `REFERENCE_ANCESTRY_LOCAL`, soit huit domaines graphiques au total.
+- L'implémentation est commitée et poussée sous `34e1b2e` sur
+  `origin/agent/implement-reference-ancestry-16a` ; aucun résultat réel `16A`
+  n'a encore été publié.
 
 ## Décisions à conserver
 

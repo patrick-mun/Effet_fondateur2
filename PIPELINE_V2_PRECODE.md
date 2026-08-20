@@ -591,7 +591,9 @@ Chaque figure `figure_name.png` ou `figure_name.pdf` possède un fichier
         -> 13 haplotype fondateur et IBD local -> 14 datation
 10 + 11 -> 15 LD local secondaire
 10 + 11 -> 16 ROH secondaire
-13 + 14 si activée + étapes secondaires activées -> 17 analyses de sensibilité
+06 + 12 + 16 -> 16A positionnements 1000G global et haplotypique local
+02 + 09 + 11 + 12 + 13 + 16A -> 16B enrichissement du partage haplotypique
+13 + 14 si activée + étapes secondaires activées + 16A + 16B -> 17 analyses de sensibilité
 17 -> 18 visualisations consolidées -> 19 rapport et revue finale
 ```
 
@@ -619,7 +621,9 @@ dépend du phasage et des longueurs haplotypiques validées, pas des ROH globaux
 | `14` | `13` | critique uniquement si une datation est demandée |
 | `15` | `09`, `10`, `11` | secondaire, exploratoire par défaut |
 | `16` | `09`, `10`, `11` | secondaire, exploratoire par défaut |
-| `17` | `13`, `14` si activée, `15` et `16` si activées | critique pour les résultats concernés |
+| `16A` | `02`, `06`, `12`, `16` | secondaire, positionnement externe exploratoire |
+| `16B` | `02`, `09`, `11`, `12`, `13`, `16A` | secondaire, enrichissement IBS exploratoire |
+| `17` | `13`, `14` si activée, `15`, `16`, `16A` et `16B` si activées | critique pour les résultats concernés |
 | `18` | toutes les étapes activées dans un état terminal | critique pour le rapport |
 | `19` | `18` et tous les audits requis | critique |
 
@@ -1373,6 +1377,42 @@ concerné.
 **Visualisations** : fardeau ROH, longueurs, pistes individuelles par chromosome
 et chevauchements locaux correctement calculés.
 
+### Étape 16A — Positionnement par rapport aux références 1000 Genomes
+
+**Script cible** : `stages/analyze_reference_ancestry.py`.
+
+**Responsabilité** : ajuster séparément une PCA globale sur les 2 504 individus
+1000 Genomes non apparentés et une PCA haplotypique sur leurs 5 008 chromosomes
+locaux, puis projeter l'étude sans modifier les axes. La région locale et la
+variation cible sont résolues depuis le run ; aucune dépendance à DOCK6, au
+chromosome 19 ou à une coordonnée codée en dur n'est autorisée.
+
+Les extraits publics utiles sont mis en cache de façon immuable, liés aux MD5
+officiels et aux SHA-256 locaux. L'harmonisation accepte uniquement les allèles
+directs ou inversés à coordonnée identique. Les résultats sont des
+positionnements relatifs : ils n'attribuent aucune identité ethnique, ne
+retracent pas un ancêtre généalogique et ne prouvent ni ascendance locale, ni
+IBD, ni effet fondateur.
+
+**Sorties** : scores globaux/locaux, valeurs propres, loadings, audit des
+variants, centroïdes de référence, résumé de méthode, provenance et empreintes.
+
+### Étape 16B — Enrichissement du partage haplotypique fondateur
+
+**Script cible** : `stages/evaluate_founder_haplotype_enrichment.py`.
+
+**Responsabilité** : comparer `T_TOTAL_CM`, somme préspécifiée des bras IBS
+exacts publiés par 13, à deux distributions nulles au même locus. La cible est
+une ancre exclue de la signature. Le fond interne énumère des copies non
+porteuses provenant d'individus distincts ; le fond 1000G utilise un
+Monte-Carlo reproductible sur 2 504 individus et 5 008 haplotypes. Les
+non-évaluations et exclusions restent visibles. Sans seuil fixé avant le run,
+la valeur est publiée avec `NOT_CLASSIFIED`.
+
+L'étape ne consomme ni le LD de 15 ni les ROH de 16. Elle ne requalifie jamais
+IBS en IBD, n'infère aucune origine et ne produit aucun score composite. Le
+contrat détaillé est dans `docs/modules/founder_haplotype_enrichment.md`.
+
 ### Étape 17 — Analyses de sensibilité
 
 **Script cible** : `stages/run_sensitivity_analyses.py`.
@@ -1399,7 +1439,9 @@ une nouvelle preuve ni remplacer le run primaire.
   éloignés est explicitement secondaire et ne remplace aucune estimation
   obtenue sur unités indépendantes ;
 - les conclusions sont comparées séparément pour l'IBS local de `13`, la
-  datation de `14`, le LD secondaire de `15` et les ROH secondaires de `16` ;
+  datation de `14`, le LD secondaire de `15`, les ROH secondaires de `16` et
+  le positionnement de référence global/local de `16A` et l'enrichissement
+  haplotypique distinct de `16B` ;
   aucun score composite et aucun vote entre domaines ne sont autorisés ;
 - une absence de résultat, un petit effectif ou une étape non exécutée donnent
   `NOT_EVALUATED` et ne sont jamais comptés comme une confirmation ;
@@ -1486,7 +1528,9 @@ son étape attendue dans un état `SUCCEEDED` ou `CACHED`.
 **Sorties versionnées** :
 
 - `population_structure.svg`, `founder_ibs.svg`, `variant_age.svg`,
-  `local_ld.svg`, `roh.svg` et `sensitivity.svg` ;
+  `local_ld.svg`, `roh.svg`, `reference_ancestry_global.svg`,
+  `reference_ancestry_local.svg`, `founder_haplotype_enrichment.svg` et
+  `sensitivity.svg` ;
 - `visualization_gallery.html`, rendu de consultation prioritaire assemblé
   depuis `figure_index.json` sans table individuelle ;
 - `visualization_gallery.pdf`, rendu secondaire paginé depuis le même index et
@@ -1501,7 +1545,9 @@ son étape attendue dans un état `SUCCEEDED` ou `CACHED`.
 - `stage_outputs.json`, `audit.json` et `checksums.sha256` usuels.
 
 Chaque entrée d'index possède un domaine unique parmi `POPULATION_STRUCTURE`,
-`FOUNDER_IBS`, `VARIANT_AGE`, `LOCAL_LD`, `ROH` et `SENSITIVITY`, un statut
+`FOUNDER_IBS`, `VARIANT_AGE`, `LOCAL_LD`, `ROH`,
+`REFERENCE_ANCESTRY_GLOBAL`, `REFERENCE_ANCESTRY_LOCAL`,
+`FOUNDER_HAPLOTYPE_ENRICHMENT` et `SENSITIVITY`, un statut
 `RENDERED`, `NOT_EVALUATED` ou `BLOCKED`, son niveau de sensibilité et la liste
 de ses sources exactes. Les figures et provenances sont classées au moins
 `sensitive_genetic`, même si elles n'affichent que des pseudonymes, afin de ne

@@ -22,6 +22,16 @@ STAGES = {
     "estimate_variant_age": ("14", "variant_age_summary", "variant_age_summary.schema.json"),
     "analyze_local_ld": ("15", "local_ld_analysis_summary", "local_ld_analysis_summary.schema.json"),
     "analyze_roh": ("16", "roh_analysis_summary", "roh_analysis_summary.schema.json"),
+    "analyze_reference_ancestry": (
+        "16A", "reference_ancestry_summary", "reference_ancestry_summary.schema.json"
+    ),
+    "evaluate_founder_haplotype_enrichment": (
+        "16B", "founder_haplotype_enrichment_summary_json",
+        "founder_haplotype_enrichment_summary.schema.json",
+    ),
+    "call_explicit_ibd": (
+        "16C", "explicit_ibd_summary", "explicit_ibd_summary.schema.json",
+    ),
 }
 
 
@@ -58,6 +68,50 @@ def _summaries(founder_status: str = "SUPPORTED_IBS_CANDIDATE", age: float = 10.
             "target_variant_id": "target_GRCh38_1_100000_A_G", "target_in_roh_count": 1,
             "f_roh_calculated": False, "feeds_founder_haplotype": False,
             "feeds_variant_age": False, "consumes_local_ld": False,
+        },
+        "reference_ancestry_summary": {
+            "schema_version": "1.0.0", "method_id": "reference_only_global_local_pca_v1",
+            "assembly": "GRCh38",
+            "target": {"variant_id": "target_GRCh38_1_100000_A_G", "chromosome": 1,
+                       "position_bp": 100000, "ref": "A", "alt": "G"},
+            "global": {"reference_entity_count": 2504, "study_entity_count": 8,
+                       "candidate_variant_count": 20000, "informative_variant_count": 18000,
+                       "component_count": 10},
+            "local": {"reference_entity_count": 5008, "study_entity_count": 16,
+                      "candidate_variant_count": 500, "informative_variant_count": 450,
+                      "component_count": 10, "region_start_bp": 90000,
+                      "region_end_bp": 110000},
+            "cache": {"metadata_status": "HIT", "extract_hits": 2,
+                      "extract_populated": 0, "offline": True},
+            "interpretation": {"policy": "RELATIVE_REFERENCE_POSITIONING_ONLY",
+                               "ethnic_identity_assigned": False,
+                               "genealogical_ancestor_identified": False,
+                               "local_ancestry_proven": False, "ibd_proven": False},
+            "checks": {"reference_unrelated_only": "PASS", "study_not_used_for_axes": "PASS",
+                       "global_local_separated": "PASS", "target_and_region_resolved": "PASS",
+                       "cache_integrity": "PASS", "variant_harmonization": "PASS"},
+        },
+        "founder_haplotype_enrichment_summary_json": {
+            "schema_version": "1.0.0", "method_id": "target_centered_empirical_haplotype_sharing_v1",
+            "primary_statistic": "total_shared_cm", "status": "NOT_CLASSIFIED", "independent_family_count": 3,
+            "observed": {"evaluation_status": "EVALUATED", "left_shared_cm": 0.4, "right_shared_cm": 0.9, "total_shared_cm": 1.3, "left_marker_count": 5, "right_marker_count": 9},
+            "null_results": [{"source": "EXTERNAL", "stratum": "ALL", "requested_draws": 100000, "attempted_draws": 100000, "evaluable_draws": 100000, "non_evaluable_draws": 0, "exceedance_count": 4, "empirical_probability": 0.00005, "exact_probability": None, "interval_low": 0.00001, "interval_high": 0.0001}],
+            "classification_threshold": None, "random_seed": 161602026,
+            "provenance": {"assembly": "GRCh38", "target_variant_id": "target_GRCh38_1_100000_A_G", "target_ref": "A", "target_alt": "G", "map_sha256": "a" * 64, "study_bcf_sha256": "a" * 64, "reference_vcf_sha256": "a" * 64, "step13_summary_sha256": "a" * 64, "step16a_summary_sha256": "a" * 64},
+            "interpretation": {"ibs_only": True, "ibd_proven": False, "founder_effect_proven": False, "geographic_origin_inferred": False, "composite_score_calculated": False, "statement": "Partage IBS centré cible, pas preuve IBD."},
+        },
+        "explicit_ibd_summary": {
+            "schema_version": "1.0.0", "method_id": "dual_target_centered_explicit_ibd_v1",
+            "status": "METHOD_DISCORDANT", "primary_status": "DISCORDANT",
+            "sensitivity_statuses": [{"scenario_id": "sensitivity_1_5cm", "status": "NOT_EVALUABLE"}],
+            "input_scope": "AUTOSOMAL_GENOMEWIDE",
+            "target": {"assembly": "GRCh38", "chromosome": "1", "position_bp": 100000,
+                       "project_variant_id": "target_GRCh38_1_100000_A_G"},
+            "family_count": 3,
+            "interpretation": {"ibs_only_from_step13": True, "explicit_ibd_supported": False,
+                               "ibd_proven": False, "founder_effect_proven": False,
+                               "geographic_origin_inferred": False, "composite_score_calculated": False},
+            "limitations": ["synthetic"],
         },
     }
 
@@ -102,28 +156,62 @@ def _write_source_run(
             content = "SYNTHETIC_TARGET_ANCHOR_CHANGED\n" if changed_anchor else "SYNTHETIC_TARGET_ANCHOR\n"
             artifact_path.write_text(content, encoding="utf-8")
             media_type = "text/tab-separated-values"
+        elif artifact_id == "explicit_ibd_summary":
+            artifact_path = stage_dir / f"{artifact_id}.json"
+            artifact_path.write_text(json.dumps(summaries[artifact_id], sort_keys=True) + "\n", encoding="utf-8")
+            media_type = "application/json"
         else:
             artifact_path = stage_dir / f"{artifact_id}.json"
             artifact_path.write_text(json.dumps(summaries[artifact_id], sort_keys=True) + "\n", encoding="utf-8")
             media_type = "application/json"
-        signature = (stage_id * 32)[:64]
-        artifact = build_file_artifact(
-            physical_path=artifact_path,
-            published_path=f"stages/{stage_id}_{stage_name}/{artifact_path.name}",
-            artifact_id=artifact_id, artifact_type=artifact_id, media_type=media_type,
-            producer_stage=stage_name, producer_signature=signature, schema_name=schema_name,
-            schema_version="1.0.0" if schema_name else None, assembly="GRCh38",
-            sample_set_id="synthetic_samples", variant_set_id="synthetic_variants",
-            sensitivity="sensitive_genetic" if artifact_id in {"samples_master", "target_genotype_audit"} else "internal",
+        signature = (
+            "a6" * 32 if stage_id == "16A" else
+            "b6" * 32 if stage_id == "16B" else
+            "c6" * 32 if stage_id == "16C" else
+            (stage_id * 32)[:64]
         )
+        artifacts_to_publish = [(artifact_id, artifact_path, schema_name, media_type)]
+        if artifact_id == "explicit_ibd_summary":
+            auxiliary = {
+                "explicit_ibd_pair_results": (
+                    "pairs.tsv", "explicit_ibd_pair_results.schema.json",
+                    "SCENARIO_ID\tROLE\tFAMILY_1\tFAMILY_2\tHAP_IBD_STATUS\tREFINED_IBD_STATUS\tBOTH_METHODS\tCONTAINS_TARGET\tBOUNDARIES_CONCORDANT\tDETAIL_CODE\n"
+                    "primary\tPRIMARY\tF1\tF2\tCALLED\tCALLED\ttrue\ttrue\tfalse\tBOUNDARIES_DISCORDANT\n"
+                    "primary\tPRIMARY\tF1\tF3\tCALLED\tCALLED\ttrue\ttrue\tfalse\tBOUNDARIES_DISCORDANT\n"
+                    "primary\tPRIMARY\tF2\tF3\tCALLED\tCALLED\ttrue\ttrue\tfalse\tBOUNDARIES_DISCORDANT\n",
+                ),
+                "explicit_ibd_concordance": (
+                    "concordance.tsv", "explicit_ibd_concordance.schema.json",
+                    "SCENARIO_ID\tALL_REQUIRED_PAIRS\tGLOBAL_HAPLOTYPE_COHERENT\tBOUNDARIES_CONCORDANT\tCOMMON_START_BP\tCOMMON_END_BP\tTARGET_IN_COMMON_INTERSECTION\tSTATUS\n"
+                    "primary\ttrue\ttrue\tfalse\t90000\t110000\ttrue\tDISCORDANT\n",
+                ),
+                "explicit_ibd_control_frequency": (
+                    "frequency.tsv", "explicit_ibd_control_frequency.schema.json",
+                    "SCENARIO_ID\tCONTROL_SOURCE\tEVALUABLE_UNIT_COUNT\tPOSITIVE_UNIT_COUNT\tFREQUENCY\tPRESPECIFIED_MAXIMUM\tSTATUS\n"
+                    "primary\tINTERNAL_INDEPENDENT_CONTROLS\t100\t3\t0.03\t0.05\tACCEPTABLE\n",
+                ),
+            }
+            for auxiliary_id, (name, auxiliary_schema, content) in auxiliary.items():
+                auxiliary_path = stage_dir / name
+                auxiliary_path.write_text(content, encoding="utf-8")
+                artifacts_to_publish.append((auxiliary_id, auxiliary_path, auxiliary_schema, "text/tab-separated-values"))
+        published_artifacts = [build_file_artifact(
+            physical_path=artifact_path,
+            published_path=f"stages/{stage_id}_{stage_name}/{artifact_path.name}", artifact_id=published_id,
+            artifact_type=published_id, media_type=published_media, producer_stage=stage_name,
+            producer_signature=signature, schema_name=published_schema,
+            schema_version="1.0.0" if published_schema else None, assembly="GRCh38",
+            sample_set_id="synthetic_samples", variant_set_id="synthetic_variants",
+            sensitivity="sensitive_genetic" if published_id in {"samples_master", "target_genotype_audit"} else "internal",
+        ) for published_id, artifact_path, published_schema, published_media in artifacts_to_publish]
         outputs = {
             "schema_version": "1.0.0", "run_id": run_id, "stage_id": stage_id,
-            "stage_name": stage_name, "signature": signature, "artifacts": [artifact],
+            "stage_name": stage_name, "signature": signature, "artifacts": published_artifacts,
         }
         outputs_path = stage_dir / "stage_outputs.json"
         outputs_path.write_text(json.dumps(outputs, sort_keys=True) + "\n", encoding="utf-8")
         audit_path = stage_dir / "audit.json"
-        audit_path.write_text(json.dumps(_audit(run_id, stage_id, stage_name, signature, [artifact]), sort_keys=True) + "\n", encoding="utf-8")
+        audit_path.write_text(json.dumps(_audit(run_id, stage_id, stage_name, signature, published_artifacts), sort_keys=True) + "\n", encoding="utf-8")
         stage_records.append({
             "stage_id": stage_id, "stage_name": stage_name, "state": "SUCCEEDED",
             "critical": stage_id not in {"15", "16"}, "signature": signature,
@@ -145,10 +233,10 @@ def _write_source_run(
 
 
 def _write_registry(path: Path, primary: tuple[Path, str], scenario: tuple[Path, str]) -> None:
-    columns = ["SCENARIO_ID", "ROLE", "DESIGN", "CHANGED_FACTOR", "CHANGED_VALUE", "RUN_DIR", "RUN_ID", "MANIFEST_SHA256", "EXPECT_FOUNDER_IBS", "EXPECT_VARIANT_AGE", "EXPECT_LOCAL_LD", "EXPECT_ROH"]
+    columns = ["SCENARIO_ID", "ROLE", "DESIGN", "CHANGED_FACTOR", "CHANGED_VALUE", "RUN_DIR", "RUN_ID", "MANIFEST_SHA256", "EXPECT_FOUNDER_IBS", "EXPECT_VARIANT_AGE", "EXPECT_LOCAL_LD", "EXPECT_ROH", "EXPECT_REFERENCE_ANCESTRY", "EXPECT_FOUNDER_HAPLOTYPE_ENRICHMENT", "EXPECT_EXPLICIT_IBD"]
     rows = [
-        ["primary", "PRIMARY", "BASELINE", "PRIMARY", "baseline", str(primary[0]), "primary_run", primary[1], "true", "true", "true", "true"],
-        ["window_wide", "SENSITIVITY", "SINGLE_FACTOR", "LOCAL_WINDOW", "left_plus_1000bp", str(scenario[0]), "scenario_run", scenario[1], "true", "true", "true", "true"],
+        ["primary", "PRIMARY", "BASELINE", "PRIMARY", "baseline", str(primary[0]), "primary_run", primary[1], "true", "true", "true", "true", "true", "true", "true"],
+        ["window_wide", "SENSITIVITY", "SINGLE_FACTOR", "LOCAL_WINDOW", "left_plus_1000bp", str(scenario[0]), "scenario_run", scenario[1], "true", "true", "true", "true", "true", "true", "true"],
     ]
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.writer(handle, delimiter="\t", lineterminator="\n")
@@ -163,16 +251,16 @@ def test_cross_run_sensitivity_publishes_separate_stability_domains(tmp_path: Pa
     _write_registry(registry, (primary_dir, primary_manifest), (scenario_dir, scenario_manifest))
     publication = publish_sensitivity_analysis(
         registry_path=registry, output_dir=tmp_path / "out",
-        relative_change_tolerances={"FOUNDER_IBS": None, "VARIANT_AGE": 0.25, "LOCAL_LD": None, "ROH": None},
+        relative_change_tolerances={"FOUNDER_IBS": None, "VARIANT_AGE": 0.25, "LOCAL_LD": None, "ROH": None, "REFERENCE_ANCESTRY": None, "FOUNDER_HAPLOTYPE_ENRICHMENT": None},
         consolidation_config=primary_config,
     )
     comparisons = validate_tsv_table(publication.comparisons_path, "sensitivity_comparisons.schema.json")
     stability = validate_tsv_table(publication.stability_path, "sensitivity_stability.schema.json")
-    assert len(comparisons.rows) == 8
+    assert len(comparisons.rows) == 14
     assert {row["CATEGORICAL_STABILITY"] for row in stability.rows} == {"STABLE"}
     age_row = next(row for row in comparisons.rows if row["SCENARIO_ID"] == "window_wide" and row["DOMAIN"] == "VARIANT_AGE")
     assert age_row["QUANTITATIVE_CLASSIFICATION"] == "WITHIN_TOLERANCE"
-    assert publication.domain_stability == {domain: "STABLE" for domain in ("FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH")}
+    assert publication.domain_stability == {domain: "STABLE" for domain in ("FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY", "FOUNDER_HAPLOTYPE_ENRICHMENT", "EXPLICIT_IBD")}
 
 
 def test_status_change_is_variable_not_a_composite_conclusion(tmp_path: Path) -> None:
@@ -184,7 +272,7 @@ def test_status_change_is_variable_not_a_composite_conclusion(tmp_path: Path) ->
     _write_registry(registry, (primary_dir, primary_manifest), (scenario_dir, scenario_manifest))
     publication = publish_sensitivity_analysis(
         registry_path=registry, output_dir=tmp_path / "out",
-        relative_change_tolerances={domain: None for domain in ("FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH")},
+        relative_change_tolerances={domain: None for domain in ("FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY", "FOUNDER_HAPLOTYPE_ENRICHMENT")},
         consolidation_config=primary_config,
     )
     summary = json.loads(publication.summary_path.read_text(encoding="utf-8"))
@@ -251,7 +339,8 @@ def test_stage_17_publishes_contracts_and_audit_from_synthetic_runs(tmp_path: Pa
     outputs = json.loads((output_dir / "stage_outputs.json").read_text(encoding="utf-8"))
     audit = json.loads((output_dir / "audit.json").read_text(encoding="utf-8"))
     assert {artifact["artifact_id"] for artifact in outputs["artifacts"]} == {
-        "sensitivity_comparisons", "sensitivity_stability", "sensitivity_analysis_summary"
+        "sensitivity_comparisons", "sensitivity_stability", "sensitivity_analysis_summary",
+        "population_convergence",
     }
     assert audit["metrics"]["composite_founder_score_calculated"] is False
     assert audit["counts"]["scenarios"] == 2

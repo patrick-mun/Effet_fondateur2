@@ -192,6 +192,32 @@ QC_FINAL_STAGE = StageDefinition(
     ),
 )
 
+PREPARE_AUTOSOMAL_PHASING_PANEL_STAGE = StageDefinition(
+    stage_id="10A",
+    stage_name="prepare_autosomal_phasing_panel",
+    module="effet_fondateur.stages.prepare_autosomal_phasing_panel",
+    critical=True,
+    dependencies=("qc_preliminary", "freeze_cohorts", "qc_final"),
+    required_artifact_ids=(
+        "genomewide_pre_qc_bed", "genomewide_pre_qc_bim",
+        "genomewide_pre_qc_fam", "genomewide_pre_qc_dataset",
+        "cohort_keep_target_chromosome_all_qc",
+    ),
+)
+
+PHASE_AUTOSOMAL_PANEL_STAGE = StageDefinition(
+    stage_id="12A",
+    stage_name="phase_autosomal_panel",
+    module="effet_fondateur.stages.phase_autosomal_panel",
+    critical=True,
+    dependencies=("build_sample_registry", "prepare_autosomal_phasing_panel"),
+    config_input_files=("reference_panel_catalog", "ancestry_reference_catalog", "genetic_map_catalog"),
+    required_artifact_ids=(
+        "samples_master", "autosomal_phasing_panel_bed", "autosomal_phasing_panel_bim",
+        "autosomal_phasing_panel_fam", "autosomal_phasing_panel_dataset",
+    ),
+)
+
 PREPARE_TARGET_REGION_STAGE = StageDefinition(
     stage_id="11",
     stage_name="prepare_target_region",
@@ -322,13 +348,86 @@ ANALYZE_ROH_STAGE = StageDefinition(
     ),
 )
 
+ANALYZE_REFERENCE_ANCESTRY_STAGE = StageDefinition(
+    stage_id="16A",
+    stage_name="analyze_reference_ancestry",
+    module="effet_fondateur.stages.analyze_reference_ancestry",
+    critical=False,
+    dependencies=(
+        "build_sample_registry",
+        "build_kinship_panel",
+        "phase_target_region",
+        "analyze_roh",
+    ),
+    config_input_files=(
+        "target_variant_metadata",
+        "reference_panel_catalog",
+        "ancestry_reference_catalog",
+    ),
+    required_artifact_ids=(
+        "samples_master",
+        "kinship_panel_bed",
+        "kinship_panel_bim",
+        "kinship_panel_fam",
+        "kinship_panel_dataset",
+        "shapeit5_final_bcf",
+        "shapeit5_final_index",
+        "carrier_haplotypes",
+        "harmonized_reference_vcf",
+        "harmonized_reference_index",
+        "reference_harmonization_manifest",
+        "roh_analysis_summary",
+    ),
+)
+
+EVALUATE_FOUNDER_HAPLOTYPE_ENRICHMENT_STAGE = StageDefinition(
+    stage_id="16B",
+    stage_name="evaluate_founder_haplotype_enrichment",
+    module="effet_fondateur.stages.evaluate_founder_haplotype_enrichment",
+    critical=False,
+    dependencies=(
+        "build_sample_registry", "freeze_cohorts", "prepare_target_region",
+        "phase_target_region", "infer_founder_haplotype",
+        "analyze_reference_ancestry",
+    ),
+    config_input_files=("target_variant_metadata",),
+    required_artifact_ids=(
+        "samples_master", "cohorts_frozen", "target_genetic_map",
+        "shapeit5_final_bcf", "shapeit5_final_index", "carrier_haplotypes",
+        "harmonized_reference_vcf", "harmonized_reference_index",
+        "reference_harmonization_manifest", "founder_segments",
+        "founder_consensus", "founder_sharing_matrix", "founder_analysis_summary",
+        "ancestry_scores", "ancestry_variant_audit", "reference_ancestry_summary",
+    ),
+)
+
+CALL_EXPLICIT_IBD_STAGE = StageDefinition(
+    stage_id="16C",
+    stage_name="call_explicit_ibd",
+    module="effet_fondateur.stages.call_explicit_ibd",
+    critical=False,
+    dependencies=(
+        "build_sample_registry", "freeze_cohorts", "qc_final",
+        "prepare_target_region", "phase_target_region",
+        "phase_autosomal_panel", "infer_founder_haplotype", "analyze_reference_ancestry",
+    ),
+    config_input_files=("target_variant_metadata",),
+    required_artifact_ids=(
+        "samples_master", "cohorts_frozen",
+        "shapeit5_final_bcf", "shapeit5_final_index", "carrier_haplotypes",
+        "founder_analysis_summary", "autosomal_phasing_manifest",
+        *(f"autosomal_phased_chr{chromosome}_{kind}" for chromosome in range(1, 23) for kind in ("bcf", "index", "ibd_map")),
+    ),
+)
+
 RUN_SENSITIVITY_ANALYSES_STAGE = StageDefinition(
     stage_id="17",
     stage_name="run_sensitivity_analyses",
     module="effet_fondateur.stages.run_sensitivity_analyses",
     critical=False,
-    dependencies=("initialize_run",),
+    dependencies=("initialize_run", "freeze_cohorts", "analyze_reference_ancestry"),
     config_input_files=("sensitivity_scenarios",),
+    required_artifact_ids=("cohorts_frozen", "ancestry_scores"),
 )
 
 BUILD_VISUALIZATIONS_STAGE = StageDefinition(
@@ -338,13 +437,18 @@ BUILD_VISUALIZATIONS_STAGE = StageDefinition(
     critical=True,
     dependencies=(
         "analyze_population_structure", "infer_founder_haplotype", "estimate_variant_age", "analyze_local_ld",
-        "analyze_roh", "run_sensitivity_analyses",
+        "analyze_roh", "analyze_reference_ancestry", "evaluate_founder_haplotype_enrichment", "call_explicit_ibd", "run_sensitivity_analyses",
     ),
     required_artifact_ids=(
         "population_scores", "population_eigenvalues", "population_outliers",
         "founder_segments", "founder_analysis_summary",
         "variant_age_estimates", "variant_age_scenarios", "local_ld_summary",
-        "roh_cohort_summary", "sensitivity_comparisons", "sensitivity_stability",
+        "roh_cohort_summary", "ancestry_scores", "ancestry_eigenvalues",
+        "ancestry_population_centroids", "reference_ancestry_summary",
+        "founder_haplotype_null_draws", "founder_haplotype_enrichment_summary_json",
+        "sensitivity_comparisons", "sensitivity_stability",
+        "explicit_ibd_pair_results", "explicit_ibd_concordance", "explicit_ibd_control_frequency", "explicit_ibd_summary",
+        "population_convergence",
     ),
 )
 
@@ -353,15 +457,36 @@ BUILD_REPORT_STAGE = StageDefinition(
     stage_name="build_report",
     module="effet_fondateur.stages.build_report",
     critical=True,
-    dependencies=("infer_kinship", "build_visualizations"),
+    dependencies=(
+        "infer_kinship",
+        "infer_founder_haplotype",
+        "estimate_variant_age",
+        "analyze_roh",
+        "analyze_reference_ancestry",
+        "evaluate_founder_haplotype_enrichment",
+        "call_explicit_ibd",
+        "run_sensitivity_analyses",
+        "build_visualizations",
+    ),
     required_artifact_ids=(
         "kinship_pairs", "kinship_degree_summary", "kinship_report",
         "figure_index", "visualization_completeness", "visualization_render_manifest",
         "figure_population_structure", "figure_founder_ibs", "figure_variant_age",
-        "figure_local_ld", "figure_roh", "figure_sensitivity",
+        "figure_local_ld", "figure_roh", "figure_reference_ancestry_global",
+        "figure_reference_ancestry_local", "figure_sensitivity",
+        "figure_founder_haplotype_enrichment",
         "figure_provenance_population_structure", "figure_provenance_founder_ibs",
         "figure_provenance_variant_age", "figure_provenance_local_ld",
-        "figure_provenance_roh", "figure_provenance_sensitivity",
+        "figure_provenance_roh", "figure_provenance_reference_ancestry_global",
+        "figure_provenance_reference_ancestry_local", "figure_provenance_sensitivity",
+        "figure_provenance_founder_haplotype_enrichment",
+        "figure_explicit_ibd", "figure_population_convergence",
+        "figure_provenance_explicit_ibd", "figure_provenance_population_convergence",
+        "founder_haplotype_enrichment_summary_json",
+        "founder_analysis_summary", "variant_age_summary", "roh_analysis_summary",
+        "reference_ancestry_summary", "explicit_ibd_summary", "explicit_ibd_pair_results",
+        "explicit_ibd_concordance", "explicit_ibd_control_frequency",
+        "sensitivity_analysis_summary", "population_convergence",
     ),
 )
 
@@ -377,12 +502,17 @@ DEFAULT_STAGE_DEFINITIONS = (
     ANALYZE_POPULATION_STRUCTURE_STAGE,
     FREEZE_COHORTS_STAGE,
     QC_FINAL_STAGE,
+    PREPARE_AUTOSOMAL_PHASING_PANEL_STAGE,
     PREPARE_TARGET_REGION_STAGE,
     PHASE_TARGET_REGION_STAGE,
+    PHASE_AUTOSOMAL_PANEL_STAGE,
     INFER_FOUNDER_HAPLOTYPE_STAGE,
     ESTIMATE_VARIANT_AGE_STAGE,
     ANALYZE_LOCAL_LD_STAGE,
     ANALYZE_ROH_STAGE,
+    ANALYZE_REFERENCE_ANCESTRY_STAGE,
+    EVALUATE_FOUNDER_HAPLOTYPE_ENRICHMENT_STAGE,
+    CALL_EXPLICIT_IBD_STAGE,
     RUN_SENSITIVITY_ANALYSES_STAGE,
     BUILD_VISUALIZATIONS_STAGE,
     BUILD_REPORT_STAGE,

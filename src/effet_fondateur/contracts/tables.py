@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import gzip
 import json
 from dataclasses import dataclass
 from pathlib import Path
@@ -126,7 +127,11 @@ def validate_tsv_table(
     observed_primary_keys: set[tuple[Any, ...]] = set()
 
     try:
-        input_file = table_path.open("r", encoding="utf-8", newline="")
+        input_file = (
+            gzip.open(table_path, "rt", encoding="utf-8", newline="")
+            if table_path.suffix == ".gz"
+            else table_path.open("r", encoding="utf-8", newline="")
+        )
     except FileNotFoundError as error:
         raise TableValidationError(f"Table TSV introuvable : {table_path}") from error
 

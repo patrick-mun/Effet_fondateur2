@@ -18,18 +18,37 @@ from effet_fondateur.contracts import (
 )
 
 
-DOMAINS = ("FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH")
+DOMAINS = (
+    "FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY",
+    "FOUNDER_HAPLOTYPE_ENRICHMENT", "EXPLICIT_IBD",
+)
 DOMAIN_STAGE = {
     "FOUNDER_IBS": ("infer_founder_haplotype", "founder_analysis_summary", "founder_analysis_summary.schema.json"),
     "VARIANT_AGE": ("estimate_variant_age", "variant_age_summary", "variant_age_summary.schema.json"),
     "LOCAL_LD": ("analyze_local_ld", "local_ld_analysis_summary", "local_ld_analysis_summary.schema.json"),
     "ROH": ("analyze_roh", "roh_analysis_summary", "roh_analysis_summary.schema.json"),
+    "REFERENCE_ANCESTRY": (
+        "analyze_reference_ancestry",
+        "reference_ancestry_summary",
+        "reference_ancestry_summary.schema.json",
+    ),
+    "FOUNDER_HAPLOTYPE_ENRICHMENT": (
+        "evaluate_founder_haplotype_enrichment",
+        "founder_haplotype_enrichment_summary_json",
+        "founder_haplotype_enrichment_summary.schema.json",
+    ),
+    "EXPLICIT_IBD": (
+        "call_explicit_ibd", "explicit_ibd_summary", "explicit_ibd_summary.schema.json",
+    ),
 }
 EXPECT_COLUMNS = {
     "FOUNDER_IBS": "EXPECT_FOUNDER_IBS",
     "VARIANT_AGE": "EXPECT_VARIANT_AGE",
     "LOCAL_LD": "EXPECT_LOCAL_LD",
     "ROH": "EXPECT_ROH",
+    "REFERENCE_ANCESTRY": "EXPECT_REFERENCE_ANCESTRY",
+    "FOUNDER_HAPLOTYPE_ENRICHMENT": "EXPECT_FOUNDER_HAPLOTYPE_ENRICHMENT",
+    "EXPLICIT_IBD": "EXPECT_EXPLICIT_IBD",
 }
 COMPARISON_COLUMNS = (
     "SCENARIO_ID", "SCENARIO_SIGNATURE", "ROLE", "DESIGN", "CHANGED_FACTOR",
@@ -196,7 +215,14 @@ ALLOWED_FACTOR_PREFIXES = {
     "GENOMEWIDE_LD_PRUNING": ("stages.build_kinship_panel.parameters",),
     "DISTANT_RELATIVE_POLICY": ("stages.infer_kinship.parameters", "stages.freeze_cohorts.parameters"),
     "ROH_PROFILE": ("stages.analyze_roh.parameters",),
-    "REFERENCE_POPULATION": ("inputs.reference_panel_catalog", "stages.phase_target_region.parameters"),
+    "REFERENCE_POPULATION": (
+        "inputs.reference_panel_catalog",
+        "inputs.ancestry_reference_catalog",
+        "stages.phase_target_region.parameters",
+        "stages.analyze_reference_ancestry.parameters",
+        "stages.evaluate_founder_haplotype_enrichment.parameters",
+    ),
+    "HAPLOTYPE_ENRICHMENT_NULL": ("stages.evaluate_founder_haplotype_enrichment.parameters",),
 }
 
 
@@ -232,6 +258,17 @@ def _technical_endpoint(domain: str, summary: dict[str, Any]) -> tuple[str, str 
         statuses = summary["cohort_statuses"]
         status = ";".join(f"{key}={statuses[key]}" for key in sorted(statuses))
         return status, None, None
+    if domain == "REFERENCE_ANCESTRY":
+        status = (
+            f"GLOBAL_PROJECTED={summary['global']['study_entity_count']};"
+            f"LOCAL_HAPLOTYPES_PROJECTED={summary['local']['study_entity_count']};"
+            f"REFERENCE_ONLY_AXES={summary['checks']['study_not_used_for_axes']}"
+        )
+        return status, None, None
+    if domain == "FOUNDER_HAPLOTYPE_ENRICHMENT":
+        external = next((item for item in summary["null_results"] if item["source"] == "EXTERNAL" and item["stratum"] == "ALL"), None)
+        value = None if external is None else external["empirical_probability"]
+        return summary["status"], "external_empirical_probability", None if value is None else float(value)
     statuses = summary["scope_statuses"]
     status = ";".join(f"{key}={statuses[key]}" for key in sorted(statuses))
     return status, "target_in_roh_count", float(summary["target_in_roh_count"])
@@ -248,6 +285,47 @@ def _domain_result(source: _SourceRun, domain: str, expected: bool) -> dict[str,
     artifact, summary_path = _artifact_from_outputs(source, outputs, artifact_id)
     summary = read_json(summary_path)
     validate_json_document(summary, schema_name)
+    if domain == "EXPLICIT_IBD":
+        pair_artifact, pair_path = _artifact_from_outputs(source, outputs, "explicit_ibd_pair_results")
+        concordance_artifact, concordance_path = _artifact_from_outputs(source, outputs, "explicit_ibd_concordance")
+        frequency_artifact, frequency_path = _artifact_from_outputs(source, outputs, "explicit_ibd_control_frequency")
+        pairs = validate_tsv_table(pair_path, "explicit_ibd_pair_results.schema.json")
+        concordance = validate_tsv_table(concordance_path, "explicit_ibd_concordance.schema.json")
+        frequencies = validate_tsv_table(frequency_path, "explicit_ibd_control_frequency.schema.json")
+        primary_pairs = [row for row in pairs.rows if row["ROLE"] == "PRIMARY"]
+        primary_concordance = [row for row in concordance.rows if row["SCENARIO_ID"] == "primary"]
+        primary_frequency = [row for row in frequencies.rows if row["SCENARIO_ID"] == "primary"]
+        if len(primary_pairs) != summary["family_count"] or len(primary_concordance) != 1 or len(primary_frequency) != 1:
+            raise SensitivityAnalysisError("explicit_ibd_primary_contract_mismatch")
+        dual_tool_pairs = sum(row["BOTH_METHODS"] for row in primary_pairs)
+        target_pairs = sum(row["CONTAINS_TARGET"] for row in primary_pairs)
+        concordance_row, frequency_row = primary_concordance[0], primary_frequency[0]
+        parameters = source.config["stages"]["call_explicit_ibd"]["parameters"]
+        primary_parameters = parameters["primary"]
+        sensitivity_statuses = ",".join(
+            f"{item['scenario_id']}={item['status']}" for item in summary["sensitivity_statuses"]
+        ) or "NONE"
+        status = (
+            f"STATUS={summary['status']};PRIMARY_STATUS={summary['primary_status']};"
+            f"DUAL_TOOL_PAIRS={dual_tool_pairs}/{len(primary_pairs)};"
+            f"TARGET_PAIRS={target_pairs}/{len(primary_pairs)};"
+            f"COMMON={concordance_row['COMMON_START_BP'] or 'NA'}-{concordance_row['COMMON_END_BP'] or 'NA'};"
+            f"TARGET_IN_COMMON={str(concordance_row['TARGET_IN_COMMON_INTERSECTION']).lower()};"
+            f"BOUNDARIES_CONCORDANT={str(concordance_row['BOUNDARIES_CONCORDANT']).lower()};"
+            f"CONTROL={frequency_row['POSITIVE_UNIT_COUNT']}/{frequency_row['EVALUABLE_UNIT_COUNT']};"
+            f"FREQUENCY={frequency_row['FREQUENCY']};"
+            f"THRESHOLDS={primary_parameters['minimum_cm']}CM/{primary_parameters['minimum_markers']}MARKERS;"
+            f"SENSITIVITIES={sensitivity_statuses}"
+        )
+        combined_hash = hashlib.sha256("".join(sorted((
+            artifact["sha256"], pair_artifact["sha256"], concordance_artifact["sha256"],
+            frequency_artifact["sha256"],
+        ))).encode("ascii")).hexdigest()
+        return {
+            "stage_signature": signature, "summary_sha256": combined_hash,
+            "evaluation": "EVALUATED", "status": status,
+            "metric": "primary_control_frequency", "value": float(frequency_row["FREQUENCY"]),
+        }
     status, metric, value = _technical_endpoint(domain, summary)
     return {"stage_signature": signature, "summary_sha256": artifact["sha256"], "evaluation": "EVALUATED", "status": status, "metric": metric, "value": value}
 
@@ -274,6 +352,12 @@ def _is_conclusive(domain: str, status: str | None) -> bool:
         return status == "PRIMARY_ESTIMATE"
     if domain == "LOCAL_LD":
         return "DESCRIPTIVE_PRIMARY" in status
+    if domain == "REFERENCE_ANCESTRY":
+        return "REFERENCE_ONLY_AXES=PASS" in status
+    if domain == "FOUNDER_HAPLOTYPE_ENRICHMENT":
+        return status not in {"NOT_EVALUATED", "MULTIPLE_CARRIER_BACKGROUNDS"}
+    if domain == "EXPLICIT_IBD":
+        return "DUAL_TOOL_PAIRS=3/3" in status and "TARGET_IN_COMMON=true" in status
     return "EVALUATED" in status
 
 

@@ -228,6 +228,17 @@ les résultats aux manifestes `12.5–12.6`, publie atomiquement le résumé fin
 déclare les visualisations pseudonymisées attendues à l'étape 18. Le contrat est
 documenté dans `docs/modules/phasing_qc.md`.
 
+Pour les comparaisons IBD explicites, `10A_prepare_autosomal_phasing_panel`
+construit en amont un jeu commun couvrant les 22 autosomes, puis
+`12A_phase_autosomal_panel` phase séparément chaque chromosome avec SHAPEIT5 et
+le même panel 1000 Genomes GRCh38. Les VCF/TBI publics peuvent rester hors du
+dépôt et être exposés par un lien sous
+`data/cache/references/sources/1kg_3202_high_coverage_20220422` ; chaque VCF et
+index est contrôlé contre son MD5 officiel avant extraction. Le manifest 12A
+publie les 22 BCF phasés, leurs index et exactement la carte utilisée ensuite
+par les deux moteurs IBD. Cette branche genome-wide ne remplace pas le phasage
+ciblé de 12, nécessaire pour attribuer la copie mutante.
+
 L'étape `13_infer_founder_haplotype` applique ensuite la méthode conservatrice
 `target_centered_exact_ibs_v1` aux chromosomes porteurs fiables des unités
 indépendantes. Elle s'étend depuis la cible jusqu'au premier allèle manquant ou
@@ -262,29 +273,77 @@ chromosome cible. Elle ne redéfinit ni l'IBS fondateur ni la datation, et ne
 calcule `F_ROH` qu'avec un dénominateur autosomique explicite et sourcé. Le
 contrat est documenté dans `docs/modules/roh.md`.
 
-L'étape planifiée `16A_analyze_reference_ancestry` séparera ensuite une PCA
+L'étape `16A_analyze_reference_ancestry` sépare une PCA
 globale de référence d'un positionnement haplotypique local. La branche locale
 est définie autour de la variation cible configurée et de sa région phasée :
 elle n'est liée ni à `DOCK6`, ni au chromosome 19, ni à une coordonnée codée en
-dur. `DOCK6` est uniquement le premier cas d'étude. Les axes seront ajustés sur
-les références 1000 Genomes non apparentées, puis les individus ou haplotypes
-de l'étude seront projetés sans modifier ces axes. Ces résultats resteront des
+dur. `DOCK6` est uniquement le premier cas d'étude. Les axes sont ajustés sur
+les 2 504 références 1000 Genomes non apparentées, puis les individus ou
+haplotypes de l'étude sont projetés sans modifier ces axes. Les extraits par
+chromosome sont mis en cache de façon immuable et vérifiés avant réutilisation.
+Une copie locale complète du panel officiel peut être placée sous
+`data/cache/references/source_panels/<panel_id>/`, avec les noms VCF et TBI du
+catalogue. Les MD5 officiels sont alors contrôlés avant toute extraction et
+`bcftools` n'accède pas au réseau.
+Ces résultats restent des
 positionnements relatifs et ne constitueront ni une attribution ethnique ni une
 preuve d'ascendance généalogique ou d'IBD. Le contrat est documenté dans
 `docs/modules/reference_ancestry.md`.
 
+Après publication de `16A`, les vues exploratoires pseudonymisées peuvent être
+recréées sans recalcul scientifique avec :
+
+```bash
+.venv/bin/python -m scripts.plot_reference_ancestry --run-dir <dossier-du-run>
+```
+
+Les PNG, SVG, la galerie HTML et leur résumé de provenance sont écrits sous
+`derived/reference_ancestry_visualizations/` dans le run.
+
+L'étape secondaire `16B_evaluate_founder_haplotype_enrichment` teste ensuite
+la rareté du partage IBS exact observé par 13, avec la famille indépendante
+comme unité primaire. Elle exclut la cible de la signature, réutilise les
+représentants présélectionnés par 13, énumère le fond interne non porteur et
+effectue un Monte-Carlo reproductible sur les 5 008 haplotypes 1000G. Les fonds
+interne et externe restent séparés du LD général de 15. Sans seuil
+préspécifié, le statut est `NOT_CLASSIFIED`; aucun résultat ne constitue une
+preuve IBD ou automatique d'effet fondateur. Le contrat est documenté dans
+`docs/modules/founder_haplotype_enrichment.md`.
+
+L'étape optionnelle `16C_call_explicit_ibd` appelle ensuite Hap-IBD et
+Refined IBD à l'aveugle sur les 22 autosomes phasés, avant d'interroger les
+segments autour de la cible. Pour chaque chromosome et scénario, les deux
+outils reçoivent le même VCF phasé et la même carte génétique. Le scénario
+primaire ne peut pas descendre sous `2 cM` et `100` marqueurs ; les scénarios
+`1,5 cM` et `1 cM` restent des sensibilités et exigent une calibration
+préspécifiée. Les marqueurs ayant au moins un génotype manquant ou non phasé
+sont retirés des deux outils et audités, jamais imputés silencieusement.
+Une assignation mutante globale cohérente par famille est exigée : des choix
+H1/H2 différents selon les paires ne peuvent pas produire un résultat positif.
+Quel que soit le statut, `founder_effect_proven` reste faux et une absence
+d'appel sur puce SNP n'est jamais présentée comme une réfutation. Voir
+`docs/modules/explicit_ibd.md`.
+
+Le profil de production doit épingler Java, les deux JAR, leurs versions et
+leurs SHA-256 dans `tools.explicit_ibd_adapters`. L'installation reproductible
+des versions retenues se fait avec `scripts/install_explicit_ibd_tools.sh` ; le
+pipeline n'effectue lui-même aucun téléchargement. Les exemples génériques
+restent désactivés afin de pouvoir exécuter les tests simulés sans Java.
+
 L'étape `17_run_sensitivity_analyses` consolide ensuite un run primaire et des
 runs de sensibilité distincts, déclarés dans un registre TSV. Elle vérifie les
 manifestes, configurations, signatures, résumés et ancrages moléculaires avant
-de comparer séparément IBS, datation, LD et ROH. Elle ne relance aucun calcul,
+de comparer séparément IBS, datation, LD, ROH, ascendance de référence et
+enrichissement haplotypique. Elle ne relance aucun calcul,
 ne calcule aucun score composite d'effet fondateur et ne classe une variation
 numérique que si une tolérance a été préspécifiée. Copier
 `config/sensitivity/scenarios.example.tsv`, remplacer les chemins, identifiants
 et SHA-256 des manifestes, puis renseigner `inputs.sensitivity_scenarios`. Le
 contrat complet est documenté dans `docs/modules/sensitivity.md`.
 
-L'étape `18_build_visualizations` produit six vues SVG séparées pour la PCA,
-l'IBS, la datation, le LD, les ROH et les sensibilités. Elle consomme uniquement
+L'étape `18_build_visualizations` produit neuf vues SVG séparées pour la PCA
+interne, l'IBS, la datation, le LD, les ROH, les positionnements 1000G global
+et local, l'enrichissement haplotypique 16B et les sensibilités. Elle consomme uniquement
 les tables et résumés versionnés des étapes 08 et 13–17 dans le run courant, valide leurs
 empreintes, signatures, schémas, effectifs et unités, puis publie une provenance
 par figure, un index et un contrôle de complétude. Les non-évaluations et petits
@@ -298,7 +357,7 @@ formats sont pseudonymisés, classés `sensitive_genetic`, autonomes hors résea
 et liés par `visualization_render_manifest.json`.
 
 L'étape `19_build_report` assemble ensuite un rapport HTML révisable depuis les
-seuls artefacts signés des étapes 07 et 18. Il contient la fiche des paramètres
+seuls artefacts signés des étapes 07, 16B et 18. Il contient la fiche des paramètres
 effectivement utilisés, le tableau et le réseau KING pseudonymisés, les figures,
 les faits contrôlés et des commentaires modifiables. Le prompt prudent est
 publié avec son empreinte ; aucun fournisseur IA externe n'est appelé par
@@ -327,7 +386,9 @@ Les exécutables suivants doivent être accessibles depuis le `PATH` :
 - `plink` 1.9 ou compatible : filtrage, ROH, IBD, HWE et LD ;
 - `king` : estimation des relations de parenté ;
 - `bcftools` : cache, extraction et harmonisation de la référence phasée ;
-- `Rscript` : exécution de l'analyse Adegenet.
+- `Rscript` : exécution de l'analyse Adegenet ;
+- SHAPEIT5 5.1.1 : phasage ciblé et des 22 autosomes ;
+- Java 17, Hap-IBD et Refined IBD : appels IBD explicites de l'étape 16C.
 
 Le binaire `Gamma` est uniquement nécessaire pour utiliser la fonction
 `run_gamma()` ou l'ancien script shell. Le pipeline principal utilise
@@ -341,6 +402,7 @@ plink --version
 king --version
 bcftools --version
 Rscript --version
+scripts/install_explicit_ibd_tools.sh
 ```
 
 ### Packages R

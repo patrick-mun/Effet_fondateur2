@@ -21,7 +21,12 @@ DOMAIN_ORDER = (
     "VARIANT_AGE",
     "LOCAL_LD",
     "ROH",
+    "REFERENCE_ANCESTRY_GLOBAL",
+    "REFERENCE_ANCESTRY_LOCAL",
+    "FOUNDER_HAPLOTYPE_ENRICHMENT",
     "SENSITIVITY",
+    "EXPLICIT_IBD",
+    "POPULATION_CONVERGENCE",
 )
 
 DOMAIN_TITLES = {
@@ -30,7 +35,12 @@ DOMAIN_TITLES = {
     "VARIANT_AGE": "Datation du variant",
     "LOCAL_LD": "LD local secondaire",
     "ROH": "ROH et autozygotie",
+    "REFERENCE_ANCESTRY_GLOBAL": "Positionnement global sur références 1000G",
+    "REFERENCE_ANCESTRY_LOCAL": "Positionnement haplotypique local sur références 1000G",
+    "FOUNDER_HAPLOTYPE_ENRICHMENT": "Rareté du partage haplotypique exact",
     "SENSITIVITY": "Analyses de sensibilité",
+    "EXPLICIT_IBD": "IBD explicite autour de DOCK6",
+    "POPULATION_CONVERGENCE": "Convergence genome-wide versus région DOCK6",
 }
 
 DOMAIN_LIMITS = {
@@ -39,7 +49,12 @@ DOMAIN_LIMITS = {
     "VARIANT_AGE": "La datation est conditionnelle aux hypothèses Gamma, à la phase et à la carte génétique.",
     "LOCAL_LD": "Le LD est descriptif et ne démontre pas une origine fondatrice unique.",
     "ROH": "L'autozygotie individuelle reste distincte de l'IBS ou de l'IBD entre individus.",
+    "REFERENCE_ANCESTRY_GLOBAL": "Positionnement relatif uniquement ; aucune attribution ethnique ou généalogique.",
+    "REFERENCE_ANCESTRY_LOCAL": "Positionnement haplotypique relatif ; aucune preuve d'ascendance locale, d'IBD ou d'effet fondateur.",
+    "FOUNDER_HAPLOTYPE_ENRICHMENT": "Partage IBS centré cible, pas preuve IBD ; trois familles indépendantes.",
     "SENSITIVITY": "La robustesse aux scénarios testés n'est ni une validation externe ni une preuve causale.",
+    "EXPLICIT_IBD": "La discordance des limites inter-familles ne signifie pas que Hap-IBD et Refined IBD divergent pour une paire donnée.",
+    "POPULATION_CONVERGENCE": "Analyse exploratoire post hoc ; les fenêtres autosomiques négatives comparables ne sont pas évaluées.",
 }
 
 
@@ -54,9 +69,9 @@ class RenderPublication:
 
 def _ordered_figures(figure_index: dict[str, Any]) -> list[dict[str, Any]]:
     by_domain = {figure["domain"]: figure for figure in figure_index["figures"]}
-    if set(by_domain) != set(DOMAIN_ORDER):
+    if not set(by_domain) <= set(DOMAIN_ORDER) or len(by_domain) not in {9, 11}:
         raise ValueError("render_domain_set_mismatch")
-    return [by_domain[domain] for domain in DOMAIN_ORDER]
+    return [by_domain[domain] for domain in DOMAIN_ORDER if domain in by_domain]
 
 
 def _validate_render_sources(
@@ -209,7 +224,7 @@ def publish_renderings(
         "run_id": run_id,
         "method_id": "validated_current_run_rendering_v1",
         "source_figure_index_sha256": sha256_file(figure_index_path),
-        "domain_order": list(DOMAIN_ORDER),
+        "domain_order": [figure["domain"] for figure in figures],
         "html": {
             "path": html_path.name,
             "media_type": "text/html",

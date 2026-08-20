@@ -1,0 +1,5 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://effet-fondateur.local/schemas/explicit_ibd_feasibility.schema.json","title":"Faisabilité 16C","type":"object","additionalProperties":false,
+  "required":["schema_version","input_scope","variant_count","complete_phased_variant_count","target_present","primary_density_possible","status"],
+  "properties":{"schema_version":{"const":"1.0.0"},"input_scope":{"enum":["TARGET_REGION","TARGET_CHROMOSOME","AUTOSOMAL_GENOMEWIDE"]},"variant_count":{"type":"integer","minimum":0},"complete_phased_variant_count":{"type":"integer","minimum":0},"target_present":{"type":"boolean"},"primary_density_possible":{"type":"boolean"},"status":{"enum":["GO","GO_SENSITIVITY_ONLY","NOT_EVALUABLE"]}}
+}

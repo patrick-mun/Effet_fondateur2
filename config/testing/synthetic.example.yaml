@@ -30,6 +30,7 @@ tools:
   rscript: null
   phasing_adapter: null
   local_ibd_adapter: null
+  explicit_ibd_adapters: null
 
 policies:
   overwrite_inputs: false

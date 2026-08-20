@@ -61,7 +61,10 @@ def _fake_plink(arguments: list[str]) -> None:
 def test_local_ld_keeps_genotype_r2_separate_from_haplotype_dprime(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    commands: list[list[str]] = []
+
     def fake_run(_executable: str, arguments: list[str], _timeout: int) -> None:
+        commands.append(arguments)
         _fake_plink(arguments)
 
     monkeypatch.setattr("effet_fondateur.ld.local._run_plink", fake_run)
@@ -110,6 +113,8 @@ def test_local_ld_keeps_genotype_r2_separate_from_haplotype_dprime(
     summaries = validate_tsv_table(publication.summary_path, "local_ld_summary.schema.json").rows
     assert any(row["SUMMARY_STATUS"] == "EVALUATED" for row in summaries if row["COHORT_ID"] == "controls_unrelated")
     assert len(publication.native_paths) == 2
+    metrics_command = next(arguments for arguments in commands if "--freq" in arguments)
+    assert "--allow-no-sex" in metrics_command
 
 
 def test_local_ld_contract_is_secondary_and_independent_from_stages_13_14() -> None:
@@ -140,7 +145,7 @@ def test_local_ld_smoke_with_real_plink_on_temporary_synthetic_data(tmp_path: Pa
     ]
     ped_path.write_text(
         "".join(
-            f"family_{index} sample_{index} 0 0 0 -9 {genotype}\n"
+            f"family_{index} sample_{index} 0 0 0 1 {genotype}\n"
             for index, genotype in enumerate(genotypes, start=1)
         ),
         encoding="utf-8",

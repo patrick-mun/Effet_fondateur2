@@ -26,6 +26,9 @@ génotypes moléculaires acceptés, jamais depuis le phénotype.
 - `VARIANT_AGE` : statut, estimation et intervalle de datation de l'étape 14 ;
 - `LOCAL_LD` : statuts descriptifs par cohorte de l'étape 15 ;
 - `ROH` : statuts par périmètre et indicateurs secondaires de l'étape 16.
+- `REFERENCE_ANCESTRY` : disponibilité conjointe des projections globales et
+  haplotypiques locales, avec confirmation que les axes restent ajustés sur les
+  seules références, depuis l'étape 16A.
 
 Les domaines restent séparés. Leur concordance peut renforcer la cohérence du
 faisceau d'arguments, mais l'étape 17 ne calcule ni score global ni probabilité

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/founder_haplotype_null_draws.schema.json",
+  "title": "Tirages nuls de partage haplotypique",
+  "x-tsv": {"schema_version": "1.0.0", "columns": ["NULL_SOURCE", "STRATUM", "DRAW_INDEX", "ATTEMPT_INDEX", "UNIT_COUNT", "EVALUATION_STATUS", "LEFT_SHARED_CM", "RIGHT_SHARED_CM", "TOTAL_SHARED_CM", "LEFT_MARKER_COUNT", "RIGHT_MARKER_COUNT", "NON_EVALUABLE_REASON"], "null_value": "", "primary_key": ["NULL_SOURCE", "STRATUM", "DRAW_INDEX"], "boolean_values": {"true": true, "false": false}, "allow_empty": true},
+  "$defs": {
+    "count": {"type": "string", "pattern": "^[0-9]+$"}, "positive": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+    "decimal": {"type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$"}, "nullableDecimal": {"oneOf": [{"$ref": "#/$defs/decimal"}, {"type": "null"}]},
+    "nullableIdentifier": {"oneOf": [{"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"}, {"type": "null"}]},
+    "row": {"type": "object", "additionalProperties": false, "required": ["NULL_SOURCE", "STRATUM", "DRAW_INDEX", "ATTEMPT_INDEX", "UNIT_COUNT", "EVALUATION_STATUS", "LEFT_SHARED_CM", "RIGHT_SHARED_CM", "TOTAL_SHARED_CM", "LEFT_MARKER_COUNT", "RIGHT_MARKER_COUNT", "NON_EVALUABLE_REASON"], "properties": {
+      "NULL_SOURCE": {"enum": ["INTERNAL", "EXTERNAL"]}, "STRATUM": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+      "DRAW_INDEX": {"$ref": "#/$defs/positive"}, "ATTEMPT_INDEX": {"$ref": "#/$defs/positive"}, "UNIT_COUNT": {"$ref": "#/$defs/positive"},
+      "EVALUATION_STATUS": {"enum": ["EVALUATED", "NOT_EVALUATED"]}, "LEFT_SHARED_CM": {"$ref": "#/$defs/nullableDecimal"},
+      "RIGHT_SHARED_CM": {"$ref": "#/$defs/nullableDecimal"}, "TOTAL_SHARED_CM": {"$ref": "#/$defs/nullableDecimal"},
+      "LEFT_MARKER_COUNT": {"oneOf": [{"$ref": "#/$defs/count"}, {"type": "null"}]}, "RIGHT_MARKER_COUNT": {"oneOf": [{"$ref": "#/$defs/count"}, {"type": "null"}]},
+      "NON_EVALUABLE_REASON": {"$ref": "#/$defs/nullableIdentifier"}
+    }}
+  }
+}

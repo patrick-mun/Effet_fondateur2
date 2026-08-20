@@ -120,6 +120,19 @@ def cache_ancestry_metadata(
         _validate_file(unrelated_path, str(unrelated_asset["sha256"]), "ancestry_unrelated_index_corrupt")
         if not manifest_path.is_file() or manifest_path.is_symlink():
             raise AncestryReferenceError("ancestry_metadata_manifest_missing")
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            validate_json_document(manifest, "ancestry_metadata_cache_manifest.schema.json")
+        except (OSError, ValueError) as error:
+            raise AncestryReferenceError("ancestry_metadata_manifest_invalid") from error
+        if (
+            manifest["catalog_id"] != catalog["catalog_id"]
+            or manifest["catalog_sha256"] != catalog_sha
+            or manifest["cache_key"] != cache_key
+            or manifest["files"]["population_metadata"]["sha256"] != population_asset["sha256"]
+            or manifest["files"]["unrelated_sample_index"]["sha256"] != unrelated_asset["sha256"]
+        ):
+            raise AncestryReferenceError("ancestry_metadata_manifest_identity_mismatch")
         return CachedAncestryMetadata(status, entry_dir, population_path, unrelated_path, manifest_path)
 
     lock_path = entry_parent / f".{cache_key}.lock"
@@ -177,13 +190,19 @@ def load_reference_samples(cached: CachedAncestryMetadata) -> tuple[ReferenceSam
     for line in cached.unrelated_index_path.read_text(encoding="utf-8").splitlines():
         if line.startswith("##"):
             continue
-        fields = line.split("\t")
+        # Trois SAMPLE_NAME du fichier officiel sont suivis d'un espace. Les
+        # champs tabulés sont normalisés sans modifier le fichier public mis en
+        # cache ni relâcher les contrôles d'effectif et d'appartenance.
+        fields = [field.strip() for field in line.split("\t")]
         if line.startswith("#ENA_FILE_PATH"):
             header = [field.removeprefix("#") for field in fields]
             continue
         if header is None or len(fields) != len(header):
             raise AncestryReferenceError("ancestry_unrelated_index_row_invalid")
-        unrelated.add(fields[header.index("SAMPLE_NAME")])
+        sample_id = fields[header.index("SAMPLE_NAME")]
+        if sample_id in unrelated:
+            raise AncestryReferenceError("ancestry_unrelated_index_duplicate_sample")
+        unrelated.add(sample_id)
     if len(unrelated) != 2504 or not unrelated <= metadata.keys():
         raise AncestryReferenceError("ancestry_unrelated_sample_set_mismatch")
     return tuple(metadata[sample_id] for sample_id in sorted(unrelated))

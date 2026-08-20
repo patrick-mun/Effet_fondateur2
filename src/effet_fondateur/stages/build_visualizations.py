@@ -29,13 +29,26 @@ def _parameters(parameters: dict[str, Any]) -> dict[str, Any]:
     return {"method": "validated_current_run_figures_v1"}
 
 
+def _producer_record(manifest: dict[str, Any], producer_stage: str) -> dict[str, Any] | None:
+    """Résout un producteur publié sous son nom court ou son identifiant d'étape."""
+    matches = [
+        record
+        for record in manifest.get("stages", [])
+        if producer_stage
+        in {
+            record.get("stage_name"),
+            f"{record.get('stage_id')}_{record.get('stage_name')}",
+        }
+    ]
+    return matches[0] if len(matches) == 1 else None
+
+
 def _validate_producer_controls(run_dir: Path, input_artifacts: list[dict[str, Any]]) -> None:
     """Lie chaque entrée au manifest, à l'audit et aux sorties de son producteur."""
     manifest = read_json(run_dir / "manifest.json")
-    records = {record["stage_name"]: record for record in manifest.get("stages", [])}
     for producer in sorted({artifact["producer_stage"] for artifact in input_artifacts}):
         producer_artifacts = [artifact for artifact in input_artifacts if artifact["producer_stage"] == producer]
-        record = records.get(producer)
+        record = _producer_record(manifest, producer)
         if record is None or record.get("state") not in {"SUCCEEDED", "CACHED"}:
             raise ValueError("producer_stage_not_validated_in_current_run")
         expected_signatures = {artifact["producer_signature"] for artifact in producer_artifacts}
@@ -58,7 +71,7 @@ def _validate_producer_controls(run_dir: Path, input_artifacts: list[dict[str, A
 
 
 def execute(stage_inputs_path: Path, output_dir: Path) -> int:
-    """Valide les artefacts 13–17, rend les domaines et publie leur index."""
+    """Valide les artefacts scientifiques, rend les domaines et publie leur index."""
     started_at, started_clock = utc_now(), monotonic()
     stage_inputs = read_json(stage_inputs_path)
     validate_json_document(stage_inputs, "stage_inputs.schema.json")
@@ -81,7 +94,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
     rendered_count = sum(item.status == "RENDERED" for item in results)
     not_evaluated_count = sum(item.status == "NOT_EVALUATED" for item in results)
     blocked_count = sum(item.status == "BLOCKED" for item in results)
-    completeness = {"schema_version": "1.0.0", "run_id": stage_inputs["run_id"], "expected_domain_count": 6, "rendered_count": rendered_count, "not_evaluated_count": not_evaluated_count, "blocked_count": blocked_count, "complete_for_scientific_report": blocked_count == 0}
+    completeness = {"schema_version": "1.0.0", "run_id": stage_inputs["run_id"], "expected_domain_count": len(results), "rendered_count": rendered_count, "not_evaluated_count": not_evaluated_count, "blocked_count": blocked_count, "complete_for_scientific_report": blocked_count == 0}
     validate_json_document(completeness, "visualization_completeness.schema.json")
     completeness_path = output_dir / "visualization_completeness.json"; atomic_write_json(completeness_path, completeness)
     render_publication = publish_renderings(
@@ -120,7 +133,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             {"tool": "python_svg_html_renderer", "configured": Path(sys.executable).name, "version": sys.version.split()[0]},
             {"tool": "fpdf2", "configured": "Python package", "version": importlib.metadata.version("fpdf2")},
         ],
-        "counts": {"expected_domains": 6, "rendered": rendered_count, "not_evaluated": not_evaluated_count, "blocked": blocked_count},
+        "counts": {"expected_domains": len(results), "rendered": rendered_count, "not_evaluated": not_evaluated_count, "blocked": blocked_count},
         "metrics": {"complete_for_scientific_report": blocked_count == 0, "pseudonymized": True, "sensitivity": "sensitive_genetic", "html_rendered": True, "pdf_rendered": True, "scientific_recalculation_performed": False, "composite_founder_score_calculated": False},
         "exclusions": [], "warnings": [{"code": "figure_blocked", "count": blocked_count}] if blocked_count else [],
         "checks": [{"check": "current_run_only", "status": "PASS"}, {"check": "source_checksums_and_signatures", "status": "PASS" if blocked_count == 0 else "WARN"}, {"check": "domain_separation", "status": "PASS"}, {"check": "primary_exploratory_separation", "status": "PASS"}, {"check": "html_render_from_figure_index", "status": "PASS"}, {"check": "pdf_render_from_same_figure_index", "status": "PASS"}, {"check": "no_scientific_recalculation", "status": "PASS"}, {"check": "no_composite_founder_score", "status": "PASS"}],

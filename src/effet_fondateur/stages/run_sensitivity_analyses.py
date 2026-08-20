@@ -20,6 +20,7 @@ from effet_fondateur.contracts import (
 )
 from effet_fondateur.orchestrator.state import utc_now
 from effet_fondateur.sensitivity import SensitivityAnalysisError, publish_sensitivity_analysis
+from effet_fondateur.sensitivity.convergence import publish_population_convergence
 
 
 class SensitivityStageInputError(ValueError):
@@ -37,7 +38,7 @@ def _parameters(parameters: dict[str, Any]) -> dict[str, Any]:
     if parameters.get("method", "cross_run_sensitivity_consolidation_v1") != "cross_run_sensitivity_consolidation_v1":
         raise SensitivityStageInputError("invalid_parameter:method")
     raw_tolerances = parameters.get("relative_change_tolerances", {})
-    domains = ("FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH")
+    domains = ("FOUNDER_IBS", "VARIANT_AGE", "LOCAL_LD", "ROH", "REFERENCE_ANCESTRY", "FOUNDER_HAPLOTYPE_ENRICHMENT", "EXPLICIT_IBD")
     if not isinstance(raw_tolerances, dict) or set(raw_tolerances) - set(domains):
         raise SensitivityStageInputError("invalid_parameter:relative_change_tolerances")
     tolerances: dict[str, float | None] = {}
@@ -80,10 +81,22 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         relative_change_tolerances=parameters["relative_change_tolerances"],
         consolidation_config=config,
     )
+    artifact_map = {artifact["artifact_id"]: artifact for artifact in stage_inputs["artifacts"]}
+    convergence_path = output_dir / "sensitivity" / "population_convergence.json"
+    if {"ancestry_scores", "cohorts_frozen"} <= set(artifact_map):
+        publish_population_convergence(
+            scores_path=run_dir / artifact_map["ancestry_scores"]["path"],
+            cohorts_path=run_dir / artifact_map["cohorts_frozen"]["path"],
+            output_path=convergence_path,
+        )
+    else:
+        fallback = {"schema_version": "1.0.0", "method_id": "global_local_triplet_convergence_v1", "analysis_role": "EXPLORATORY_POST_HOC", "component_count": 10, "distance": "MEAN_PAIRWISE_EUCLIDEAN", "null_mode": "EXHAUSTIVE_CONTROL_TRIPLETS", "random_seed": None, "global_matching_relative_tolerance": 0.1, "carrier_unit_count": 0, "control_unit_count": 0, "local_entity_definition": "MEAN_OF_PROJECTED_HAPLOTYPE_SCORES_PER_SAMPLE", "status": "NOT_EVALUATED", "global": None, "local": None, "conditional_local": None, "negative_control_windows": {"status": "NOT_EVALUATED", "reason": "SIGNED_INPUTS_UNAVAILABLE"}, "interpretation": "Analyse secondaire exploratoire post hoc ; aucune attribution ethnique, généalogique ou causale."}
+        validate_json_document(fallback, "population_convergence.schema.json"); atomic_write_json(convergence_path, fallback)
     specifications = (
         ("sensitivity_comparisons", publication.comparisons_path, "sensitivity_comparisons.schema.json", "sensitive_genetic"),
         ("sensitivity_stability", publication.stability_path, "sensitivity_stability.schema.json", "internal"),
         ("sensitivity_analysis_summary", publication.summary_path, "sensitivity_analysis_summary.schema.json", "internal"),
+        ("population_convergence", convergence_path, "population_convergence.schema.json", "sensitive_genetic"),
     )
     output_artifacts = [
         build_file_artifact(

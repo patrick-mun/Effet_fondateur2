@@ -310,7 +310,11 @@ def publish_local_ld(
             report_prefix = work_dir / f"{cohort_id}_metrics"
             _run_plink(plink_executable, [
                 "--bfile", str(dataset_prefix), "--keep", str(cohort_keep_paths[cohort_id]),
-                "--freq", "--recode", "A-transpose", "--out", str(report_prefix),
+                # Les métadonnées peuvent légitimement conserver un sexe inconnu.
+                # PLINK refuse sinon de combiner --recode avec --freq lorsque le
+                # phénotype de ces individus est renseigné.
+                "--allow-no-sex", "--freq", "--recode", "A-transpose",
+                "--out", str(report_prefix),
             ], timeout_seconds)
             frequencies = _frequencies(report_prefix.with_suffix(".frq"), expected_ids)
             called = _dosages(report_prefix.with_suffix(".traw"), expected_ids)

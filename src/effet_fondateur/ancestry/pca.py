@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from scipy.sparse.linalg import svds
 
 
 class AncestryPcaError(ValueError):
@@ -19,6 +20,7 @@ class ReferencePca:
     scales: np.ndarray
     loadings: np.ndarray
     eigenvalues: np.ndarray
+    total_variance: float
     reference_scores: np.ndarray
     informative_variant_mask: np.ndarray
 
@@ -49,14 +51,28 @@ def fit_reference_pca(
     imputed = np.where(np.isnan(selected), ploidy * selected_frequencies, selected)
     scales = np.sqrt(ploidy * selected_frequencies * (1 - selected_frequencies))
     standardized = (imputed - ploidy * selected_frequencies) / scales
-    _, singular_values, loadings_transposed = np.linalg.svd(
-        standardized, full_matrices=False
-    )
     component_count = min(
         requested_components, standardized.shape[0] - 1, standardized.shape[1]
     )
     if component_count < 1:
         raise AncestryPcaError("insufficient_reference_samples_for_pca")
+    minimum_dimension = min(standardized.shape)
+    if component_count < minimum_dimension:
+        _, singular_values, loadings_transposed = svds(
+            standardized,
+            k=component_count,
+            which="LM",
+            random_state=0,
+        )
+        order = np.argsort(singular_values)[::-1]
+        singular_values = singular_values[order]
+        loadings_transposed = loadings_transposed[order]
+    else:
+        _, singular_values, loadings_transposed = np.linalg.svd(
+            standardized, full_matrices=False
+        )
+        singular_values = singular_values[:component_count]
+        loadings_transposed = loadings_transposed[:component_count]
     loadings = loadings_transposed[:component_count].T
     for component in range(component_count):
         pivot = int(np.argmax(np.abs(loadings[:, component])))
@@ -64,11 +80,13 @@ def fit_reference_pca(
             loadings[:, component] *= -1
     scores = standardized @ loadings
     eigenvalues = singular_values[:component_count] ** 2 / max(1, matrix.shape[0] - 1)
+    total_variance = float(np.sum(standardized**2) / max(1, matrix.shape[0] - 1))
     return ReferencePca(
         frequencies,
         scales,
         loadings,
         eigenvalues,
+        total_variance,
         scores,
         informative,
     )

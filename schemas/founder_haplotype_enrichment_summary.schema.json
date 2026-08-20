@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/founder_haplotype_enrichment_summary.schema.json",
+  "title": "Résumé agrégé de l'enrichissement haplotypique",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "method_id", "primary_statistic", "status", "independent_family_count", "observed", "null_results", "classification_threshold", "random_seed", "provenance", "interpretation"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"}, "method_id": {"const": "target_centered_empirical_haplotype_sharing_v1"}, "primary_statistic": {"const": "total_shared_cm"},
+    "status": {"enum": ["NOT_EVALUATED", "NOT_CLASSIFIED", "NO_UNUSUAL_SHARING_DETECTED", "UNUSUAL_TARGET_CENTERED_SHARING", "MULTIPLE_CARRIER_BACKGROUNDS"]},
+    "independent_family_count": {"type": "integer", "minimum": 0}, "observed": {"$ref": "#/$defs/observed"},
+    "null_results": {"type": "array", "items": {"$ref": "#/$defs/nullResult"}}, "classification_threshold": {"type": ["number", "null"], "exclusiveMinimum": 0, "maximum": 1},
+    "random_seed": {"type": "integer", "minimum": 0},
+    "provenance": {"type": "object", "additionalProperties": false, "required": ["assembly", "target_variant_id", "target_ref", "target_alt", "map_sha256", "study_bcf_sha256", "reference_vcf_sha256", "step13_summary_sha256", "step16a_summary_sha256"], "properties": {
+      "assembly": {"type": "string", "minLength": 1}, "target_variant_id": {"type": "string", "minLength": 1}, "target_ref": {"type": "string", "pattern": "^[ACGTN]+$"}, "target_alt": {"type": "string", "pattern": "^[ACGTN]+$"},
+      "map_sha256": {"$ref": "#/$defs/sha256"}, "study_bcf_sha256": {"$ref": "#/$defs/sha256"}, "reference_vcf_sha256": {"$ref": "#/$defs/sha256"}, "step13_summary_sha256": {"$ref": "#/$defs/sha256"}, "step16a_summary_sha256": {"$ref": "#/$defs/sha256"}
+    }},
+    "interpretation": {"type": "object", "additionalProperties": false, "required": ["ibs_only", "ibd_proven", "founder_effect_proven", "geographic_origin_inferred", "composite_score_calculated", "statement"], "properties": {
+      "ibs_only": {"const": true}, "ibd_proven": {"const": false}, "founder_effect_proven": {"const": false}, "geographic_origin_inferred": {"const": false}, "composite_score_calculated": {"const": false}, "statement": {"const": "Partage IBS centré cible, pas preuve IBD."}
+    }}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "observed": {"type": "object", "additionalProperties": false, "required": ["evaluation_status", "left_shared_cm", "right_shared_cm", "total_shared_cm", "left_marker_count", "right_marker_count"], "properties": {
+      "evaluation_status": {"enum": ["EVALUATED", "NOT_EVALUATED"]}, "left_shared_cm": {"type": ["number", "null"], "minimum": 0}, "right_shared_cm": {"type": ["number", "null"], "minimum": 0}, "total_shared_cm": {"type": ["number", "null"], "minimum": 0}, "left_marker_count": {"type": ["integer", "null"], "minimum": 0}, "right_marker_count": {"type": ["integer", "null"], "minimum": 0}
+    }},
+    "nullResult": {"type": "object", "additionalProperties": false, "required": ["source", "stratum", "requested_draws", "attempted_draws", "evaluable_draws", "non_evaluable_draws", "exceedance_count", "empirical_probability", "exact_probability", "interval_low", "interval_high"], "properties": {
+      "source": {"enum": ["INTERNAL", "EXTERNAL"]}, "stratum": {"type": "string", "minLength": 1}, "requested_draws": {"type": ["integer", "null"], "minimum": 1}, "attempted_draws": {"type": "integer", "minimum": 0}, "evaluable_draws": {"type": "integer", "minimum": 0}, "non_evaluable_draws": {"type": "integer", "minimum": 0}, "exceedance_count": {"type": "integer", "minimum": 0}, "empirical_probability": {"type": ["number", "null"], "minimum": 0, "maximum": 1}, "exact_probability": {"type": ["number", "null"], "minimum": 0, "maximum": 1}, "interval_low": {"type": ["number", "null"], "minimum": 0, "maximum": 1}, "interval_high": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+    }}
+  }
+}

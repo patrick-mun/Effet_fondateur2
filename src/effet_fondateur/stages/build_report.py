@@ -66,7 +66,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         "method_id": METHOD_ID, "signature": stage_inputs["signature"], "started_at": started_at, "completed_at": utc_now(), "duration_seconds": monotonic() - started_clock,
         "inputs": stage_inputs["artifacts"], "outputs": artifacts, "parameters": parameters,
         "tools": [{"tool": "deterministic_report_draft", "configured": "built-in", "version": "1.0.0"}],
-        "counts": {"report_sections": 7},
+        "counts": {"report_sections": 10},
         "metrics": {"report_status": validation["status"], "human_validation_required": True, "external_ai_called": False, "scientific_recalculation_performed": False, "composite_founder_score_calculated": False, "pseudonymized": True},
         "exclusions": [], "warnings": [{"code": "human_report_review_required"}],
         "checks": validation["checks"],
