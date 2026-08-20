@@ -199,3 +199,55 @@ Usage labo/recherche modéré, hors HDS et hors développement :
 **Reste à faire** : préciser le scénario réel (nombre de runs/mois, usage
 interne ou multi-clients) pour affiner la fourchette, et confirmer si un
 hébergement certifié HDS est requis.
+
+## 5. Monétisation — internationalisation, facturation au run publiable
+
+**Piste évoquée** : facturer ~1500 $ par run finalisé/publiable (résultat
+utilisable dans une publication scientifique), plutôt qu'à l'exécution brute
+(cf. §3 sur l'itération normale d'un run).
+
+**Ordre de grandeur du prix** : pas déraisonnable en soi pour une analyse de
+cohorte complète (QC, parenté, phasage, datation, ascendance, rapport
+publiable) — probablement inférieur au coût d'un bio-informaticien faisant
+l'équivalent manuellement pendant plusieurs semaines, et cohérent avec les
+tarifs de services d'analyse génomique en labo/CRO. À moduler selon la
+taille de cohorte plutôt qu'un tarif plat unique (voir §3).
+
+### Risque de contournement identifié
+
+Facturer sur une action déclenchée côté client (« bouton valider le rapport
+final ») est contournable : les artefacts intermédiaires (`*.parquet`,
+`*.json` — segments founder, discordances, panels de parenté, etc.) sont
+déjà accessibles en téléchargement à chaque étape dans le suivi de run,
+avant même la génération du rapport final. Ce sont ces fichiers, pas le
+HTML, qui portent la valeur scientifique. Un utilisateur peut donc les
+récupérer sans jamais déclencher l'action de paiement si le verrou est
+uniquement dans l'interface.
+
+**Principe à respecter** : le contrôle de paiement doit être **côté
+serveur, sur l'accès aux données**, jamais sur une action côté client.
+
+- Le suivi de progression (statuts, étapes, logs) peut rester visible
+  gratuitement — n'expose aucun résultat scientifique.
+- Chaque endpoint de téléchargement/export d'artefact vérifie le paiement à
+  chaque appel, indépendamment de l'état de l'interface (pas de drapeau
+  « payé » stocké côté client).
+- Aperçu dégradé possible avant paiement (valeurs tronquées/floutées,
+  watermark), export haute précision débloqué uniquement après paiement
+  confirmé côté serveur.
+
+### Risque structurel additionnel — pipeline ouvert
+
+Le pipeline V2 (`src/effet_fondateur/`) reste un logiciel installable et
+exécutable localement dans ce dépôt. À l'échelle internationale, un
+utilisateur technique peut l'installer chez lui sans jamais passer par la
+version hébergée payante. La monétisation ne peut donc pas reposer sur « le
+code est payant », mais sur la valeur de l'infrastructure gérée : cache de
+références déjà peuplé, calcul à la demande sans installation d'outils
+externes (PLINK/KING/SHAPEIT5/bcftools/R), support, interface. Modèle
+viable (courant en open source commercial), mais à assumer dès la
+conception plutôt qu'à découvrir après coup.
+
+**Reste à faire** : concevoir le modèle d'autorisation serveur (paiement →
+déblocage export) avant tout développement de la facturation, et décider du
+niveau d'aperçu gratuit acceptable.
