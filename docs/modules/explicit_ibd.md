@@ -5,7 +5,8 @@
 `16C_call_explicit_ibd` appelle d'abord les segments sur les 22 autosomes avec
 deux méthodes indépendantes, Hap-IBD et Refined IBD, sans utiliser la mutation
 pour guider les appels. Elle interroge ensuite seulement les segments autour de
-la cible. Elle ne remplace ni l'IBS
+la cible, en exigeant simultanément le chromosome cible et sa position. Elle ne
+remplace ni l'IBS
 strict de 13, ni la datation de 14, ni l'enrichissement empirique de 16B. Un
 appel primaire concordant apporte un support IBD explicite ; il ne prouve pas à
 lui seul un effet fondateur, un ancêtre unique ou une origine géographique.

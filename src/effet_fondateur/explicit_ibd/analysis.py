@@ -75,6 +75,11 @@ class IbdSegment:
     def contains(self, position_bp: int) -> bool:
         return self.start_bp <= position_bp <= self.end_bp
 
+    def contains_target(self, chromosome: str | int, position_bp: int) -> bool:
+        """Indique si le segment contient une cible sur le même chromosome."""
+        target_chromosome = str(chromosome).removeprefix("chr")
+        return self.chromosome == target_chromosome and self.contains(position_bp)
+
 
 @dataclass(frozen=True)
 class ScenarioEvaluation:
@@ -170,11 +175,27 @@ def _assignments(families: Sequence[str], mutant_haplotypes: Mapping[str, frozen
     return (dict(zip(families, values, strict=True)) for values in product(*choices))
 
 
+def boundaries_are_concordant(
+    segments: Sequence[IbdSegment],
+    tolerance_bp: int,
+) -> bool:
+    """Compare les bornes d'un ensemble de segments avec une tolérance en pb."""
+    if not segments or tolerance_bp < 0:
+        return False
+    starts = [segment.start_bp for segment in segments]
+    ends = [segment.end_bp for segment in segments]
+    return (
+        max(starts) - min(starts) <= tolerance_bp
+        and max(ends) - min(ends) <= tolerance_bp
+    )
+
+
 def evaluate_scenario(
     scenario: Scenario,
     segments: Sequence[IbdSegment],
     families: Sequence[str],
     mutant_haplotypes: Mapping[str, frozenset[str]],
+    target_chromosome: str | int,
     target_position_bp: int,
     boundary_tolerance_bp: int,
     control_frequency: float | None,
@@ -191,7 +212,14 @@ def evaluate_scenario(
         return ScenarioEvaluation(scenario.scenario_id, False, False, False, False, False, None, None, (), "CALIBRATION_UNACCEPTABLE_OR_MISSING")
     if control_frequency is None:
         return ScenarioEvaluation(scenario.scenario_id, False, False, False, False, False, None, None, (), "CONTROL_BACKGROUND_NOT_EVALUATED")
-    candidates = tuple(segment for segment in segments if segment.scenario_id == scenario.scenario_id and segment.contains(target_position_bp) and segment.length_cm >= scenario.minimum_cm and segment.marker_count >= scenario.minimum_markers)
+    candidates = tuple(
+        segment
+        for segment in segments
+        if segment.scenario_id == scenario.scenario_id
+        and segment.contains_target(target_chromosome, target_position_bp)
+        and segment.length_cm >= scenario.minimum_cm
+        and segment.marker_count >= scenario.minimum_markers
+    )
     selected: tuple[IbdSegment, ...] = ()
     coherent = False
     for assignment in _assignments(families, mutant_haplotypes):
@@ -213,7 +241,7 @@ def evaluate_scenario(
     if not all_pairs:
         return ScenarioEvaluation(scenario.scenario_id, True, False, False, False, control_frequency <= maximum_control_frequency, None, None, (), "PAIR_TOOL_OR_MUTANT_ASSIGNMENT_MISSING")
     starts, ends = [item.start_bp for item in selected], [item.end_bp for item in selected]
-    boundaries = max(starts) - min(starts) <= boundary_tolerance_bp and max(ends) - min(ends) <= boundary_tolerance_bp
+    boundaries = boundaries_are_concordant(selected, boundary_tolerance_bp)
     common_start, common_end = max(starts), min(ends)
     if common_start > target_position_bp or common_end < target_position_bp:
         boundaries = False
