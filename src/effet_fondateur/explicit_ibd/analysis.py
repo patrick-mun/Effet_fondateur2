@@ -31,6 +31,8 @@ class Scenario:
     minimum_cm: float
     minimum_markers: int
     calibrated: bool
+    calibration_specificity_acceptable: bool
+    calibration_control_frequency: float | None
 
     def validate(self) -> None:
         if self.role not in {"PRIMARY", "SENSITIVITY"}:
@@ -43,6 +45,26 @@ class Scenario:
             raise ExplicitIbdError("primary_threshold_post_hoc_or_too_permissive")
         if self.role == "SENSITIVITY" and self.minimum_cm < 1.0:
             raise ExplicitIbdError("sensitivity_threshold_too_permissive")
+        if self.calibration_control_frequency is not None and not (
+            0.0 <= self.calibration_control_frequency <= 1.0
+        ):
+            raise ExplicitIbdError("calibration_control_frequency_invalid")
+        if self.calibrated and self.calibration_control_frequency is None:
+            raise ExplicitIbdError("calibration_control_frequency_missing")
+        if not self.calibrated and (
+            self.calibration_specificity_acceptable
+            or self.calibration_control_frequency is not None
+        ):
+            raise ExplicitIbdError("uncalibrated_scenario_has_calibration_results")
+
+    def calibration_is_acceptable(self, maximum_control_frequency: float) -> bool:
+        """Vérifie la calibration externe préspécifiée du scénario."""
+        return (
+            self.calibrated
+            and self.calibration_specificity_acceptable
+            and self.calibration_control_frequency is not None
+            and self.calibration_control_frequency <= maximum_control_frequency
+        )
 
 
 @dataclass(frozen=True)
@@ -190,6 +212,88 @@ def boundaries_are_concordant(
     )
 
 
+def _selection_key(segments: Sequence[IbdSegment]) -> tuple[object, ...]:
+    """Ordonne les sélections de façon stable en privilégiant leur longueur."""
+    return (
+        -sum(segment.length_cm for segment in segments),
+        tuple(
+            (
+                segment.tool,
+                segment.family_pair,
+                segment.start_bp,
+                segment.end_bp,
+                segment.sample_1,
+                segment.haplotype_1,
+                segment.sample_2,
+                segment.haplotype_2,
+            )
+            for segment in segments
+        ),
+    )
+
+
+def _select_for_assignment(
+    match_groups: Sequence[Sequence[IbdSegment]],
+    boundary_tolerance_bp: int,
+) -> tuple[tuple[IbdSegment, ...], bool]:
+    """Retient la meilleure combinaison concordante pour une assignation.
+
+    Chaque borne minimale d'une combinaison réalisable appartient à un segment
+    candidat. Les couples de bornes candidates permettent donc de chercher une
+    combinaison sans énumérer le produit cartésien de tous les segments.
+    """
+    fallback = tuple(
+        sorted(
+            matches,
+            key=lambda item: (-item.length_cm, item.start_bp, item.end_bp),
+        )[0]
+        for matches in match_groups
+    )
+    all_matches = tuple(segment for matches in match_groups for segment in matches)
+    best: tuple[IbdSegment, ...] | None = None
+    for minimum_start in sorted({segment.start_bp for segment in all_matches}):
+        maximum_start = minimum_start + boundary_tolerance_bp
+        start_filtered = tuple(
+            tuple(
+                segment
+                for segment in matches
+                if minimum_start <= segment.start_bp <= maximum_start
+            )
+            for matches in match_groups
+        )
+        if any(not matches for matches in start_filtered):
+            continue
+        possible_minimum_ends = sorted(
+            {segment.end_bp for matches in start_filtered for segment in matches}
+        )
+        for minimum_end in possible_minimum_ends:
+            maximum_end = minimum_end + boundary_tolerance_bp
+            eligible = tuple(
+                tuple(
+                    segment
+                    for segment in matches
+                    if minimum_end <= segment.end_bp <= maximum_end
+                )
+                for matches in start_filtered
+            )
+            if any(not matches for matches in eligible):
+                continue
+            selection = tuple(
+                sorted(
+                    matches,
+                    key=lambda item: (
+                        -item.length_cm,
+                        item.start_bp,
+                        item.end_bp,
+                    ),
+                )[0]
+                for matches in eligible
+            )
+            if best is None or _selection_key(selection) < _selection_key(best):
+                best = selection
+    return (best, True) if best is not None else (fallback, False)
+
+
 def evaluate_scenario(
     scenario: Scenario,
     segments: Sequence[IbdSegment],
@@ -198,19 +302,21 @@ def evaluate_scenario(
     target_chromosome: str | int,
     target_position_bp: int,
     boundary_tolerance_bp: int,
-    control_frequency: float | None,
+    empirical_control_frequency: float | None,
     maximum_control_frequency: float,
-    calibration_specificity_acceptable: bool,
+    control_pair_count_sufficient: bool,
 ) -> ScenarioEvaluation:
     """Évalue les deux outils et toutes les paires avec une assignation globale."""
     scenario.validate()
     families = tuple(sorted(set(families)))
-    required_pairs = set(combinations(families, 2))
+    required_pairs = tuple(combinations(families, 2))
     if len(families) < 3:
         return ScenarioEvaluation(scenario.scenario_id, False, False, False, False, False, None, None, (), "INSUFFICIENT_INDEPENDENT_FAMILIES")
-    if not scenario.calibrated or not calibration_specificity_acceptable:
+    if not scenario.calibration_is_acceptable(maximum_control_frequency):
         return ScenarioEvaluation(scenario.scenario_id, False, False, False, False, False, None, None, (), "CALIBRATION_UNACCEPTABLE_OR_MISSING")
-    if control_frequency is None:
+    if not control_pair_count_sufficient:
+        return ScenarioEvaluation(scenario.scenario_id, False, False, False, False, False, None, None, (), "CONTROL_BACKGROUND_INSUFFICIENT")
+    if empirical_control_frequency is None:
         return ScenarioEvaluation(scenario.scenario_id, False, False, False, False, False, None, None, (), "CONTROL_BACKGROUND_NOT_EVALUATED")
     candidates = tuple(
         segment
@@ -220,32 +326,54 @@ def evaluate_scenario(
         and segment.length_cm >= scenario.minimum_cm
         and segment.marker_count >= scenario.minimum_markers
     )
-    selected: tuple[IbdSegment, ...] = ()
-    coherent = False
+    best_concordant: tuple[IbdSegment, ...] | None = None
+    best_complete: tuple[IbdSegment, ...] | None = None
     for assignment in _assignments(families, mutant_haplotypes):
-        current: list[IbdSegment] = []
-        valid = True
+        match_groups: list[tuple[IbdSegment, ...]] = []
+        complete_assignment = True
         for tool in TOOLS:
             for pair in required_pairs:
-                matches = [segment for segment in candidates if segment.tool == tool and segment.family_pair == pair and _mutant_compatible(segment, mutant_haplotypes, assignment)]
+                matches = tuple(
+                    segment
+                    for segment in candidates
+                    if segment.tool == tool
+                    and segment.family_pair == pair
+                    and _mutant_compatible(
+                        segment,
+                        mutant_haplotypes,
+                        assignment,
+                    )
+                )
                 if not matches:
-                    valid = False
+                    complete_assignment = False
                     break
-                current.append(sorted(matches, key=lambda item: (-item.length_cm, item.start_bp, item.end_bp))[0])
-            if not valid:
+                match_groups.append(matches)
+            if not complete_assignment:
                 break
-        if valid:
-            selected, coherent = tuple(current), True
-            break
-    all_pairs = coherent and len(selected) == len(required_pairs) * len(TOOLS)
-    if not all_pairs:
-        return ScenarioEvaluation(scenario.scenario_id, True, False, False, False, control_frequency <= maximum_control_frequency, None, None, (), "PAIR_TOOL_OR_MUTANT_ASSIGNMENT_MISSING")
+        if not complete_assignment:
+            continue
+        current, concordant = _select_for_assignment(
+            match_groups,
+            boundary_tolerance_bp,
+        )
+        if best_complete is None or _selection_key(current) < _selection_key(
+            best_complete
+        ):
+            best_complete = current
+        if concordant and (
+            best_concordant is None
+            or _selection_key(current) < _selection_key(best_concordant)
+        ):
+            best_concordant = current
+    selected = best_concordant or best_complete
+    if selected is None:
+        return ScenarioEvaluation(scenario.scenario_id, True, False, False, False, empirical_control_frequency <= maximum_control_frequency, None, None, (), "PAIR_TOOL_OR_MUTANT_ASSIGNMENT_MISSING")
     starts, ends = [item.start_bp for item in selected], [item.end_bp for item in selected]
     boundaries = boundaries_are_concordant(selected, boundary_tolerance_bp)
     common_start, common_end = max(starts), min(ends)
     if common_start > target_position_bp or common_end < target_position_bp:
-        boundaries = False
-    return ScenarioEvaluation(scenario.scenario_id, True, True, True, boundaries, control_frequency <= maximum_control_frequency, common_start, common_end, selected, None if boundaries else "BOUNDARIES_DISCORDANT")
+        raise ExplicitIbdError("target_outside_common_interval_invariant")
+    return ScenarioEvaluation(scenario.scenario_id, True, True, True, boundaries, empirical_control_frequency <= maximum_control_frequency, common_start, common_end, selected, None if boundaries else "BOUNDARIES_DISPERSED")
 
 
 def classify_explicit_ibd(primary: ScenarioEvaluation, sensitivities: Sequence[ScenarioEvaluation]) -> str:

@@ -221,7 +221,36 @@
         "calibrated": {"type": "boolean"},
         "calibration_specificity_acceptable": {"type": "boolean"},
         "control_frequency": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"calibrated": {"const": false}},
+            "required": ["calibrated"]
+          },
+          "then": {
+            "properties": {
+              "calibration_specificity_acceptable": {"const": false},
+              "control_frequency": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {"calibrated": {"const": true}},
+            "required": ["calibrated"]
+          },
+          "then": {
+            "properties": {
+              "control_frequency": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          }
+        }
+      ]
     },
     "founderEnrichmentStage": {
       "type": "object",

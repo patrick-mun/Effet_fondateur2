@@ -2,6 +2,23 @@
 
 Dernière mise à jour : 27 octobre 2026
 
+## Retrait du pipeline historique V1 — 27 octobre 2026
+
+- Une archive externe vérifiée a été constituée avant retrait, avec manifeste
+  interne couvrant 17 fichiers de code et 4 documents historiques. Aucune
+  donnée d'entrée, sortie ou donnée génétique n'y a été incluse.
+- `run_pipeline.py`, l'interface Streamlit, les modules V1 sous `scripts/`, les
+  trois anciens utilitaires de simulation/conversion et `Module_WIKI/` ont été
+  retirés du dépôt actif.
+- Le point d'entrée unique du pipeline est désormais `effet-fondateur` ; les
+  scripts complémentaires V2 testés et les outils actuels de préparation ACPA
+  sont conservés.
+- `streamlit`, `pyarrow` et `networkx`, utilisés uniquement par la V1, ont été
+  retirés des dépendances Python actives.
+- Validation après retrait : imports V2 et scripts complémentaires réussis,
+  `git diff --check` propre, 37 tests ciblés puis suite complète à 314 tests
+  réussis en 14 min 19 s.
+
 ## Durcissement de la LD phase 15 v2 — 27 octobre 2026
 
 - Le script exploratoire LD v2 valide désormais le manifest du run, l'identité
@@ -187,12 +204,10 @@ Dernière mise à jour : 27 octobre 2026
 - PR V2 `#2` fusionnée dans `main` le 5 août 2026.
 - PR `#1` fusionnée dans `main` le 4 août 2026.
 - Environnement : Python 3.12.13 dans `.venv`.
-- Outils disponibles et fonctionnels : PLINK 1.9, KING, bcftools, Rscript et
-  packages R du projet. SHAPEIT5 5.1.1 est installé dans l'environnement Conda
+- Outils disponibles et fonctionnels : PLINK 1.9, KING et bcftools. SHAPEIT5
+  5.1.1 est installé dans l'environnement Conda
   isolé `effet-fondateur-shapeit5` ; `SHAPEIT5_phase_common` et
   `SHAPEIT5_phase_rare` démarrent correctement.
-  Les commandes `Gamma`/`gamma` présentes dans le `PATH` pointent actuellement
-  vers un document HTML invalide et ne sont pas utilisables.
 - Java 17 est installé dans l'environnement Conda isolé
   `effet-fondateur-ibd`. Hap-IBD `1.0.0-15Jun23.92f` et Refined IBD
   `17Jan20.102` sont installés sous le cache ignoré, avec SHA-256 vérifiés par
@@ -574,15 +589,16 @@ Dernière mise à jour : 27 octobre 2026
 - Réservé aux tests techniques et exploratoires, sans interprétation biologique
   du LD, des haplotypes ou des ROH.
 
-### Entrée actuellement lue par le pipeline
+### Ancienne entrée V1 examinée pendant la migration
 
 - `data/input/complex_simulation/genotype_data.ped` contient 127 individus.
 - `data/input/complex_simulation/genotype_data.map` contient 2 726 marqueurs,
   dont `rsMUT_11237780`.
 - Ce jeu est historique et ne correspond pas au nouveau jeu ACPA de 9 individus
   avec 50 témoins simulés.
-- `cas.txt` et `temoins.txt` sont absents de ce dossier, donc le pipeline actuel
-  ne doit pas encore être lancé sur cette entrée.
+- `cas.txt` et `temoins.txt` sont absents de ce dossier. Le pipeline V2 ne lit
+  pas implicitement cette entrée : toute source doit être déclarée dans son
+  profil YAML et validée par les contrats actuels.
 - Aucune injection définitive n'a été enregistrée dans
   `data/output/acpa_chr19_mutation/` ; la validation de l'injecteur a été faite
   uniquement dans un dossier temporaire.
@@ -590,8 +606,7 @@ Dernière mise à jour : 27 octobre 2026
 ## Validations effectuées
 
 - `pip check` : aucune dépendance cassée.
-- Imports Python principaux et `run_pipeline` réussis.
-- Packages R `adegenet`, `ggplot2`, `ape`, `ade4` et `poppr` disponibles.
+- Imports Python principaux de la V2 réussis.
 - Conversion ACPA réelle validée par PLINK : 9 individus, 2 725 marqueurs et
   taux de génotypage de 98,04 %.
 - Jeu avec témoins simulés validé par PLINK et KING : 59 individus et 2 725
@@ -944,28 +959,9 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
    entre les variants absents de la carte complète et cette table d'exclusions,
    tout en bloquant toute autre absence et toute exclusion de la cible. La
    seconde tentative a réussi sans recalculer `00–12`.
-3. `run_pipeline.py` utilise encore des chemins fixes dans
-   `data/input/complex_simulation/` et ouvre automatiquement le rapport HTML.
-4. L'interface Streamlit écrit `user_input.ped/map`, tandis que le pipeline lit
-   `genotype_data.ped/map`.
-5. La datation Gamma du pipeline V1 sépare les positions en deux moitiés au
-   lieu d'utiliser des longueurs gauche/droite pertinentes autour de la
-   mutation ; l'étape V2 `14` ne reprend pas cette approximation.
-6. Les exécutables `Gamma` et `gamma` installés dans `/usr/local/bin` contiennent
-   une page HTML au lieu d'un programme exécutable. Gamma reste optionnel et ne
-   doit pas être déclaré disponible avant réinstallation et validation.
-7. Quatre tests historiques échouent encore :
-   - confirmation interactive non neutralisée dans un test Gamma ;
-   - argument `n` absent d'un test d'estimation d'âge ;
-   - deux mocks de prétraitement ne créent pas `filtered_data.ped`.
-8. Le simulateur familial historique et les anciens convertisseurs sont encore
-   conservés tant que leur dernière logique utile n'a pas été vérifiée.
-9. Le pipeline V1 mélange calcul, visualisation et interprétation et peut lire
-   des sorties historiques après un échec ; il ne doit pas être relancé pour
-   produire un résultat scientifique avant la migration V2.
-10. La signature d'étape lie le module, la configuration et les artefacts, mais
-    pas encore l'empreinte du binaire externe ni celle des modules partagés ; ce
-    durcissement transversal reste requis avant un usage de production.
+3. La signature d'étape lie le module, la configuration et les artefacts, mais
+   pas encore l'empreinte du binaire externe ni celle des modules partagés ; ce
+   durcissement transversal reste requis avant un usage de production.
 
 ## Priorités de la prochaine session
 
@@ -1016,15 +1012,29 @@ catalogue orchestrateur, reprise générique, documentation et tests simulés. L
 exemples restent désactivés avec calibration `false`. La galerie 18 et le
 rapport 19 ne rendent pas encore 16C obligatoire afin de préserver les runs
 historiques ; leur raccord doit accompagner le panel chromosome 19 complet.
-Validation de ce socle : 25 tests ciblés réussis, import de `run_pipeline`,
+Validation de ce socle : 25 tests ciblés réussis, import du pipeline V2,
 schémas JSON valides, `git diff --check` propre et suite moderne complète à
 `275 passed` en 10 min 43 s.
+
+La revue indépendante du 27 octobre 2026 a identifié une divergence entre le
+contrat de calibration 16C et son exécution : les indicateurs préspécifiés
+étaient remplacés par le nombre et la fréquence des paires témoins du run. La
+correction sur `agent/16c-calibration-contract` conserve désormais la
+calibration externe de la configuration, traite séparément le fond empirique,
+rend une taille témoin insuffisante non évaluable et calcule les statuts
+d'audit par scénario. La sélection des segments recherche aussi une combinaison
+de bornes concordantes avant de conclure à `BOUNDARIES_DISPERSED`. Les profils
+DOCK6 restent à `calibrated: false` : ils doivent donc produire
+`NOT_EVALUABLE` tant qu'aucune calibration externe auditée n'est configurée.
+Le run diagnostique historique reste immuable et son ancien statut 16C ne doit
+pas être cité comme conforme à la méthode corrigée. Validation : 45 tests
+ciblés réussis, puis suite moderne complète à `314 passed` en 13 min 50 s.
 
 La configuration validée du prochain run est
 `config/studies/dock6.16b.next.yaml`. Elle active 16B avec 100 000 tirages
 externes, graine `161602026`, sensibilités par superpopulation et cache 16A en
 mode hors ligne. Elle ne doit pas être exécutée sans autorisation explicite.
-Validation du développement : import de `run_pipeline`, `git diff --check`,
+Validation du développement : import du pipeline V2, `git diff --check`,
 37 tests ciblés puis 252 tests modernes réussis. Après une optimisation mémoire
 de la publication gzip et l'ajout du test scientifique synthétique bout en
 bout, les 9 tests scientifiques 16B et les validations ciblées associées

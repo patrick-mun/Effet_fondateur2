@@ -18,6 +18,23 @@ FAMILIES = ("F1", "F2", "F3")
 MUTANT = {family: frozenset({"H1"}) for family in FAMILIES}
 
 
+def _calibrated_scenario(
+    scenario_id="primary",
+    role="PRIMARY",
+    minimum_cm=2.0,
+    minimum_markers=100,
+):
+    return Scenario(
+        scenario_id,
+        role,
+        minimum_cm,
+        minimum_markers,
+        True,
+        True,
+        0.01,
+    )
+
+
 def _segments(scenario="primary", end=300, tools=("HAP_IBD", "REFINED_IBD"), pairs=(("F1", "F2"), ("F1", "F3"), ("F2", "F3")), hap="H1"):
     rows = []
     for tool in tools:
@@ -28,11 +45,11 @@ def _segments(scenario="primary", end=300, tools=("HAP_IBD", "REFINED_IBD"), pai
 
 def _evaluate(segments, scenario=None, **changes):
     values = dict(
-        scenario=scenario or Scenario("primary", "PRIMARY", 2.0, 100, True),
+        scenario=scenario or _calibrated_scenario(),
         segments=segments, families=FAMILIES, mutant_haplotypes=MUTANT,
         target_chromosome="19", target_position_bp=200, boundary_tolerance_bp=10,
-        control_frequency=0.01, maximum_control_frequency=0.05,
-        calibration_specificity_acceptable=True,
+        empirical_control_frequency=0.01, maximum_control_frequency=0.05,
+        control_pair_count_sufficient=True,
     )
     values.update(changes)
     return evaluate_scenario(**values)
@@ -59,7 +76,28 @@ def test_segment_on_other_chromosome_cannot_satisfy_target_call():
 def test_discordant_boundaries_are_reported():
     segments = _segments()
     segments[-1] = IbdSegment(**{**segments[-1].__dict__, "start_bp": 150})
-    assert classify_explicit_ibd(_evaluate(segments), ()) == "METHOD_DISCORDANT"
+    result = _evaluate(segments)
+    assert result.reason == "BOUNDARIES_DISPERSED"
+    assert classify_explicit_ibd(result, ()) == "METHOD_DISCORDANT"
+
+
+def test_concordant_combination_is_preferred_to_longer_discordant_segment():
+    segments = _segments()
+    discordant_longest = IbdSegment(
+        **{
+            **segments[-1].__dict__,
+            "start_bp": 150,
+            "end_bp": 350,
+            "start_cm": 0.0,
+            "end_cm": 4.0,
+        }
+    )
+
+    result = _evaluate([*segments, discordant_longest])
+
+    assert result.boundaries_concordant
+    assert discordant_longest not in result.selected_segments
+    assert classify_explicit_ibd(result, ()) == "PRIMARY_CONCORDANT_IBD_SUPPORT"
 
 
 def test_boundary_concordance_can_be_assessed_for_one_pair():
@@ -75,8 +113,11 @@ def test_missing_pair_or_single_tool_is_not_a_primary_call(segments):
 
 
 def test_sensitivity_signal_never_becomes_primary_support():
-    primary = _evaluate([], scenario=Scenario("primary", "PRIMARY", 2.0, 100, True))
-    sensitivity = _evaluate(_segments("s1"), scenario=Scenario("s1", "SENSITIVITY", 1.5, 50, True))
+    primary = _evaluate([], scenario=_calibrated_scenario())
+    sensitivity = _evaluate(
+        _segments("s1"),
+        scenario=_calibrated_scenario("s1", "SENSITIVITY", 1.5, 50),
+    )
     assert classify_explicit_ibd(primary, (sensitivity,)) == "SENSITIVITY_ONLY_IBD_SUPPORT"
 
 
@@ -86,18 +127,28 @@ def test_unassignable_mutant_chromosome_blocks_call():
 
 
 def test_frequent_control_signal_blocks_positive_classification():
-    result = _evaluate(_segments(), control_frequency=0.2)
+    result = _evaluate(_segments(), empirical_control_frequency=0.2)
     assert classify_explicit_ibd(result, ()) == "NO_PRIMARY_IBD_CALL"
 
 
 def test_missing_calibration_is_not_evaluable():
-    result = _evaluate(_segments(), calibration_specificity_acceptable=False)
+    scenario = Scenario("primary", "PRIMARY", 2.0, 100, False, False, None)
+    result = _evaluate(_segments(), scenario=scenario)
+    assert classify_explicit_ibd(result, ()) == "NOT_EVALUABLE"
+
+
+def test_insufficient_empirical_control_pairs_are_not_evaluable():
+    result = _evaluate(_segments(), control_pair_count_sufficient=False)
+    assert result.reason == "CONTROL_BACKGROUND_INSUFFICIENT"
     assert classify_explicit_ibd(result, ()) == "NOT_EVALUABLE"
 
 
 def test_post_hoc_primary_threshold_is_refused():
     with pytest.raises(ExplicitIbdError, match="post_hoc"):
-        _evaluate([], scenario=Scenario("primary", "PRIMARY", 1.5, 18, True))
+        _evaluate(
+            [],
+            scenario=Scenario("primary", "PRIMARY", 1.5, 18, True, True, 0.01),
+        )
 
 
 def test_both_parsers_normalize_same_universe(tmp_path: Path):
