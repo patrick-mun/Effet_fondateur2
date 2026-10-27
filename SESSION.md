@@ -1,6 +1,146 @@
 # Suivi de session
 
-Dernière mise à jour : 16 août 2026
+Dernière mise à jour : 27 octobre 2026
+
+## Durcissement de la LD phase 15 v2 — 27 octobre 2026
+
+- Le script exploratoire LD v2 valide désormais le manifest du run, l'identité
+  et l'empreinte des quatre `stage_outputs.json` sources, puis le chemin, le type
+  et le SHA-256 de chaque artefact réellement consommé.
+- Les 21 BCF autosomiques hors chromosome 19 et leurs 21 cartes sont contrôlés
+  avant lecture et enregistrés directement dans la provenance. L'ordre complet
+  des 75 échantillons doit être identique à celui du BCF cible sur chaque
+  chromosome.
+- La densité cible et la densité des fenêtres génomiques utilisent maintenant
+  la même définition : seuls les voisins dont le r² est effectivement évaluable
+  sont comptés. Le calcul réutilise le même moteur que la production des paires
+  LD afin d'éviter une divergence future des critères.
+- Une réexécution isolée sur le run final a produit des trois tables
+  scientifiques strictement identiques à la version précédente : 181 ancres,
+  direction `NEUTRAL_EXPLORATORY_SMALL_N`. Seule la provenance est enrichie,
+  de 6 à 51 fichiers, dont 42 artefacts autosomiques vérifiés.
+- Validation : import du pipeline et du script réussi, `git diff --check`
+  propre, 12 tests LD ciblés réussis et suite moderne complète à 307 tests
+  réussis sans échec.
+
+## Copie éditoriale portable du rapport — 18 août 2026
+
+- Un dossier racine `rapport/` contient désormais `index.html`, un sous-dossier
+  `images/`, un guide d'utilisation et une table de provenance avec empreintes.
+- Les six SVG auparavant appelés depuis le dossier dérivé du run final ont été
+  copiés sous `rapport/images/`. Leurs six références dans le HTML utilisent
+  maintenant des chemins relatifs `images/...` ; le rapport historique du run
+  n'a pas été modifié.
+- Cette copie reste marquée comme contenant des informations génétiques et
+  familiales sensibles. Elle ne doit pas être publiée dans un dépôt public sans
+  revue d'anonymisation et d'autorisation.
+
+## Rapport phase 19 — Résultat 7 — 17 août 2026
+
+- Seules la couverture et le sommaire ont été retravaillés après le retour
+  arrière demandé : nouvelle hiérarchie visuelle, verdict et quatre chiffres
+  clés sur la couverture, sommaire cliquable couvrant le cadrage, les sept
+  résultats, la conclusion et la validation. Aucun moteur de pagination, numéro
+  de page, saut A4 supplémentaire ou déplacement de section n'a été ajouté.
+- Une conclusion générale a été ajoutée après le Résultat 7 dans le brouillon
+  HTML. Elle classe qualitativement l'effet fondateur comme « probable, mais
+  encore non démontré », avec un niveau de confiance modéré, sans produire de
+  pourcentage artificiel à partir de seulement trois familles indépendantes.
+- La conclusion présente visuellement la balance entre arguments favorables et
+  limites, une échelle de preuve à quatre niveaux, les conditions nécessaires à
+  une confirmation et un texte éditable pour la validation humaine.
+- La différence de bornes IBD d'une seule paire a été retirée des éléments de
+  prudence : les deux outils détectent le partage contenant DOCK6 pour les trois
+  paires. Elle figure désormais comme précision méthodologique affectant la
+  délimitation du segment, sans remettre en cause sa présence.
+- Le brouillon HTML du run final contient désormais un Résultat 7 structuré en
+  trois blocs : LD apparié au fond génomique, ROH locale/charge génomique et âge
+  exploratoire. La section reprend introduction, chiffres clés, figures,
+  tableaux, interprétations puis conclusion croisée.
+- Les Figures 12–14 et Tableaux 14–15 prolongent sans rupture la numérotation
+  existante. La Figure 12 réutilise la phase 15 v2 ; les figures ROH et âge sont
+  générées par `scripts/plot_result7_roh_age.py` sous
+  `derived/result7_visualizations/`, avec provenance et empreintes.
+- Les trois représentants indépendants, et les cinq homozygotes A/A au total,
+  ont une ROH couvrant DOCK6 ; aucun des 62 témoins n'en a à cette position. Le
+  recouvrement commun mesure 0,813 Mb. La charge génomique varie de 11,695 à
+  39,883 Mb et reste descriptive avec n=3 ; F_ROH n'est pas calculable.
+- L'âge corrélé est 37,1 générations (IC95 % 15,1–94,6), soit environ 1 040 ans
+  avec 28 ans/génération (424–2 649 ans). Le HTML explicite qu'aucun épisode
+  historique réunionnais précis ne peut être attribué.
+- Le LD reste neutre ; les ROH apportent un soutien local limité ; la datation
+  demeure exploratoire. Le JavaScript, les chemins d'images et les suites
+  Figures 1–14/Tableaux 1–15 ont été contrôlés. Les 3 tests du générateur de
+  visualisations passent.
+
+## Phase 15 v2 exploratoire — 17 août 2026
+
+- Une comparaison LD cible–génome a été ajoutée sans modifier les sorties
+  immuables de l'étape 15 historique. Le script
+  `scripts/analyze_phase15_ld_v2.py` utilise les BCF phasés de 12/12A et publie
+  dans `derived/phase15_ld_v2/`.
+- L'analyse principale porte sur 62 témoins non apparentés et un représentant
+  explicite de chacune des trois familles, soit 65 individus et 130 haplotypes.
+  Le chromosome 19 est exclu des fenêtres génomiques appariées. La série des 75
+  sujets reste une sensibilité familiale non décisionnelle.
+- Le run final retient 181 ancrages appariés. La MAF cible indépendante vaut
+  6/130 = 0,0462. Une classe ne contient aucune paire cible et reste
+  `NOT_EVALUATED`; les trois classes évaluables se situent dans le fond apparié
+  (percentiles empiriques 0,879, 0,890 et 0,923), sans dépassement du P95.
+- La direction publiée est `NEUTRAL_EXPLORATORY_SMALL_N` : absence de soutien
+  LD supplémentaire, mais pas preuve contre l'effet fondateur. La parenté
+  augmente visiblement les r² dans la sensibilité à 75 sujets.
+- Le dossier dérivé contient tableaux, JSON de provenance, figure SVG/PNG,
+  galerie, empreintes et `CORRECTIONS_PHASE15_LD_V2.md`. Les 9 tests LD ciblés
+  passent ; prochaine action éventuelle : validation humaine avant intégration
+  de cette figure au résultat 7 du HTML.
+- La suite complète termine avec 313 tests passés et 4 échecs historiques hors
+  phase 15 : interaction stdin de `gamma.py`, ancienne signature de datation et
+  deux mocks de prétraitement qui ne créent pas `filtered_data.ped`.
+
+## Correction ciblée de 16C — 17 août 2026
+
+- La sélection des segments centrés sur la variation exige désormais à la fois
+  le chromosome cible et la position : un segment d'un autre chromosome ne
+  peut plus être retenu à cause de coordonnées numériques chevauchantes. Le
+  même correctif est appliqué au calcul de fréquence chez les témoins.
+- La concordance des bornes est maintenant publiée par paire familiale. Dans le
+  run final, les deux outils appellent les trois paires sur le chromosome 19 ;
+  deux paires ont des bornes concordantes et `FAM001–FAM002` conserve une borne
+  droite discordante selon la tolérance préspecifiée.
+- Une exécution indépendante complète de 16C est conservée sous
+  `derived/16c_chr19_pairwise_corrected/` dans le run final. Les 489 segments
+  marqués comme contenant la cible sont tous sur le chromosome 19. L'intervalle
+  commun IBD est 9 162 624–15 626 423 bp et contient la variation ; la fréquence
+  primaire chez les témoins est 3/1 891 (0,159 %).
+- Le statut strict reste `METHOD_DISCORDANT` en raison des bornes, et non d'une
+  absence d'appel IBD. Les 31 tests ciblés de 16C passent. Le HTML de phase 19
+  contient désormais un Résultat 4 relu : segments IBS par famille, appels IBD
+  par paire et comparaison séparée aux fonds interne, 1000G et témoin IBD. Les
+  anciennes cartes automatiques de résultats ont été retirées du rendu pour
+  permettre la reprise progressive du rapport. Le Résultat 5 traite désormais
+  séparément la rareté empirique IBS : fond interne, ensemble 1000G et cinq
+  strates externes, sans seuil ajouté a posteriori et avec le statut
+  `NOT_CLASSIFIED`. Figures 1–8 et tableaux 1–13 restent continus ; prochaine
+  action : validation humaine du Résultat 5 avant la reprise du résultat suivant.
+
+## Rapport phase 19 — Résultat 6 — 17 août 2026
+
+- Le brouillon HTML du run final contient désormais un Résultat 6 consacré au
+  positionnement global et local par rapport aux références 1000 Genomes. Il
+  réutilise les SVG contrôlés du dossier
+  `derived/reference_ancestry_visualizations/` : nuage global, nuage local et
+  zoom des copies porteuses.
+- Le commentaire sépare les observations, l'hypothèse démographique liée au
+  contexte insulaire réunionnais et les limites : la proximité avec les
+  centroïdes AMR/EUR n'est pas une attribution d'origine, et l'absence de
+  références régionales empêche de trancher entre les sources possibles de
+  l'océan Indien.
+- Le parcours de lecture place maintenant le positionnement 1000 Genomes en
+  résultat 6 et reporte la comparaison aux témoins avec LD, ROH et âge au
+  résultat 7. La numérotation reste continue jusqu'aux figures 9–11 et aux
+  tableaux 1–13. La syntaxe JavaScript, le chargement des figures, le rendu
+  Chrome et l'export PDF ont été contrôlés.
 
 ## Reprise étapes 17–19 — 16 août 2026
 
