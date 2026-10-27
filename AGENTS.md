@@ -4,7 +4,8 @@
 
 Ce dépôt contient un pipeline de recherche pour étudier un possible effet
 fondateur autour d'une mutation de `DOCK6` sur le chromosome 19. Le moteur
-combine PLINK, KING, Python, R/Adegenet et une estimation Gamma.
+combine Python, PLINK, KING, bcftools, SHAPEIT5, des appels IBD explicites et
+une estimation Gamma implémentée en Python.
 
 ## Environnement de travail
 
@@ -13,25 +14,23 @@ combine PLINK, KING, Python, R/Adegenet et une estimation Gamma.
 - Activer l'environnement avec `source .venv/bin/activate` ou appeler
   explicitement `.venv/bin/python`.
 - Installer les dépendances avec `.venv/bin/python -m pip install -r requirements.txt`.
-- Les exécutables `plink`, `king`, `bcftools` et `Rscript` doivent être dans le
-  `PATH`.
-- `Gamma` est optionnel pour le pipeline principal actuel.
+- Les exécutables `plink`, `king` et `bcftools` doivent être dans le `PATH`
+  lorsque les étapes correspondantes sont activées.
+- SHAPEIT5, Java, Hap-IBD et Refined IBD sont requis uniquement pour les étapes
+  de phasage et d'IBD explicite configurées.
+- Aucun binaire Gamma externe n'est utilisé par le pipeline actuel.
 
 ## Points d'entrée
 
-- Pipeline : `.venv/bin/python run_pipeline.py`
-- Interface : `.venv/bin/streamlit run interface_effet_fondateur.py`
-- Tests : `.venv/bin/python -m pytest test/`
+- Pipeline : `.venv/bin/effet-fondateur run --config <profil.yaml>`
+- Reprise : `.venv/bin/effet-fondateur resume --run-dir <dossier_run>`
+- Tests : `.venv/bin/python -m pytest tests/`
 - Conversion multi-échantillons ACPA vers PLINK :
   `.venv/bin/python -m simulation_genotype_famille.acpa_to_plink`
-- Conversion historique ACPA vers VCF sans génotypes individuels :
-  `.venv/bin/python simulation_genotype_famille/acpa_to_vcf2.py`
 - Simulation exploratoire de témoins indépendants :
   `.venv/bin/python -m simulation_genotype_famille.simulate_unrelated_controls`
 - Injection documentée de la mutation :
   `.venv/bin/python -m simulation_genotype_famille.inject_mutation`
-- Simulation familiale :
-  `.venv/bin/python simulation_genotype_famille/ped_generator_precod.py`
 
 ## Données et sécurité
 
@@ -39,8 +38,8 @@ combine PLINK, KING, Python, R/Adegenet et une estimation Gamma.
   explicite de l'utilisateur.
 - Ne pas considérer les fichiers de `data/output/` comme des sources : ce sont
   des résultats générés, parfois historiques.
-- Ne pas lancer le pipeline complet sans prévenir l'utilisateur : il réécrit
-  des sorties et ouvre le rapport HTML dans le navigateur.
+- Ne pas lancer le pipeline complet sans prévenir l'utilisateur : il peut être
+  long, appeler plusieurs outils externes et créer un nouveau dossier de run.
 - Ne jamais inclure de données génétiques, jetons ou secrets dans les commits,
   les rapports de session ou les messages GitHub.
 - Ne jamais inférer automatiquement les génotypes de la mutation à partir du
@@ -102,8 +101,8 @@ combine PLINK, KING, Python, R/Adegenet et une estimation Gamma.
   nouveau comportement testable.
 - Tester le comportement observable, les cas limites et les erreurs attendues,
   sans dépendre des détails internes inutiles.
-- Simuler PLINK, KING, Gamma ou R dans les tests unitaires ; réserver leur
-  exécution réelle à des tests d'intégration identifiés.
+- Simuler PLINK, KING, bcftools, SHAPEIT5, Hap-IBD et Refined IBD dans les tests
+  unitaires ; réserver leur exécution réelle à des tests d'intégration identifiés.
 - Utiliser des dossiers temporaires et ne jamais écrire dans les données ou
   résultats réels pendant les tests.
 - Ne pas affaiblir une assertion uniquement pour faire passer un test.
@@ -132,7 +131,7 @@ combine PLINK, KING, Python, R/Adegenet et une estimation Gamma.
 ## Validation
 
 - Commencer par `git diff --check`.
-- Vérifier les imports avec `.venv/bin/python -c "import run_pipeline"`.
+- Vérifier les imports avec `.venv/bin/python -c "import effet_fondateur; import effet_fondateur.orchestrator.pipeline"`.
 - Lancer les tests ciblés avant la suite complète.
 - Pour une modification liée à PLINK, utiliser une sortie temporaire et ne pas
   écraser les résultats existants.

@@ -41,12 +41,12 @@ python --version
 ```
 
 Le chemin affiché par `which python` doit se terminer par `.venv/bin/python`.
-Une fois l'environnement activé, les commandes peuvent être lancées simplement :
+Une fois l'environnement activé, les commandes principales sont :
 
 ```bash
-python run_pipeline.py
-streamlit run interface_effet_fondateur.py
-pytest test/
+effet-fondateur validate-config config/pipeline.example.yaml
+effet-fondateur run --config config/testing/synthetic.example.yaml
+python -m pytest tests/
 ```
 
 Pour quitter l'environnement :
@@ -60,15 +60,13 @@ Le projet importe directement les bibliothèques suivantes :
 - `pandas`, `numpy` et `scipy` pour les calculs ;
 - `PyYAML` et `jsonschema` pour la configuration V2 ;
 - `matplotlib` pour les graphiques ;
-- `networkx` pour le réseau de parenté ;
-- `fpdf2` pour le rapport PDF ;
-- `streamlit` pour l'interface ;
+- `fpdf2` pour les rapports PDF ;
 - `pytest` et `pytest-html` pour les tests.
 
-### Configuration V2
+### Configuration du pipeline
 
-La V2 est développée parallèlement au pipeline historique. Une configuration
-peut être validée sans lire les données ni lancer d'analyse :
+Le pipeline actif est le paquet V2 `effet_fondateur`. Une configuration peut
+être validée sans lire les données ni lancer d'analyse :
 
 ```bash
 effet-fondateur validate-config config/pipeline.example.yaml
@@ -415,13 +413,11 @@ Les exécutables suivants doivent être accessibles depuis le `PATH` :
 - `plink` 1.9 ou compatible : filtrage, ROH, IBD, HWE et LD ;
 - `king` : estimation des relations de parenté ;
 - `bcftools` : cache, extraction et harmonisation de la référence phasée ;
-- `Rscript` : exécution de l'analyse Adegenet ;
 - SHAPEIT5 5.1.1 : phasage ciblé et des 22 autosomes ;
 - Java 17, Hap-IBD et Refined IBD : appels IBD explicites de l'étape 16C.
 
-Le binaire `Gamma` est uniquement nécessaire pour utiliser la fonction
-`run_gamma()` ou l'ancien script shell. Le pipeline principal utilise
-actuellement l'estimation Python de `scripts/gamma_age_estimation.py`.
+L'estimation Gamma de l'étape 14 est implémentée en Python dans
+`src/effet_fondateur/dating/` et ne nécessite aucun binaire Gamma externe.
 
 Vérification rapide :
 
@@ -430,32 +426,23 @@ python3 --version
 plink --version
 king --version
 bcftools --version
-Rscript --version
 scripts/install_explicit_ibd_tools.sh
-```
-
-### Packages R
-
-Le script Adegenet nécessite :
-
-```r
-install.packages(c("adegenet", "ggplot2", "ape", "ade4", "poppr"))
 ```
 
 ## Données attendues
 
-Le pipeline principal utilise actuellement ces chemins fixes :
+Le pipeline résout ses entrées depuis la section `inputs` de la configuration
+YAML. Le profil générique documente notamment les emplacements suivants :
 
 ```text
-data/input/complex_simulation/genotype_data.ped
-data/input/complex_simulation/genotype_data.map
-data/input/complex_simulation/groupes.txt
-data/input/complex_simulation/cas.txt
-data/input/complex_simulation/temoins.txt
+data/input/acpa_samples/
+data/input/metadata/samples.tsv
+data/input/target_variant/variant.yaml
+data/input/target_variant/genotypes.tsv
 ```
 
-Les fichiers `cas.txt` et `temoins.txt` sont des fichiers PLINK `--keep` à deux
-colonnes (`FID IID`). Ils doivent être présents avant l'exécution complète.
+Les chemins peuvent être adaptés dans un profil d'étude sans modifier le code.
+Le pipeline refuse les sources absentes ou non conformes avant toute analyse.
 
 ### Protocole de conversion ACPA vers PLINK
 
@@ -826,49 +813,34 @@ plink \
 ```
 
 Toute erreur mendélienne au marqueur `rsMUT...` doit être résolue ou documentée
-avant le pipeline. Pour l'analyse actuelle, copier ensuite de façon contrôlée
-le PED, le MAP, `groupes.txt`, `cas.txt`, `temoins.txt` et `project_info.json`
-dans `data/input/complex_simulation/`, car `run_pipeline.py` lit encore ce
-dossier fixe.
+avant le pipeline. Les données retenues doivent ensuite être déclarées dans le
+profil YAML et passer les contrats de source, d'échantillons et de génotypes
+cibles de la V2.
 
 ## Exécution
 
-### Pipeline complet
+### Pipeline
 
 Depuis la racine du projet :
 
 ```bash
-.venv/bin/python run_pipeline.py
+.venv/bin/effet-fondateur run \
+  --config config/studies/dock6.example.yaml \
+  --runs-dir data/runs
 ```
 
-Le script exécute successivement :
-
-1. le filtrage et le contrôle qualité PLINK ;
-2. la détection et la visualisation des ROH ;
-3. les analyses IBD avec KING et PLINK ;
-4. le calcul du LD global et autour de la mutation ;
-5. la préparation des fréquences et l'estimation de l'âge de la mutation ;
-6. l'analyse DAPC avec R/Adegenet ;
-7. la génération des rapports HTML et PDF.
-
-Les résultats sont écrits dans `data/output/complex_simulation/`.
-
-Le script ne possède pas encore d'options pour exécuter une seule étape.
-
-### Interface Streamlit
+La commande crée un dossier de run immuable et exécute uniquement les étapes
+activées dans le profil. Une reprise vérifie les empreintes avant de réutiliser
+les artefacts publiés :
 
 ```bash
-.venv/bin/streamlit run interface_effet_fondateur.py
+.venv/bin/effet-fondateur resume --run-dir data/runs/<run_id>
 ```
-
-L'interface permet de consulter le wiki et les résultats et de lancer le
-pipeline. Le raccordement des fichiers uploadés au pipeline doit encore être
-corrigé : le pipeline continue actuellement à lire `genotype_data.ped/map`.
 
 ### Tests
 
 ```bash
-.venv/bin/python -m pytest test tests
+.venv/bin/python -m pytest tests/
 ```
 
 Pour produire le rapport HTML et l'ouvrir sur macOS :
@@ -880,18 +852,16 @@ Pour produire le rapport HTML et l'ouvrir sur macOS :
 ## Organisation
 
 ```text
-run_pipeline.py                 orchestration principale
-interface_effet_fondateur.py    interface Streamlit
-scripts/                        modules d'analyse
+src/effet_fondateur/            pipeline V2 et logique scientifique
+scripts/                        analyses complémentaires et installation d'outils
 simulation_genotype_famille/    préparation ACPA, simulation et injection
-Module_WIKI/                    documentation scientifique des outils
-data/input/                     données sources et métadonnées
-data/output/                    résultats générés
-test/                           tests automatisés
+config/                         profils d'étude et catalogues de référence
+schemas/                        contrats JSON et TSV
+docs/modules/                   documentation des étapes V2
+data/input/                     données sources et métadonnées non versionnées
+data/runs/                      runs immuables non versionnés
+tests/                          tests automatisés
 ```
-
-La description détaillée de PLINK, KING, Gamma et Adegenet se trouve dans
-`Module_WIKI/`.
 
 ## État du projet
 

@@ -103,8 +103,19 @@ def _validate_tool_vcf_universe(
         raise ExplicitIbdInputError(f"ibd_tool_vcf_universe_mismatch:chr{chromosome}")
 
 
-def _scenario(raw: dict[str, Any], calibrated: bool = False) -> Scenario:
-    scenario = Scenario(raw["scenario_id"], raw["role"], float(raw["minimum_cm"]), int(raw["minimum_markers"]), calibrated)
+def _scenario(raw: dict[str, Any]) -> Scenario:
+    """Construit un scénario sans remplacer sa calibration préspécifiée."""
+    scenario = Scenario(
+        scenario_id=raw["scenario_id"],
+        role=raw["role"],
+        minimum_cm=float(raw["minimum_cm"]),
+        minimum_markers=int(raw["minimum_markers"]),
+        calibrated=raw["calibrated"],
+        calibration_specificity_acceptable=raw[
+            "calibration_specificity_acceptable"
+        ],
+        calibration_control_frequency=raw["control_frequency"],
+    )
     scenario.validate()
     return scenario
 
@@ -229,6 +240,90 @@ def _control_frequency(
     return len(pairs), positive, positive / len(pairs) if pairs else None
 
 
+def _calibration_status(
+    scenario: Scenario,
+    maximum_control_frequency: float,
+) -> str:
+    """Classe la calibration externe déclarée, sans utiliser les témoins du run."""
+    if not scenario.calibrated:
+        return "NOT_EVALUABLE"
+    if scenario.calibration_is_acceptable(maximum_control_frequency):
+        return "ACCEPTABLE"
+    return "UNACCEPTABLE"
+
+
+def _empirical_control_status(
+    pair_count: int,
+    frequency: float | None,
+    minimum_control_pairs: int,
+    maximum_control_frequency: float,
+) -> str:
+    """Classe le fond empirique en tenant compte de sa taille évaluable."""
+    if pair_count < minimum_control_pairs or frequency is None:
+        return "NOT_EVALUABLE"
+    if frequency > maximum_control_frequency:
+        return "TOO_FREQUENT"
+    return "ACCEPTABLE"
+
+
+def _audit_checks(
+    scenarios: Sequence[Scenario],
+    control_results: dict[str, tuple[int, int, float | None]],
+    minimum_control_pairs: int,
+    maximum_control_frequency: float,
+) -> list[dict[str, Any]]:
+    """Produit des contrôles d'audit calculés pour les décisions scientifiques."""
+    checks = [
+        {"check": name, "status": "PASS"}
+        for name in (
+            "blind_genomewide_calling",
+            "same_variant_universe_both_tools",
+            "same_genetic_map_both_tools",
+            "no_missing_alleles",
+            "all_22_autosomes",
+            "regional_autosomal_phase_alignment",
+            "ibs_ibd_founder_separation",
+        )
+    ]
+    for scenario in scenarios:
+        calibration_status = _calibration_status(
+            scenario,
+            maximum_control_frequency,
+        )
+        pair_count, _, frequency = control_results[scenario.scenario_id]
+        empirical_status = _empirical_control_status(
+            pair_count,
+            frequency,
+            minimum_control_pairs,
+            maximum_control_frequency,
+        )
+        checks.extend(
+            (
+                {
+                    "check": f"prespecified_calibration_{scenario.scenario_id}",
+                    "status": (
+                        "PASS"
+                        if calibration_status == "ACCEPTABLE"
+                        else "FAIL"
+                        if calibration_status == "UNACCEPTABLE"
+                        else "NOT_EVALUABLE"
+                    ),
+                },
+                {
+                    "check": f"empirical_control_frequency_{scenario.scenario_id}",
+                    "status": (
+                        "PASS"
+                        if empirical_status == "ACCEPTABLE"
+                        else "FAIL"
+                        if empirical_status == "TOO_FREQUENT"
+                        else "NOT_EVALUABLE"
+                    ),
+                },
+            )
+        )
+    return checks
+
+
 def _segment_row(
     segment: IbdSegment,
     target_chromosome: str | int,
@@ -337,12 +432,25 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         )
         for scenario in declared
     }
-    scenarios = tuple(Scenario(item.scenario_id, item.role, item.minimum_cm, item.minimum_markers, control_results[item.scenario_id][0] >= minimum_control_pairs) for item in declared)
+    maximum_control_frequency = float(parameters["maximum_control_frequency"])
+    scenarios = declared
     evaluations: list[ScenarioEvaluation] = []
     for scenario in scenarios:
-        evaluable, _, frequency = control_results[scenario.scenario_id]
-        acceptable = frequency is not None and frequency <= float(parameters["maximum_control_frequency"])
-        evaluations.append(evaluate_scenario(scenario, all_segments, families, {key: frozenset(value) for key, value in mutant.items()}, target_chromosome, target_bp, int(parameters["boundary_tolerance_bp"]), frequency, float(parameters["maximum_control_frequency"]), evaluable >= minimum_control_pairs and acceptable))
+        pair_count, _, empirical_frequency = control_results[scenario.scenario_id]
+        evaluations.append(
+            evaluate_scenario(
+                scenario,
+                all_segments,
+                families,
+                {key: frozenset(value) for key, value in mutant.items()},
+                target_chromosome,
+                target_bp,
+                int(parameters["boundary_tolerance_bp"]),
+                empirical_frequency,
+                maximum_control_frequency,
+                pair_count >= minimum_control_pairs,
+            )
+        )
     primary_evaluation, sensitivity_evaluations = evaluations[0], tuple(evaluations[1:])
     status = classify_explicit_ibd(primary_evaluation, sensitivity_evaluations)
     segments_path, marker_path = analysis_dir / "explicit_ibd_segments.tsv", analysis_dir / "ibd_marker_audit.tsv"
@@ -367,7 +475,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             detail_code = (
                 None
                 if pair_boundaries_concordant
-                else "BOUNDARIES_DISCORDANT"
+                else "BOUNDARIES_DISPERSED"
                 if tools == {"HAP_IBD", "REFINED_IBD"} and contains_target
                 else evaluation.reason
             )
@@ -377,9 +485,40 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
     calibration_rows, control_rows = [], []
     for scenario in scenarios:
         count, positive, frequency = control_results[scenario.scenario_id]
-        calibrated, acceptable = count >= minimum_control_pairs, frequency is not None and frequency <= float(parameters["maximum_control_frequency"])
-        calibration_rows.append({"SCENARIO_ID": scenario.scenario_id, "ROLE": scenario.role, "MINIMUM_CM": scenario.minimum_cm, "MINIMUM_MARKERS": scenario.minimum_markers, "CALIBRATED": calibrated, "SPECIFICITY_ACCEPTABLE": acceptable, "CONTROL_FREQUENCY": frequency, "MAXIMUM_CONTROL_FREQUENCY": parameters["maximum_control_frequency"], "STATUS": "ACCEPTABLE" if calibrated and acceptable else "UNACCEPTABLE" if calibrated else "NOT_EVALUABLE"})
-        control_rows.append({"SCENARIO_ID": scenario.scenario_id, "CONTROL_SOURCE": "INTERNAL_INDEPENDENT_CONTROLS", "EVALUABLE_UNIT_COUNT": count, "POSITIVE_UNIT_COUNT": positive, "FREQUENCY": frequency, "PRESPECIFIED_MAXIMUM": parameters["maximum_control_frequency"], "STATUS": "NOT_EVALUABLE" if frequency is None else "ACCEPTABLE" if acceptable else "TOO_FREQUENT"})
+        calibration_rows.append(
+            {
+                "SCENARIO_ID": scenario.scenario_id,
+                "ROLE": scenario.role,
+                "MINIMUM_CM": scenario.minimum_cm,
+                "MINIMUM_MARKERS": scenario.minimum_markers,
+                "CALIBRATED": scenario.calibrated,
+                "SPECIFICITY_ACCEPTABLE": (
+                    scenario.calibration_specificity_acceptable
+                ),
+                "CONTROL_FREQUENCY": scenario.calibration_control_frequency,
+                "MAXIMUM_CONTROL_FREQUENCY": maximum_control_frequency,
+                "STATUS": _calibration_status(
+                    scenario,
+                    maximum_control_frequency,
+                ),
+            }
+        )
+        control_rows.append(
+            {
+                "SCENARIO_ID": scenario.scenario_id,
+                "CONTROL_SOURCE": "INTERNAL_INDEPENDENT_CONTROLS",
+                "EVALUABLE_UNIT_COUNT": count,
+                "POSITIVE_UNIT_COUNT": positive,
+                "FREQUENCY": frequency,
+                "PRESPECIFIED_MAXIMUM": maximum_control_frequency,
+                "STATUS": _empirical_control_status(
+                    count,
+                    frequency,
+                    minimum_control_pairs,
+                    maximum_control_frequency,
+                ),
+            }
+        )
     _write_tsv(calibration_path, ("SCENARIO_ID","ROLE","MINIMUM_CM","MINIMUM_MARKERS","CALIBRATED","SPECIFICITY_ACCEPTABLE","CONTROL_FREQUENCY","MAXIMUM_CONTROL_FREQUENCY","STATUS"), calibration_rows)
     _write_tsv(control_path, ("SCENARIO_ID","CONTROL_SOURCE","EVALUABLE_UNIT_COUNT","POSITIVE_UNIT_COUNT","FREQUENCY","PRESPECIFIED_MAXIMUM","STATUS"), control_rows)
     target_positions = target_map[1]
@@ -396,7 +535,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
     for artifact_id, path, sensitivity in raw_output_specs:
         outputs.append(build_file_artifact(physical_path=path, published_path=f"{stage_inputs['published_output_dir']}/{path.relative_to(output_dir).as_posix()}", artifact_id=artifact_id, artifact_type="explicit_ibd_raw_output" if sensitivity == "sensitive_genetic" else "explicit_ibd_tool_log", media_type="application/gzip" if path.suffix == ".gz" else "text/plain", producer_stage=stage_inputs["stage_name"], producer_signature=stage_inputs["signature"], assembly=target["assembly"], sample_set_id=manifest["sample_set_id"], variant_set_id=manifest["variant_set_id"], sensitivity=sensitivity))
     stage_outputs = {"schema_version":"1.0.0","run_id":stage_inputs["run_id"],"stage_id":stage_inputs["stage_id"],"stage_name":stage_inputs["stage_name"],"signature":stage_inputs["signature"],"artifacts":outputs}; validate_json_document(stage_outputs,"stage_outputs.schema.json"); atomic_write_json(output_dir/"stage_outputs.json",stage_outputs)
-    audit = {"schema_version":"1.0.0","run_id":stage_inputs["run_id"],"stage_id":stage_inputs["stage_id"],"stage_name":stage_inputs["stage_name"],"method_id":METHOD_ID,"signature":stage_inputs["signature"],"started_at":started_at,"completed_at":utc_now(),"duration_seconds":monotonic()-started_clock,"inputs":list(artifacts.values()),"outputs":outputs,"parameters":parameters,"tools":tool_records,"counts":{"independent_families":len(families),"independent_controls":len(controls),"autosomes":22,"input_variants":len(marker_rows),"normalized_segments":len(all_segments)},"metrics":{"analysis_status":status,"ibd_proven":status=="PRIMARY_CONCORDANT_IBD_SUPPORT","founder_effect_proven":False,"composite_founder_score_calculated":False},"exclusions":[],"warnings":[] if status=="PRIMARY_CONCORDANT_IBD_SUPPORT" else [{"code":"absence_or_non_primary_call_does_not_refute_founder_effect","count":1}],"checks":[{"check":name,"status":"PASS"} for name in ("blind_genomewide_calling","same_variant_universe_both_tools","same_genetic_map_both_tools","no_missing_alleles","all_22_autosomes","regional_autosomal_phase_alignment","empirical_control_frequency","ibs_ibd_founder_separation")],"known_limits":summary["limitations"],"expected_visualizations":["explicit_ibd_target_segments"],"manual_validation_required":True}; validate_json_document(audit,"stage_audit.schema.json"); atomic_write_json(output_dir/"audit.json",audit)
+    audit = {"schema_version":"1.0.0","run_id":stage_inputs["run_id"],"stage_id":stage_inputs["stage_id"],"stage_name":stage_inputs["stage_name"],"method_id":METHOD_ID,"signature":stage_inputs["signature"],"started_at":started_at,"completed_at":utc_now(),"duration_seconds":monotonic()-started_clock,"inputs":list(artifacts.values()),"outputs":outputs,"parameters":parameters,"tools":tool_records,"counts":{"independent_families":len(families),"independent_controls":len(controls),"autosomes":22,"input_variants":len(marker_rows),"normalized_segments":len(all_segments)},"metrics":{"analysis_status":status,"ibd_proven":status=="PRIMARY_CONCORDANT_IBD_SUPPORT","founder_effect_proven":False,"composite_founder_score_calculated":False},"exclusions":[],"warnings":[] if status=="PRIMARY_CONCORDANT_IBD_SUPPORT" else [{"code":"absence_or_non_primary_call_does_not_refute_founder_effect","count":1}],"checks":_audit_checks(scenarios,control_results,minimum_control_pairs,maximum_control_frequency),"known_limits":summary["limitations"],"expected_visualizations":["explicit_ibd_target_segments"],"manual_validation_required":True}; validate_json_document(audit,"stage_audit.schema.json"); atomic_write_json(output_dir/"audit.json",audit)
     (output_dir/"checksums.sha256").write_text("".join(f"{item['sha256']}  {item['artifact_id']}\n" for item in outputs),encoding="utf-8")
     return 0
 

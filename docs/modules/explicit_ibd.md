@@ -41,6 +41,16 @@ et le seuil maximal de fréquence de fond. Ces valeurs doivent être figées dan
 une nouvelle configuration avant le run réel. Une calibration absente ou non
 acceptable produit `NOT_EVALUABLE`.
 
+La fréquence `control_frequency` du scénario décrit exclusivement le résultat
+de cette calibration externe. Elle n'est jamais remplacée par la fréquence
+mesurée parmi les témoins indépendants du run. Cette seconde fréquence est
+publiée séparément dans `ibd_control_frequency.tsv`. L'évaluation exige à la
+fois une calibration externe acceptable, au moins `minimum_control_pairs`
+paires témoins évaluables et une fréquence empirique inférieure ou égale au
+maximum préspécifié. Une taille de fond insuffisante produit
+`CONTROL_BACKGROUND_INSUFFICIENT`; un fond assez grand mais trop fréquent
+interdit un support IBD positif.
+
 La configuration d'exemple garde toutes les calibrations à `false`. Leur
 passage à `true` exige une simulation séparée reproduisant la densité réelle,
 les positions cM, les taux de données manquantes et les incertitudes de phase,
@@ -55,6 +65,14 @@ ne sont jamais déduits du phénotype ou du groupe. Pour les trois familles, 16C
 énumère les assignations possibles et exige une assignation unique cohérente
 sur toutes les paires et les deux outils. Une arête F1–F2 sur H1 et une arête
 F1–F3 uniquement sur H2 ne suffisent donc pas.
+
+Pour chaque assignation complète, 16C recherche d'abord une combinaison de
+segments dont les bornes de début et de fin respectent la tolérance. Si
+plusieurs combinaisons concordantes existent, la plus longue au total est
+retenue avec un départage déterministe. Le segment le plus long d'une paire ne
+peut donc plus, à lui seul, fabriquer une discordance lorsqu'une combinaison
+concordante existe. `BOUNDARIES_DISPERSED` signifie qu'aucune combinaison
+complète ne respecte la tolérance.
 
 Le support primaire exige les deux outils, toutes les paires familiales, la
 cible dans chaque segment et dans l'intersection commune, des limites dans la
@@ -95,6 +113,11 @@ fréquence de fond et le résumé scientifique. Les tables contenant individus,
 familles ou haplotypes sont `sensitive_genetic`. Les contrats sont versionnés
 dans `schemas/explicit_ibd_*.schema.json`.
 
+L'audit publie un contrôle distinct par scénario pour la calibration
+préspécifiée et pour la fréquence empirique. Ces contrôles prennent les statuts
+`PASS`, `FAIL` ou `NOT_EVALUABLE`; ils ne sont jamais déclarés `PASS` par une
+valeur constante.
+
 La table de segments et le résumé sont prêts pour une figure montrant
 séparément Hap-IBD, Refined IBD, la cible et leur intersection. Le raccord à la
 galerie consolidée 18 doit être activé en même temps que le panel chromosome
@@ -106,7 +129,9 @@ historiques.
 Les tests ordinaires simulent les sorties des deux JAR et couvrent cible
 incluse/absente, limites discordantes, paire ou outil manquant, sensibilité
 seule, GT manquant/non phasé, chromosome mutant non assignable, fond trop
-fréquent, calibration absente, seuil primaire post hoc, échec et timeout.
+fréquent, nombre insuffisant de paires témoins, calibration absente, séparation
+entre calibration et fond empirique, alternative concordante au segment le
+plus long, seuil primaire post hoc, échec et timeout.
 
 Java et les JAR ne sont pas des dépendances Python et ne figurent pas dans
 `requirements.txt`. Le run diagnostique du 14 août 2026 a exercé 132 appels
