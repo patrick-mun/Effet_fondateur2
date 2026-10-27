@@ -189,6 +189,16 @@ def test_control_frequency_is_computed_from_both_tools_at_target():
         IbdSegment(tool, "primary", "C1", "H1", "C1", "C2", "H2", "C2", "19", 100, 300, 1.0, 3.0, 120)
         for tool in ("HAP_IBD", "REFINED_IBD")
     ]
-    evaluable, positive, frequency = _control_frequency(segments, "primary", {"C1", "C2", "C3"}, 200)
+    segments.extend(
+        IbdSegment(tool, "primary", "C1", "H1", "C1", "C3", "H2", "C3", "10", 100, 300, 1.0, 3.0, 120)
+        for tool in ("HAP_IBD", "REFINED_IBD")
+    )
+    evaluable, positive, frequency = _control_frequency(
+        segments,
+        "primary",
+        {"C1", "C2", "C3"},
+        "19",
+        200,
+    )
     assert (evaluable, positive) == (3, 1)
     assert frequency == pytest.approx(1 / 3)

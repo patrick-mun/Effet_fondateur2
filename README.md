@@ -266,6 +266,35 @@ signale les petits effectifs et les paires conditionnées par le variant cible,
 et ne fournit aucune entrée aux étapes 13–14. Aucun bloc LD ni test massif n'est
 produit. Le contrat est documenté dans `docs/modules/local_ld.md`.
 
+Une comparaison exploratoire v2 peut être exécutée après un run terminé sans
+modifier ses étapes publiées. Elle compare le r² haplotypique centré sur la
+variation dans le groupe `62 témoins + 3 représentants familiaux` à des fenêtres
+génomiques appariées en fréquence et densité, puis écrit exclusivement sous
+`derived/phase15_ld_v2/` :
+
+```bash
+.venv/bin/python scripts/analyze_phase15_ld_v2.py \
+  --run-dir data/runs/<RUN_ID>
+```
+
+Le dossier contient les tables, une figure SVG/PNG, les empreintes et
+`CORRECTIONS_PHASE15_LD_V2.md`. La série des 75 sujets n'est publiée que comme
+sensibilité confondue par la parenté ; elle ne classe jamais la preuve.
+Le script vérifie la chaîne de provenance du manifest jusqu'aux 21 BCF et 21
+cartes autosomiques hors chromosome cible, contrôle l'ordre des échantillons et
+apparie la densité sur les seuls voisins dont le r² est effectivement évaluable.
+
+Les figures ROH et âge destinées au Résultat 7 peuvent ensuite être régénérées
+à partir des sorties signées des étapes 14 et 16 :
+
+```bash
+.venv/bin/python scripts/plot_result7_roh_age.py \
+  --run-dir data/runs/<RUN_ID>
+```
+
+Le script refuse d'écraser un dossier existant et publie les SVG, PNG, la
+provenance et les empreintes sous `derived/result7_visualizations/`.
+
 L'étape secondaire `16_analyze_roh` mesure l'autozygotie avec deux périmètres
 séparés : fardeau genome-wide sur un univers commun chez témoins et porteurs
 indépendants, puis recherche individuelle du variant cible dans un ROH du

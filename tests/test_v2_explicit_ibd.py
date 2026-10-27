@@ -6,6 +6,7 @@ from effet_fondateur.explicit_ibd import (
     ExplicitIbdError,
     IbdSegment,
     Scenario,
+    boundaries_are_concordant,
     classify_explicit_ibd,
     evaluate_scenario,
     parse_hap_ibd,
@@ -29,7 +30,7 @@ def _evaluate(segments, scenario=None, **changes):
     values = dict(
         scenario=scenario or Scenario("primary", "PRIMARY", 2.0, 100, True),
         segments=segments, families=FAMILIES, mutant_haplotypes=MUTANT,
-        target_position_bp=200, boundary_tolerance_bp=10,
+        target_chromosome="19", target_position_bp=200, boundary_tolerance_bp=10,
         control_frequency=0.01, maximum_control_frequency=0.05,
         calibration_specificity_acceptable=True,
     )
@@ -47,10 +48,25 @@ def test_segment_not_containing_target_is_not_a_primary_call():
     assert classify_explicit_ibd(_evaluate(_segments(end=180)), ()) == "NO_PRIMARY_IBD_CALL"
 
 
+def test_segment_on_other_chromosome_cannot_satisfy_target_call():
+    wrong_chromosome = [
+        IbdSegment(**{**segment.__dict__, "chromosome": "10"})
+        for segment in _segments()
+    ]
+    assert classify_explicit_ibd(_evaluate(wrong_chromosome), ()) == "NO_PRIMARY_IBD_CALL"
+
+
 def test_discordant_boundaries_are_reported():
     segments = _segments()
     segments[-1] = IbdSegment(**{**segments[-1].__dict__, "start_bp": 150})
     assert classify_explicit_ibd(_evaluate(segments), ()) == "METHOD_DISCORDANT"
+
+
+def test_boundary_concordance_can_be_assessed_for_one_pair():
+    pair = _segments(pairs=(("F1", "F2"),))
+    assert boundaries_are_concordant(pair, 10)
+    shifted = [pair[0], IbdSegment(**{**pair[1].__dict__, "end_bp": 400})]
+    assert not boundaries_are_concordant(shifted, 10)
 
 
 @pytest.mark.parametrize("segments", [_segments(pairs=(("F1", "F2"), ("F1", "F3"))), _segments(tools=("HAP_IBD",))])
