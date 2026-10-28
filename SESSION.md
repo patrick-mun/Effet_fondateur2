@@ -4,6 +4,22 @@ Dernière mise à jour : 28 octobre 2026
 
 ## Plan du panel de simulation et de calibration — 28 octobre 2026
 
+- D03 version `1.0.0` et D04 version `0.2.0` ont été approuvés humainement le
+  28 octobre 2026. D03 porte le statut `APPROVED` et D04 le statut
+  `APPROVED_PRE_PILOT` : les règles sont approuvées, mais les seuils
+  `pilot_then_seal` restent non renseignés et aucun panel n'est encore autorisé.
+  La décision est enregistrée sous `CAL-DEC-002`.
+- D04 a été relu contre D03. Le biais de datation est désormais signé et
+  distinct du MAE et de la RMSE ; les formules, dénominateurs, intervalles
+  hiérarchiques et règles de dérivation des seuils sont explicites. Un test
+  dédié refuse les clés YAML dupliquées et les seuils pilote renseignés avant
+  scellement.
+- Les exigences de développement de `AGENTS.md` sont désormais reformulées
+  dans `calibration/CONVENTIONS_DEVELOPPEMENT.md` et rendues obligatoires par
+  le plan avant toute porte de passage. Elles couvrent nommage, types,
+  documentation scientifique, erreurs, outils externes simulés, tests,
+  reproductibilité, confidentialité et validation avant commit. `AGENTS.md`
+  reste l'autorité supérieure.
 - L'étape D01 est terminée. La décision `CAL-DEC-001`, enregistrée dans
   `calibration/protocoles/REGISTRE_DECISIONS.md`, fixe `12`, `13`, `14` et
   `16C` comme priorités de qualification scientifique approfondie. Toutes les
@@ -15,13 +31,31 @@ Dernière mise à jour : 28 octobre 2026
   séparés de `calibration_workspace/`. Ce dernier reste entièrement ignoré,
   tout comme les chemins de précaution `calibration/runs/` et
   `calibration/local/` ; aucun artefact généré n'a été ajouté au dépôt.
-- Une version de travail D04 des critères est créée dans
+- La version `0.2.0` approuvée avant pilote des critères D04 est conservée dans
   `calibration/protocoles/CRITERES_ACCEPTATION.yaml`. Chaque critère possède
   une unité, un sens d'amélioration et une règle explicite pour les valeurs
   manquantes. Les exigences de sécurité et de concordance restent fixes ; les
   seuils de performance sont marqués `pilot_then_seal` et ne pourront être
   ajustés qu'avec le panel de calibration, avant toute ouverture du panel
-  aveugle. Le document reste `DRAFT` jusqu'aux revues D03 et D05.
+  aveugle. Le statut `APPROVED_PRE_PILOT` approuve ce cadre, sans préapprouver
+  les seuils qui restent à dériver puis à sceller.
+- L'étape D05 est terminée avec
+  `calibration/schemas/calibration_config.schema.json` et ses tests ciblés. Le
+  contrat impose six graines distinctement nommées, les rôles et effectifs des
+  cinq phases, les minima de qualification et les protections d'aveuglement.
+  Il refuse notamment les graines absentes, les effectifs incohérents, les
+  chemins absolus ou traversants et toute référence à `dock6_real` ou
+  `calibration_workspace`.
+- L'étape D06 est terminée avec
+  `calibration/schemas/truth_manifest.schema.json` et 56 tests ciblés. Le
+  manifest reste scellé sous `private_truth/` et impose neuf catégories de
+  vérité, leurs champs typés et unités, leurs empreintes, ainsi que les rapports
+  autorisés à les consommer. La vérité fondatrice inclut l'âge, les bornes, les
+  longueurs, les recombinaisons et la copie porteuse ; les scénarios IBD/ROH
+  négatifs acceptent des bornes nulles explicites ; chaque erreur injectée
+  conserve son profil, le champ touché et les valeurs avant/après. Toute source
+  réelle, correspondance d'identifiant, fuite vers le manifest aveugle ou
+  recouvrement calibration-validation déclaré est refusé.
 - Le plan de développement est créé sous
   `calibration/PLAN_DEVELOPPEMENT_PANEL_SIMULATION.md`. Il sépare strictement
   données aveugles, vérité simulée, panel de calibration et panel de validation.
@@ -40,9 +74,9 @@ Dernière mise à jour : 28 octobre 2026
 - Aucun fichier de `dock6_real` ne peut servir au réglage. Aucun changement de
   méthode, aucune correction de datation et aucun passage de 16C à
   `calibrated: true` ne sont autorisés sans rapports audités et décision humaine.
-- Aucune simulation ni aucun outil externe n'a été lancé. La prochaine tranche
-  proposée est limitée à D01–D08 : protocole, critères, arborescence, schémas et
-  gardes d'isolation.
+- Aucune simulation ni aucun outil externe n'a été lancé. Les prochaines étapes
+  sont D07 pour le manifest reproductible de run, puis D08 pour les gardes
+  d'isolation, avant toute demande d'ouverture du micro-panel.
 
 ## Nouveau run complet V2 — 27 octobre 2026
 

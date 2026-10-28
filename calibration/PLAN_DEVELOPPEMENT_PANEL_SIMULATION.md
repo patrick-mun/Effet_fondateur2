@@ -140,6 +140,35 @@ seront jamais utilisés pour régler le simulateur ou les seuils.
 - Marquer toute conclusion issue de ce système comme
   `SIMULATION_CALIBRATED`.
 
+### 3.6 Conventions de développement obligatoires
+
+Tout changement sous `calibration/`, `src/effet_fondateur/calibration/` ou
+`tests/calibration/` doit respecter
+`calibration/CONVENTIONS_DEVELOPPEMENT.md`. Ce document décline les règles de
+`AGENTS.md`, qui reste l'autorité supérieure en cas de divergence.
+
+Avant validation d'une étape de développement :
+
+1. les noms, responsabilités, types et unités doivent être explicites ;
+2. toute fonction publique ou scientifique complexe doit documenter ses
+   entrées, sorties, hypothèses et erreurs ;
+3. les graines, versions, paramètres et empreintes nécessaires à la
+   reproductibilité doivent être enregistrés ;
+4. les erreurs et codes de retour externes ne doivent jamais être ignorés ;
+5. un test ciblé doit couvrir chaque nouveau comportement, cas limite et erreur
+   attendue ;
+6. les outils externes doivent être simulés en test unitaire et réservés aux
+   tests d'intégration explicitement identifiés ;
+7. aucune donnée réelle, vérité générée, sortie ou rapport ne doit entrer dans
+   Git ;
+8. `git diff --check`, les imports et les tests proportionnés au changement
+   doivent réussir.
+
+Une porte de passage ne peut pas être déclarée réussie si ces contrôles ne sont
+pas documentés. Un changement scientifique doit en plus publier sa référence,
+ses hypothèses, une comparaison à une vérité connue et un identifiant de
+méthode compatible avec sa portée.
+
 ## 4. Architecture cible
 
 ```text
@@ -827,7 +856,7 @@ outil, seuil, algorithme ou contrat scientifique.
 | Porte | Autorise | Conditions minimales |
 |---|---|---|
 | G0 | Développement | Plan et périmètre approuvés |
-| G1 | Micro-panel | Schémas, isolation et tests unitaires réussis |
+| G1 | Micro-panel | Schémas, isolation, conventions et tests unitaires réussis |
 | G2 | Pilote calibration | Micro-panel et rapports techniques `PASS` |
 | G3 | Pilote aveugle | Critères scellés et calibration documentée |
 | G4 | Qualification 5 000 | Pilote aveugle, ressources et QA acceptables |

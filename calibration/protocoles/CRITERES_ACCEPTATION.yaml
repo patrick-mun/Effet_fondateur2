@@ -1,22 +1,22 @@
 document:
   id: CAL-ACCEPTANCE
-  version: 0.1.0
+  version: 0.2.0
   date: 2026-10-28
-  status: DRAFT
+  status: APPROVED_PRE_PILOT
   language: fr
   development_step: D04
   authority:
     - calibration/PLAN_DEVELOPPEMENT_PANEL_SIMULATION.md
     - calibration/protocoles/REGISTRE_DECISIONS.md
+    - calibration/protocoles/PROTOCOLE_GENERAL.md
     - docs/modules
-  blockers_before_approval:
-    - D03_PROTOCOL_NOT_REVIEWED
-    - D05_SCHEMA_NOT_AVAILABLE
+  blockers_before_approval: []
   statement: >-
     Ce document définit les mesures, leur sens d'amélioration et le traitement
-    des valeurs manquantes. Les seuils marqués pilot_then_seal seront estimés
-    uniquement sur le panel de calibration, puis figés avant toute ouverture
-    du panel de validation aveugle.
+    des valeurs manquantes. Les seuils marqués pilot_then_seal seront proposés
+    uniquement sur le panel de calibration selon une règle de dérivation écrite
+    avant le run, puis figés avant toute ouverture du panel de validation
+    aveugle.
 
 decision_statuses:
   PASS: Tous les critères obligatoires évaluables respectent leur règle.
@@ -31,8 +31,16 @@ rules:
   inherited_validation_forbidden: true
   confidence_level_default: 0.95
   interval_method_for_proportions: wilson_or_exact_binomial
+  interval_method_for_continuous_metrics: hierarchical_bootstrap_or_justified_analytic
+  metric_denominator_must_be_prespecified: true
+  independent_statistical_unit_must_be_declared: true
+  correlated_pairs_cannot_be_treated_as_independent: true
+  strata_must_remain_visible_when_pooled: true
   pilot_threshold_policy:
     source: pilot_calibration_only
+    derivation_rule_prespecified_before_pilot: true
+    observed_point_estimate_cannot_be_copied_as_threshold: true
+    uncertainty_and_scientific_margin_required: true
     provisional_report_status: REVIEW_REQUIRED
     seal_before: pilot_validation
     absent_after_sealing: NOT_EVALUABLE
@@ -46,6 +54,18 @@ rules:
       - NOT_EVALUABLE
       - REVIEW_REQUIRED
       - PASS
+
+metric_definitions:
+  sensitivity: TP / (TP + FN)
+  specificity: TN / (TN + FP)
+  false_positive_rate: FP / (FP + TN)
+  precision: TP / (TP + FP)
+  balanced_accuracy: (sensitivity + specificity) / 2
+  signed_bias: mean(estimate - truth)
+  mean_absolute_error: mean(abs(estimate - truth))
+  rmse: sqrt(mean((estimate - truth)^2))
+  interval_coverage: count(lower <= truth <= upper) / evaluable_count
+  zero_denominator_status: NOT_EVALUABLE
 
 criteria:
   - id: CAL-GLOBAL-001
@@ -353,16 +373,28 @@ criteria:
 
   - id: CAL-AGE-001
     reports: [CAL-REP-14]
-    metric: absolute_age_bias
+    metric: signed_age_bias
+    unit: generations
+    direction: target_closeness
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: absolute_distance_less_or_equal
+      target_value: 0.0
+      tolerance: null
+    missing: {status: NOT_EVALUABLE, reason: L'âge vrai ou les estimations manquent.}
+
+  - id: CAL-AGE-002
+    reports: [CAL-REP-14]
+    metric: age_mean_absolute_error
     unit: generations
     direction: lower_is_better
     acceptance:
       lifecycle: pilot_then_seal
       operator: less_or_equal
       value: null
-    missing: {status: NOT_EVALUABLE, reason: L'âge vrai ou les estimations manquent.}
+    missing: {status: NOT_EVALUABLE, reason: La grille d'âges évaluables est requise.}
 
-  - id: CAL-AGE-002
+  - id: CAL-AGE-003
     reports: [CAL-REP-14]
     metric: age_rmse
     unit: generations
@@ -373,7 +405,7 @@ criteria:
       value: null
     missing: {status: NOT_EVALUABLE, reason: La grille d'âges évaluables est requise.}
 
-  - id: CAL-AGE-003
+  - id: CAL-AGE-004
     reports: [CAL-REP-14]
     metric: nominal_95_interval_coverage
     unit: proportion
@@ -386,7 +418,7 @@ criteria:
       confidence_interval_required: true
     missing: {status: NOT_EVALUABLE, reason: Les intervalles ou l'âge vrai manquent.}
 
-  - id: CAL-AGE-004
+  - id: CAL-AGE-005
     reports: [CAL-REP-14]
     metric: leave_one_family_out_instability
     unit: generations
@@ -397,7 +429,7 @@ criteria:
       value: null
     missing: {status: NOT_EVALUABLE, reason: Au moins trois unités familiales sont nécessaires.}
 
-  - id: CAL-AGE-005
+  - id: CAL-AGE-006
     reports: [CAL-REP-14]
     metric: historical_gamma_reference_example_error
     unit: generations
@@ -718,8 +750,11 @@ scientific_grid_minimum:
   dock6_only_calibration_forbidden: true
 
 approval:
-  d03_protocol_reviewed: false
-  d05_schema_validated: false
+  d03_protocol_documented: true
+  d03_protocol_human_approved: true
+  d05_schema_validated: true
   pilot_thresholds_sealed: false
   validation_panel_opened: false
-  human_approval: false
+  human_approval: true
+  human_approval_date: 2026-10-28
+  human_approval_scope: PRE_PILOT_FRAMEWORK
