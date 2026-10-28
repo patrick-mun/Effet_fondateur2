@@ -1,0 +1,725 @@
+document:
+  id: CAL-ACCEPTANCE
+  version: 0.1.0
+  date: 2026-10-28
+  status: DRAFT
+  language: fr
+  development_step: D04
+  authority:
+    - calibration/PLAN_DEVELOPPEMENT_PANEL_SIMULATION.md
+    - calibration/protocoles/REGISTRE_DECISIONS.md
+    - docs/modules
+  blockers_before_approval:
+    - D03_PROTOCOL_NOT_REVIEWED
+    - D05_SCHEMA_NOT_AVAILABLE
+  statement: >-
+    Ce document définit les mesures, leur sens d'amélioration et le traitement
+    des valeurs manquantes. Les seuils marqués pilot_then_seal seront estimés
+    uniquement sur le panel de calibration, puis figés avant toute ouverture
+    du panel de validation aveugle.
+
+decision_statuses:
+  PASS: Tous les critères obligatoires évaluables respectent leur règle.
+  FAIL: Au moins un critère obligatoire évalué enfreint sa règle.
+  NOT_EVALUABLE: Une entrée, une vérité, une taille ou une mesure obligatoire manque.
+  REVIEW_REQUIRED: Une décision humaine ou un seuil non encore scellé est requis.
+
+rules:
+  validation_panel_tuning_forbidden: true
+  dock6_result_tuning_forbidden: true
+  missing_is_never_success: true
+  inherited_validation_forbidden: true
+  confidence_level_default: 0.95
+  interval_method_for_proportions: wilson_or_exact_binomial
+  pilot_threshold_policy:
+    source: pilot_calibration_only
+    provisional_report_status: REVIEW_REQUIRED
+    seal_before: pilot_validation
+    absent_after_sealing: NOT_EVALUABLE
+    modification_after_unblinding: FAIL
+  aggregation_policy:
+    mandatory_fail: FAIL
+    mandatory_missing: NOT_EVALUABLE
+    human_review_required: REVIEW_REQUIRED
+    precedence:
+      - FAIL
+      - NOT_EVALUABLE
+      - REVIEW_REQUIRED
+      - PASS
+
+criteria:
+  - id: CAL-GLOBAL-001
+    reports: [CAL-REP-00, CAL-REP-01, CAL-REP-E2E]
+    metric: real_data_access_event_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: FAIL, reason: L'absence de journal d'accès viole l'isolation.}
+
+  - id: CAL-GLOBAL-002
+    reports: [CAL-REP-00, CAL-REP-E2E]
+    metric: private_truth_reference_in_pipeline_manifest_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: FAIL, reason: Le manifest aveugle doit être vérifiable.}
+
+  - id: CAL-GLOBAL-003
+    reports: [CAL-REP-02, CAL-REP-09, CAL-REP-E2E]
+    metric: forbidden_identifier_overlap_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Les partitions doivent être inventoriées.}
+
+  - id: CAL-GLOBAL-004
+    reports: [CAL-REP-00, CAL-REP-01, CAL-REP-E2E]
+    metric: checksum_mismatch_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Les empreintes sont obligatoires.}
+
+  - id: CAL-GLOBAL-005
+    reports: [CAL-REP-E2E]
+    metric: deterministic_reproduction_mismatch_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Un second run avec la même graine est requis.}
+
+  - id: CAL-GLOBAL-006
+    reports: [CAL-REP-00, CAL-REP-E2E]
+    metric: schema_validation_error_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Le schéma ou son résultat de validation manque.}
+
+  - id: CAL-GLOBAL-007
+    reports: [CAL-REP-E2E, CAL-REP-DEC]
+    metric: unrecorded_protocol_deviation_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Le registre des écarts est obligatoire.}
+
+  - id: CAL-GLOBAL-008
+    reports: [CAL-REP-00, CAL-REP-E2E]
+    metric: missing_or_overwritten_run_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Les identifiants et dossiers de run doivent être audités.}
+
+  - id: CAL-TECH-001
+    reports: [CAL-REP-01]
+    metric: missing_or_unverified_source_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: L'inventaire des sources est obligatoire.}
+
+  - id: CAL-TECH-002
+    reports: [CAL-REP-02]
+    metric: lost_duplicated_or_misaligned_sample_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: La vérité d'alignement manque.}
+
+  - id: CAL-TECH-003
+    reports: [CAL-REP-03]
+    metric: genotype_conversion_discordance_rate
+    unit: proportion
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0.0}
+    missing: {status: NOT_EVALUABLE, reason: La vérité génotypique ou la conversion manque.}
+
+  - id: CAL-TECH-004
+    reports: [CAL-REP-04]
+    metric: target_genotype_discordance_rate
+    unit: proportion
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0.0}
+    missing: {status: NOT_EVALUABLE, reason: La vérité de la cible synthétique manque.}
+
+  - id: CAL-QC-001
+    reports: [CAL-REP-05, CAL-REP-10]
+    metric: injected_defect_detection_sensitivity
+    unit: proportion
+    direction: higher_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: greater_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: Les défauts injectés ou les appels QC manquent.}
+
+  - id: CAL-QC-002
+    reports: [CAL-REP-05, CAL-REP-10]
+    metric: false_exclusion_rate
+    unit: proportion
+    direction: lower_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: less_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: Les exclusions et la vérité QC sont requises.}
+
+  - id: CAL-QC-003
+    reports: [CAL-REP-05, CAL-REP-10]
+    metric: sex_discordance_evaluation_status
+    unit: categorical_status
+    direction: nominal
+    acceptance:
+      lifecycle: fixed_contract
+      operator: equal
+      value: NOT_EVALUABLE_UNTIL_SEX_CHROMOSOME_TRUTH_EXISTS
+    missing: {status: NOT_EVALUABLE, reason: Ce contrôle exige un univers sexuel simulé dédié.}
+
+  - id: CAL-KIN-001
+    reports: [CAL-REP-06]
+    metric: autosome_coverage_count_full_integration
+    unit: chromosome_count
+    direction: higher_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 22}
+    missing: {status: NOT_EVALUABLE, reason: La couverture par chromosome manque.}
+
+  - id: CAL-KIN-002
+    reports: [CAL-REP-07]
+    metric: kinship_degree_balanced_accuracy
+    unit: proportion
+    direction: higher_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: greater_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: La matrice de confusion de parenté manque.}
+
+  - id: CAL-KIN-003
+    reports: [CAL-REP-07, CAL-REP-09]
+    metric: forbidden_related_pair_in_independent_set_count
+    unit: pair_count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: La vérité de parenté ou la cohorte gelée manque.}
+
+  - id: CAL-POP-001
+    reports: [CAL-REP-08]
+    metric: injected_outlier_detection_sensitivity
+    unit: proportion
+    direction: higher_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: greater_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: Les atypiques injectés ou les appels manquent.}
+
+  - id: CAL-POP-002
+    reports: [CAL-REP-08]
+    metric: non_injected_outlier_rate
+    unit: proportion
+    direction: lower_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: less_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: La vérité de structure ou les appels manquent.}
+
+  - id: CAL-POP-003
+    reports: [CAL-REP-08, CAL-REP-16A, CAL-REP-19]
+    metric: unsupported_geographic_origin_claim_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Les textes et décisions doivent être audités.}
+
+  - id: CAL-POP-004
+    reports: [CAL-REP-09]
+    metric: cohort_repeat_mismatch_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Deux gels avec entrées identiques sont requis.}
+
+  - id: CAL-PHASE-001
+    reports: [CAL-REP-10A, CAL-REP-11, CAL-REP-12A]
+    metric: autosomal_sample_or_variant_universe_mismatch_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Les univers et ordres doivent être inventoriés.}
+
+  - id: CAL-PHASE-002
+    reports: [CAL-REP-11]
+    metric: genetic_map_or_coordinate_consistency_error_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: La carte ou les positions bp/cM manquent.}
+
+  - id: CAL-PHASE-003
+    reports: [CAL-REP-11, CAL-REP-12]
+    metric: target_variant_retained
+    unit: boolean
+    direction: required_true
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: true}
+    missing: {status: NOT_EVALUABLE, reason: La présence unique de la cible doit être contrôlée.}
+
+  - id: CAL-PHASE-004
+    reports: [CAL-REP-12, CAL-REP-12A]
+    metric: switch_error_rate
+    unit: proportion
+    direction: lower_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: less_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: La phase vraie ou la phase estimée manque.}
+
+  - id: CAL-PHASE-005
+    reports: [CAL-REP-12, CAL-REP-12A]
+    metric: rare_variant_phase_error_rate
+    unit: proportion
+    direction: lower_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: less_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: Les variants rares évaluables doivent être présents.}
+
+  - id: CAL-PHASE-006
+    reports: [CAL-REP-12]
+    metric: target_mutation_orientation_accuracy
+    unit: proportion
+    direction: higher_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: greater_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: L'orientation vraie ou estimée manque.}
+
+  - id: CAL-FOUND-001
+    reports: [CAL-REP-13]
+    metric: founder_segment_detection_sensitivity
+    unit: proportion
+    direction: higher_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: greater_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: Les scénarios positifs ou les segments appelés manquent.}
+
+  - id: CAL-FOUND-002
+    reports: [CAL-REP-13]
+    metric: founder_segment_detection_specificity
+    unit: proportion
+    direction: higher_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: greater_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: Les scénarios négatifs ou les appels manquent.}
+
+  - id: CAL-FOUND-003
+    reports: [CAL-REP-13]
+    metric: target_containment_rate_when_detectable
+    unit: proportion
+    direction: higher_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: greater_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: Les segments détectables doivent être définis a priori.}
+
+  - id: CAL-FOUND-004
+    reports: [CAL-REP-13]
+    metric: boundary_mean_absolute_error
+    unit: cM
+    direction: lower_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: less_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: Les bornes vraies ou estimées manquent.}
+
+  - id: CAL-FOUND-005
+    reports: [CAL-REP-13, CAL-REP-19]
+    metric: ibs_reclassified_as_ibd_without_explicit_ibd_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Les conclusions doivent être auditées.}
+
+  - id: CAL-AGE-001
+    reports: [CAL-REP-14]
+    metric: absolute_age_bias
+    unit: generations
+    direction: lower_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: less_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: L'âge vrai ou les estimations manquent.}
+
+  - id: CAL-AGE-002
+    reports: [CAL-REP-14]
+    metric: age_rmse
+    unit: generations
+    direction: lower_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: less_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: La grille d'âges évaluables est requise.}
+
+  - id: CAL-AGE-003
+    reports: [CAL-REP-14]
+    metric: nominal_95_interval_coverage
+    unit: proportion
+    direction: target_closeness
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: absolute_distance_less_or_equal
+      target_value: 0.95
+      tolerance: null
+      confidence_interval_required: true
+    missing: {status: NOT_EVALUABLE, reason: Les intervalles ou l'âge vrai manquent.}
+
+  - id: CAL-AGE-004
+    reports: [CAL-REP-14]
+    metric: leave_one_family_out_instability
+    unit: generations
+    direction: lower_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: less_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: Au moins trois unités familiales sont nécessaires.}
+
+  - id: CAL-AGE-005
+    reports: [CAL-REP-14]
+    metric: historical_gamma_reference_example_error
+    unit: generations
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: less_or_equal, value: 0.1}
+    missing: {status: NOT_EVALUABLE, reason: Le test de référence Gandolfo doit être exécuté.}
+
+  - id: CAL-LD-001
+    reports: [CAL-REP-15]
+    metric: r_squared_mean_absolute_error
+    unit: r_squared
+    direction: lower_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: less_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: Les valeurs vraies ou observées de LD manquent.}
+
+  - id: CAL-LD-002
+    reports: [CAL-REP-15]
+    metric: target_chromosome_in_background_count
+    unit: chromosome_count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Le contenu du fond génomique doit être audité.}
+
+  - id: CAL-ROH-001
+    reports: [CAL-REP-16]
+    metric: roh_detection_sensitivity
+    unit: proportion
+    direction: higher_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: greater_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: Les ROH vraies ou appelées manquent.}
+
+  - id: CAL-ROH-002
+    reports: [CAL-REP-16]
+    metric: roh_false_positive_rate
+    unit: proportion
+    direction: lower_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: less_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: Les régions négatives ou appels manquent.}
+
+  - id: CAL-ROH-003
+    reports: [CAL-REP-16]
+    metric: roh_length_mean_absolute_error
+    unit: cM
+    direction: lower_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: less_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: Les longueurs vraies ou appelées manquent.}
+
+  - id: CAL-ROH-004
+    reports: [CAL-REP-16, CAL-REP-19]
+    metric: roh_used_as_direct_gamma_length_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Les entrées de datation doivent être auditées.}
+
+  - id: CAL-ANC-001
+    reports: [CAL-REP-16A]
+    metric: simulated_mixture_proportion_mean_absolute_error
+    unit: proportion
+    direction: lower_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: less_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: Les mélanges vrais ou estimés manquent.}
+
+  - id: CAL-ANC-002
+    reports: [CAL-REP-16A]
+    metric: repeated_position_instability
+    unit: standardized_distance
+    direction: lower_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: less_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: Les répétitions ou coordonnées manquent.}
+
+  - id: CAL-ENRICH-001
+    reports: [CAL-REP-16B]
+    metric: classification_emitted_without_prespecified_threshold_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Le seuil et les statuts publiés doivent être audités.}
+
+  - id: CAL-ENRICH-002
+    reports: [CAL-REP-16B]
+    metric: null_false_positive_rate
+    unit: proportion
+    direction: lower_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: less_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: Les scénarios nuls ou classifications manquent.}
+
+  - id: CAL-ENRICH-003
+    reports: [CAL-REP-16B]
+    metric: positive_scenario_power
+    unit: proportion
+    direction: higher_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: greater_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: Les scénarios positifs ou classifications manquent.}
+
+  - id: CAL-IBD-001
+    reports: [CAL-REP-16C]
+    metric: method_universe_or_map_mismatch_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Les univers Hap-IBD et Refined IBD doivent être audités.}
+
+  - id: CAL-IBD-002
+    reports: [CAL-REP-16C]
+    metric: autosomes_called_before_target_interrogation
+    unit: chromosome_count
+    direction: higher_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 22}
+    missing: {status: NOT_EVALUABLE, reason: L'inventaire des appels autosomiques manque.}
+
+  - id: CAL-IBD-003
+    reports: [CAL-REP-16C]
+    metric: negative_independent_pair_count_per_panel_qualification
+    unit: pair_count
+    direction: higher_is_better
+    acceptance: {lifecycle: fixed_contract, operator: greater_or_equal, value: 3000}
+    missing: {status: NOT_EVALUABLE, reason: Les paires négatives évaluables doivent être comptées.}
+
+  - id: CAL-IBD-004
+    reports: [CAL-REP-16C]
+    metric: concordant_false_support_rate_upper_95_bound
+    unit: proportion
+    direction: lower_is_better
+    stratify_by: [scenario_id]
+    acceptance: {lifecycle: fixed_contract, operator: less_or_equal, value: 0.05}
+    missing: {status: NOT_EVALUABLE, reason: Le taux et son intervalle par scénario sont obligatoires.}
+
+  - id: CAL-IBD-005
+    reports: [CAL-REP-16C]
+    metric: positive_repetition_count_per_length_qualification
+    unit: repetition_count
+    direction: higher_is_better
+    acceptance: {lifecycle: fixed_contract, operator: greater_or_equal, value: 400}
+    missing: {status: NOT_EVALUABLE, reason: Les répétitions positives doivent être inventoriées.}
+
+  - id: CAL-IBD-006
+    reports: [CAL-REP-16C]
+    metric: explicit_ibd_detection_sensitivity
+    unit: proportion
+    direction: higher_is_better
+    stratify_by: [scenario_id, segment_length_cm]
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: greater_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: Les segments positifs ou appels manquent.}
+
+  - id: CAL-IBD-007
+    reports: [CAL-REP-16C]
+    metric: explicit_ibd_boundary_mean_absolute_error
+    unit: cM
+    direction: lower_is_better
+    stratify_by: [scenario_id, tool]
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: less_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: Les bornes vraies ou appelées manquent.}
+
+  - id: CAL-IBD-008
+    reports: [CAL-REP-16C]
+    metric: configured_primary_minimum_length
+    unit: cM
+    direction: required_minimum
+    acceptance: {lifecycle: fixed_contract, operator: greater_or_equal, value: 2.0}
+    missing: {status: NOT_EVALUABLE, reason: Le scénario primaire doit être explicite.}
+
+  - id: CAL-IBD-009
+    reports: [CAL-REP-16C]
+    metric: configured_primary_minimum_marker_count
+    unit: marker_count
+    direction: required_minimum
+    acceptance: {lifecycle: fixed_contract, operator: greater_or_equal, value: 100}
+    missing: {status: NOT_EVALUABLE, reason: Le scénario primaire doit être explicite.}
+
+  - id: CAL-SENS-001
+    reports: [CAL-REP-17]
+    metric: injected_difference_detection_sensitivity
+    unit: proportion
+    direction: higher_is_better
+    acceptance:
+      lifecycle: pilot_then_seal
+      operator: greater_or_equal
+      value: null
+    missing: {status: NOT_EVALUABLE, reason: Les différences injectées ou comparaisons manquent.}
+
+  - id: CAL-SENS-002
+    reports: [CAL-REP-17]
+    metric: non_injected_difference_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Les scénarios attendus doivent être inventoriés.}
+
+  - id: CAL-VIZ-001
+    reports: [CAL-REP-18]
+    metric: scientific_statistic_recalculated_by_rendering_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Les sources de chaque statistique doivent être tracées.}
+
+  - id: CAL-VIZ-002
+    reports: [CAL-REP-18]
+    metric: figure_without_source_or_checksum_count
+    unit: figure_count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: L'inventaire des figures est obligatoire.}
+
+  - id: CAL-REPORT-001
+    reports: [CAL-REP-19]
+    metric: source_fact_discrepancy_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Les faits sources et le rapport final sont requis.}
+
+  - id: CAL-REPORT-002
+    reports: [CAL-REP-19]
+    metric: hidden_exploratory_or_not_evaluable_status_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Tous les statuts sources doivent être comparés.}
+
+  - id: CAL-REPORT-003
+    reports: [CAL-REP-00, CAL-REP-01, CAL-REP-02, CAL-REP-03, CAL-REP-04,
+      CAL-REP-05, CAL-REP-06, CAL-REP-07, CAL-REP-08, CAL-REP-09,
+      CAL-REP-10, CAL-REP-10A, CAL-REP-11, CAL-REP-12, CAL-REP-12A,
+      CAL-REP-13, CAL-REP-14, CAL-REP-15, CAL-REP-16, CAL-REP-16A,
+      CAL-REP-16B, CAL-REP-16C, CAL-REP-17, CAL-REP-18, CAL-REP-19]
+    metric: missing_required_report_section_count
+    unit: section_count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Le rapport autonome doit exister.}
+
+  - id: CAL-E2E-001
+    reports: [CAL-REP-E2E]
+    metric: missing_independent_stage_report_count
+    unit: report_count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Le registre contractuel compte 25 rapports d'étape.}
+
+  - id: CAL-E2E-002
+    reports: [CAL-REP-E2E]
+    metric: unresolved_cross_report_inconsistency_count
+    unit: count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Les effectifs, versions et statuts doivent être réconciliés.}
+
+  - id: CAL-QUAL-001
+    reports: [CAL-REP-DEC]
+    metric: explicit_human_qualification_decision_present
+    unit: boolean
+    direction: required_true
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: true}
+    missing: {status: REVIEW_REQUIRED, reason: La qualification ne peut pas être automatique.}
+
+  - id: CAL-QUAL-002
+    reports: [CAL-REP-DEC]
+    metric: method_qualified_without_passing_reports_count
+    unit: method_count
+    direction: lower_is_better
+    acceptance: {lifecycle: fixed_contract, operator: equal, value: 0}
+    missing: {status: NOT_EVALUABLE, reason: Les décisions doivent référencer les rapports et empreintes.}
+
+qualification_prerequisites:
+  pilot_calibration_individual_count: 500
+  pilot_validation_individual_count: 500
+  qualification_calibration_individual_count: 2500
+  qualification_validation_individual_count: 2500
+  minimum_trios_per_qualification_panel: 100
+  minimum_pairs_per_evaluated_kinship_class: 200
+  minimum_ibd_negative_pairs_per_panel: 3000
+  minimum_ibd_positive_repetitions_per_length: 400
+  minimum_dating_repetitions_per_age: 500
+  minimum_full_integration_autosome_count: 22
+
+scientific_grid_minimum:
+  ages_generations: [5, 10, 15, 20, 30, 40, 50, 75, 100, 150]
+  independent_family_counts: [3, 5, 10]
+  ibd_lengths_cm: [1.0, 1.5, 2.0, 3.0, 5.0]
+  required_negative_scenarios: true
+  vary_missingness: true
+  vary_genotyping_error: true
+  vary_phase_error: true
+  vary_marker_density: true
+  vary_autosomal_position: true
+  dock6_only_calibration_forbidden: true
+
+approval:
+  d03_protocol_reviewed: false
+  d05_schema_validated: false
+  pilot_thresholds_sealed: false
+  validation_panel_opened: false
+  human_approval: false

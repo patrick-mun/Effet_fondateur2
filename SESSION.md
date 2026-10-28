@@ -4,6 +4,24 @@ Dernière mise à jour : 28 octobre 2026
 
 ## Plan du panel de simulation et de calibration — 28 octobre 2026
 
+- L'étape D01 est terminée. La décision `CAL-DEC-001`, enregistrée dans
+  `calibration/protocoles/REGISTRE_DECISIONS.md`, fixe `12`, `13`, `14` et
+  `16C` comme priorités de qualification scientifique approfondie. Toutes les
+  autres étapes activées restent soumises à une validation technique, à un
+  scénario fonctionnel lorsque leur comportement est testable et à un rapport
+  indépendant ; aucune validation n'est acquise par héritage.
+- L'étape D02 est terminée. Les emplacements versionnés des protocoles,
+  configurations, schémas, modèles, futurs modules et futurs tests sont
+  séparés de `calibration_workspace/`. Ce dernier reste entièrement ignoré,
+  tout comme les chemins de précaution `calibration/runs/` et
+  `calibration/local/` ; aucun artefact généré n'a été ajouté au dépôt.
+- Une version de travail D04 des critères est créée dans
+  `calibration/protocoles/CRITERES_ACCEPTATION.yaml`. Chaque critère possède
+  une unité, un sens d'amélioration et une règle explicite pour les valeurs
+  manquantes. Les exigences de sécurité et de concordance restent fixes ; les
+  seuils de performance sont marqués `pilot_then_seal` et ne pourront être
+  ajustés qu'avec le panel de calibration, avant toute ouverture du panel
+  aveugle. Le document reste `DRAFT` jusqu'aux revues D03 et D05.
 - Le plan de développement est créé sous
   `calibration/PLAN_DEVELOPPEMENT_PANEL_SIMULATION.md`. Il sépare strictement
   données aveugles, vérité simulée, panel de calibration et panel de validation.

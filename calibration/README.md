@@ -27,6 +27,11 @@ Les chemins historiques éventuels `calibration/runs/` et
 
 ## État actuel
 
-Seule la planification est commencée. Aucun simulateur, panel ou rapport de
-calibration n'a encore été produit. Le développement doit suivre
+Le périmètre initial D01 et l'arborescence isolée D02 sont établis. Une version
+de travail des critères D04 existe dans
+`protocoles/CRITERES_ACCEPTATION.yaml` ; elle restera non approuvée tant que le
+protocole D03 et le schéma D05 ne seront pas validés. Les seuils de performance
+seront calculés sur le seul pilote de calibration, puis scellés avant le panel
+aveugle. Aucun simulateur, schéma, panel ou rapport de calibration n'a encore
+été produit. Le développement doit suivre
 `PLAN_DEVELOPPEMENT_PANEL_SIMULATION.md` et ses portes de passage.
