@@ -1,6 +1,64 @@
 # Suivi de session
 
-Dernière mise à jour : 27 octobre 2026
+Dernière mise à jour : 28 octobre 2026
+
+## Plan du panel de simulation et de calibration — 28 octobre 2026
+
+- Le plan de développement est créé sous
+  `calibration/PLAN_DEVELOPPEMENT_PANEL_SIMULATION.md`. Il sépare strictement
+  données aveugles, vérité simulée, panel de calibration et panel de validation.
+- L'espace de contrôle `calibration/` reste versionné, tandis que les panels,
+  vérités, sorties et rapports seront écrits sous `calibration_workspace/`,
+  désormais entièrement ignoré par Git. Les anciens chemins locaux
+  `calibration/runs/` et `calibration/local/` sont également protégés.
+- Le plan couvre les étapes `00–19` au moyen de 25 rapports d'étapes autonomes,
+  puis d'un rapport bout en bout et d'une décision de qualification. Les futurs
+  rapports seront français, autoportants, imprimables en PDF et contrôlés selon
+  le workflow `report-formater`.
+- Le développement est découpé en 42 étapes et 7 portes de passage. Il commence
+  par un micro-panel, puis prévoit un pilote `500 + 500`; la qualification
+  `2 500 + 2 500` reste interdite avant validation des ressources et du pilote
+  aveugle.
+- Aucun fichier de `dock6_real` ne peut servir au réglage. Aucun changement de
+  méthode, aucune correction de datation et aucun passage de 16C à
+  `calibrated: true` ne sont autorisés sans rapports audités et décision humaine.
+- Aucune simulation ni aucun outil externe n'a été lancé. La prochaine tranche
+  proposée est limitée à D01–D08 : protocole, critères, arborescence, schémas et
+  gardes d'isolation.
+
+## Nouveau run complet V2 — 27 octobre 2026
+
+- Le run `2026-10-27T073332Z_dock6_reunion_founder_effect_f68f6abd` a utilisé
+  exclusivement les entrées déclarées sous `data/input/dock6_real/` :
+  échantillons ACPA, métadonnées, configuration de la variation cible et table
+  de génotypes cibles. Les données de simulation n'ont pas été utilisées.
+- Avant relance, une concaténation accidentelle entre deux lignes de
+  `metadata/samples.tsv` a été réparée avec l'autorisation explicite de
+  l'utilisateur. La correction est strictement structurelle : elle rétablit 75
+  lignes de 15 colonnes et l'ensemble attendu des échantillons, sans inférer ni
+  modifier de génotype. L'original est conservé dans le cache ignoré sous
+  `data/cache/metadata_backups/`.
+- Les deux tentatives de diagnostic précédentes sont conservées sous
+  `data/runs/`. Le run final a terminé les 22 étapes activées, de `00` à `16C`,
+  avec 22 statuts `SUCCEEDED` et un statut global `TECHNICALLY_VALID`. Les
+  étapes `17–19` sont désactivées dans cette configuration.
+- `16B` reste exploratoire et `NOT_CLASSIFIED` : trois familles indépendantes,
+  1,436 cM de partage IBS centré sur la cible et probabilité empirique externe
+  globale de 0,0573. Aucun IBD ni effet fondateur n'est revendiqué.
+- `16C` a traité 22 autosomes, 160 186 variants phasés complets, 62 témoins
+  indépendants et 132 appels externes. La densité est suffisante et les trois
+  fréquences témoins sont sous le maximum préspecifié, mais les trois scénarios
+  ont `CALIBRATED=false` : le résultat scientifique reste donc
+  `NOT_EVALUABLE`, et non négatif.
+- Tous les contrôles techniques de `16B` passent. Pour `16C`, seuls les trois
+  contrôles de calibration préspecifiée sont `NOT_EVALUABLE`; les autres
+  contrôles passent. Les SHA-256 des 7 artefacts de `16B` et des 273 artefacts
+  de `16C` ont été recalculés avec 280 correspondances et aucune anomalie.
+- Le balayage des 22 audits compte 117 contrôles `PASS`. Deux décisions restent
+  soumises à revue humaine : la proposition d'ensemble indépendant en `07` et
+  les individus atypiques de structure de population en `08`. Le contrôle de
+  discordance de sexe en `05` n'est pas évalué ; ces réserves n'empêchent pas
+  la validité technique du run mais interdisent une conclusion automatique.
 
 ## Retrait du pipeline historique V1 — 27 octobre 2026
 
@@ -192,8 +250,9 @@ Dernière mise à jour : 27 octobre 2026
 ## État du dépôt
 
 - Dépôt GitHub : `patrick-mun/Effet_fondateur2`.
-- `main` contient les étapes `00–18` et pointe sur `21184ff` après les fusions
-  ordonnées des PR `#5`, `#6`, `#7` et `#8` le 7 août 2026.
+- Branche active `main`, synchronisée avec `origin/main` au commit de fusion
+  `108a204` avant le nouveau run. Le retrait des fichiers historiques V1 est
+  intégré ; les données, caches et résultats du run restent ignorés par Git.
 - La PR `#5` a livré l'étape `15`, la PR `#6` l'étape `16` et la PR `#7`
   l'étape `17`. La branche `#6` a été avancée en fast-forward vers le commit
   d'intégration existant `fbc6398`, sans rebase ni réécriture destructive.
@@ -212,8 +271,6 @@ Dernière mise à jour : 27 octobre 2026
   `effet-fondateur-ibd`. Hap-IBD `1.0.0-15Jun23.92f` et Refined IBD
   `17Jan20.102` sont installés sous le cache ignoré, avec SHA-256 vérifiés par
   `scripts/install_explicit_ibd_tools.sh`.
-- Branche active `agent/phase-autosomes-explicit-ibd`, poussée sur GitHub. Elle
-  ajoute le phasage cohérent des 22 autosomes avant le calcul IBD explicite.
 
 ## Correction phasage autosomique et IBD explicite — 14 août 2026
 
