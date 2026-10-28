@@ -175,6 +175,8 @@ méthode compatible avec sa portée.
 calibration/
 ├── PLAN_DEVELOPPEMENT_PANEL_SIMULATION.md
 ├── README.md
+├── references/
+│   └── public_reference_catalog.json
 ├── protocoles/
 │   ├── PROTOCOLE_GENERAL.md
 │   ├── CRITERES_ACCEPTATION.yaml
@@ -189,6 +191,8 @@ calibration/
 │   ├── calibration_config.schema.json
 │   ├── truth_manifest.schema.json
 │   ├── calibration_run_manifest.schema.json
+│   ├── public_reference_catalog.schema.json
+│   ├── reference_partition_manifest.schema.json
 │   ├── stage_evaluation.schema.json
 │   └── calibration_decision.schema.json
 └── templates/
@@ -208,6 +212,8 @@ calibration_workspace/           # généré, entièrement ignoré par Git
 
 src/effet_fondateur/calibration/
 ├── configuration.py
+├── materialize_partitions.py
+├── partitioning.py
 ├── simulation/
 ├── truth/
 ├── evaluation/
@@ -633,12 +639,28 @@ les collisions d'identifiants.
 **Livrable :** catalogue versionné des références autorisées.
 **Réussite :** chaque source possède identifiant, version, origine et SHA-256.
 
+Le catalogue D09 distingue l'empreinte de la source épinglée de celle des
+charges utiles acquises. Lorsque le fournisseur ne publie que des MD5 par
+fichier, le SHA-256 du manifeste officiel fige la release, puis chaque fichier
+téléchargé doit être contrôlé par l'empreinte fournisseur et recevoir un
+SHA-256 local dans le manifest D07 avant utilisation. Une autorisation d'usage
+local ne vaut pas autorisation de redistribution.
+
 ### D10 — Séparer donneurs simulés et référence de phasage
 
 **Action :** créer des partitions disjointes pour éviter une validation
 optimiste.
 **Livrable :** manifest des partitions.
 **Réussite :** intersection nulle des identifiants entre partitions interdites.
+
+Le manifest D10 reste privé dans le workspace : il publie seulement les rôles,
+effectifs et empreintes des listes placées sous `private_truth/partitions/`.
+La séparation est contrôlée par composante connexe de pedigree ou de parenté,
+pas seulement par identifiant. Un groupe contenant à la fois un candidat à la
+référence de phasage et un autre donneur est retiré en bloc de la référence.
+La référence de phasage peut être commune aux panels de calibration et de
+validation, mais les groupes donneurs restent distincts entre eux et de cette
+référence.
 
 ### D11 — Générer les haplotypes de base
 

@@ -56,6 +56,63 @@ Dernière mise à jour : 28 octobre 2026
   conserve son profil, le champ touché et les valeurs avant/après. Toute source
   réelle, correspondance d'identifiant, fuite vers le manifest aveugle ou
   recouvrement calibration-validation déclaré est refusé.
+- L'étape D07 est terminée avec
+  `calibration/schemas/calibration_run_manifest.schema.json` et 127 tests
+  ciblés. Le manifest finalisé est privé au contrôle de calibration et ancre la
+  configuration, la vérité, les six graines, le commit propre, l'environnement
+  Python verrouillé, les sources, les outils, les commandes normalisées, les
+  ressources, les artefacts, les reprises, les écarts et l'ordre de rejeu. Les
+  chemins absolus, locaux ou réels sont refusés et une commande `PIPELINE` ne
+  peut pas référencer `private_truth/`. Le registre des graines est désormais
+  lui-même exigé comme artefact privé inventorié.
+- L'étape D08 est terminée avec
+  `src/effet_fondateur/calibration/isolation.py` et 55 tests ciblés. Le garde
+  valide la racine de workspace, résout tous les artefacts sans ouvrir leur
+  contenu, refuse les chemins `data/input` et `dock6_real`, les traversées, les
+  liens symboliques et physiques, puis contrôle identifiants, producteurs,
+  outils, entrées/sorties, ordre de rejeu et ancres D07. Une commande pipeline
+  ne peut consommer que des artefacts `BLINDED_INPUT`. Le contrôle inter-panel
+  refuse tout partage d'identifiant, graine ou source synthétique ; seules les
+  références publiques identiques et explicitement déclarées partagées sont
+  admises.
+- L'étape D09 est terminée avec
+  `calibration/references/public_reference_catalog.json`, son schéma strict et
+  26 tests ciblés. La liste fermée couvre le panel phasé 1kGP GRCh38, ses
+  métadonnées de population, l'index des 2 504 références non apparentées et
+  les cartes SHAPEIT4/HapMap GRCh38 épinglées par commit. Chaque source fixe
+  identifiant, version, origine, assemblage, conditions d'usage et SHA-256,
+  puis lie par empreinte le catalogue technique existant du pipeline.
+- D09 n'a téléchargé aucun VCF, BCF ni panel. Le panel 1kGP est figé par le
+  SHA-256 de son manifeste officiel et les MD5 fournisseur ; tout fichier
+  acquis ultérieurement devra recevoir un SHA-256 local dans le manifest D07
+  avant usage. Les conditions IGSR permettent l'usage sous leurs termes ; les
+  cartes sont limitées à l'usage local et interdites de redistribution par le
+  projet, car la licence MIT du dépôt ne démontre pas seule tous les droits sur
+  les données HapMap dérivées.
+- L'étape D10 est implémentée avec
+  `calibration/schemas/reference_partition_manifest.schema.json`,
+  `src/effet_fondateur/calibration/partitioning.py`, le matérialisateur privé et
+  55 tests ciblés. Le contrat sépare donneurs de calibration, donneurs de
+  validation et référence
+  de phasage commune ; toute source est affectée exactement une fois et les
+  intersections d'identifiants ou de groupes d'indépendance valent zéro.
+- Le partitionnement D10 travaille par composante connexe de pedigree ou de
+  parenté. Un groupe mixte est retiré en bloc de la référence de phasage, puis
+  les groupes donneurs sont répartis de façon déterministe et équilibrée sans
+  graine supplémentaire. Le manifest ne contient aucun identifiant brut : les
+  listes canoniques et leurs SHA-256 resteront sous
+  `calibration_workspace/.../private_truth/partitions/`.
+- Les métadonnées publiques D09 étaient déjà présentes dans le cache avec les
+  SHA-256 attendus. La matérialisation
+  `calibration_workspace/d10_1kg_3202_20220422_v1/`, ignorée par Git, affecte
+  exactement 3 202 sources : 900 donneurs de calibration, 899 donneurs de
+  validation et 1 403 références de phasage. Elle couvre 1 873 groupes
+  d'indépendance, possède trois listes privées empreintées, un manifest valide
+  et zéro intersection interdite. Le SHA-256 du manifest privé est
+  `404d96a52c74b4dfe880e5b22c9f506f202ddc95fa5a182082302ae2765c97c4`.
+  Aucun VCF ni outil génétique n'a été lancé. Validation finale D10 : 55 tests
+  ciblés et 381 tests de calibration réussis, imports, compilation et
+  `git diff --check` sans erreur.
 - Le plan de développement est créé sous
   `calibration/PLAN_DEVELOPPEMENT_PANEL_SIMULATION.md`. Il sépare strictement
   données aveugles, vérité simulée, panel de calibration et panel de validation.
@@ -74,9 +131,11 @@ Dernière mise à jour : 28 octobre 2026
 - Aucun fichier de `dock6_real` ne peut servir au réglage. Aucun changement de
   méthode, aucune correction de datation et aucun passage de 16C à
   `calibrated: true` ne sont autorisés sans rapports audités et décision humaine.
-- Aucune simulation ni aucun outil externe n'a été lancé. Les prochaines étapes
-  sont D07 pour le manifest reproductible de run, puis D08 pour les gardes
-  d'isolation, avant toute demande d'ouverture du micro-panel.
+- Aucune simulation ni aucun outil externe n'a été lancé. Les étapes D01 à D10
+  sont implémentées ; une revue humaine du point G1 reste nécessaire avant
+  toute ouverture du micro-panel. La prochaine étape de développement prévue
+  est D11, la génération des haplotypes de base à partir des partitions D10
+  désormais matérialisées et auditées.
 
 ## Nouveau run complet V2 — 27 octobre 2026
 

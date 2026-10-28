@@ -49,6 +49,22 @@ effet-fondateur run --config config/testing/synthetic.example.yaml
 python -m pytest tests/
 ```
 
+Le sous-système de calibration reste séparé du pipeline réel. Son étape D10
+matérialise les partitions publiques uniquement dans le workspace ignoré :
+
+```bash
+python -m effet_fondateur.calibration.materialize_partitions \
+  --public-catalog calibration/references/public_reference_catalog.json \
+  --population-metadata <fichier_public_population_3202> \
+  --unrelated-index <index_public_2504> \
+  --workspace-root calibration_workspace \
+  --partition-run-id <identifiant_nouveau>
+```
+
+La commande vérifie les SHA-256 D09, refuse l'écrasement et n'affiche que des
+effectifs agrégés. Les listes d'identifiants restent sous `private_truth/` et
+ne doivent jamais être ajoutées à Git.
+
 Pour quitter l'environnement :
 
 ```bash

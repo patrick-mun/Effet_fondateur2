@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/calibration/schemas/reference_partition_manifest.schema.json",
+  "title": "Manifest privé des partitions de référence de calibration",
+  "description": "Contrat D10 séparant les donneurs de calibration, les donneurs de validation et la référence de phasage commune, sans exposer les identifiants dans le manifest.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "partition_manifest_id",
+    "manifest_state",
+    "created_at",
+    "source_catalog",
+    "source",
+    "partition_inputs",
+    "method",
+    "confidentiality",
+    "partitions",
+    "integrity"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "partition_manifest_id": {"$ref": "#/$defs/stableIdentifier"},
+    "manifest_state": {"const": "FINALIZED"},
+    "created_at": {"$ref": "#/$defs/dateTime"},
+    "source_catalog": {"$ref": "#/$defs/sourceCatalog"},
+    "source": {"$ref": "#/$defs/sourceRecord"},
+    "partition_inputs": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/partitionInput"},
+      "allOf": [
+        {"contains": {"properties": {"purpose": {"const": "INDEPENDENCE_GROUPS"}}, "required": ["purpose"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"purpose": {"const": "PHASING_REFERENCE_CANDIDATES"}}, "required": ["purpose"]}, "minContains": 1, "maxContains": 1}
+      ]
+    },
+    "method": {"$ref": "#/$defs/methodRecord"},
+    "confidentiality": {"$ref": "#/$defs/confidentialityRecord"},
+    "partitions": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/partitionRecord"},
+      "allOf": [
+        {"contains": {"properties": {"role": {"const": "DONOR_CALIBRATION"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "DONOR_VALIDATION"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "PHASING_REFERENCE_SHARED"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1}
+      ]
+    },
+    "integrity": {"$ref": "#/$defs/integrityRecord"}
+  },
+  "$defs": {
+    "stableIdentifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "semanticVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "dateTime": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]+)?(?:Z|[+-](?:0[0-9]|1[0-4]):[0-5][0-9])$"
+    },
+    "safeRepositoryPath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![\\\\/])(?!~)(?![A-Za-z][A-Za-z0-9+.-]*:)(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$))(?!.*[dD][oO][cC][kK]6_[rR][eE][aA][lL])(?!.*[dD][aA][tT][aA][\\\\/][iI][nN][pP][uU][tT])[^\\u0000]+$"
+    },
+    "privateMembershipPath": {
+      "type": "string",
+      "pattern": "^private_truth/partitions/(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9][A-Za-z0-9._/-]*\\.ids\\.txt$"
+    },
+    "sourceCatalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["catalog_id", "catalog_version", "repository_path", "sha256"],
+      "properties": {
+        "catalog_id": {"const": "calibration_public_references_v1"},
+        "catalog_version": {"const": "1.0.0"},
+        "repository_path": {"const": "calibration/references/public_reference_catalog.json"},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "sourceRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "source_type",
+        "version",
+        "assembly",
+        "fingerprint_sha256",
+        "source_identifier_count"
+      ],
+      "properties": {
+        "source_id": {"const": "igsr_1kg_3202_phased_grch38_20220422"},
+        "source_type": {"const": "PHASED_HAPLOTYPE_PANEL"},
+        "version": {"const": "20220422_3202_phased_SNV_INDEL_SV"},
+        "assembly": {"const": "GRCh38"},
+        "fingerprint_sha256": {"$ref": "#/$defs/sha256"},
+        "source_identifier_count": {"type": "integer", "minimum": 3}
+      }
+    },
+    "partitionInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["purpose", "source_id", "version", "fingerprint_sha256"],
+      "properties": {
+        "purpose": {
+          "enum": ["INDEPENDENCE_GROUPS", "PHASING_REFERENCE_CANDIDATES"]
+        },
+        "source_id": {
+          "enum": [
+            "igsr_1kg_3202_population_metadata_20130606",
+            "igsr_1kg_2504_unrelated_sequence_index"
+          ]
+        },
+        "version": {"type": "string", "minLength": 1},
+        "fingerprint_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"purpose": {"const": "INDEPENDENCE_GROUPS"}}, "required": ["purpose"]},
+          "then": {"properties": {"source_id": {"const": "igsr_1kg_3202_population_metadata_20130606"}}}
+        },
+        {
+          "if": {"properties": {"purpose": {"const": "PHASING_REFERENCE_CANDIDATES"}}, "required": ["purpose"]},
+          "then": {"properties": {"source_id": {"const": "igsr_1kg_2504_unrelated_sequence_index"}}}
+        }
+      ]
+    },
+    "methodRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method_id",
+        "method_version",
+        "identifier_normalization",
+        "independence_unit",
+        "mixed_group_policy",
+        "donor_balance_policy",
+        "partition_order_key"
+      ],
+      "properties": {
+        "method_id": {"const": "family_isolated_reference_partition_v1"},
+        "method_version": {"const": "1.0.0"},
+        "identifier_normalization": {"const": "UTF8_NFC_CASEFOLD_COLLISION"},
+        "independence_unit": {"const": "PEDIGREE_OR_KINSHIP_CONNECTED_COMPONENT"},
+        "mixed_group_policy": {"const": "REMOVE_WHOLE_GROUP_FROM_PHASING_REFERENCE"},
+        "donor_balance_policy": {"const": "GREEDY_BALANCE_BY_GROUP_SIZE"},
+        "partition_order_key": {"const": "SHA256_METHOD_SOURCE_FINGERPRINT_GROUP_ID"}
+      }
+    },
+    "confidentialityRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw_identifiers_in_manifest",
+        "membership_artifacts_private",
+        "membership_artifacts_version_control_allowed",
+        "aggregate_counts_publishable"
+      ],
+      "properties": {
+        "raw_identifiers_in_manifest": {"const": false},
+        "membership_artifacts_private": {"const": true},
+        "membership_artifacts_version_control_allowed": {"const": false},
+        "aggregate_counts_publishable": {"const": true}
+      }
+    },
+    "partitionRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "partition_id",
+        "role",
+        "membership_artifact_path",
+        "membership_sha256",
+        "member_count",
+        "independence_group_count",
+        "shared_between_panels"
+      ],
+      "properties": {
+        "partition_id": {"$ref": "#/$defs/stableIdentifier"},
+        "role": {
+          "enum": [
+            "DONOR_CALIBRATION",
+            "DONOR_VALIDATION",
+            "PHASING_REFERENCE_SHARED"
+          ]
+        },
+        "membership_artifact_path": {"$ref": "#/$defs/privateMembershipPath"},
+        "membership_sha256": {"$ref": "#/$defs/sha256"},
+        "member_count": {"type": "integer", "minimum": 1},
+        "independence_group_count": {"type": "integer", "minimum": 1},
+        "shared_between_panels": {"type": "boolean"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"role": {"const": "PHASING_REFERENCE_SHARED"}}, "required": ["role"]},
+          "then": {"properties": {"shared_between_panels": {"const": true}}}
+        },
+        {
+          "if": {"properties": {"role": {"enum": ["DONOR_CALIBRATION", "DONOR_VALIDATION"]}}, "required": ["role"]},
+          "then": {"properties": {"shared_between_panels": {"const": false}}}
+        }
+      ]
+    },
+    "integrityRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "partition_count",
+        "assigned_identifier_count",
+        "unique_identifier_count",
+        "source_identifier_count",
+        "unassigned_identifier_count",
+        "unknown_identifier_count",
+        "forbidden_identifier_overlap_count",
+        "forbidden_independence_group_overlap_count",
+        "all_source_identifiers_assigned_once",
+        "donor_member_count_difference"
+      ],
+      "properties": {
+        "partition_count": {"const": 3},
+        "assigned_identifier_count": {"type": "integer", "minimum": 3},
+        "unique_identifier_count": {"type": "integer", "minimum": 3},
+        "source_identifier_count": {"type": "integer", "minimum": 3},
+        "unassigned_identifier_count": {"const": 0},
+        "unknown_identifier_count": {"const": 0},
+        "forbidden_identifier_overlap_count": {"const": 0},
+        "forbidden_independence_group_overlap_count": {"const": 0},
+        "all_source_identifiers_assigned_once": {"const": true},
+        "donor_member_count_difference": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}
