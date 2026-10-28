@@ -1,0 +1,573 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/calibration/schemas/calibration_config.schema.json",
+  "title": "Configuration d'un panel de simulation et de calibration",
+  "description": "Contrat strict des configurations synthétiques isolées du pipeline réel.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "config_id",
+    "phase",
+    "panel",
+    "random_seeds",
+    "target",
+    "references",
+    "scenarios",
+    "safety",
+    "reporting"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "config_id": {
+      "$ref": "#/$defs/stableIdentifier"
+    },
+    "phase": {
+      "enum": [
+        "micro_panel",
+        "pilot_calibration",
+        "pilot_validation",
+        "qualification_calibration",
+        "qualification_validation"
+      ]
+    },
+    "panel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "panel_id",
+        "role",
+        "individual_count",
+        "genome_scope",
+        "chromosomes"
+      ],
+      "properties": {
+        "panel_id": {
+          "$ref": "#/$defs/stableIdentifier"
+        },
+        "role": {
+          "enum": ["TECHNICAL", "CALIBRATION", "VALIDATION"]
+        },
+        "individual_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "genome_scope": {
+          "enum": ["REDUCED_AUTOSOMAL", "AUTOSOMAL_GENOMEWIDE"]
+        },
+        "chromosomes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 22,
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 22
+          }
+        }
+      }
+    },
+    "random_seeds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "master",
+        "haplotypes",
+        "pedigrees",
+        "recombination",
+        "measurement_error",
+        "blinding"
+      ],
+      "properties": {
+        "master": {"$ref": "#/$defs/randomSeed"},
+        "haplotypes": {"$ref": "#/$defs/randomSeed"},
+        "pedigrees": {"$ref": "#/$defs/randomSeed"},
+        "recombination": {"$ref": "#/$defs/randomSeed"},
+        "measurement_error": {"$ref": "#/$defs/randomSeed"},
+        "blinding": {"$ref": "#/$defs/randomSeed"}
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "variant_id", "ref", "alt"],
+      "properties": {
+        "mode": {
+          "const": "SIMULATED_ONLY"
+        },
+        "variant_id": {
+          "$ref": "#/$defs/stableIdentifier"
+        },
+        "ref": {
+          "$ref": "#/$defs/allele"
+        },
+        "alt": {
+          "$ref": "#/$defs/allele"
+        }
+      }
+    },
+    "references": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assembly", "haplotype_source", "genetic_map_source"],
+      "properties": {
+        "assembly": {
+          "type": "string",
+          "minLength": 1
+        },
+        "haplotype_source": {
+          "$ref": "#/$defs/referenceSource"
+        },
+        "genetic_map_source": {
+          "$ref": "#/$defs/referenceSource"
+        }
+      }
+    },
+    "scenarios": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "founder",
+        "ibd",
+        "measurement_error",
+        "population",
+        "pedigree",
+        "autosomal_positions",
+        "replications"
+      ],
+      "properties": {
+        "founder": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ages_generations", "independent_family_counts"],
+          "properties": {
+            "ages_generations": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "independent_family_counts": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        },
+        "ibd": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["lengths_cm", "include_negative_controls"],
+          "properties": {
+            "lengths_cm": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "number",
+                "minimum": 1.0
+              }
+            },
+            "include_negative_controls": {
+              "const": true
+            }
+          }
+        },
+        "measurement_error": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "missingness_rates",
+            "genotyping_error_rates",
+            "phase_error_rates",
+            "marker_density_fractions"
+          ],
+          "properties": {
+            "missingness_rates": {
+              "$ref": "#/$defs/proportionArray"
+            },
+            "genotyping_error_rates": {
+              "$ref": "#/$defs/proportionArray"
+            },
+            "phase_error_rates": {
+              "$ref": "#/$defs/proportionArray"
+            },
+            "marker_density_fractions": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1
+              }
+            }
+          }
+        },
+        "population": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["stratum_count", "include_admixed"],
+          "properties": {
+            "stratum_count": {
+              "type": "integer",
+              "minimum": 2
+            },
+            "include_admixed": {
+              "type": "boolean"
+            }
+          }
+        },
+        "pedigree": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["trio_count", "kinship_classes"],
+          "properties": {
+            "trio_count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "kinship_classes": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "UNRELATED",
+                  "FIRST_DEGREE",
+                  "SECOND_DEGREE",
+                  "THIRD_DEGREE"
+                ]
+              }
+            }
+          }
+        },
+        "autosomal_positions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["chromosome", "position_bp"],
+            "properties": {
+              "chromosome": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 22
+              },
+              "position_bp": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        },
+        "replications": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kinship_pairs_per_class",
+            "ibd_negative_pairs",
+            "ibd_positive_per_length",
+            "dating_per_age"
+          ],
+          "properties": {
+            "kinship_pairs_per_class": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "ibd_negative_pairs": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "ibd_positive_per_length": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "dating_per_age": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allow_real_data",
+        "allow_dock6_inputs",
+        "expose_private_truth_to_pipeline",
+        "allow_identifier_reuse",
+        "allow_run_overwrite"
+      ],
+      "properties": {
+        "allow_real_data": {"const": false},
+        "allow_dock6_inputs": {"const": false},
+        "expose_private_truth_to_pipeline": {"const": false},
+        "allow_identifier_reuse": {"const": false},
+        "allow_run_overwrite": {"const": false}
+      }
+    },
+    "reporting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "language",
+        "primary_format",
+        "include_json_summary",
+        "include_sha256"
+      ],
+      "properties": {
+        "language": {"const": "fr"},
+        "primary_format": {"const": "HTML"},
+        "include_json_summary": {"const": true},
+        "include_sha256": {"const": true}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"phase": {"const": "micro_panel"}},
+        "required": ["phase"]
+      },
+      "then": {
+        "properties": {
+          "panel": {
+            "properties": {
+              "role": {"const": "TECHNICAL"},
+              "individual_count": {"minimum": 24, "maximum": 60}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"phase": {"const": "pilot_calibration"}},
+        "required": ["phase"]
+      },
+      "then": {
+        "$ref": "#/$defs/pilotCalibrationProfile"
+      }
+    },
+    {
+      "if": {
+        "properties": {"phase": {"const": "pilot_validation"}},
+        "required": ["phase"]
+      },
+      "then": {
+        "$ref": "#/$defs/pilotValidationProfile"
+      }
+    },
+    {
+      "if": {
+        "properties": {"phase": {"const": "qualification_calibration"}},
+        "required": ["phase"]
+      },
+      "then": {
+        "$ref": "#/$defs/qualificationCalibrationProfile"
+      }
+    },
+    {
+      "if": {
+        "properties": {"phase": {"const": "qualification_validation"}},
+        "required": ["phase"]
+      },
+      "then": {
+        "$ref": "#/$defs/qualificationValidationProfile"
+      }
+    }
+  ],
+  "$defs": {
+    "stableIdentifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "allele": {
+      "type": "string",
+      "pattern": "^[ACGTN]+$"
+    },
+    "randomSeed": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "safeRelativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![\\\\/])(?!~)(?![A-Za-z][A-Za-z0-9+.-]*:)(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$))(?!.*[dD][oO][cC][kK]6_[rR][eE][aA][lL])(?!.*[cC][aA][lL][iI][bB][rR][aA][tT][iI][oO][nN]_[wW][oO][rR][kK][sS][pP][aA][cC][eE])(?!.*[cC][aA][lL][iI][bB][rR][aA][tT][iI][oO][nN][\\\\/](?:[rR][uU][nN][sS]|[lL][oO][cC][aA][lL])(?:[\\\\/]|$))[^\\u0000]+$"
+    },
+    "referenceSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "mode"],
+      "properties": {
+        "source_id": {
+          "$ref": "#/$defs/stableIdentifier"
+        },
+        "mode": {
+          "enum": ["PUBLIC_CATALOG", "SYNTHETIC_FIXTURE"]
+        },
+        "catalog_path": {
+          "$ref": "#/$defs/safeRelativePath"
+        },
+        "public_reference_id": {
+          "$ref": "#/$defs/stableIdentifier"
+        },
+        "fixture_id": {
+          "$ref": "#/$defs/stableIdentifier"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"mode": {"const": "PUBLIC_CATALOG"}},
+            "required": ["mode"]
+          },
+          "then": {
+            "required": ["catalog_path", "public_reference_id"],
+            "not": {"required": ["fixture_id"]}
+          }
+        },
+        {
+          "if": {
+            "properties": {"mode": {"const": "SYNTHETIC_FIXTURE"}},
+            "required": ["mode"]
+          },
+          "then": {
+            "required": ["fixture_id"],
+            "not": {
+              "anyOf": [
+                {"required": ["catalog_path"]},
+                {"required": ["public_reference_id"]}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "proportionArray": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      }
+    },
+    "fullAutosomalPanel": {
+      "properties": {
+        "genome_scope": {"const": "AUTOSOMAL_GENOMEWIDE"},
+        "chromosomes": {
+          "minItems": 22,
+          "maxItems": 22,
+          "uniqueItems": true
+        }
+      }
+    },
+    "pilotCalibrationProfile": {
+      "properties": {
+        "panel": {
+          "allOf": [
+            {"$ref": "#/$defs/fullAutosomalPanel"},
+            {
+              "properties": {
+                "role": {"const": "CALIBRATION"},
+                "individual_count": {"const": 500}
+              }
+            }
+          ]
+        }
+      }
+    },
+    "pilotValidationProfile": {
+      "properties": {
+        "panel": {
+          "allOf": [
+            {"$ref": "#/$defs/fullAutosomalPanel"},
+            {
+              "properties": {
+                "role": {"const": "VALIDATION"},
+                "individual_count": {"const": 500}
+              }
+            }
+          ]
+        }
+      }
+    },
+    "qualificationScenarioMinimums": {
+      "properties": {
+        "population": {
+          "properties": {
+            "stratum_count": {"minimum": 5},
+            "include_admixed": {"const": true}
+          }
+        },
+        "pedigree": {
+          "properties": {
+            "trio_count": {"minimum": 100}
+          }
+        },
+        "replications": {
+          "properties": {
+            "kinship_pairs_per_class": {"minimum": 200},
+            "ibd_negative_pairs": {"minimum": 3000},
+            "ibd_positive_per_length": {"minimum": 400},
+            "dating_per_age": {"minimum": 500}
+          }
+        }
+      }
+    },
+    "qualificationCalibrationProfile": {
+      "properties": {
+        "panel": {
+          "allOf": [
+            {"$ref": "#/$defs/fullAutosomalPanel"},
+            {
+              "properties": {
+                "role": {"const": "CALIBRATION"},
+                "individual_count": {"const": 2500}
+              }
+            }
+          ]
+        },
+        "scenarios": {
+          "$ref": "#/$defs/qualificationScenarioMinimums"
+        }
+      }
+    },
+    "qualificationValidationProfile": {
+      "properties": {
+        "panel": {
+          "allOf": [
+            {"$ref": "#/$defs/fullAutosomalPanel"},
+            {
+              "properties": {
+                "role": {"const": "VALIDATION"},
+                "individual_count": {"const": 2500}
+              }
+            }
+          ]
+        },
+        "scenarios": {
+          "$ref": "#/$defs/qualificationScenarioMinimums"
+        }
+      }
+    }
+  }
+}

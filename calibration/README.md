@@ -4,6 +4,10 @@ Ce dossier contient uniquement les éléments reproductibles qui doivent être
 versionnés avec le pipeline : plan, protocoles, configurations, schémas et
 modèles de rapports.
 
+Les développements suivent obligatoirement
+`CONVENTIONS_DEVELOPPEMENT.md`, déclinaison locale de `AGENTS.md` pour la
+simulation, l'aveuglement, les tests et le calcul scientifique.
+
 ## Séparation des espaces
 
 - `calibration/` : documents et contrats suivis par Git ;
@@ -27,11 +31,13 @@ Les chemins historiques éventuels `calibration/runs/` et
 
 ## État actuel
 
-Le périmètre initial D01 et l'arborescence isolée D02 sont établis. Une version
-de travail des critères D04 existe dans
-`protocoles/CRITERES_ACCEPTATION.yaml` ; elle restera non approuvée tant que le
-protocole D03 et le schéma D05 ne seront pas validés. Les seuils de performance
-seront calculés sur le seul pilote de calibration, puis scellés avant le panel
-aveugle. Aucun simulateur, schéma, panel ou rapport de calibration n'a encore
-été produit. Le développement doit suivre
+Le périmètre initial D01 et l'arborescence isolée D02 sont établis. Le protocole
+D03 est `APPROVED` et les critères D04 sont `APPROVED_PRE_PILOT`. Cette
+approbation porte sur le cadre et les règles : les seuils de performance restent
+non scellés et seront proposés sur le seul pilote de calibration selon une
+règle écrite avant le run, puis figés avant le panel aveugle. Le schéma de
+configuration D05 et le manifest de vérité D06 sont créés et testés. Le
+manifest D06 impose neuf familles de vérité synthétique, leurs champs, unités,
+empreintes, chemins privés et consommateurs autorisés. Aucun simulateur, panel
+ou rapport de calibration n'a encore été produit. Le développement doit suivre
 `PLAN_DEVELOPPEMENT_PANEL_SIMULATION.md` et ses portes de passage.

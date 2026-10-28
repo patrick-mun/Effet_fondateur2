@@ -84,3 +84,49 @@ validation prévu est réduit. La nouvelle entrée devra référencer
 Décision approuvée explicitement par le responsable du projet au cours de la
 session du 28 octobre 2026, après examen de la différence entre priorité
 scientifique et validation complète du pipeline.
+
+## CAL-DEC-002 — Approbation de D03 et D04 avant pilote
+
+| Champ | Valeur |
+|---|---|
+| Date | 28 octobre 2026 |
+| Étapes de développement | `D03`, `D04` |
+| Statut | `APPROUVEE` |
+| Effet | immédiat |
+| Porte concernée | préparation de `G1` |
+
+### Décision
+
+Le protocole général D03 version `1.0.0` est approuvé avec le statut
+`APPROVED`. Les critères d'acceptation D04 version `0.2.0` sont approuvés avec
+le statut `APPROVED_PRE_PILOT`.
+
+L'approbation de D04 porte sur les métriques, unités, sens d'amélioration,
+règles de valeurs manquantes, méthodes d'incertitude et cycle de décision. Les
+critères `pilot_then_seal` restent volontairement sans valeur numérique.
+
+### Empreintes au moment de l'approbation
+
+- `PROTOCOLE_GENERAL.md` :
+  `108e8b877091f44e26ad0a8637f911388af559da86680ff685e43569ecfb7062` ;
+- `CRITERES_ACCEPTATION.yaml` :
+  `90f65e9a685fa388bcab813603c6b037daeb04badf6cf2024a2bbd6187c1cec2`.
+
+### Portée et restrictions
+
+Cette décision autorise la poursuite du développement documentaire, des
+schémas, des gardes d'isolation et des tests unitaires. Elle :
+
+- ne scelle aucun seuil de performance issu du pilote ;
+- n'autorise pas encore le micro-panel, le pilote ou la qualification ;
+- ne qualifie aucune méthode scientifique existante ;
+- ne permet pas de passer `16C` à `calibrated: true` ;
+- ne permet aucune utilisation de donnée ou résultat individuel de
+  `dock6_real`.
+
+Les autorisations de run restent soumises aux portes G1 à G4 du plan.
+
+### Validation humaine
+
+Décision approuvée explicitement par le responsable du projet dans la session
+du 28 octobre 2026 après lecture du protocole D03 et de la révision D04.

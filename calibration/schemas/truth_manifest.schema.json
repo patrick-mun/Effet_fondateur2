@@ -1,0 +1,668 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/calibration/schemas/truth_manifest.schema.json",
+  "title": "Manifest de vérité privée d'un panel de calibration",
+  "description": "Inventaire typé et scellé des vérités synthétiques, séparé des entrées aveugles.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "truth_manifest_id",
+    "calibration_run_id",
+    "config_id",
+    "panel",
+    "created_at",
+    "disclosure_state",
+    "coordinate_system",
+    "provenance",
+    "target",
+    "dimensions",
+    "separation",
+    "truth_artifacts"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "truth_manifest_id": {"$ref": "#/$defs/stableIdentifier"},
+    "calibration_run_id": {"$ref": "#/$defs/stableIdentifier"},
+    "config_id": {"$ref": "#/$defs/stableIdentifier"},
+    "panel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["panel_id", "role", "individual_count"],
+      "properties": {
+        "panel_id": {"$ref": "#/$defs/stableIdentifier"},
+        "role": {"enum": ["TECHNICAL", "CALIBRATION", "VALIDATION"]},
+        "individual_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "created_at": {"type": "string", "format": "date-time"},
+    "disclosure_state": {"const": "SEALED_PRIVATE"},
+    "coordinate_system": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assembly",
+        "base_position",
+        "genetic_distance",
+        "age",
+        "proportion",
+        "haplotype_index"
+      ],
+      "properties": {
+        "assembly": {"type": "string", "minLength": 1},
+        "base_position": {"const": "BP_1_BASED_CLOSED"},
+        "genetic_distance": {"const": "cM"},
+        "age": {"const": "generations"},
+        "proportion": {"const": "UNIT_INTERVAL"},
+        "haplotype_index": {"const": "ONE_OR_TWO"}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generator_method_id",
+        "generator_version",
+        "code_commit_sha",
+        "configuration_sha256",
+        "seed_registry_sha256",
+        "public_reference_set_sha256"
+      ],
+      "properties": {
+        "generator_method_id": {"$ref": "#/$defs/stableIdentifier"},
+        "generator_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "code_commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "configuration_sha256": {"$ref": "#/$defs/sha256"},
+        "seed_registry_sha256": {"$ref": "#/$defs/sha256"},
+        "public_reference_set_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "variant_id", "chromosome", "position_bp", "ref", "alt"],
+      "properties": {
+        "mode": {"const": "SIMULATED_ONLY"},
+        "variant_id": {"$ref": "#/$defs/stableIdentifier"},
+        "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+        "position_bp": {"type": "integer", "minimum": 1},
+        "ref": {"$ref": "#/$defs/allele"},
+        "alt": {"$ref": "#/$defs/allele"}
+      }
+    },
+    "dimensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "individual_count",
+        "family_count",
+        "variant_count",
+        "haplotype_count",
+        "simulation_repetition_count",
+        "truth_artifact_count"
+      ],
+      "properties": {
+        "individual_count": {"type": "integer", "minimum": 1},
+        "family_count": {"type": "integer", "minimum": 0},
+        "variant_count": {"type": "integer", "minimum": 1},
+        "haplotype_count": {"type": "integer", "minimum": 2},
+        "simulation_repetition_count": {"type": "integer", "minimum": 1},
+        "truth_artifact_count": {"const": 9}
+      }
+    },
+    "separation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "real_data_source_count",
+        "real_identifier_mapping_count",
+        "calibration_validation_identifier_overlap_count",
+        "private_truth_reference_in_blinded_manifest_count"
+      ],
+      "properties": {
+        "real_data_source_count": {"const": 0},
+        "real_identifier_mapping_count": {"const": 0},
+        "calibration_validation_identifier_overlap_count": {"const": 0},
+        "private_truth_reference_in_blinded_manifest_count": {"const": 0}
+      }
+    },
+    "truth_artifacts": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/truthArtifact"},
+      "allOf": [
+        {"contains": {"properties": {"truth_type": {"const": "SAMPLE_REGISTRY"}}, "required": ["truth_type"]}},
+        {"contains": {"properties": {"truth_type": {"const": "HAPLOTYPES_AND_GENOTYPES"}}, "required": ["truth_type"]}},
+        {"contains": {"properties": {"truth_type": {"const": "ANCESTRY"}}, "required": ["truth_type"]}},
+        {"contains": {"properties": {"truth_type": {"const": "PEDIGREE_KINSHIP"}}, "required": ["truth_type"]}},
+        {"contains": {"properties": {"truth_type": {"const": "TARGET_VARIANT"}}, "required": ["truth_type"]}},
+        {"contains": {"properties": {"truth_type": {"const": "FOUNDER_TRANSMISSION"}}, "required": ["truth_type"]}},
+        {"contains": {"properties": {"truth_type": {"const": "IBD_SEGMENTS"}}, "required": ["truth_type"]}},
+        {"contains": {"properties": {"truth_type": {"const": "ROH_SEGMENTS"}}, "required": ["truth_type"]}},
+        {"contains": {"properties": {"truth_type": {"const": "MEASUREMENT_ERRORS"}}, "required": ["truth_type"]}}
+      ]
+    }
+  },
+  "$defs": {
+    "stableIdentifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "allele": {
+      "type": "string",
+      "pattern": "^[ACGTN]+$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "privateTruthPath": {
+      "type": "string",
+      "pattern": "^private_truth/(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9][A-Za-z0-9._/-]*$"
+    },
+    "reportId": {
+      "enum": [
+        "CAL-REP-00", "CAL-REP-01", "CAL-REP-02", "CAL-REP-03", "CAL-REP-04",
+        "CAL-REP-05", "CAL-REP-06", "CAL-REP-07", "CAL-REP-08", "CAL-REP-09",
+        "CAL-REP-10", "CAL-REP-10A", "CAL-REP-11", "CAL-REP-12", "CAL-REP-12A",
+        "CAL-REP-13", "CAL-REP-14", "CAL-REP-15", "CAL-REP-16", "CAL-REP-16A",
+        "CAL-REP-16B", "CAL-REP-16C", "CAL-REP-17", "CAL-REP-18", "CAL-REP-19"
+      ]
+    },
+    "fieldDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_type", "unit", "nullable"],
+      "properties": {
+        "data_type": {"enum": ["string", "integer", "number", "boolean", "categorical", "object"]},
+        "unit": {"enum": ["none", "bp", "cM", "generations", "proportion", "chromosome", "allele", "genotype", "haplotype_index"]},
+        "nullable": {"type": "boolean"}
+      }
+    },
+    "requiredStringField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_type", "unit", "nullable"],
+      "properties": {
+        "data_type": {"const": "string"},
+        "unit": {"const": "none"},
+        "nullable": {"const": false}
+      }
+    },
+    "nullableStringField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_type", "unit", "nullable"],
+      "properties": {
+        "data_type": {"const": "string"},
+        "unit": {"const": "none"},
+        "nullable": {"const": true}
+      }
+    },
+    "categoricalField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_type", "unit", "nullable"],
+      "properties": {
+        "data_type": {"const": "categorical"},
+        "unit": {"const": "none"},
+        "nullable": {"const": false}
+      }
+    },
+    "booleanField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_type", "unit", "nullable"],
+      "properties": {
+        "data_type": {"const": "boolean"},
+        "unit": {"const": "none"},
+        "nullable": {"const": false}
+      }
+    },
+    "chromosomeField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_type", "unit", "nullable"],
+      "properties": {
+        "data_type": {"const": "integer"},
+        "unit": {"const": "chromosome"},
+        "nullable": {"const": false}
+      }
+    },
+    "nullableChromosomeField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_type", "unit", "nullable"],
+      "properties": {
+        "data_type": {"const": "integer"},
+        "unit": {"const": "chromosome"},
+        "nullable": {"const": true}
+      }
+    },
+    "bpField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_type", "unit", "nullable"],
+      "properties": {
+        "data_type": {"const": "integer"},
+        "unit": {"const": "bp"},
+        "nullable": {"const": false}
+      }
+    },
+    "nullableBpField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_type", "unit", "nullable"],
+      "properties": {
+        "data_type": {"const": "integer"},
+        "unit": {"const": "bp"},
+        "nullable": {"const": true}
+      }
+    },
+    "cmField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_type", "unit", "nullable"],
+      "properties": {
+        "data_type": {"const": "number"},
+        "unit": {"const": "cM"},
+        "nullable": {"const": false}
+      }
+    },
+    "nullableCmField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_type", "unit", "nullable"],
+      "properties": {
+        "data_type": {"const": "number"},
+        "unit": {"const": "cM"},
+        "nullable": {"const": true}
+      }
+    },
+    "generationsField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_type", "unit", "nullable"],
+      "properties": {
+        "data_type": {"const": "integer"},
+        "unit": {"const": "generations"},
+        "nullable": {"const": false}
+      }
+    },
+    "proportionField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_type", "unit", "nullable"],
+      "properties": {
+        "data_type": {"enum": ["number", "object"]},
+        "unit": {"const": "proportion"},
+        "nullable": {"const": false}
+      }
+    },
+    "alleleField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_type", "unit", "nullable"],
+      "properties": {
+        "data_type": {"const": "string"},
+        "unit": {"const": "allele"},
+        "nullable": {"const": false}
+      }
+    },
+    "genotypeField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_type", "unit", "nullable"],
+      "properties": {
+        "data_type": {"const": "categorical"},
+        "unit": {"const": "genotype"},
+        "nullable": {"const": false}
+      }
+    },
+    "objectField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_type", "unit", "nullable"],
+      "properties": {
+        "data_type": {"const": "object"},
+        "unit": {"const": "none"},
+        "nullable": {"const": false}
+      }
+    },
+    "haplotypeIndexField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_type", "unit", "nullable"],
+      "properties": {
+        "data_type": {"const": "integer"},
+        "unit": {"const": "haplotype_index"},
+        "nullable": {"const": false}
+      }
+    },
+    "haplotypeStateField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_type", "unit", "nullable"],
+      "properties": {
+        "data_type": {"const": "categorical"},
+        "unit": {"const": "haplotype_index"},
+        "nullable": {"const": false}
+      }
+    },
+    "recordContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_id", "schema_version", "schema_sha256", "fields"],
+      "properties": {
+        "schema_id": {"$ref": "#/$defs/stableIdentifier"},
+        "schema_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "schema_sha256": {"$ref": "#/$defs/sha256"},
+        "fields": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
+          "additionalProperties": {"$ref": "#/$defs/fieldDefinition"}
+        }
+      }
+    },
+    "truthArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_id",
+        "truth_type",
+        "relative_path",
+        "format",
+        "sha256",
+        "record_count",
+        "sensitivity",
+        "blinded_export_allowed",
+        "record_contract",
+        "consumed_by_evaluators"
+      ],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/stableIdentifier"},
+        "truth_type": {
+          "enum": [
+            "SAMPLE_REGISTRY",
+            "HAPLOTYPES_AND_GENOTYPES",
+            "ANCESTRY",
+            "PEDIGREE_KINSHIP",
+            "TARGET_VARIANT",
+            "FOUNDER_TRANSMISSION",
+            "IBD_SEGMENTS",
+            "ROH_SEGMENTS",
+            "MEASUREMENT_ERRORS"
+          ]
+        },
+        "relative_path": {"$ref": "#/$defs/privateTruthPath"},
+        "format": {"enum": ["JSON", "JSONL", "TSV", "VCF_GZ", "BCF"]},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "record_count": {"type": "integer", "minimum": 0},
+        "sensitivity": {"const": "SYNTHETIC_GENETIC_PRIVATE"},
+        "blinded_export_allowed": {"const": false},
+        "record_contract": {"$ref": "#/$defs/recordContract"},
+        "consumed_by_evaluators": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/reportId"}
+        }
+      },
+      "allOf": [
+        {"$ref": "#/$defs/sampleRegistryTruth"},
+        {"$ref": "#/$defs/haplotypeGenotypeTruth"},
+        {"$ref": "#/$defs/ancestryTruth"},
+        {"$ref": "#/$defs/pedigreeKinshipTruth"},
+        {"$ref": "#/$defs/targetVariantTruth"},
+        {"$ref": "#/$defs/founderTransmissionTruth"},
+        {"$ref": "#/$defs/ibdSegmentsTruth"},
+        {"$ref": "#/$defs/rohSegmentsTruth"},
+        {"$ref": "#/$defs/measurementErrorsTruth"}
+      ]
+    },
+    "sampleRegistryTruth": {
+      "if": {"properties": {"truth_type": {"const": "SAMPLE_REGISTRY"}}, "required": ["truth_type"]},
+      "then": {
+        "properties": {
+          "record_contract": {
+            "properties": {
+              "fields": {
+                "required": ["sample_id", "panel_id", "family_id", "is_synthetic"],
+                "properties": {
+                  "sample_id": {"$ref": "#/$defs/requiredStringField"},
+                  "panel_id": {"$ref": "#/$defs/requiredStringField"},
+                  "family_id": {"$ref": "#/$defs/nullableStringField"},
+                  "is_synthetic": {"$ref": "#/$defs/booleanField"}
+                }
+              }
+            }
+          },
+          "consumed_by_evaluators": {"contains": {"const": "CAL-REP-02"}}
+        }
+      }
+    },
+    "haplotypeGenotypeTruth": {
+      "if": {"properties": {"truth_type": {"const": "HAPLOTYPES_AND_GENOTYPES"}}, "required": ["truth_type"]},
+      "then": {
+        "properties": {
+          "record_contract": {
+            "properties": {
+              "fields": {
+                "required": ["sample_id", "chromosome", "position_bp", "genotype", "haplotype_1_allele", "haplotype_2_allele"],
+                "properties": {
+                  "sample_id": {"$ref": "#/$defs/requiredStringField"},
+                  "chromosome": {"$ref": "#/$defs/chromosomeField"},
+                  "position_bp": {"$ref": "#/$defs/bpField"},
+                  "genotype": {"$ref": "#/$defs/genotypeField"},
+                  "haplotype_1_allele": {"$ref": "#/$defs/alleleField"},
+                  "haplotype_2_allele": {"$ref": "#/$defs/alleleField"}
+                }
+              }
+            }
+          },
+          "consumed_by_evaluators": {
+            "allOf": [
+              {"contains": {"const": "CAL-REP-03"}},
+              {"contains": {"const": "CAL-REP-12"}},
+              {"contains": {"const": "CAL-REP-12A"}}
+            ]
+          }
+        }
+      }
+    },
+    "ancestryTruth": {
+      "if": {"properties": {"truth_type": {"const": "ANCESTRY"}}, "required": ["truth_type"]},
+      "then": {
+        "properties": {
+          "record_contract": {
+            "properties": {
+              "fields": {
+                "required": ["sample_id", "stratum_id", "mixture_proportions"],
+                "properties": {
+                  "sample_id": {"$ref": "#/$defs/requiredStringField"},
+                  "stratum_id": {"$ref": "#/$defs/requiredStringField"},
+                  "mixture_proportions": {"$ref": "#/$defs/proportionField"}
+                }
+              }
+            }
+          },
+          "consumed_by_evaluators": {
+            "allOf": [
+              {"contains": {"const": "CAL-REP-08"}},
+              {"contains": {"const": "CAL-REP-16A"}}
+            ]
+          }
+        }
+      }
+    },
+    "pedigreeKinshipTruth": {
+      "if": {"properties": {"truth_type": {"const": "PEDIGREE_KINSHIP"}}, "required": ["truth_type"]},
+      "then": {
+        "properties": {
+          "record_contract": {
+            "properties": {
+              "fields": {
+                "required": ["sample_1_id", "sample_2_id", "relationship_class", "kinship_coefficient"],
+                "properties": {
+                  "sample_1_id": {"$ref": "#/$defs/requiredStringField"},
+                  "sample_2_id": {"$ref": "#/$defs/requiredStringField"},
+                  "relationship_class": {"$ref": "#/$defs/categoricalField"},
+                  "kinship_coefficient": {"$ref": "#/$defs/proportionField"}
+                }
+              }
+            }
+          },
+          "consumed_by_evaluators": {"contains": {"const": "CAL-REP-07"}}
+        }
+      }
+    },
+    "targetVariantTruth": {
+      "if": {"properties": {"truth_type": {"const": "TARGET_VARIANT"}}, "required": ["truth_type"]},
+      "then": {
+        "properties": {
+          "record_contract": {
+            "properties": {
+              "fields": {
+                "required": ["sample_id", "variant_id", "genotype", "mutant_haplotype"],
+                "properties": {
+                  "sample_id": {"$ref": "#/$defs/requiredStringField"},
+                  "variant_id": {"$ref": "#/$defs/requiredStringField"},
+                  "genotype": {"$ref": "#/$defs/genotypeField"},
+                  "mutant_haplotype": {"$ref": "#/$defs/haplotypeStateField"}
+                }
+              }
+            }
+          },
+          "consumed_by_evaluators": {
+            "allOf": [
+              {"contains": {"const": "CAL-REP-04"}},
+              {"contains": {"const": "CAL-REP-12"}}
+            ]
+          }
+        }
+      }
+    },
+    "founderTransmissionTruth": {
+      "if": {"properties": {"truth_type": {"const": "FOUNDER_TRANSMISSION"}}, "required": ["truth_type"]},
+      "then": {
+        "properties": {
+          "record_contract": {
+            "properties": {
+              "fields": {
+                "required": ["replication_id", "family_id", "sample_id", "age_generations", "left_boundary_bp", "right_boundary_bp", "left_length_cm", "right_length_cm", "total_length_cm", "recombination_events", "founder_haplotype_id", "carrier_haplotype_index"],
+                "properties": {
+                  "replication_id": {"$ref": "#/$defs/requiredStringField"},
+                  "family_id": {"$ref": "#/$defs/requiredStringField"},
+                  "sample_id": {"$ref": "#/$defs/requiredStringField"},
+                  "age_generations": {"$ref": "#/$defs/generationsField"},
+                  "left_boundary_bp": {"$ref": "#/$defs/bpField"},
+                  "right_boundary_bp": {"$ref": "#/$defs/bpField"},
+                  "left_length_cm": {"$ref": "#/$defs/cmField"},
+                  "right_length_cm": {"$ref": "#/$defs/cmField"},
+                  "total_length_cm": {"$ref": "#/$defs/cmField"},
+                  "recombination_events": {"$ref": "#/$defs/objectField"},
+                  "founder_haplotype_id": {"$ref": "#/$defs/requiredStringField"},
+                  "carrier_haplotype_index": {"$ref": "#/$defs/haplotypeIndexField"}
+                }
+              }
+            }
+          },
+          "consumed_by_evaluators": {
+            "allOf": [
+              {"contains": {"const": "CAL-REP-13"}},
+              {"contains": {"const": "CAL-REP-14"}}
+            ]
+          }
+        }
+      }
+    },
+    "ibdSegmentsTruth": {
+      "if": {"properties": {"truth_type": {"const": "IBD_SEGMENTS"}}, "required": ["truth_type"]},
+      "then": {
+        "properties": {
+          "record_contract": {
+            "properties": {
+              "fields": {
+                "required": ["replication_id", "sample_1_id", "sample_2_id", "chromosome", "start_bp", "end_bp", "start_cm", "end_cm", "scenario_id", "is_positive"],
+                "properties": {
+                  "replication_id": {"$ref": "#/$defs/requiredStringField"},
+                  "sample_1_id": {"$ref": "#/$defs/requiredStringField"},
+                  "sample_2_id": {"$ref": "#/$defs/requiredStringField"},
+                  "chromosome": {"$ref": "#/$defs/chromosomeField"},
+                  "start_bp": {"$ref": "#/$defs/nullableBpField"},
+                  "end_bp": {"$ref": "#/$defs/nullableBpField"},
+                  "start_cm": {"$ref": "#/$defs/nullableCmField"},
+                  "end_cm": {"$ref": "#/$defs/nullableCmField"},
+                  "scenario_id": {"$ref": "#/$defs/requiredStringField"},
+                  "is_positive": {"$ref": "#/$defs/booleanField"}
+                }
+              }
+            }
+          },
+          "consumed_by_evaluators": {"contains": {"const": "CAL-REP-16C"}}
+        }
+      }
+    },
+    "rohSegmentsTruth": {
+      "if": {"properties": {"truth_type": {"const": "ROH_SEGMENTS"}}, "required": ["truth_type"]},
+      "then": {
+        "properties": {
+          "record_contract": {
+            "properties": {
+              "fields": {
+                "required": ["replication_id", "sample_id", "chromosome", "start_bp", "end_bp", "start_cm", "end_cm", "scenario_id", "is_positive"],
+                "properties": {
+                  "replication_id": {"$ref": "#/$defs/requiredStringField"},
+                  "sample_id": {"$ref": "#/$defs/requiredStringField"},
+                  "chromosome": {"$ref": "#/$defs/chromosomeField"},
+                  "start_bp": {"$ref": "#/$defs/nullableBpField"},
+                  "end_bp": {"$ref": "#/$defs/nullableBpField"},
+                  "start_cm": {"$ref": "#/$defs/nullableCmField"},
+                  "end_cm": {"$ref": "#/$defs/nullableCmField"},
+                  "scenario_id": {"$ref": "#/$defs/requiredStringField"},
+                  "is_positive": {"$ref": "#/$defs/booleanField"}
+                }
+              }
+            }
+          },
+          "consumed_by_evaluators": {"contains": {"const": "CAL-REP-16"}}
+        }
+      }
+    },
+    "measurementErrorsTruth": {
+      "if": {"properties": {"truth_type": {"const": "MEASUREMENT_ERRORS"}}, "required": ["truth_type"]},
+      "then": {
+        "properties": {
+          "record_contract": {
+            "properties": {
+              "fields": {
+                "required": ["error_event_id", "error_profile_id", "sample_id", "error_type", "affected_field", "original_value", "injected_value", "chromosome", "position_bp", "injected"],
+                "properties": {
+                  "error_event_id": {"$ref": "#/$defs/requiredStringField"},
+                  "error_profile_id": {"$ref": "#/$defs/requiredStringField"},
+                  "sample_id": {"$ref": "#/$defs/nullableStringField"},
+                  "error_type": {"$ref": "#/$defs/categoricalField"},
+                  "affected_field": {"$ref": "#/$defs/requiredStringField"},
+                  "original_value": {"$ref": "#/$defs/nullableStringField"},
+                  "injected_value": {"$ref": "#/$defs/nullableStringField"},
+                  "chromosome": {"$ref": "#/$defs/nullableChromosomeField"},
+                  "position_bp": {"$ref": "#/$defs/nullableBpField"},
+                  "injected": {"$ref": "#/$defs/booleanField"}
+                }
+              }
+            }
+          },
+          "consumed_by_evaluators": {
+            "allOf": [
+              {"contains": {"const": "CAL-REP-05"}},
+              {"contains": {"const": "CAL-REP-10"}}
+            ]
+          }
+        }
+      }
+    }
+  }
+}
