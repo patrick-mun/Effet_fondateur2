@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Vérité D15 par paire et scénario",
+  "type": "array",
+  "minItems": 10,
+  "maxItems": 10,
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "replication_id",
+      "scenario_id",
+      "sample_1_id",
+      "sample_2_id",
+      "template_id",
+      "is_positive",
+      "chromosome",
+      "requested_length_cm",
+      "start_bp",
+      "end_bp",
+      "start_cm",
+      "end_cm",
+      "minimum_markers"
+    ],
+    "properties": {
+      "replication_id": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+      },
+      "scenario_id": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+      },
+      "sample_1_id": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+      },
+      "sample_2_id": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+      },
+      "template_id": {
+        "anyOf": [
+          {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "is_positive": {
+        "type": "boolean"
+      },
+      "chromosome": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 22
+      },
+      "requested_length_cm": {
+        "type": "number",
+        "exclusiveMinimum": 0
+      },
+      "start_bp": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "minimum": 1
+      },
+      "end_bp": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "minimum": 1
+      },
+      "start_cm": {
+        "type": [
+          "number",
+          "null"
+        ]
+      },
+      "end_cm": {
+        "type": [
+          "number",
+          "null"
+        ]
+      },
+      "minimum_markers": {
+        "type": "integer",
+        "minimum": 1
+      }
+    },
+    "allOf": [
+      {
+        "if": {
+          "properties": {
+            "is_positive": {
+              "const": false
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "template_id": {
+              "type": "null"
+            },
+            "start_bp": {
+              "type": "null"
+            },
+            "end_bp": {
+              "type": "null"
+            },
+            "start_cm": {
+              "type": "null"
+            },
+            "end_cm": {
+              "type": "null"
+            }
+          }
+        },
+        "else": {
+          "properties": {
+            "template_id": {
+              "not": {
+                "type": "null"
+              }
+            },
+            "start_bp": {
+              "not": {
+                "type": "null"
+              }
+            },
+            "end_bp": {
+              "not": {
+                "type": "null"
+              }
+            },
+            "start_cm": {
+              "not": {
+                "type": "null"
+              }
+            },
+            "end_cm": {
+              "not": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

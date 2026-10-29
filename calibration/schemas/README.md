@@ -61,6 +61,51 @@ diploïdes exacts à deux composantes 50/50. Le manifest lie par SHA-256 D11a,
 D11b et la configuration, inventorie la vérité d'ascendance privée, la
 provenance D12→D11, le panel phasé dense et sa copie observable sans étiquette.
 
+`pedigree_config.schema.json` et `pedigree_manifest.schema.json` encadrent D13.
+Ils figent le pedigree de cousins germains, la sélection sans remplacement dans
+une même strate, la graine, l'interdiction des recombinaisons avant D14 et les
+liaisons SHA-256 vers les quatre entrées D12. Le manifest inventorie séparément
+les vérités de pedigree, parenté, transmission, provenance et ascendance, ainsi
+que les panels dense et aveugle. Tous les compteurs d'incohérence mendélienne,
+de copie fondatrice ou de chevauchement familial doivent être nuls.
+
+`founder_simulation_config.schema.json` et
+`founder_simulation_manifest.schema.json` encadrent D14. Ils figent l'âge, la
+graine, le variant synthétique, le processus exponentiel des premiers
+breakpoints et la censure aux bords. Le manifest lie D11a, D12 et D13 par
+SHA-256, inventorie neuf artefacts privés et sépare segments, porteurs, vérité
+du variant et mosaïque d'ascendance locale. Une recombinaison censurée ne peut
+pas être comptée comme un événement observé.
+
+`simulation_window_config.schema.json` et
+`simulation_window_manifest.schema.json` encadrent D14b. Ils imposent le
+dimensionnement primaire en `cM`, la séparation du défi de censure, une cible
+publique présélectionnée, les seuils de marqueurs IBD et l'interdiction de
+filtrer les tirages selon leur résultat. Le manifest conserve les empreintes
+des trois références publiques, les bornes réalisées et l'audit de densité.
+
+`simulation_window_replay.schema.json` scelle séparément le rejeu D11a–D14.
+Il lie les six manifests par SHA-256, contrôle le domaine, la cible, le rôle de
+panel, l'observation d'un chemin de recombinaison interne et l'absence d'erreur
+mendélienne, sans modifier un manifest déjà finalisé.
+
 Les références croisées entre identifiants et la résolution physique des
 chemins seront contrôlées par les gardes D08. Aucun artefact généré ne doit être
 stocké ici.
+
+`ibd_simulation_manifest.schema.json` et `ibd_injection_truth.schema.json`
+encadrent D15. Le premier lie D14b, le reçu, D11a et D14 par empreintes et
+impose zéro erreur de copie, de modification négative ou de Mendel. Le second
+décrit chaque réplication, paire, matrice, longueur demandée et bornes réalisées
+en bp/cM ; les négatifs exigent des bornes et une matrice nulles.
+
+`roh_simulation_config.schema.json`, `roh_injection_truth.schema.json`,
+`roh_induced_ibd_truth.schema.json` et `roh_simulation_manifest.schema.json`
+encadrent D16. Ils imposent quatre
+scénarios, trois origines autozygotes et un témoin avec bornes nulles. Les
+copies H1/H2 sont explicites et une ROH est couplée à un positif D15 nommé.
+Le manifest lie configuration et sources, huit artefacts privés, la densité
+observable et les compteurs d'erreur nuls. `gamma_inputs_modified` et
+`calibrated` restent `false`.
+La vérité IBD induite déclare explicitement le partage H2–H1 supplémentaire
+créé sur l'intersection ROH/IBD de la paire couplée.

@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0.0",
+  "pedigree_config_id": "d13_diagnostic_100kb_calibration_v1",
+  "config_state": "FINALIZED",
+  "method": {
+    "method_id": "first_cousin_whole_haplotype_transmission_v1",
+    "method_version": "1.0.0",
+    "random_seed": 1003,
+    "family_template": "FIRST_COUSIN_PEDIGREE",
+    "source_selection": "SAME_STRATUM_WITHOUT_REPLACEMENT",
+    "recombination_policy": "FORBIDDEN_DEFERRED_TO_D14"
+  },
+  "family_groups": [
+    {
+      "family_group_id": "PED_CEU",
+      "stratum_id": "CEU",
+      "family_count": 1
+    },
+    {
+      "family_group_id": "PED_ADMIX_CEU_YRI",
+      "stratum_id": "ADMIX_CEU_YRI",
+      "family_count": 1
+    }
+  ],
+  "unrelated_pair_count": 2
+}

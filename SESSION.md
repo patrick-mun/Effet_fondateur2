@@ -196,6 +196,163 @@ Dernière mise à jour : 29 octobre 2026
   exactement les mêmes SHA-256 que ceux de `v1`. Le SHA-256 du nouveau manifest,
   qui diffère normalement par l'identifiant et l'horodatage du run, est
   `841b3bc6bf8a739bfeb436de2ac2d72b9fc279395e87f51ade0f20cd2f8ae262`.
+- L'étape D13 est implémentée avec deux schémas stricts, une configuration
+  diagnostique, le générateur de pedigrees et son matérialisateur atomique. Une
+  unité de cousins germains utilise quatre fondateurs D12 distincts, produit
+  quatre descendants et quatre trios, puis dérive récursivement les parentés
+  théoriques du premier au troisième degré. D13 transmet des haplotypes entiers
+  et réserve explicitement les recombinaisons à D14.
+- Le premier essai D13 `v1` a été invalidé avant acceptation : l'ascendance des
+  descendants métissés y était moyennée depuis les parents au lieu de suivre
+  les copies réellement transmises. Il est conservé uniquement comme trace
+  d'audit. Le correctif lie désormais par SHA-256 la provenance haplotypique
+  D12 et recalcule chaque ascendance D13 depuis les deux copies héritées.
+- Le run de référence
+  `d13_integration_cal_chr19_11000000_11100000_v3` contient 900 fondateurs,
+  huit descendants, deux familles, huit trios et 16 transmissions. Les 2 484
+  variants denses et l'unique marqueur observable sont conservés ; les 58
+  paires de vérité couvrent 26 relations non apparentées, 18 au premier degré,
+  12 au deuxième et deux au troisième. Les neuf contrôles passent avec zéro
+  erreur mendélienne, de copie, d'allèle, de parent ou d'ascendance. Les sept
+  artefacts, le schéma, les effectifs, l'aveuglement et les permissions sont
+  valides. Les 477 tests de calibration et les 791 tests du dépôt passent. Le
+  calcul de parenté reste borné à chaque unité familiale de huit membres afin
+  d'éviter une matrice quadratique sur tous les fondateurs. Le SHA-256 du
+  manifest D13 de référence est
+  `222927ea28c0bfdc2e29778e9c5a08f75f4f5cae1abbb0ca76e238a1d7365722`.
+  Ses sept charges utiles sont octet pour octet identiques au run corrigé `v2` ;
+  seul le calcul interne de parenté a été borné par famille.
+- L'étape D14 est implémentée avec deux schémas stricts, une configuration
+  diagnostique, un moteur de recombinaison fondé sur la carte D11a et un
+  matérialisateur atomique. Chaque bras suit le premier événement d'une loi
+  exponentielle de taux `âge / 100` par cM. Les événements hors domaine sont
+  censurés sans être comptés ; la mosaïque est propagée par origine D12 pour
+  préserver les transmissions D13.
+- Le run `d14_integration_cal_chr19_11000000_11100000_age150_v2` utilise un âge
+  vrai de 150 générations et le SNV synthétique `chr19:11050057 C/T`. Il compte
+  deux familles, cinq copies porteuses, 2 484 variants denses et un marqueur
+  observable. Les quatre bras sont censurés aux bords de la fenêtre de
+  `0,1356203263 cM`, donc aucun breakpoint interne n'est revendiqué. Les tests
+  sur carte longue couvrent séparément les recombinaisons internes.
+- Les neuf artefacts D14, leurs effectifs et SHA-256, les coordonnées, les
+  génotypes cibles, les permissions et l'aveuglement sont valides ; Mendel reste
+  sans erreur après 408 substitutions alléliques de mosaïque. Les 485 tests de
+  calibration et les 799 tests du dépôt passent. Le SHA-256 du manifest privé
+  D14 est
+  `c1e848f512027bcffae70895869bf49fa1df827f752c56743056a8d167ae04b3`.
+  Ses neuf charges utiles sont identiques à celles du premier run `v1`, rejoué
+  avant ajout des gardes finales de disjonction des origines.
+- Le plan passe en version `0.3` et introduit D14b avant D15. Une fenêtre
+  principale est désormais dimensionnée en `cM` pour limiter à `0,05` la
+  probabilité théorique de censure de chaque bras : sa demi-largeur minimale
+  vaut `-100 × ln(0,05) / âge`, soit `299,573 / âge cM`. Les dix âges de la
+  grille possèdent leurs largeurs préspecifiées ; une cible sans marge
+  suffisante est déclarée `INFEASIBLE_WINDOW`, sans extrapolation ni rabotage.
+- D14b sépare les fenêtres principales utilisées pour les métriques des
+  fenêtres volontairement tronquées réservées au contrôle de la censure. Il
+  impose une sélection déterministe fondée uniquement sur D09/D11/D11b, les
+  inventaires dense/observable, les seuils de marqueurs D15/16C, un manifest
+  privé empreinté et un rejeu lié de la chaîne D11a–D14. Un tirage censuré ne
+  peut pas être rejeté ou rejoué pour obtenir un résultat plus favorable.
+- D14b est implémentée avec deux schémas de fenêtre, un schéma de reçu de
+  rejeu, un moteur de quantile/interpolation sans extrapolation, un
+  matérialisateur atomique et un scelleur de chaîne. La configuration
+  `d14b_micro_chr5_age100_calibration_v1` utilise une cible synthétique
+  publique sur le chromosome 5, indépendante de DOCK6, à 100 générations.
+- Le run `d14b_integration_cal_chr5_age100_v1` matérialise une fenêtre
+  principale de `5,9914769625 cM` entre `82 789 211` et `91 015 050 bp`, ainsi
+  qu'un défi de censure de `0,2000055436 cM`. La fenêtre principale contient
+  165 290 SNV denses et 487 marqueurs CytoScan harmonisés ; les scénarios 1,
+  1,5, 2, 3 et 5 cM sont tous `EVALUABLE`, avec respectivement 95, 145, 178,
+  261 et 400 marqueurs. Son manifest possède le SHA-256
+  `52e95f594abbb32ff2bebb6d873671530ba14c787b9b8a02c2cf123dd0e779b8`.
+- Le rejeu réel D11a–D14 sur cette fenêtre conserve 900 individus de base,
+  1 800 haplotypes, 18 strates, 165 290 variants denses et 487 variants
+  observables. D13 ajoute huit descendants et 16 transmissions avec zéro
+  erreur mendélienne. D14 réalise quatre breakpoints internes dans deux
+  familles, sans bras censuré, après 22 292 substitutions de mosaïque et sans
+  erreur mendélienne. Les manifests D11a, D11b, D12, D13 et D14 ont pour
+  SHA-256 respectifs `2597f489951130bc974c3633b1c552d9aed6eb1157200de03a12eddec3cf5e47`,
+  `c54a7465fb95314c0d5692dc26049b5f5b981852329bcbf717635ec9cea4a874`,
+  `062764cdf4bd3cf1ec2578fde2f12d4c3da1ab5132bac584b0dd65f78e8b9f1c`,
+  `61771aae1507a329cedc613095ac9b1b8a19ced386b6c4db6a6052c40e032bd1`
+  et `3489ca6330e100d9977e13d2d5884a8f81f8b11f2ae4f620a18192ba1a58322a`.
+- Le reçu privé `d14b_replay_cal_chr5_age100_v1` vérifie les cinq liaisons de
+  manifests, le domaine, la cible, le rôle de panel, les recombinaisons
+  internes et Mendel sans modifier les runs finalisés. Son SHA-256 est
+  `b0193ae7f1a0d3bc1c51332f156efb72392d49ee20b04ac05e85d0b9972c246f`.
+  L'ensemble des sept runs D14b et D11a–D14 occupe environ 70 Mio dans le
+  workspace ignoré ; D11a complète a nécessité environ 16 minutes à elle seule,
+  ce qui devra guider le futur sous-échantillonnage contractuel du micro-panel.
+- Validation finale D14b : 23 tests ciblés, 508 tests de calibration et les
+  822 tests du dépôt réussissent. Les deux configurations et les deux documents
+  D14b générés valident leurs schémas ; compilation, imports et
+  `git diff --check` réussissent. Aucun fichier de `dock6_real`, aucun run
+  scientifique existant et aucun artefact généré n'ont été ajoutés au dépôt.
+- D15 est implémentée dans `simulation/ibd.py` et `materialize_ibd.py`, avec
+  deux schémas stricts et le rapport autonome `report_ibd_injection.py`.
+  La méthode `disjoint_unrelated_haplotype_copy_v1` utilise les cinq longueurs
+  et seuils D14b scellés. La graine `2884982008` est dérivée par SHA-256 de la
+  graine de recombinaison `1004`, du rôle et de l'identifiant de méthode.
+- Le run `d15_integration_cal_chr5_v1` contient cinq paires positives et cinq
+  paires sans injection, avec 25 sujets/matrices disjoints hors pedigree et
+  hors porteurs D14. Les 165 290 variants denses et 487 marqueurs observables
+  sont conservés. Après 35 570 substitutions, les erreurs de copie, les
+  modifications négatives et les erreurs mendéliennes restent nulles. Une
+  comparaison indépendante des fichiers confirme les copies H1 et les cinq
+  négatifs inchangés ; les longueurs 1, 1,5, 2, 3 et 5 cM conservent 95, 145,
+  178, 261 et 400 marqueurs. SHA-256 du manifest D15 :
+  `04efe545f60549963f77e76b39388b67086f8522d8d8636f46c58615b756c96b`.
+- Les négatifs signifient absence d'injection ; leur IBD historique reste
+  inconnu. Les bornes vraies décrivent l'origine commune injectée, sans
+  garantir les limites maximales d'un appel. La matrice et les bornes sont une
+  surcharge locale d'origine à appliquer avant les évaluations d'ascendance.
+  Ce contrôle régional par paire ne qualifie pas le consensus familial 16C,
+  les 22 autosomes ni les effectifs requis ; `calibrated` reste `false`.
+- Validation D15 : 15 tests ciblés et 523 tests de calibration réussis ;
+  imports, schémas et `git diff --check` valides. La suite complète hors
+  calibration n'a pas été relancée : les modules de production et leurs
+  imports publics ne sont pas modifiés par D15.
+- Rapport indépendant `CAL-DEV-D15` généré avec le modèle report-formater,
+  sous `calibration_workspace/d15_validation_report_chr5_v2/` : HTML
+  autonome, JSON agrégé, PDF de six pages et empreintes. Les quatorze sections,
+  les renvois du sommaire et les pieds de contenu ont été contrôlés dans
+  Chrome après pagination complète. L'essai de rapport `v1` est conservé
+  comme diagnostic : l'export CLI initial avait précédé la fin de pagination.
+- D16 est implémentée dans `simulation/roh.py` et `materialize_roh.py`, avec
+  quatre schémas stricts et le rapport indépendant `report_roh_injection.py`.
+  La méthode `within_sample_h1_to_h2_roh_copy_v1` conserve H1 et copie H1 vers
+  H2 dans trois ROH de 2 Mb : éloignée de la cible, centrée sans IBD injecté,
+  centrée chez un positif D15. Un quatrième sujet reste sans injection ; cela
+  ne garantit pas l'absence de ROH historique. Les autres sujets sélectionnés
+  sont hors pedigree, hors porteurs D14 et hors paires/matrices D15.
+- Le run final `d16_integration_cal_chr5_v2`, graine dérivée `3385969657`,
+  conserve 165 290 variants denses et 487 marqueurs observables. Les ROH
+  contiennent 99, 127 et 127 sondes ; 3 814 substitutions H2 sont effectuées.
+  Les erreurs ROH, IBD, mendéliennes, les modifications H1 et des négatifs sont
+  nulles. Une comparaison indépendante complète confirme que seules les trois
+  copies H2 autorisées changent ; la vérité IBD D15 est conservée à l'identique.
+- Le couplage ROH/IBD crée une relation H2–H1 supplémentaire dans la paire D15,
+  enregistrée séparément : environ 1,39749 cM, vérifiés sur 41 840 variants.
+  Ce partage n'est pas une répétition indépendante. Les huit artefacts sont
+  liés au manifest SHA-256
+  `6da095542763fb517dafc23701f3607d0e3b8410f395d5f0a5138e6d09cc0d9f`.
+  Le run `v1`, antérieur à cette vérité dérivée explicite, reste un audit
+  provisoire et ne doit pas servir de référence finale.
+- Validation D16 : 20 tests ciblés et 543 tests de calibration réussis ;
+  imports, schémas et `git diff --check` valides. La suite hors calibration
+  n'a pas été relancée ; aucun module scientifique de production n'est changé.
+  Aucun pipeline complet ni aucune donnée d'étude n'ont été utilisés pour D16.
+  Le rapport `CAL-DEV-D16` est dans
+  `calibration_workspace/d16_validation_report_chr5_v2/` : HTML autonome,
+  JSON agrégé, PDF de six pages, deux figures et empreintes. Pagination,
+  sommaire, pieds de page et absence de débordement sont contrôlés dans Chrome.
+  Le modèle report-formater impose les quatorze sections et la vérification
+  visuelle. Qualification de détection réservée à D26 ; `calibrated=false`.
+- Contrôle avant sauvegarde : un échec intermittent de rejeu D16 provenait
+  exclusivement des horodatages gzip des entrées synthétiques de test. Les
+  fixtures D15/D16 utilisent désormais une compression déterministe ; leurs
+  comparaisons forcent deux heures distinctes, sans affaiblir les assertions.
 - Le plan de développement est créé sous
   `calibration/PLAN_DEVELOPPEMENT_PANEL_SIMULATION.md`. Il sépare strictement
   données aveugles, vérité simulée, panel de calibration et panel de validation.
@@ -219,9 +376,12 @@ Dernière mise à jour : 29 octobre 2026
   au même panel et au même domaine : le prérequis technique de D12 est
   satisfait. Avec un seul marqueur de puce sur 100 kb, ce diagnostic ne
   remplace toutefois pas le futur micro-panel D33 ni son contrôle de densité.
-  D12 est désormais matériellement validée sur ce domaine. La prochaine action
-  concrète est D13, qui introduira les pedigrees et permettra enfin le contrôle
-  des transmissions mendéliennes parent–enfant.
+  D12 et D13 sont désormais matériellement validées sur ce domaine. La
+  D14 est désormais matériellement contrôlée pour la chaîne et la censure sur
+  le domaine court, puis pour les recombinaisons internes sur le domaine D14b
+  large. D14b lève le blocage documentaire et technique placé avant D15. La
+  D15 et D16 sont désormais techniquement validées sur ce domaine. La prochaine
+  action concrète est D17, injection tracée des imperfections de mesure.
 
 ## Nouveau run complet V2 — 27 octobre 2026
 

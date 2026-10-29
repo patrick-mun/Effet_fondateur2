@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/calibration/schemas/founder_simulation_config.schema.json",
+  "title": "Configuration privée de simulation fondatrice D14",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "founder_simulation_config_id", "config_state",
+    "replication_id", "method", "target_variant"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "founder_simulation_config_id": {"$ref": "#/$defs/stableIdentifier"},
+    "config_state": {"const": "FINALIZED"},
+    "replication_id": {"$ref": "#/$defs/stableIdentifier"},
+    "method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method_id", "method_version", "random_seed", "age_generations",
+        "family_selection", "carrier_lineage_selection",
+        "founder_haplotype_selection", "breakpoint_process", "edge_policy"
+      ],
+      "properties": {
+        "method_id": {"const": "map_first_breakpoint_founder_mosaic_v1"},
+        "method_version": {"const": "1.0.0"},
+        "random_seed": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "age_generations": {"type": "integer", "minimum": 1},
+        "family_selection": {"const": "ALL_D13_PEDIGREE_FAMILIES"},
+        "carrier_lineage_selection": {"const": "RANDOM_TERMINAL_DESCENDANT_HAPLOTYPE"},
+        "founder_haplotype_selection": {"const": "RANDOM_UNRELATED_D13_HAPLOTYPE"},
+        "breakpoint_process": {"const": "INDEPENDENT_EXPONENTIAL_FIRST_EVENT_EACH_SIDE"},
+        "edge_policy": {"const": "RIGHT_CENSOR_AT_MAP_DOMAIN"}
+      }
+    },
+    "target_variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "variant_id", "chromosome", "position_bp", "reference_allele",
+        "alternate_allele", "position_policy"
+      ],
+      "properties": {
+        "variant_id": {"$ref": "#/$defs/stableIdentifier"},
+        "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+        "position_bp": {"type": "integer", "minimum": 1},
+        "reference_allele": {"enum": ["A", "C", "G", "T"]},
+        "alternate_allele": {"enum": ["A", "C", "G", "T"]},
+        "position_policy": {"const": "EXISTING_BIALLELIC_SNV_RESET_TO_SYNTHETIC_MUTATION"}
+      }
+    }
+  },
+  "$defs": {
+    "stableIdentifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    }
+  }
+}

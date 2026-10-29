@@ -42,3 +42,43 @@ de diploïdes D11 provenant de deux strates donnent deux mélanges réciproques
 recombinaison, seules les proportions pures ou 50/50 sont exactes ; les
 proportions inégales sont différées à D14. La vérité et la provenance restent
 privées, tandis que le VCF observable ne contient aucune étiquette d'ascendance.
+
+`simulation/pedigrees.py` et `materialize_pedigrees.py` implémentent D13. Ils
+sélectionnent sans remplacement quatre fondateurs D12 par unité familiale,
+construisent quatre trios jusqu'aux cousins germains et calculent la parenté
+théorique depuis le pedigree. Chaque enfant reçoit une copie entière de chaque
+parent ; l'ascendance est dérivée des copies D12 effectivement transmises et
+contrôlée contre la provenance haplotypique. Les vérités restent privées et le
+VCF observable ne contient aucun libellé familial ou d'ascendance.
+
+`simulation/founder_recombination.py` et
+`materialize_founder_recombination.py` implémentent D14. Ils vérifient la chaîne
+empreintée D11a–D13, utilisent la carte génétique réelle du run D11a et tirent
+indépendamment le premier breakpoint de chaque bras. La mosaïque fondatrice est
+propagée par origine haplotypique afin de préserver Mendel. Les limites hors
+domaine sont censurées, la mutation synthétique est injectée sur un SNV
+existant et les vérités ne sont jamais écrites dans le VCF observable.
+
+`simulation/windows.py` et `materialize_simulation_windows.py` implémentent
+D14b. Ils calculent le quantile de censure par âge, inversent la carte en
+arrondissant les bornes vers l'extérieur, refusent toute extrapolation et
+harmonisent l'univers CytoScan avec le VCF public avant d'accepter les seuils
+IBD. `materialize_window_replay_receipt.py` vérifie ensuite les liaisons
+SHA-256 D14b→D11a→D11b→D12→D13→D14 et écrit un reçu privé atomique.
+
+`simulation/ibd.py` et `materialize_ibd.py` implémentent D15 : dix paires
+positives/négatives disjointes sur les cinq longueurs D14b, sélection hors
+pedigree, copie H1 commune, invariance des négatifs, contrôle Mendel, empreintes
+et schémas avant publication. Les matrices sont distinctes des sujets ; le
+fond public peut conserver du partage inconnu. `report_ibd_injection.py`
+produit un rapport technique français indépendant à partir d'un modèle
+report-formater fourni explicitement, sans estimer de sensibilité IBD.
+
+`simulation/roh.py` et `materialize_roh.py` implémentent D16. Ils copient H1
+sur H2 pour réaliser trois origines autozygotes, dont une sur un sujet IBD
+positif. H1 et les copies IBD sont contrôlées, les sujets de transmission et
+les négatifs/matrices IBD sont protégés. Les seuils observables sont vérifiés
+avant écriture. Les huit artefacts conservent séparément ROH, IBD original,
+IBD induit H2–H1, pedigree, transmissions, audit de densité et VCF.
+`report_roh_injection.py` publie le
+rapport de développement à partir d'un modèle report-formater explicite.

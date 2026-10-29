@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/calibration/schemas/pedigree_config.schema.json",
+  "title": "Configuration privée des pedigrees D13",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "pedigree_config_id", "config_state", "method",
+    "family_groups", "unrelated_pair_count"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "pedigree_config_id": {"$ref": "#/$defs/stableIdentifier"},
+    "config_state": {"const": "FINALIZED"},
+    "method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method_id", "method_version", "random_seed", "family_template",
+        "source_selection", "recombination_policy"
+      ],
+      "properties": {
+        "method_id": {"const": "first_cousin_whole_haplotype_transmission_v1"},
+        "method_version": {"const": "1.0.0"},
+        "random_seed": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "family_template": {"const": "FIRST_COUSIN_PEDIGREE"},
+        "source_selection": {"const": "SAME_STRATUM_WITHOUT_REPLACEMENT"},
+        "recombination_policy": {"const": "FORBIDDEN_DEFERRED_TO_D14"}
+      }
+    },
+    "family_groups": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["family_group_id", "stratum_id", "family_count"],
+        "properties": {
+          "family_group_id": {"$ref": "#/$defs/stableIdentifier"},
+          "stratum_id": {"$ref": "#/$defs/stableIdentifier"},
+          "family_count": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "unrelated_pair_count": {"type": "integer", "minimum": 1}
+  },
+  "$defs": {
+    "stableIdentifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    }
+  }
+}

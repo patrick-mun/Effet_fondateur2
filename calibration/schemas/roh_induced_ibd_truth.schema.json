@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Partage IBD H2–H1 induit par une copie ROH D16",
+  "type": "array",
+  "minItems": 1,
+  "maxItems": 1,
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "replication_id",
+      "roh_scenario_id",
+      "source_ibd_scenario_id",
+      "sample_1_id",
+      "sample_2_id",
+      "haplotype_1_index",
+      "haplotype_2_index",
+      "chromosome",
+      "start_bp",
+      "end_bp",
+      "start_cm",
+      "end_cm",
+      "is_positive",
+      "origin_policy"
+    ],
+    "properties": {
+      "replication_id": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+      },
+      "roh_scenario_id": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+      },
+      "source_ibd_scenario_id": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+      },
+      "sample_1_id": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+      },
+      "sample_2_id": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+      },
+      "haplotype_1_index": {
+        "const": 2
+      },
+      "haplotype_2_index": {
+        "const": 1
+      },
+      "chromosome": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 22
+      },
+      "start_bp": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "end_bp": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "start_cm": {
+        "type": "number"
+      },
+      "end_cm": {
+        "type": "number"
+      },
+      "is_positive": {
+        "const": true
+      },
+      "origin_policy": {
+        "const": "ROH_COPY_OF_D15_SHARED_H1"
+      }
+    }
+  }
+}

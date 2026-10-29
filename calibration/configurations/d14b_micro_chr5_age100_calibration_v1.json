@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0.0",
+  "simulation_window_config_id": "d14b_micro_chr5_age100_calibration_v1",
+  "config_state": "FINALIZED",
+  "panel_role": "CALIBRATION",
+  "method": {
+    "method_id": "map_quantile_window_design_v1",
+    "method_version": "1.0.0",
+    "maximum_arm_censor_probability": 0.05,
+    "genetic_map_interpolation": "PIECEWISE_LINEAR_NO_EXTRAPOLATION",
+    "candidate_selection": "PRESELECTED_PUBLIC_REFERENCE_TARGET",
+    "outcome_filtering": "FORBIDDEN"
+  },
+  "marker_requirements": {
+    "minimum_flank_markers_each_side": 2,
+    "ibd_scenarios": [
+      {"scenario_id": "sensitivity_1cm", "segment_length_cm": 1, "minimum_observed_markers": 30},
+      {"scenario_id": "sensitivity_1_5cm", "segment_length_cm": 1.5, "minimum_observed_markers": 50},
+      {"scenario_id": "primary_2cm", "segment_length_cm": 2, "minimum_observed_markers": 100},
+      {"scenario_id": "extended_3cm", "segment_length_cm": 3, "minimum_observed_markers": 100},
+      {"scenario_id": "extended_5cm", "segment_length_cm": 5, "minimum_observed_markers": 100}
+    ]
+  },
+  "window_specs": [
+    {
+      "window_id": "chr5_age100_primary",
+      "purpose": "PRIMARY",
+      "age_generations": 100,
+      "chromosome": 5,
+      "target": {
+        "variant_id": "SYNTHETIC_TARGET_D14B_CHR5",
+        "position_bp": 84991179,
+        "reference_allele": "T",
+        "alternate_allele": "A"
+      }
+    },
+    {
+      "window_id": "chr5_age100_censoring_challenge",
+      "purpose": "CENSORING_CHALLENGE",
+      "age_generations": 100,
+      "chromosome": 5,
+      "target": {
+        "variant_id": "SYNTHETIC_TARGET_D14B_CHR5",
+        "position_bp": 84991179,
+        "reference_allele": "T",
+        "alternate_allele": "A"
+      },
+      "challenge_half_width_cm": 0.1
+    }
+  ]
+}

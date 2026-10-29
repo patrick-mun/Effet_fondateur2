@@ -115,6 +115,43 @@ est limité à deux haplotypes de strates différentes, donc 50/50. La vérité
 d'ascendance et la provenance restent dans `calibration_workspace/`; aucune
 étiquette de strate n'est écrite dans le VCF observable.
 
+La D13 ajoute ensuite des pedigrees synthétiques de cousins germains. Quatre
+fondateurs D12 distincts produisent quatre descendants et quatre trios par
+famille, ce qui couvre les parentés théoriques du premier au troisième degré.
+Chaque enfant reçoit une copie haplotypique entière de chaque parent ; la
+recombinaison reste réservée à D14. La vérité privée conserve les transmissions
+et l'ascendance effectivement héritée, tandis que le VCF observable masque les
+familles, les strates et les identifiants D12.
+
+La D14 transforme ensuite une copie haplotypique par famille en mosaïque issue
+d'un même fondateur synthétique. Les distances aux premiers breakpoints sont
+tirées sur la carte génétique D11a selon l'âge vrai du scénario. Les bras qui
+dépassent la fenêtre restent censurés et ne sont pas présentés comme des
+recombinaisons observées. Le variant cible, les segments, les porteurs et
+l'ascendance locale restent des vérités privées distinctes du panel aveugle.
+
+La D14b dimensionne avant D15 les fenêtres en unités génétiques. Une fenêtre
+principale utilise la demi-largeur `-100 × ln(p) / âge` avec `p ≤ 0,05` par
+bras ; une fenêtre volontairement courte contrôle séparément la censure. La
+carte publique est interpolée sans extrapolation, les seuils de marqueurs IBD
+sont vérifiés avant simulation et un reçu empreinté lie le rejeu réel
+D11a–D14 au manifest de fenêtre. Les commandes et contrats sont documentés
+dans `calibration/README.md`.
+
+La D15 ajoute les injections IBD régionales sur la fenêtre D14b scellée.
+Chaque longueur possède une paire positive et une paire sans injection,
+sélectionnées hors pedigree et hors porteurs D14 ; les contrôles portent sur
+les copies, la densité et les transmissions mendéliennes. Le rapport technique
+indépendant conserve les limites du fond public et `calibrated: false`.
+Les commandes de matérialisation et de rapport figurent dans
+`calibration/README.md`.
+
+La D16 ajoute ensuite des ROH autozygotes par copie locale H1→H2. Quatre
+scénarios distinguent absence d'injection, ROH hors cible, ROH sur la cible
+et coexistence ROH/IBD chez un positif D15. La vérité IBD H1 et les
+transmissions restent contrôlées ; les ROH ne fournissent aucune longueur à
+Gamma. Les commandes et limites sont précisées dans `calibration/README.md`.
+
 Pour quitter l'environnement :
 
 ```bash

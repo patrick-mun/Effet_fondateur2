@@ -1,8 +1,8 @@
 # Plan de développement du panel de simulation et de calibration
 
 **Projet :** Effet_fondateur2
-**Version du plan :** 0.2
-**Date :** 28 octobre 2026
+**Version du plan :** 0.3
+**Date :** 29 octobre 2026
 **Statut :** plan de développement — aucune simulation volumineuse autorisée à
 ce stade
 **Périmètre :** qualification par simulation des étapes `00` à `19`, avec une
@@ -184,6 +184,7 @@ calibration/
 │   └── REGISTRE_DECISIONS.md
 ├── configurations/
 │   ├── micro_panel.yaml
+│   ├── window_design.yaml
 │   ├── pilot_calibration.yaml
 │   ├── pilot_validation.yaml
 │   ├── qualification_calibration.yaml
@@ -198,6 +199,13 @@ calibration/
 │   ├── chip_marker_harmonization_manifest.schema.json
 │   ├── population_structure_config.schema.json
 │   ├── population_structure_manifest.schema.json
+│   ├── pedigree_config.schema.json
+│   ├── pedigree_manifest.schema.json
+│   ├── founder_simulation_config.schema.json
+│   ├── founder_simulation_manifest.schema.json
+│   ├── simulation_window_config.schema.json
+│   ├── simulation_window_manifest.schema.json
+│   ├── simulation_window_replay.schema.json
 │   ├── stage_evaluation.schema.json
 │   └── calibration_decision.schema.json
 └── templates/
@@ -222,10 +230,17 @@ src/effet_fondateur/calibration/
 ├── materialize_base_haplotypes.py
 ├── materialize_chip_observation.py
 ├── materialize_population_structure.py
+├── materialize_pedigrees.py
+├── materialize_founder_recombination.py
+├── materialize_simulation_windows.py
+├── materialize_window_replay_receipt.py
 ├── simulation/
 │   ├── base_haplotypes.py
 │   ├── chip_markers.py
-│   └── population_structure.py
+│   ├── population_structure.py
+│   ├── pedigrees.py
+│   ├── founder_recombination.py
+│   └── windows.py
 ├── truth/
 ├── evaluation/
 ├── reporting/
@@ -298,6 +313,72 @@ La grille initiale doit couvrir :
 - taux de données manquantes et erreurs de génotypage à plusieurs niveaux ;
 - erreurs de phase et densités de marqueurs à plusieurs niveaux ;
 - positions autosomiques variées, sans calibration limitée à DOCK6.
+
+### 5.5 Dimensionnement des fenêtres de simulation
+
+Les fenêtres utilisées pour mesurer les performances ne seront pas définies par
+une largeur physique arbitraire. Pour un âge vrai `g`, la distance `X` au
+premier événement sur un bras suit le modèle D14
+`X ~ exponentielle(g / 100)` lorsque `X` est exprimée en `cM`. La probabilité
+qu'un bras soit censuré par une demi-fenêtre de largeur `W` vaut donc
+`exp(-g × W / 100)`.
+
+La série principale utilisera une borne préspecifiée de `0,05` pour la
+probabilité théorique de censure de chaque bras. La largeur génétique minimale
+de chaque côté de la cible sera par conséquent :
+
+`W_min(g) = -100 × ln(0,05) / g = 299,573 / g cM`.
+
+Cette convention limite à `0,0975` la probabilité théorique qu'au moins un des
+deux bras soit censuré, sous l'hypothèse d'indépendance du modèle D14. Elle ne
+permet ni de rejeter ni de retirer un tirage effectivement censuré.
+
+*Tableau 2 — Demi-largeur génétique minimale de la série principale.*
+
+| Âge vrai (générations) | Minimum par bras (cM) | Minimum total (cM) |
+|---:|---:|---:|
+| 5 | 59,915 | 119,829 |
+| 10 | 29,957 | 59,915 |
+| 15 | 19,972 | 39,943 |
+| 20 | 14,979 | 29,957 |
+| 30 | 9,986 | 19,972 |
+| 40 | 7,489 | 14,979 |
+| 50 | 5,991 | 11,983 |
+| 75 | 3,994 | 7,988 |
+| 100 | 2,996 | 5,991 |
+| 150 | 1,997 | 3,994 |
+
+Les limites `bp` seront obtenues par interpolation inverse de la carte publique
+figée en D09. L'extrapolation de carte, l'approximation `1 cM = 1 Mb` et le
+rabotage silencieux aux bornes d'un chromosome sont interdits. Si une cible ne
+dispose pas de la marge exigée sur ses deux côtés, le couple cible–âge est
+déclaré `INFEASIBLE_WINDOW` avant tout tirage ; une autre position autosomique
+préspecifiée peut être utilisée, mais la fenêtre ne peut pas être choisie après
+observation des recombinaisons ou des résultats du pipeline.
+
+Deux séries resteront séparées :
+
+- la série principale, dimensionnée par la formule ci-dessus et utilisée pour
+  les métriques de performance et de datation ;
+- une série de défi, volontairement tronquée, utilisée uniquement pour vérifier
+  la détection et le traitement de la censure. Elle ne contribuera ni au biais,
+  ni à la RMSE, ni à une courbe de correction non explicitement stratifiée sur
+  la censure.
+
+Pour D15, le domaine devra en plus contenir intégralement chaque segment IBD
+injecté de `1`, `1,5`, `2`, `3` ou `5 cM`. Chaque borne vraie devra rester à
+l'intérieur de la fenêtre et posséder, à l'extérieur du segment, le nombre de
+marqueurs flanquants exigé par le scénario analysé. Le segment observable devra
+atteindre le seuil de marqueurs du scénario `16C` correspondant. Un scénario
+qui ne satisfait pas ces conditions sera `NOT_EVALUABLE`; sa longueur ou son
+seuil ne seront pas modifiés pour le faire passer.
+
+Le micro-panel D33 matérialisera au moins une fenêtre principale techniquement
+faisable et une fenêtre de défi censurée. Le pilote et la qualification
+couvriront toute la grille d'âges sur plusieurs positions autosomiques
+présélectionnées. L'appel des 22 autosomes exigé par `16C` reste un contrôle de
+l'univers génomique complet et ne signifie pas que chaque âge doit être simulé
+à chaque position.
 
 ## 6. Contrat commun des rapports indépendants
 
@@ -384,7 +465,7 @@ recalculer son contenu et d'en vérifier la provenance sans extraire le HTML.
 Chaque étape possède son propre rapport. Un rapport transversal ne remplace
 jamais un rapport d'étape.
 
-*Tableau 2 — Registre contractuel des rapports indépendants.*
+*Tableau 3 — Registre contractuel des rapports indépendants.*
 
 | ID | Étape évaluée | Rapport indépendant |
 |---|---|---|
@@ -748,11 +829,124 @@ distincts et ne peuvent être mélangés dans un même run.
 **Livrable :** pedigrees vrais et génotypes descendants.
 **Réussite :** transmissions mendéliennes sans incohérence non injectée.
 
+**Prérequis bloquant :** un manifest D12 finalisé dont le panel dense, le panel
+observable, la vérité d'ascendance et la provenance haplotypique sont tous liés
+par SHA-256. D13 refuse de déduire l'ascendance d'un descendant à partir de la
+seule étiquette diploïde de ses parents.
+
+**Méthode retenue :** une unité familiale de huit individus part de quatre
+fondateurs D12 distincts et appartenant à la même strate. Un couple de
+grands-parents produit deux germains ; chacun forme ensuite un couple avec un
+conjoint fondateur distinct et produit un enfant. Une unité couvre ainsi quatre
+trios, les premier et deuxième degrés, puis une paire de cousins germains au
+troisième degré. Les coefficients de parenté théoriques `0,25`, `0,125` et
+`0,0625` sont calculés récursivement depuis le pedigree ; ils ne sont ni
+estimés à partir des génotypes, ni assimilés à une quantité IBD réalisée sur la
+fenêtre.
+
+D13 tire, avec la graine `pedigrees`, une copie haplotypique entière de chaque
+parent. Aucune recombinaison n'est autorisée avant D14. La provenance D13→D12
+rend chaque transmission vérifiable et l'ascendance du descendant est calculée
+depuis les deux strates haplotypiques effectivement transmises. Un descendant
+de parents 50/50 peut donc être pur pour une composante ou rester 50/50 sur le
+domaine ; une moyenne parentale systématique est interdite.
+
+Les vérités privées comprennent le pedigree, les transmissions, la parenté
+théorique, la provenance haplotypique et l'ascendance réalisée. Le VCF aveugle
+conserve seulement l'univers de marqueurs D12 et ne révèle ni famille, ni
+ascendance, ni identifiant D12. La porte D13 exige une bijection exacte des
+fondateurs, des familles disjointes, zéro erreur mendélienne, les quatre classes
+de relation attendues, des empreintes valides et une concordance intégrale
+entre provenance et ascendance.
+
 ### D14 — Simuler le fondateur et les recombinaisons
 
 **Action :** transmettre un haplotype fondateur pendant un âge connu.
 **Livrable :** bornes vraies gauche/droite par famille et génération.
 **Réussite :** distances `bp`, `cM` et générations cohérentes.
+
+**Prérequis bloquant :** les manifests D11a, D12 et D13 doivent être finalisés,
+liés par identifiant et SHA-256, et décrire exactement le même panel, chromosome
+et domaine. La carte interpolée D11a est l'unique autorité pour les conversions
+`bp`↔`cM` ; aucune vitesse moyenne codée en dur n'est autorisée.
+
+**Méthode retenue :** pour un âge vrai `g`, la distance au premier événement de
+recombinaison de chaque côté du variant suit indépendamment une loi
+exponentielle de taux `g` par Morgan, soit `g / 100` par cM. Si le premier
+événement tombe hors du domaine simulé, le bras est censuré au bord. Une limite
+censurée n'est jamais comptée comme un événement de recombinaison et sa longueur
+ne doit pas être interprétée comme la longueur ancestrale complète.
+
+Un haplotype D13 extérieur aux familles sert de matrice fondatrice commune. Une
+origine haplotypique distincte est choisie dans chaque famille à partir d'un
+descendant terminal ; le segment fondateur est mosaïqué sur cette origine, puis
+propagé à tous les membres qui l'ont reçue. Cette propagation par origine D12
+préserve exactement les transmissions mendéliennes D13. Les origines ne peuvent
+pas traverser deux familles et la matrice fondatrice ne peut appartenir à une
+famille simulée.
+
+Le variant cible synthétique doit correspondre à un SNV biallélique déjà
+présent et correctement orienté dans le VCF. Son fond allélique est remis à la
+référence, puis l'allèle alternatif est posé uniquement sur les copies
+porteuses. Cette règle évite d'inventer une base GRCh38 sans référence FASTA.
+La vérité privée distingue segments, censures, porteurs, mutation et mosaïque
+d'ascendance locale. Le VCF aveugle conserve uniquement les marqueurs
+observables et ne reçoit aucun libellé de vérité.
+
+Le diagnostic de 100 kb à 150 générations contrôle la chaîne, l'injection et la
+censure, mais il ne suffit pas à valider la distribution des recombinaisons :
+sa longueur génétique totale est seulement d'environ `0,136 cM`. Une fenêtre
+plus large reste obligatoire pour le micro-panel et la qualification.
+
+### D14b — Construire les fenêtres génétiques de simulation
+
+**Action :** sélectionner puis matérialiser, avant tout tirage D15, des domaines
+génomiques dimensionnés en `cM` selon la section 5.5.
+**Livrable :** configuration versionnée, manifest privé des fenêtres, tables de
+coordonnées `bp`/`cM`, inventaires des variants denses et observables,
+empreintes SHA-256 et reçu privé du rejeu D11a–D14.
+**Réussite :** chaque fenêtre principale respecte sa demi-largeur théorique,
+chaque fenêtre de défi est explicitement étiquetée, et aucune cible n'est
+choisie selon un résultat simulé ou un résultat DOCK6.
+
+La configuration doit fixer avant matérialisation : le rôle du panel, l'âge ou
+le scénario IBD, le chromosome, la cible synthétique, la carte D09, la source
+VCF D11, le profil de puce D11b, la probabilité maximale de censure par bras et
+les seuils de marqueurs. Les positions candidates seront déterminées uniquement
+à partir des références publiques et des règles de densité. Leur ordre de
+sélection sera déterministe et lié aux graines déjà réservées ; aucune nouvelle
+graine implicite n'est autorisée.
+
+Le manifest doit enregistrer pour chaque fenêtre : les limites physiques et
+génétiques, les distances gauche/droite, la probabilité théorique de censure,
+le statut `PRIMARY` ou `CENSORING_CHALLENGE`, les nombres de variants denses et
+observables de chaque côté, les seuils IBD applicables et les empreintes des
+sources. Les identifiants de donneurs et les chemins locaux absolus y sont
+interdits.
+
+La matérialisation échoue sans produire de run accepté si l'une des conditions
+suivantes survient : carte non couvrante, extrapolation nécessaire, cible hors
+VCF, cible non biallélique, marge génétique insuffisante, marqueurs flanquants
+insuffisants, seuil `16C` impossible à atteindre, discordance d'assemblage,
+source non figée, rôle de panel ambigu ou collision de chemin de sortie. Une
+fenêtre calibration et une fenêtre validation peuvent partager la même
+définition publique et la même coordonnée pour permettre une comparaison
+appariée, mais leurs identifiants de scénario, graines, haplotypes, individus,
+transmissions et artefacts générés doivent rester distincts.
+
+Après acceptation d'une définition de fenêtre, la chaîne D11a–D14 est rejouée
+sur ce domaine sous de nouveaux identifiants de run. Un reçu D14b distinct lie
+par SHA-256 le manifest de fenêtre et les cinq manifests D11a, D11b, D12, D13
+et D14 ; aucun manifest finalisé n'est modifié rétroactivement. Un tirage
+principal effectivement censuré reste dans la vérité et n'est jamais rejoué
+dans le but d'obtenir un événement interne.
+
+Les tests ciblés devront au minimum vérifier la formule, les dix âges de la
+grille, l'interpolation inverse, les bornes chromosomiques, les cartes non
+monotones, les densités insuffisantes, la séparation des deux séries, le refus
+de `dock6_real`, le déterminisme et la séparation calibration–validation. La
+porte D14b exige aussi un rejeu octet pour octet identique avec la même
+configuration et la même graine.
 
 ### D15 — Injecter les scénarios IBD
 
@@ -760,12 +954,113 @@ distincts et ne peuvent être mélangés dans un même run.
 **Livrable :** vérité IBD par paire, chromosome et scénario.
 **Réussite :** aucune cible positive dans les scénarios négatifs.
 
+**Prérequis bloquant :** un manifest D14b finalisé et valide. D15 ne peut ni
+élargir une fenêtre à la volée, ni déplacer une cible après un tirage, ni
+reclasser une fenêtre de défi comme fenêtre principale.
+
+**Méthode D15 v1 :** `disjoint_unrelated_haplotype_copy_v1`. Le manifest de
+fenêtre D14b constitue la configuration scientifique scellée des longueurs et
+seuils. Le reçu D14b lie D11a et D14 ; les artefacts consommés sont vérifiés
+par SHA-256 avant lecture. Une dérivation déterministe SHA-256 de la graine
+`recombination`, du rôle de panel et de l'identifiant de méthode fournit la
+graine D15, sans nouvelle graine maîtresse implicite.
+
+Chaque longueur reçoit deux sujets positifs, deux sujets négatifs et une
+matrice distincte, sélectionnés sans remise parmi les individus hors pedigree
+et hors porteurs D14. Tous les sujets et matrices sont disjoints entre
+scénarios. H1 de la matrice est copié sur H1 des deux positifs dans un intervalle
+centré sur la cible ; H2 et les génotypes hors intervalle restent inchangés.
+Les transmissions D13/D14 sont contrôlées sur tous les variants. Les seuils
+observables sont revérifiés après conversion des bornes en bp ; une densité
+insuffisante bloque l'acceptation du run.
+
+La vérité distingue longueur demandée et bornes réalisées en bp/cM. Elle
+décrit l'origine commune injectée, pas les limites maximales d'un appel.
+Les négatifs ne reçoivent aucune injection et possèdent des bornes nulles :
+le fond 1000G peut conserver un partage ancestral inconnu ou de l'IBS. Il est
+interdit de filtrer les négatifs en fonction des sorties des outils IBD.
+La fréquence d'appels sur ces paires mesure donc le fond sans injection ; elle
+ne doit pas être étiquetée comme une spécificité contre une absence absolue
+d'IBD connue. Ce point devra rester explicite dans l'évaluateur D29.
+
+La matrice et les bornes inscrites dans la vérité D15 constituent une surcharge
+locale d'origine sur le fond D14. Si matrice et receveur sont de strates
+différentes, les évaluateurs d'ascendance devront appliquer cette surcharge
+avant comparaison ; les étiquettes d'ascendance antérieures ne sont pas une
+vérité inchangée pour les copies modifiées.
+
+Le run régional technique contient une paire positive et une paire négative
+par longueur. Ces sujets ne deviennent pas automatiquement porteurs de la
+mutation ou représentants familiaux. Il ne satisfait ni le nombre de familles
+requis pour le consensus 16C, ni l'appel des 22 autosomes, ni les effectifs de
+qualification ; `calibrated` reste `false`. Les copies contrôlent le générateur
+et les futurs évaluateurs par paire. Une origine synthétique distincte ne
+démontre pas à elle seule l'indépendance du fond de population.
+
+Le rapport indépendant `CAL-DEV-D15` publie les agrégats, limites et empreintes
+de cette validation de développement. Le rapport de performance `CAL-REP-16C`
+sera produit par l'évaluateur ultérieur ; il ne peut être remplacé par ce
+contrôle technique.
+
 ### D16 — Injecter les ROH
 
 **Action :** créer des segments autozygotes de longueurs connues, distincts ou
 superposés au locus fondateur selon le scénario.
 **Livrable :** vérité ROH.
 **Réussite :** distinction explicite entre ROH et segment IBD partagé.
+
+**Prérequis bloquant :** un run D15 finalisé, lié par SHA-256 aux mêmes
+manifests D14 et D11a, et une configuration D16 finalisée de même rôle de
+panel. Les entrées sont vérifiées avant lecture ; la fenêtre D14b et les
+seuils de marqueurs ne sont pas modifiés.
+
+**Méthode D16 v1 :** `within_sample_h1_to_h2_roh_copy_v1`. Une copie locale
+de l'origine H1 sur H2 impose une autozygotie synthétique à un sujet sans
+reconstruire de généalogie consanguine globale. La graine est dérivée par
+SHA-256 de la graine de recombinaison D15, de la méthode et du rôle de panel,
+dans un domaine D16 distinct. Aucun tirage ne dépend d'un scan PLINK.
+
+La configuration pré-micro-panel comporte quatre scénarios :
+
+- un sujet sans ROH injectée, avec bornes nulles ;
+- une ROH excluant la position cible (`TARGET_DISTINCT`) ;
+- une ROH couvrant la cible, sur un sujet sans injection IBD D15 ;
+- une ROH couvrant la cible, sur le premier sujet d'une paire positive D15
+  explicitement nommée, afin d'évaluer la coexistence ROH/IBD.
+
+Les trois premiers sujets sont distincts, hors pedigree, hors porteurs D14 et
+hors paires ou matrices D15. Le quatrième reprend un positif D15 hors pedigree.
+Toutes les copies H1 sont conservées : la vérité IBD H1 demeure valide tandis
+que H2 devient localement autozygote. Les négatifs et matrices D15 ne peuvent
+pas être modifiés. H2 reste inchangée hors intervalle et toutes les
+transmissions sont contrôlées. Une incompatibilité d'une copie IBD déjà
+injectée bloque également le run.
+
+Les intervalles sont fournis en bp fermés, avec longueur
+`end_bp - start_bp + 1`, et convertis en cM sur la carte D11a. La configuration
+d'intégration fixe trois intervalles de 2 Mb ; les contrôles exigent au moins
+1 500 kb, 50 sondes, au plus 50 kb par sonde et un trou interne maximal de
+1 000 kb, avec des marqueurs flanquants. Une insuffisance bloque la
+matérialisation sans déplacement des bornes ni abaissement des seuils.
+
+La vérité ROH, son audit de densité et la vérité IBD conservée sont des
+artefacts privés distincts, empreintés. Le cas couplé crée également un
+partage H2–H1 dans la paire D15 sur l'intersection ROH/IBD. Cet intervalle
+est inscrit dans une vérité IBD induite séparée et contrôlé dans le VCF ;
+il ne doit être compté ni comme faux positif, ni comme répétition indépendante.
+La matrice D15 reste une origine de simulation, hors des paires désignées
+par le protocole d'évaluation. L'origine H1 copiée constitue une
+surcharge d'ascendance sur H2, à appliquer par les futurs évaluateurs.
+`TARGET_DISTINCT` signifie uniquement que la cible est hors ROH ; les
+coordonnées peuvent chevaucher le segment fondateur d'une autre famille.
+Les bornes injectées ne sont pas les limites maximales d'un appel PLINK, et
+le témoin sans injection peut conserver une ROH de fond inconnue.
+
+Le rapport indépendant `CAL-DEV-D16` valide la génération et la conservation
+des contrats. Les performances ROH et leurs intervalles restent
+`NOT_EVALUABLE` jusqu'aux appels réels et à l'évaluateur D26. Le fardeau
+genome-wide, les autres classes de longueur et le panel aveugle restent à
+qualifier. Aucune longueur ROH ne remplace une entrée de datation Gamma.
 
 ### D17 — Injecter les imperfections de mesure
 
@@ -877,6 +1172,13 @@ réelle identifiée.
 **Réussite :** zéro fuite, zéro incohérence de schéma et zéro artefact non
 traçable.
 
+Le micro-panel doit inclure au moins une fenêtre principale D14b, une fenêtre
+de défi censurée et les contrôles D15 positif/négatif. Le chemin de code d'un
+événement interne doit être couvert par une fixture technique déterministe,
+sans filtrer les tirages du panel principal. Ce passage vérifie la chaîne et
+les contrats ; son faible effectif ne permet pas d'estimer une performance
+scientifique.
+
 ### D34 — Exécuter le pilote de calibration
 
 **Action :** lancer le panel de 500 individus destiné au réglage.
@@ -940,12 +1242,12 @@ outil, seuil, algorithme ou contrat scientifique.
 
 ## 10. Portes de passage
 
-*Tableau 3 — Portes de passage et autorisations successives.*
+*Tableau 4 — Portes de passage et autorisations successives.*
 
 | Porte | Autorise | Conditions minimales |
 |---|---|---|
 | G0 | Développement | Plan et périmètre approuvés |
-| G1 | Micro-panel | Schémas, isolation, conventions et tests unitaires réussis |
+| G1 | Micro-panel | Schémas, isolation, conventions, manifest D14b et tests unitaires réussis |
 | G2 | Pilote calibration | Micro-panel et rapports techniques `PASS` |
 | G3 | Pilote aveugle | Critères scellés et calibration documentée |
 | G4 | Qualification 5 000 | Pilote aveugle, ressources et QA acceptables |
@@ -992,7 +1294,7 @@ une modification manuelle d'un statut.
 
 ## 12. Gestion des risques
 
-*Tableau 4 — Risques principaux et mesures de maîtrise.*
+*Tableau 5 — Risques principaux et mesures de maîtrise.*
 
 | Risque | Conséquence | Mesure de maîtrise |
 |---|---|---|
@@ -1002,6 +1304,7 @@ une modification manuelle d'un statut.
 | Coût trop élevé | Qualification inachevée | Micro-panel, pilote et porte G4 |
 | Réutilisation d'un résultat réel | Circularité | Interdiction de `dock6_real` et audit des chemins |
 | Faux gain de précision | Intervalle trompeur | Couverture et biais obligatoires |
+| Fenêtre trop courte | Censure confondue avec une recombinaison | Dimensionnement D14b en cM et série de défi séparée |
 | Rapport incomplet | Décision non traçable | Contrat commun et QA `report-formater` |
 | Changement d'outil | Calibration périmée | Matrice de compatibilité et recalibration |
 

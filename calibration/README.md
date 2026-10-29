@@ -113,7 +113,148 @@ Les proportions inégales ne sont pas acceptées avant D14. Le diagnostic de
 100 kb utilise la configuration `d12_diagnostic_100kb_calibration_v1.json` ;
 il ne constitue ni un micro-panel, ni une qualification.
 
+## Matérialisation D13
+
+D13 ajoute des familles de cousins germains au panel D12 et transmet des
+haplotypes parentaux entiers. La recombinaison reste interdite jusqu'à D14. La
+parenté publiée est théorique, dérivée du pedigree ; l'ascendance de chaque
+descendant est, elle, recalculée depuis les copies D12 réellement transmises.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.materialize_pedigrees \
+  --d12-root calibration_workspace/<run_d12> \
+  --pedigree-config calibration/configurations/<configuration_d13>.json \
+  --workspace-root calibration_workspace \
+  --run-id <identifiant_nouveau_d13>
+```
+
+Le diagnostic de 100 kb utilise
+`d13_diagnostic_100kb_calibration_v1.json`. Ses vérités et VCF restent dans le
+workspace ignoré ; il ne vaut ni micro-panel, ni pilote, ni qualification.
+
+## Matérialisation D14
+
+D14 simule, sur la carte D11a, les premiers événements de recombinaison autour
+d'un variant synthétique d'âge connu. Les trois racines sont fournies pour
+vérifier explicitement toute la chaîne D11a→D12→D13 :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.materialize_founder_recombination \
+  --d13-root calibration_workspace/<run_d13> \
+  --d12-root calibration_workspace/<run_d12> \
+  --d11a-root calibration_workspace/<run_d11a> \
+  --founder-config calibration/configurations/<configuration_d14>.json \
+  --workspace-root calibration_workspace \
+  --run-id <identifiant_nouveau_d14>
+```
+
+Les bras hors fenêtre restent explicitement censurés. Le diagnostic de 100 kb
+à 150 générations vérifie ce comportement, mais ne qualifie pas la distribution
+des longueurs ancestrales ni la datation.
+
+## Matérialisation D14b
+
+D14b dimensionne la fenêtre principale en `cM`, vérifie la cible publique, la
+densité CytoScan et les seuils IBD avant D15. Une seconde fenêtre, volontairement
+tronquée, reste réservée au contrôle de la censure.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.materialize_simulation_windows \
+  --window-config calibration/configurations/<configuration_d14b>.json \
+  --source-vcf <vcf_public_1000G> \
+  --source-index <index_public_1000G> \
+  --genetic-map <carte_publique_grch38> \
+  --normalized-chip-markers <table_snp_normalisee_d11b> \
+  --workspace-root calibration_workspace \
+  --run-id <identifiant_nouveau_d14b>
+```
+
+La chaîne D11a–D14 est ensuite rejouée sur la fenêtre principale. Un reçu neuf
+lie les six manifests sans modifier rétroactivement un run finalisé :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.materialize_window_replay_receipt \
+  --d14b-root calibration_workspace/<run_d14b> \
+  --d11a-root calibration_workspace/<run_d11a_large> \
+  --d11b-root calibration_workspace/<run_d11b_large> \
+  --d12-root calibration_workspace/<run_d12_large> \
+  --d13-root calibration_workspace/<run_d13_large> \
+  --d14-root calibration_workspace/<run_d14_large> \
+  --workspace-root calibration_workspace \
+  --run-id <identifiant_recu_nouveau>
+```
+
+Une fenêtre principale effectivement censurée reste dans la vérité ; elle
+n'est jamais rejouée pour obtenir artificiellement un breakpoint interne.
+
+## Matérialisation D16
+
+D16 ajoute des ROH par copie H1→H2. La configuration distingue un témoin
+sans injection, une ROH hors cible, une ROH sur la cible sans IBD injecté et
+une ROH sur un sujet positif D15. Les H1, les négatifs/matrices IBD et les
+transmissions sont préservés. Les vérités IBD et ROH restent séparées. Le
+partage supplémentaire H2–H1 créé par le cas couplé est enregistré dans une
+vérité IBD induite, à consommer en complément de la vérité D15 inchangée.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.materialize_roh \
+  --d15-root calibration_workspace/<run_d15> \
+  --d14-root calibration_workspace/<run_d14> \
+  --d11a-root calibration_workspace/<run_d11a> \
+  --config-path calibration/configurations/d16_micro_chr5_calibration_v1.json \
+  --workspace-root calibration_workspace \
+  --run-id <identifiant_neuf_d16>
+```
+
+Les trois intervalles de cette configuration mesurent 2 Mb. Les contrôles de
+longueur, nombre de sondes, densité et trous entre sondes reprennent le cadre
+PLINK documenté ; ils ne mesurent pas encore la sensibilité de détection. Le
+témoin négatif signifie absence d'injection, sans exclure une ROH de fond.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.report_roh_injection \
+  --run-root calibration_workspace/<run_d16> \
+  --template-path <report_skill>/templates/recherche.html \
+  --output-root calibration_workspace/<rapport_d16_neuf>
+```
+
+Le rapport `CAL-DEV-D16` reste une validation technique régionale. Les métriques
+de détection seront mesurées par l'évaluateur D26 et le rapport `CAL-REP-16`.
+
 ## État actuel
+
+D15 injecte une paire positive et une paire négative pour chacune des cinq
+longueurs IBD figées dans le manifest D14b. Les 25 sujets et matrices sont
+disjoints, hors pedigree et hors porteurs D14. La copie porte uniquement sur
+H1 dans l'intervalle ; le fond négatif reste inchangé et son IBD historique
+reste inconnu. La vérité enregistre des bornes nulles pour les négatifs.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.materialize_ibd \
+  --d14-root calibration_workspace/<run_d14> \
+  --d11a-root calibration_workspace/<run_d11a> \
+  --design-root calibration_workspace/<run_d14b> \
+  --replay-root calibration_workspace/<recu_d14b> \
+  --workspace-root calibration_workspace \
+  --run-id <identifiant_neuf_d15>
+```
+
+Le manifest conserve les empreintes des quatre entrées, la dérivation de
+graine, la vérité privée et les panels dense/observable. Un schéma est validé
+avant publication atomique. Ce run régional ne qualifie pas 16C et conserve
+`calibrated: false`.
+
+Le rapport autonome de développement peut être produit avec :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.report_ibd_injection \
+  --run-root calibration_workspace/<run_d15> \
+  --template-path <report_skill>/templates/recherche.html \
+  --output-root calibration_workspace/<rapport_d15_neuf>
+```
+
+Les rapports `CAL-DEV-D15` et leurs PDF restent ignorés par Git. Leur statut
+technique ne remplace pas le futur rapport de performance `CAL-REP-16C`.
 
 Le périmètre initial D01 et l'arborescence isolée D02 sont établis. Le protocole
 D03 est `APPROVED` et les critères D04 sont `APPROVED_PRE_PILOT`. Cette
@@ -155,5 +296,15 @@ du génome. D12 a ensuite conservé les 1 800 haplotypes par bijection et produi
 20 mélanges CEU/YRI 50/50 parmi 900 diploïdes. Sa vérité dense compte 2 484
 variants et son VCF aveugle conserve l'unique sonde D11b sans étiquette
 d'ascendance. Les contrats, proportions, empreintes et permissions passent ;
-ce diagnostic ne vaut toujours pas qualification. Le développement doit suivre
+ce diagnostic ne vaut toujours pas qualification. D13 ajoute ensuite deux
+familles synthétiques, huit descendants et quatre degrés de relation au sens du
+contrat, sans recombinaison. Le run de référence `v3` contrôle la transmission
+et l'ascendance haplotypique ; le premier essai `v1` est invalidé et conservé
+uniquement pour l'audit. D14 et D14b disposent maintenant d'une intégration
+large indépendante de DOCK6 sur le chromosome 5 : 5,991 cM, 165 290 variants
+denses, 487 marqueurs observables et cinq scénarios IBD évaluables. Le rejeu
+D11a–D14 observe quatre breakpoints internes, sans censure ni erreur
+mendélienne, et son reçu conserve toute la chaîne d'empreintes. Cette
+intégration valide D14b techniquement mais ne remplace pas le micro-panel D33,
+le pilote ni la qualification. Le développement doit suivre
 `PLAN_DEVELOPPEMENT_PANEL_SIMULATION.md` et ses portes de passage.
