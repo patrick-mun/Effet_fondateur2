@@ -186,6 +186,16 @@ Dernière mise à jour : 29 octobre 2026
   complète compte 778 réussites et le seul échec 16A préexistant décrit plus
   haut, causé par l'absence locale du VCF 1000G chromosome 5. Comme D11, cette
   intégration diagnostique ne remplace pas le micro-panel D33.
+- Après renommage du dossier externe 1000G vers sa cible historique, les 44
+  liens symboliques VCF/index du cache sont de nouveau valides. Le VCF et
+  l'index du chromosome 5 correspondent aux MD5 officiels. Les 11 tests du
+  module 16A passent désormais ; la suite complète n'a pas été relancée.
+- D12 a été rejouée sous
+  `d12_integration_cal_chr19_11000000_11100000_v2`. Les huit contrôles passent,
+  tous les compteurs d'erreur restent nuls et les quatre artefacts ont
+  exactement les mêmes SHA-256 que ceux de `v1`. Le SHA-256 du nouveau manifest,
+  qui diffère normalement par l'identifiant et l'horodatage du run, est
+  `841b3bc6bf8a739bfeb436de2ac2d72b9fc279395e87f51ade0f20cd2f8ae262`.
 - Le plan de développement est créé sous
   `calibration/PLAN_DEVELOPPEMENT_PANEL_SIMULATION.md`. Il sépare strictement
   données aveugles, vérité simulée, panel de calibration et panel de validation.
