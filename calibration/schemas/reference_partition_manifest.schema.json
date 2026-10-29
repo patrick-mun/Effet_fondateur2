@@ -85,7 +85,7 @@
       "required": ["catalog_id", "catalog_version", "repository_path", "sha256"],
       "properties": {
         "catalog_id": {"const": "calibration_public_references_v1"},
-        "catalog_version": {"const": "1.0.0"},
+        "catalog_version": {"enum": ["1.0.0", "1.1.0"]},
         "repository_path": {"const": "calibration/references/public_reference_catalog.json"},
         "sha256": {"$ref": "#/$defs/sha256"}
       }

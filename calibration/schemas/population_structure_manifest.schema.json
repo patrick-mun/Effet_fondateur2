@@ -1,0 +1,206 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/calibration/schemas/population_structure_manifest.schema.json",
+  "title": "Manifest privé de structure de population D12",
+  "description": "Contrat liant D11a, D11b, la vérité d'ascendance et le panel observable sans étiquette.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "population_structure_manifest_id",
+    "manifest_state",
+    "created_at",
+    "inputs",
+    "configuration",
+    "panel",
+    "domain",
+    "method",
+    "confidentiality",
+    "artifacts",
+    "integrity"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "population_structure_manifest_id": {"$ref": "#/$defs/stableIdentifier"},
+    "manifest_state": {"const": "FINALIZED"},
+    "created_at": {"$ref": "#/$defs/dateTime"},
+    "inputs": {"$ref": "#/$defs/inputs"},
+    "configuration": {"$ref": "#/$defs/configuration"},
+    "panel": {"$ref": "#/$defs/panel"},
+    "domain": {"$ref": "#/$defs/domain"},
+    "method": {"$ref": "#/$defs/method"},
+    "confidentiality": {"$ref": "#/$defs/confidentiality"},
+    "artifacts": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/artifact"},
+      "allOf": [
+        {"contains": {"properties": {"role": {"const": "DENSE_PHASED_POPULATION_PANEL"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "ANCESTRY_TRUTH"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "D11_HAPLOTYPE_PROVENANCE"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "BLINDED_OBSERVED_POPULATION_PANEL"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1}
+      ]
+    },
+    "integrity": {"$ref": "#/$defs/integrity"}
+  },
+  "$defs": {
+    "stableIdentifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "dateTime": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]+)?(?:Z|[+-](?:0[0-9]|1[0-4]):[0-5][0-9])$"
+    },
+    "privatePath": {"type": "string", "pattern": "^private_truth/d12/(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9][A-Za-z0-9._/-]*$"},
+    "inputBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest_id", "manifest_sha256"],
+      "properties": {
+        "manifest_id": {"$ref": "#/$defs/stableIdentifier"},
+        "manifest_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["d11a", "d11b", "panel_role"],
+      "properties": {
+        "d11a": {"$ref": "#/$defs/inputBinding"},
+        "d11b": {"$ref": "#/$defs/inputBinding"},
+        "panel_role": {"enum": ["CALIBRATION", "VALIDATION"]}
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["configuration_id", "configuration_sha256", "random_seed"],
+      "properties": {
+        "configuration_id": {"$ref": "#/$defs/stableIdentifier"},
+        "configuration_sha256": {"$ref": "#/$defs/sha256"},
+        "random_seed": {"type": "integer", "minimum": 0, "maximum": 4294967295}
+      }
+    },
+    "panel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "panel_id", "role", "synthetic_identifier_prefix", "individual_count",
+        "haplotype_count", "pure_individual_count", "admixed_individual_count",
+        "source_stratum_count", "output_stratum_count", "mixture_profile_count"
+      ],
+      "properties": {
+        "panel_id": {"$ref": "#/$defs/stableIdentifier"},
+        "role": {"enum": ["CALIBRATION", "VALIDATION"]},
+        "synthetic_identifier_prefix": {"enum": ["SYN_CAL_D12_", "SYN_VAL_D12_"]},
+        "individual_count": {"type": "integer", "minimum": 1},
+        "haplotype_count": {"type": "integer", "minimum": 2},
+        "pure_individual_count": {"type": "integer", "minimum": 0},
+        "admixed_individual_count": {"type": "integer", "minimum": 0},
+        "source_stratum_count": {"type": "integer", "minimum": 1},
+        "output_stratum_count": {"type": "integer", "minimum": 1},
+        "mixture_profile_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "domain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chromosome", "start_bp", "end_bp", "position_unit"],
+      "properties": {
+        "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+        "start_bp": {"type": "integer", "minimum": 1},
+        "end_bp": {"type": "integer", "minimum": 1},
+        "position_unit": {"const": "BP_1_BASED_CLOSED"}
+      }
+    },
+    "method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method_id", "method_version", "mixture_unit", "supported_proportions", "unequal_mixtures"],
+      "properties": {
+        "method_id": {"const": "reciprocal_whole_haplotype_mixture_v1"},
+        "method_version": {"const": "1.0.0"},
+        "mixture_unit": {"const": "RECIPROCAL_WHOLE_HAPLOTYPE_PAIR"},
+        "supported_proportions": {"const": "PURE_OR_TWO_WAY_EQUAL"},
+        "unequal_mixtures": {"const": "DEFERRED_TO_D14_RECOMBINATION_MOSAICS"}
+      }
+    },
+    "confidentiality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "real_sample_files_read", "raw_donor_identifiers_in_d12_artifacts",
+        "ancestry_labels_in_blinded_panel", "local_source_paths_in_manifest",
+        "artifacts_version_control_allowed"
+      ],
+      "properties": {
+        "real_sample_files_read": {"const": false},
+        "raw_donor_identifiers_in_d12_artifacts": {"const": false},
+        "ancestry_labels_in_blinded_panel": {"const": false},
+        "local_source_paths_in_manifest": {"const": false},
+        "artifacts_version_control_allowed": {"const": false}
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "role", "path", "sha256", "size_bytes", "record_count"],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/stableIdentifier"},
+        "role": {"enum": ["DENSE_PHASED_POPULATION_PANEL", "ANCESTRY_TRUTH", "D11_HAPLOTYPE_PROVENANCE", "BLINDED_OBSERVED_POPULATION_PANEL"]},
+        "path": {"$ref": "#/$defs/privatePath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 1},
+        "record_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dense_variant_count", "observed_variant_count", "individual_count",
+        "source_haplotype_count", "output_haplotype_count",
+        "haplotype_copy_error_count", "allele_count_difference",
+        "genotype_haplotype_discordance_count", "invalid_proportion_count",
+        "proportion_sum_error_count", "panel_role_collision_count", "checks"
+      ],
+      "properties": {
+        "dense_variant_count": {"type": "integer", "minimum": 1},
+        "observed_variant_count": {"type": "integer", "minimum": 1},
+        "individual_count": {"type": "integer", "minimum": 1},
+        "source_haplotype_count": {"type": "integer", "minimum": 2},
+        "output_haplotype_count": {"type": "integer", "minimum": 2},
+        "haplotype_copy_error_count": {"const": 0},
+        "allele_count_difference": {"const": 0},
+        "genotype_haplotype_discordance_count": {"const": 0},
+        "invalid_proportion_count": {"const": 0},
+        "proportion_sum_error_count": {"const": 0},
+        "panel_role_collision_count": {"const": 0},
+        "checks": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {"enum": [
+            "D11A_D11B_BINDING_MATCHED", "PANEL_AND_DOMAIN_MATCHED",
+            "HAPLOTYPE_COPY_BIJECTION", "ANCESTRY_PROPORTIONS_VALID",
+            "ANCESTRY_PROPORTIONS_SUM_TO_ONE", "CALIBRATION_VALIDATION_ROLE_SEPARATED",
+            "OBSERVED_MARKER_UNIVERSE_PRESERVED", "BLINDED_PANEL_HAS_NO_ANCESTRY_LABEL"
+          ]},
+          "allOf": [
+            {"contains": {"const": "D11A_D11B_BINDING_MATCHED"}},
+            {"contains": {"const": "PANEL_AND_DOMAIN_MATCHED"}},
+            {"contains": {"const": "HAPLOTYPE_COPY_BIJECTION"}},
+            {"contains": {"const": "ANCESTRY_PROPORTIONS_VALID"}},
+            {"contains": {"const": "ANCESTRY_PROPORTIONS_SUM_TO_ONE"}},
+            {"contains": {"const": "CALIBRATION_VALIDATION_ROLE_SEPARATED"}},
+            {"contains": {"const": "OBSERVED_MARKER_UNIVERSE_PRESERVED"}},
+            {"contains": {"const": "BLINDED_PANEL_HAS_NO_ANCESTRY_LABEL"}}
+          ]
+        }
+      }
+    }
+  }
+}

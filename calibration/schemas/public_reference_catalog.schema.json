@@ -41,14 +41,28 @@
     "sources": {
       "type": "array",
       "minItems": 4,
-      "maxItems": 4,
+      "maxItems": 5,
       "uniqueItems": true,
       "items": {"$ref": "#/$defs/sourceRecord"},
       "allOf": [
         {"contains": {"properties": {"source_type": {"const": "PHASED_HAPLOTYPE_PANEL"}}, "required": ["source_type"]}},
         {"contains": {"properties": {"source_type": {"const": "POPULATION_METADATA"}}, "required": ["source_type"]}},
         {"contains": {"properties": {"source_type": {"const": "UNRELATED_SAMPLE_INDEX"}}, "required": ["source_type"]}},
-        {"contains": {"properties": {"source_type": {"const": "GENETIC_MAP"}}, "required": ["source_type"]}}
+        {"contains": {"properties": {"source_type": {"const": "GENETIC_MAP"}}, "required": ["source_type"]}},
+        {
+          "if": {"minItems": 5},
+          "then": {
+            "contains": {
+              "properties": {
+                "source_id": {"const": "thermofisher_cytoscan750k_accel_na36_r1"},
+                "source_type": {"const": "ARRAY_DESIGN_MANIFEST"}
+              },
+              "required": ["source_id", "source_type"]
+            },
+            "minContains": 1,
+            "maxContains": 1
+          }
+        }
       ]
     }
   },
@@ -112,7 +126,7 @@
       "additionalProperties": false,
       "required": ["provider", "canonical_url", "documentation_url"],
       "properties": {
-        "provider": {"enum": ["IGSR_1000_GENOMES", "SHAPEIT4_HAPMAP"]},
+        "provider": {"enum": ["IGSR_1000_GENOMES", "SHAPEIT4_HAPMAP", "THERMO_FISHER"]},
         "canonical_url": {"$ref": "#/$defs/httpsUri"},
         "documentation_url": {"$ref": "#/$defs/httpsUri"}
       }
@@ -217,7 +231,8 @@
             "PHASED_HAPLOTYPE_PANEL",
             "POPULATION_METADATA",
             "UNRELATED_SAMPLE_INDEX",
-            "GENETIC_MAP"
+            "GENETIC_MAP",
+            "ARRAY_DESIGN_MANIFEST"
           ]
         },
         "version": {"type": "string", "minLength": 1, "maxLength": 200},
@@ -231,7 +246,8 @@
               "PHASING_REFERENCE_CANDIDATE",
               "ANCESTRY_REFERENCE_METADATA",
               "UNRELATED_REFERENCE_METADATA",
-              "RECOMBINATION_MAP"
+              "RECOMBINATION_MAP",
+              "OBSERVATION_MARKER_UNIVERSE"
             ]
           }
         },
@@ -292,6 +308,33 @@
               "rights": {
                 "properties": {
                   "review_status": {"const": "REPOSITORY_TERMS_VERIFIED_SOURCE_RIGHTS_PARTIAL"}
+                }
+              },
+              "fingerprint": {"properties": {"scope": {"const": "REMOTE_ASSET"}}}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"source_type": {"const": "ARRAY_DESIGN_MANIFEST"}}, "required": ["source_type"]},
+          "then": {
+            "properties": {
+              "source_id": {"const": "thermofisher_cytoscan750k_accel_na36_r1"},
+              "version": {"const": "NA36.r1"},
+              "allowed_roles": {
+                "contains": {"const": "OBSERVATION_MARKER_UNIVERSE"},
+                "minContains": 1
+              },
+              "origin": {
+                "properties": {
+                  "provider": {"const": "THERMO_FISHER"},
+                  "canonical_url": {"pattern": "^https://www\\.thermofisher\\.com/"}
+                }
+              },
+              "assembly": {
+                "properties": {
+                  "scope": {"const": "GENOMIC_COORDINATES"},
+                  "name": {"const": "GRCh38"},
+                  "associated_panel_assembly": {"const": "GRCh38"}
                 }
               },
               "fingerprint": {"properties": {"scope": {"const": "REMOTE_ASSET"}}}

@@ -29,7 +29,9 @@ origine HTTPS, un assemblage explicite, une décision d'usage local, une
 empreinte SHA-256 et une liaison empreintée au catalogue technique du pipeline.
 Il interdit les données d'étude réelles, le téléchargement pendant D09 et la
 redistribution par le projet. Tout fichier acquis ultérieurement doit recevoir
-un SHA-256 local enregistré dans le manifest D07.
+un SHA-256 local enregistré dans le manifest D07. La cinquième source
+`ARRAY_DESIGN_MANIFEST` Thermo Fisher a été ajoutée après acquisition,
+empreinte et revue des conditions d'usage.
 
 `reference_partition_manifest.schema.json`, créé à l'étape D10, décrit trois
 partitions privées : donneurs de calibration, donneurs de validation et
@@ -37,6 +39,27 @@ référence de phasage commune. Il interdit les identifiants bruts dans le
 manifest de contrôle, exige les listes sous `private_truth/partitions/`, leurs
 SHA-256 et les comptes agrégés, puis impose une intersection nulle des
 identifiants et des groupes de pedigree ou de parenté.
+
+`base_haplotype_manifest.schema.json`, créé à l'étape D11, lie les haplotypes
+phasés, les génotypes non phasés, la provenance donneur privée et la carte
+génétique interpolée. Il impose une utilisation unique de chaque copie
+haplotypique, interdit les paires issues du même donneur, exige une concordance
+génotype–haplotype intégrale et refuse tout identifiant donneur ou chemin local
+dans le manifest.
+
+`chip_marker_harmonization_manifest.schema.json` complète D11 par la couche
+D11b. Il lie le paquet constructeur CytoScan 750K Accel `NA36.r1`, sa table SNP
+normalisée et la vérité dense D11a par SHA-256. Il impose GRCh38, la politique
+d'intersection et d'exclusion des ambiguïtés, puis inventorie la table SNP
+normalisée, la table de liaison, le VCF observable et l'audit agrégé. Toute
+source dérivée d'un échantillon réel est déclarée interdite.
+
+`population_structure_config.schema.json` et
+`population_structure_manifest.schema.json` encadrent D12. Avant les mosaïques
+de recombinaison D14, ils n'autorisent que les strates pures et les mélanges
+diploïdes exacts à deux composantes 50/50. Le manifest lie par SHA-256 D11a,
+D11b et la configuration, inventorie la vérité d'ascendance privée, la
+provenance D12→D11, le panel phasé dense et sa copie observable sans étiquette.
 
 Les références croisées entre identifiants et la résolution physique des
 chemins seront contrôlées par les gardes D08. Aucun artefact généré ne doit être

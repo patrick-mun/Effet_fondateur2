@@ -88,7 +88,7 @@ def test_catalog_has_unique_source_identifiers_and_types() -> None:
     source_types = [source["source_type"] for source in catalog["sources"]]
 
     assert len(source_ids) == len(set(source_ids))
-    assert len(source_types) == len(set(source_types)) == 4
+    assert len(source_types) == len(set(source_types)) == 5
 
 
 @pytest.mark.parametrize("missing_field", ["source_id", "version", "origin", "fingerprint"])
@@ -135,13 +135,24 @@ def test_every_source_is_limited_to_local_calibration_without_redistribution() -
         assert source["acquisition"]["local_sha256_required_before_use"] is True
 
 
-def test_unreviewed_fifth_source_is_rejected() -> None:
+def test_unreviewed_array_design_source_is_rejected() -> None:
     catalog = _catalog()
-    extra_source = deepcopy(catalog["sources"][0])
-    extra_source["source_id"] = "unreviewed_source"
-    catalog["sources"].append(extra_source)
+    source = _source_by_type(catalog, "ARRAY_DESIGN_MANIFEST")
+    source["source_id"] = "unreviewed_source"
 
     assert _errors(catalog)
+
+
+def test_reviewed_cytoscan_source_is_bound_to_the_acquired_package() -> None:
+    source = _source_by_type(_catalog(), "ARRAY_DESIGN_MANIFEST")
+
+    assert source["source_id"] == "thermofisher_cytoscan750k_accel_na36_r1"
+    assert source["version"] == "NA36.r1"
+    assert source["assembly"]["name"] == "GRCh38"
+    assert source["fingerprint"]["sha256"] == (
+        "6a696ef3d2e61e9db74ead91c6410e15efc90da6a8bfc814f5da034e364607a3"
+    )
+    assert source["rights"]["redistribution_allowed_by_project"] is False
 
 
 def test_missing_provider_checksum_cannot_claim_an_algorithm() -> None:

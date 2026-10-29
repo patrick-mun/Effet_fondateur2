@@ -177,6 +177,20 @@ def test_schema_and_synthetic_manifest_are_valid() -> None:
     assert _errors(_valid_manifest()) == []
 
 
+def test_catalog_contract_keeps_historical_d10_manifests_valid() -> None:
+    manifest = _valid_manifest()
+    manifest["source_catalog"]["catalog_version"] = "1.0.0"
+
+    assert _errors(manifest) == []
+
+
+def test_unknown_catalog_contract_version_is_rejected() -> None:
+    manifest = _valid_manifest()
+    manifest["source_catalog"]["catalog_version"] = "2.0.0"
+
+    assert _errors(manifest)
+
+
 @pytest.mark.parametrize(
     "missing_field",
     [

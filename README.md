@@ -65,6 +65,56 @@ La commande vérifie les SHA-256 D09, refuse l'écrasement et n'affiche que des
 effectifs agrégés. Les listes d'identifiants restent sous `private_truth/` et
 ne doivent jamais être ajoutées à Git.
 
+La D11a construit ensuite les haplotypes de base depuis un VCF public 1000G
+fourni explicitement, sans enregistrer son chemin local dans le manifest :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.materialize_base_haplotypes \
+  --public-catalog calibration/references/public_reference_catalog.json \
+  --technical-catalog config/references/1000g_high_coverage_grch38_phased.json \
+  --source-vcf <reference_chr19.vcf.gz> \
+  --source-index <reference_chr19.vcf.gz.tbi> \
+  --population-metadata <metadata_1000g> \
+  --genetic-map <carte_chr19.tsv> \
+  --genetic-map-manifest <manifest_cache_cartes.json> \
+  --partition-root calibration_workspace/<partition_d10> \
+  --workspace-root calibration_workspace \
+  --run-id <identifiant_nouveau> \
+  --panel-role CALIBRATION \
+  --chromosome 19 --start-bp <début> --end-bp <fin> \
+  --random-seed <graine_haplotypes>
+```
+
+Les VCF synthétiques, la provenance privée, la carte dérivée et leur manifest
+restent exclusivement sous `calibration_workspace/`.
+
+Avant D12, la D11b limite une copie observable de ces génotypes aux marqueurs
+SNP du dessin exact `CytoScan750K_Accel`, `NA36.r1`, `GRCh38` :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.materialize_chip_observation \
+  --public-catalog calibration/references/public_reference_catalog.json \
+  --dense-root calibration_workspace/<run_d11a> \
+  --official-chip-package <paquet_officiel_NA36.r1.zip> \
+  --expected-official-package-sha256 <sha256_paquet> \
+  --workspace-root calibration_workspace \
+  --run-id <run_d11b>
+```
+
+La liste de marqueurs ne doit jamais être dérivée d'un export individuel. La
+vérité dense reste privée ; le VCF observable conserve l'orientation 1000G et
+les identifiants synthétiques, sans étiquette d'ascendance.
+
+La table de liaison enregistre explicitement le brin et les permutations
+d'allèles. Voir `calibration/references/CYTOSCAN_750K_ACCEL_MARKERS.md`.
+
+La D12 construit ensuite les strates pures et les mélanges connus à partir des
+haplotypes D11a, tout en reconstruisant le panel aveugle uniquement sur les
+marqueurs D11b. Avant la simulation des recombinaisons D14, un mélange exact
+est limité à deux haplotypes de strates différentes, donc 50/50. La vérité
+d'ascendance et la provenance restent dans `calibration_workspace/`; aucune
+étiquette de strate n'est écrite dans le VCF observable.
+
 Pour quitter l'environnement :
 
 ```bash

@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/calibration/schemas/population_structure_config.schema.json",
+  "title": "Configuration privée de structure de population D12",
+  "description": "Contrat des mélanges diploïdes exacts réalisables avant la simulation des recombinaisons D14.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "population_structure_config_id",
+    "config_state",
+    "method",
+    "mixtures"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "population_structure_config_id": {"$ref": "#/$defs/stableIdentifier"},
+    "config_state": {"const": "FINALIZED"},
+    "method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method_id",
+        "method_version",
+        "random_seed",
+        "pure_policy",
+        "mixture_unit",
+        "supported_proportions"
+      ],
+      "properties": {
+        "method_id": {"const": "reciprocal_whole_haplotype_mixture_v1"},
+        "method_version": {"const": "1.0.0"},
+        "random_seed": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "pure_policy": {"const": "RETAIN_UNUSED_D11_DIPLOIDS"},
+        "mixture_unit": {"const": "RECIPROCAL_WHOLE_HAPLOTYPE_PAIR"},
+        "supported_proportions": {"const": "PURE_OR_TWO_WAY_EQUAL"}
+      }
+    },
+    "mixtures": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["mixture_id", "individual_count", "components"],
+        "properties": {
+          "mixture_id": {"$ref": "#/$defs/stableIdentifier"},
+          "individual_count": {
+            "type": "integer",
+            "minimum": 2,
+            "multipleOf": 2
+          },
+          "components": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "uniqueItems": true,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["stratum_id", "proportion"],
+              "properties": {
+                "stratum_id": {"$ref": "#/$defs/stableIdentifier"},
+                "proportion": {"const": 0.5}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "stableIdentifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    }
+  }
+}

@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0.0",
   "catalog_id": "calibration_public_references_v1",
-  "catalog_version": "1.0.0",
+  "catalog_version": "1.1.0",
   "catalog_state": "FROZEN",
-  "reviewed_on": "2026-10-28",
+  "reviewed_on": "2026-10-29",
   "scope": {
     "project": "Effet_fondateur2_calibration",
     "purpose": "SYNTHETIC_CALIBRATION_ONLY",
@@ -190,6 +190,52 @@
       "catalog_binding": {
         "repository_path": "config/references/shapeit4_hapmap_grch38.json",
         "sha256": "8c3c1aca3e4b95888682e70ea4e7754125a3fb29a16e617eaabb6c9d61bddd1a"
+      },
+      "acquisition": {
+        "download_during_d09": false,
+        "provider_checksum_algorithm": "NONE",
+        "provider_checksum_required": false,
+        "local_sha256_required_before_use": true,
+        "local_sha256_record": "CALIBRATION_RUN_MANIFEST"
+      }
+    },
+    {
+      "source_id": "thermofisher_cytoscan750k_accel_na36_r1",
+      "source_type": "ARRAY_DESIGN_MANIFEST",
+      "version": "NA36.r1",
+      "allowed_roles": ["OBSERVATION_MARKER_UNIVERSE"],
+      "origin": {
+        "provider": "THERMO_FISHER",
+        "canonical_url": "https://www.thermofisher.com/order/catalog/product/952539",
+        "documentation_url": "https://documents.thermofisher.com/TFS-Assets/GSD/manuals/MAN1000007-RevA-CytoScan750KAccelArray-PI.pdf"
+      },
+      "assembly": {
+        "scope": "GENOMIC_COORDINATES",
+        "name": "GRCh38",
+        "associated_panel_assembly": "GRCh38",
+        "verified": true,
+        "evidence_url": "https://www.thermofisher.com/order/catalog/product/952539"
+      },
+      "rights": {
+        "review_status": "TERMS_VERIFIED",
+        "use_decision": "ALLOWED_LOCAL_CALIBRATION",
+        "terms_label": "Thermo Fisher Scientific Terms of Use and package copyright notice",
+        "terms_url": "https://www.thermofisher.com/us/en/home/global/terms-of-use.html",
+        "attribution_required": true,
+        "redistribution_allowed_by_project": false,
+        "reviewed_on": "2026-10-29",
+        "notes": "Le paquet officiel est utilisé uniquement pour une calibration locale non commerciale. Le projet n'en redistribue ni l'archive ni la table dérivée et ne revendique aucun droit au-delà des conditions Thermo Fisher et des mentions internes du paquet. Une revue séparée reste requise avant tout usage institutionnel différent ou toute diffusion."
+      },
+      "fingerprint": {
+        "algorithm": "SHA-256",
+        "sha256": "6a696ef3d2e61e9db74ead91c6410e15efc90da6a8bfc814f5da034e364607a3",
+        "scope": "REMOTE_ASSET",
+        "verification": "PROJECT_VERIFIED",
+        "asset_url": "https://www.thermofisher.com/order/catalog/product/952539"
+      },
+      "catalog_binding": {
+        "repository_path": "calibration/references/CYTOSCAN_750K_ACCEL_MARKERS.md",
+        "sha256": "b7f9f6c13d7172b1441195bd314927765e36a5c7308a6c6dbe6ef1c3ec7d2e1e"
       },
       "acquisition": {
         "download_during_d09": false,

@@ -26,3 +26,22 @@ que toute incohérence de chemin, empreinte, effectif ou catalogue est refusée.
 Ils contrôlent aussi la lecture des deux formats publics, la production
 atomique sous permissions privées, l'absence d'identifiant dans le manifest,
 le refus d'écrasement et le rejet d'une entrée corrompue.
+
+Les tests D11b construisent une fausse archive fournisseur et une base SQLite
+entièrement synthétiques. Ils vérifient la version `NA36.r1`, GRCh38, la
+normalisation depuis `Annotations` plutôt que depuis la liste SNPQC, les quatre
+relations alléliques, les exclusions ambiguës, les empreintes, le refus des
+dossiers d'exports individuels, le filtrage du VCF et le schéma du manifest.
+Aucun fichier ACPA réel n'est lu.
+
+Les tests D11 utilisent exclusivement quatre donneurs synthétiques. Ils
+contrôlent le schéma du manifest, le déterminisme de la graine, la bijection
+des copies, l'absence de paire issue du même donneur, la conservation exacte du
+LD haplotypique, la concordance des génotypes, l'interpolation de carte et la
+matérialisation atomique avec un exécuteur `bcftools` simulé.
+
+Les tests D12 utilisent uniquement des identifiants et VCF synthétiques. Ils
+contrôlent le schéma de configuration, la liaison empreintée D11a–D11b, le
+déterminisme, la bijection des haplotypes, les proportions 50/50 et leur somme,
+la conservation des allèles, l'univers de marqueurs D11b, les permissions
+privées et l'absence de strate ou de donneur dans le panel aveugle.

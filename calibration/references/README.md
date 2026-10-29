@@ -41,3 +41,13 @@ commune. Une première matérialisation vérifiée a été produite à partir du
 public sous `calibration_workspace/d10_1kg_3202_20220422_v1/` ; ses listes
 restent ignorées par Git.
 L'autorisation D09 d'une source ne constitue pas à elle seule cette séparation.
+
+`CYTOSCAN_750K_ACCEL_MARKERS.md` fixe la source et le format D11b de l'univers
+observable. Il distingue explicitement la conception Accel `NA36.r1` de
+l'ancienne CytoScan 750K `NA36.r7`, interdit de dériver la liste de marqueurs
+depuis un échantillon et exige les SHA-256 du paquet constructeur et du TSV
+normalisé. L'entrée Thermo Fisher est inscrite au catalogue D09 depuis
+l'acquisition et la revue du 29 octobre 2026. D11b lit le ZIP conservé hors du
+dépôt, produit directement le TSV sous `calibration_workspace/` et refuse une
+empreinte, une base SQLite ou des métadonnées incompatibles. Ces deux charges
+utiles restent locales et hors Git.

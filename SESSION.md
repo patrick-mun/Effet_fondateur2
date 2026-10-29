@@ -1,8 +1,8 @@
 # Suivi de session
 
-Dernière mise à jour : 28 octobre 2026
+Dernière mise à jour : 29 octobre 2026
 
-## Plan du panel de simulation et de calibration — 28 octobre 2026
+## Plan du panel de simulation et de calibration — 29 octobre 2026
 
 - D03 version `1.0.0` et D04 version `0.2.0` ont été approuvés humainement le
   28 octobre 2026. D03 porte le statut `APPROVED` et D04 le statut
@@ -113,6 +113,79 @@ Dernière mise à jour : 28 octobre 2026
   Aucun VCF ni outil génétique n'a été lancé. Validation finale D10 : 55 tests
   ciblés et 381 tests de calibration réussis, imports, compilation et
   `git diff --check` sans erreur.
+- La couche dense D11a est implémentée avec
+  `calibration/schemas/base_haplotype_manifest.schema.json`,
+  `src/effet_fondateur/calibration/simulation/base_haplotypes.py` et le
+  matérialisateur privé. La méthode réapparie au sein de chaque population les
+  copies de donneurs distincts, utilise chaque haplotype exactement une fois et
+  dérive le génotype non phasé sans approximation. La transmission
+  parent–enfant reste explicitement différée à D13.
+- Les 22 VCF phasés 1000G et leurs index sont conservés hors dépôt dans le
+  dossier public du Bureau. Le chromosome 19 correspond aux MD5 fournisseur et
+  aux SHA-256 locaux D09. Les 900 donneurs de calibration et 899 donneurs de
+  validation D10 y sont tous présents ; chaque panel couvre 18 populations et
+  aucune population ne possède un donneur isolé.
+- Le test d'intégration D11a réel de référence, annoncé et limité à la
+  calibration sur `chr19:11000000-11100000`, existe sous le workspace ignoré
+  avec l'identifiant `d11_integration_cal_chr19_11000000_11100000_v2`. Il a produit 900
+  diploïdes synthétiques, 1 800 haplotypes et 2 484 SNV sur 18 strates. Les neuf
+  contrôles denses passent, les génotypes sont concordants à 100 %, aucun donneur
+  n'apparaît dans les VCF synthétiques ou le manifest, les quatre empreintes
+  correspondent et les permissions privées sont valides. Le SHA-256 du
+  manifest privé est
+  `855e624b7b65a81f9644a245faeae6fb87b1951db3a1fc6ad9e533c0a0bec472`.
+  Ce run diagnostique de 100 kb ne remplace pas le futur micro-panel D33.
+- La correction D11b sépare la vérité dense de l'observation CytoScan 750K
+  Accel. Le paquet officiel `hg38/NA36.r1`, conservé hors dépôt et hors cache,
+  mesure 533 747 512 octets et possède le SHA-256
+  `6a696ef3d2e61e9db74ead91c6410e15efc90da6a8bfc814f5da034e364607a3`.
+  Son entrée Thermo Fisher est inscrite au catalogue D09 version `1.1.0` avec
+  usage limité à la calibration locale et redistribution interdite.
+- D11b lit directement `CytoScan750k_Accel_Array.na36.annot.db` dans le ZIP,
+  vérifie l'intégrité SQLite, le schéma et les métadonnées, puis normalise sa
+  table `Annotations` dans le workspace privé. La base compte 960 877
+  annotations, 254 822 SNP et 247 777 SNP autosomiques. La liste de 10 000 SNP
+  `snplist.r3.txt` sert uniquement au SNPQC et n'est pas utilisée pour définir
+  l'univers de la puce. Le TSV normalisé possède le SHA-256
+  `7b1da53203d3422cb4d71693dd3f6074689ccfa80522048f55b6a7b52a093f82`.
+- Le run D11b réel borné
+  `d11b_integration_cal_chr19_11000000_11100000_v1` est lié au run D11a de
+  100 kb. Parmi les 2 484 SNV denses, un seul marqueur de puce est présent :
+  `S-3RUGR`, chr19:11 013 062, `C/T`. Il est lié en orientation directe, sans
+  exclusion ni ambiguïté ; le VCF observable et la table de liaison comptent
+  chacun exactement un variant. Le schéma, les quatre empreintes d'artefact,
+  les permissions privées et l'absence de chemin local passent. Le SHA-256 du
+  manifest D11b est
+  `2b0665a8521315cc0efa07c47bbf93c7e91336064ad0457c43473ea1829bba55`.
+- Validation de la correction D11b : 47 tests ciblés et 452 tests de
+  calibration réussis ; imports, compilation et `git diff --check` réussis.
+  Le contrat D10 accepte les catalogues D09 `1.0.0` et `1.1.0` afin de préserver
+  les manifests historiques tout en liant les futures matérialisations au
+  catalogue courant. La suite complète compte 765 réussites et un seul échec
+  préexistant sans rapport : le test synthétique 16A voit le dossier local du
+  panel 1000G mais n'y trouve pas le VCF complet du chromosome 5. Aucun module
+  16A n'a été modifié.
+- L'étape D12 est implémentée avec deux schémas stricts, une configuration
+  diagnostique versionnée, le générateur de structure de population et son
+  matérialisateur atomique. Sans recombinaison, D12 autorise uniquement les
+  strates pures et les mélanges exacts à deux composantes 50/50. Deux diploïdes
+  D11 produisent les sorties réciproques `A1|B2` et `B1|A2` ; chaque haplotype
+  est ainsi utilisé exactement une fois. Les proportions inégales et les
+  mélanges à plus de deux composantes sont différés à D14.
+- Le run borné
+  `d12_integration_cal_chr19_11000000_11100000_v1` lie les manifests D11a et
+  D11b précédents au même panel de calibration et au même domaine de 100 kb.
+  Il contient 900 diploïdes, 1 800 haplotypes, 2 484 variants denses et 20
+  mélanges CEU/YRI 50/50 ; les 880 autres individus restent dans leur strate
+  pure. Le panel aveugle conserve uniquement la sonde CytoScan `S-3RUGR`, sans
+  étiquette d'ascendance ni identifiant donneur. Les sommes de proportions,
+  la bijection, la conservation allélique, les permissions et les quatre
+  empreintes d'artefact passent avec zéro erreur. Le SHA-256 du manifest D12
+  est `21bc2a2b375e77c48b1544939125041fe2431c4c0867792bb4d66e9cd52c0b31`.
+  Les 13 tests D12 ciblés et les 465 tests de calibration passent. La suite
+  complète compte 778 réussites et le seul échec 16A préexistant décrit plus
+  haut, causé par l'absence locale du VCF 1000G chromosome 5. Comme D11, cette
+  intégration diagnostique ne remplace pas le micro-panel D33.
 - Le plan de développement est créé sous
   `calibration/PLAN_DEVELOPPEMENT_PANEL_SIMULATION.md`. Il sépare strictement
   données aveugles, vérité simulée, panel de calibration et panel de validation.
@@ -131,11 +204,14 @@ Dernière mise à jour : 28 octobre 2026
 - Aucun fichier de `dock6_real` ne peut servir au réglage. Aucun changement de
   méthode, aucune correction de datation et aucun passage de 16C à
   `calibrated: true` ne sont autorisés sans rapports audités et décision humaine.
-- Aucune simulation ni aucun outil externe n'a été lancé. Les étapes D01 à D10
-  sont implémentées ; une revue humaine du point G1 reste nécessaire avant
-  toute ouverture du micro-panel. La prochaine étape de développement prévue
-  est D11, la génération des haplotypes de base à partir des partitions D10
-  désormais matérialisées et auditées.
+- Les intégrations D11a et D11b bornées n'ont ni lancé le pipeline complet ni
+  lu ou modifié une donnée d'étude. Les manifests D11a et D11b valides sont liés
+  au même panel et au même domaine : le prérequis technique de D12 est
+  satisfait. Avec un seul marqueur de puce sur 100 kb, ce diagnostic ne
+  remplace toutefois pas le futur micro-panel D33 ni son contrôle de densité.
+  D12 est désormais matériellement validée sur ce domaine. La prochaine action
+  concrète est D13, qui introduira les pedigrees et permettra enfin le contrôle
+  des transmissions mendéliennes parent–enfant.
 
 ## Nouveau run complet V2 — 27 octobre 2026
 

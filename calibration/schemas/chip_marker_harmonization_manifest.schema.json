@@ -1,0 +1,264 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/calibration/schemas/chip_marker_harmonization_manifest.schema.json",
+  "title": "Manifest privé d'harmonisation puce-référence D11b",
+  "description": "Contrat liant la vérité dense D11a à l'univers SNP observable de la CytoScan 750K Accel NA36.r1, sans donnée d'échantillon réel.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "chip_harmonization_manifest_id",
+    "manifest_state",
+    "created_at",
+    "dense_truth",
+    "chip_design",
+    "domain",
+    "policy",
+    "confidentiality",
+    "artifacts",
+    "integrity"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "chip_harmonization_manifest_id": {"$ref": "#/$defs/stableIdentifier"},
+    "manifest_state": {"const": "FINALIZED"},
+    "created_at": {"$ref": "#/$defs/dateTime"},
+    "dense_truth": {"$ref": "#/$defs/denseTruth"},
+    "chip_design": {"$ref": "#/$defs/chipDesign"},
+    "domain": {"$ref": "#/$defs/domain"},
+    "policy": {"$ref": "#/$defs/policy"},
+    "confidentiality": {"$ref": "#/$defs/confidentiality"},
+    "artifacts": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/artifact"},
+      "allOf": [
+        {"contains": {"properties": {"role": {"const": "NORMALIZED_CHIP_MARKERS"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "CHIP_REFERENCE_MARKER_MAP"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "CHIP_OBSERVED_GENOTYPES"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "HARMONIZATION_AUDIT"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1}
+      ]
+    },
+    "integrity": {"$ref": "#/$defs/integrity"}
+  },
+  "$defs": {
+    "stableIdentifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "dateTime": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]+)?(?:Z|[+-](?:0[0-9]|1[0-4]):[0-5][0-9])$"
+    },
+    "privatePath": {
+      "type": "string",
+      "pattern": "^private_truth/d11b/(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9][A-Za-z0-9._/-]*$"
+    },
+    "denseTruth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base_haplotype_manifest_id",
+        "base_haplotype_manifest_sha256",
+        "panel_role",
+        "dense_genotype_artifact_id",
+        "dense_genotype_sha256",
+        "dense_variant_count"
+      ],
+      "properties": {
+        "base_haplotype_manifest_id": {"$ref": "#/$defs/stableIdentifier"},
+        "base_haplotype_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "panel_role": {"enum": ["CALIBRATION", "VALIDATION"]},
+        "dense_genotype_artifact_id": {"$ref": "#/$defs/stableIdentifier"},
+        "dense_genotype_sha256": {"$ref": "#/$defs/sha256"},
+        "dense_variant_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "chipDesign": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "array_design",
+        "design_version",
+        "assembly",
+        "source_kind",
+        "public_catalog_source_id",
+        "provider",
+        "provider_url",
+        "official_package_filename",
+        "official_package_sha256",
+        "normalized_marker_manifest_filename",
+        "normalized_marker_manifest_sha256",
+        "sample_derived_marker_source"
+      ],
+      "properties": {
+        "array_design": {"const": "CytoScan750K_Accel"},
+        "design_version": {"const": "NA36.r1"},
+        "assembly": {"const": "GRCh38"},
+        "source_kind": {"const": "OFFICIAL_LIBRARY_DERIVED"},
+        "public_catalog_source_id": {
+          "const": "thermofisher_cytoscan750k_accel_na36_r1"
+        },
+        "provider": {"const": "Thermo Fisher Scientific"},
+        "provider_url": {
+          "const": "https://www.thermofisher.com/order/catalog/product/952539"
+        },
+        "official_package_filename": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._ -]*\\.(?:zip|tar\\.gz)$"
+        },
+        "official_package_sha256": {"$ref": "#/$defs/sha256"},
+        "normalized_marker_manifest_filename": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.tsv$"
+        },
+        "normalized_marker_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "sample_derived_marker_source": {"const": false}
+      }
+    },
+    "domain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chromosome", "start_bp", "end_bp", "position_unit"],
+      "properties": {
+        "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+        "start_bp": {"type": "integer", "minimum": 1},
+        "end_bp": {"type": "integer", "minimum": 1},
+        "position_unit": {"const": "BP_1_BASED_CLOSED"}
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "marker_class",
+        "coordinate_match",
+        "allele_match",
+        "palindromic_unknown_strand",
+        "duplicate_chip_position",
+        "multiple_reference_variants",
+        "output_allele_orientation",
+        "pipeline_marker_mode"
+      ],
+      "properties": {
+        "marker_class": {"const": "BIALLELIC_SNP_ONLY"},
+        "coordinate_match": {"const": "EXACT_GRCH38_CHROMOSOME_AND_POSITION"},
+        "allele_match": {"const": "DIRECT_SWAPPED_COMPLEMENT_OR_COMPLEMENT_SWAPPED"},
+        "palindromic_unknown_strand": {"const": "EXCLUDE"},
+        "duplicate_chip_position": {"const": "EXCLUDE_ALL"},
+        "multiple_reference_variants": {"const": "EXCLUDE"},
+        "output_allele_orientation": {"const": "PRESERVE_1000G_REFERENCE"},
+        "pipeline_marker_mode": {"const": "INTERSECTION"}
+      }
+    },
+    "confidentiality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "real_sample_files_read",
+        "real_sample_identifiers_present",
+        "local_source_paths_in_manifest",
+        "artifacts_version_control_allowed"
+      ],
+      "properties": {
+        "real_sample_files_read": {"const": false},
+        "real_sample_identifiers_present": {"const": false},
+        "local_source_paths_in_manifest": {"const": false},
+        "artifacts_version_control_allowed": {"const": false}
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "role", "path", "sha256", "size_bytes", "record_count"],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/stableIdentifier"},
+        "role": {
+          "enum": [
+            "NORMALIZED_CHIP_MARKERS",
+            "CHIP_REFERENCE_MARKER_MAP",
+            "CHIP_OBSERVED_GENOTYPES",
+            "HARMONIZATION_AUDIT"
+          ]
+        },
+        "path": {"$ref": "#/$defs/privatePath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 1},
+        "record_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "package_annotation_row_count",
+        "package_snp_marker_count",
+        "normalized_autosomal_marker_count",
+        "package_non_autosomal_snp_count",
+        "chip_marker_count_in_domain",
+        "reference_variant_count_in_domain",
+        "matched_marker_count",
+        "excluded_marker_count",
+        "observed_vcf_variant_count",
+        "exclusion_counts",
+        "relation_counts",
+        "checks"
+      ],
+      "properties": {
+        "package_annotation_row_count": {"type": "integer", "minimum": 1},
+        "package_snp_marker_count": {"type": "integer", "minimum": 1},
+        "normalized_autosomal_marker_count": {"type": "integer", "minimum": 1},
+        "package_non_autosomal_snp_count": {"type": "integer", "minimum": 0},
+        "chip_marker_count_in_domain": {"type": "integer", "minimum": 1},
+        "reference_variant_count_in_domain": {"type": "integer", "minimum": 1},
+        "matched_marker_count": {"type": "integer", "minimum": 1},
+        "excluded_marker_count": {"type": "integer", "minimum": 0},
+        "observed_vcf_variant_count": {"type": "integer", "minimum": 1},
+        "exclusion_counts": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 1}
+        },
+        "relation_counts": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {"type": "integer", "minimum": 1}
+        },
+        "checks": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "OFFICIAL_CHIP_SOURCE_HASH_MATCHED",
+              "OFFICIAL_PACKAGE_CONTENT_VALIDATED",
+              "DENSE_D11A_BINDING_MATCHED",
+              "ASSEMBLY_GRCH38_MATCHED",
+              "MARKER_COORDINATES_AND_ALLELES_HARMONIZED",
+              "AMBIGUOUS_MARKERS_EXCLUDED",
+              "OBSERVED_VCF_MARKER_COUNT_MATCHED",
+              "NO_REAL_SAMPLE_SOURCE_OR_IDENTIFIER"
+            ]
+          },
+          "allOf": [
+            {"contains": {"const": "OFFICIAL_CHIP_SOURCE_HASH_MATCHED"}},
+            {"contains": {"const": "OFFICIAL_PACKAGE_CONTENT_VALIDATED"}},
+            {"contains": {"const": "DENSE_D11A_BINDING_MATCHED"}},
+            {"contains": {"const": "ASSEMBLY_GRCH38_MATCHED"}},
+            {"contains": {"const": "MARKER_COORDINATES_AND_ALLELES_HARMONIZED"}},
+            {"contains": {"const": "AMBIGUOUS_MARKERS_EXCLUDED"}},
+            {"contains": {"const": "OBSERVED_VCF_MARKER_COUNT_MATCHED"}},
+            {"contains": {"const": "NO_REAL_SAMPLE_SOURCE_OR_IDENTIFIER"}}
+          ]
+        }
+      }
+    }
+  }
+}

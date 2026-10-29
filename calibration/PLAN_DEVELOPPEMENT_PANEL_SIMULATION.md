@@ -176,7 +176,8 @@ calibration/
 ├── PLAN_DEVELOPPEMENT_PANEL_SIMULATION.md
 ├── README.md
 ├── references/
-│   └── public_reference_catalog.json
+│   ├── public_reference_catalog.json
+│   └── CYTOSCAN_750K_ACCEL_MARKERS.md
 ├── protocoles/
 │   ├── PROTOCOLE_GENERAL.md
 │   ├── CRITERES_ACCEPTATION.yaml
@@ -193,6 +194,10 @@ calibration/
 │   ├── calibration_run_manifest.schema.json
 │   ├── public_reference_catalog.schema.json
 │   ├── reference_partition_manifest.schema.json
+│   ├── base_haplotype_manifest.schema.json
+│   ├── chip_marker_harmonization_manifest.schema.json
+│   ├── population_structure_config.schema.json
+│   ├── population_structure_manifest.schema.json
 │   ├── stage_evaluation.schema.json
 │   └── calibration_decision.schema.json
 └── templates/
@@ -214,7 +219,13 @@ src/effet_fondateur/calibration/
 ├── configuration.py
 ├── materialize_partitions.py
 ├── partitioning.py
+├── materialize_base_haplotypes.py
+├── materialize_chip_observation.py
+├── materialize_population_structure.py
 ├── simulation/
+│   ├── base_haplotypes.py
+│   ├── chip_markers.py
+│   └── population_structure.py
 ├── truth/
 ├── evaluation/
 ├── reporting/
@@ -666,14 +677,70 @@ référence.
 
 **Action :** produire les deux chromosomes de chaque individu synthétique en
 préservant fréquences, LD et carte.
-**Livrable :** haplotypes vrais et génotypes non phasés dérivés.
-**Réussite :** cohérence mendélienne et concordance génotype–haplotype à 100 %.
+**Livrable :** vérité haplotypique dense D11a, génotypes dérivés et univers
+observable CytoScan 750K Accel D11b.
+**Réussite :** concordance génotype–haplotype à 100 %, liaisons puce–1000G
+non ambiguës et nombre de variants observable égal au nombre de marqueurs liés.
+
+La méthode D11 réapparie, au sein d'une même strate publique, les deux copies
+de donneurs distincts. Chaque haplotype donneur est utilisé exactement une fois
+et n'est pas modifié : les fréquences alléliques et le LD haplotypique du pool
+sélectionné sont donc invariants par permutation. La paire diploïde d'un
+échantillon public n'est jamais reproduite. La provenance donneur–copie reste
+privée, tandis que le manifest ne publie que des effectifs et empreintes.
+
+À ce stade, « cohérence mendélienne » désigne uniquement la dérivation exacte
+du génotype non phasé à partir de ses deux haplotypes. Aucune transmission
+parent–enfant n'existe encore en D11 ; son évaluation est explicitement différée
+à D13 pour ne pas revendiquer un contrôle biologique qui n'est pas applicable.
+Les positions `cM` sont interpolées linéairement entre points de carte, sans
+extrapolation hors du domaine couvert.
+
+D11 est séparée en deux couches. D11a conserve la vérité 1000G dense nécessaire
+aux transmissions, recombinaisons et mesures de référence. D11b construit une
+observation distincte limitée aux SNP réellement présents sur la
+`CytoScan750K_Accel`, version `NA36.r1`, assemblage `GRCh38`. Le paquet
+constructeur doit posséder une entrée Thermo Fisher revue dans le catalogue
+D09. D11b lit directement sa base d'annotations, valide son contenu et produit
+dans le workspace privé la table normalisée ; le paquet et cette table sont
+tous deux liés par SHA-256. Aucun cache ni export d'échantillon réel ne peut
+définir l'univers de marqueurs.
+
+L'harmonisation D11b exige une coordonnée exacte et des allèles compatibles
+avec l'orientation ou le brin complémentaire. Elle exclut et compte les
+positions dupliquées, les variants 1000G multiples, les allèles incompatibles
+et les SNP palindromiques de brin inconnu. Le VCF observable conserve
+l'orientation REF/ALT de 1000G et enregistre la relation de sonde séparément.
+Le test D11a de 100 kb et son run D11b réel constituent une intégration
+technique bornée : le paquet officiel est lié et le prérequis de D12 est
+satisfait pour ce domaine. Avec un seul marqueur de puce dans la fenêtre, ce
+diagnostic ne remplace ni le futur micro-panel D33 ni son contrôle de densité.
 
 ### D12 — Générer la structure de population
 
 **Action :** produire strates et mélanges avec proportions connues.
 **Livrable :** vérité d'ascendance et panel aveugle.
 **Réussite :** proportions valides, total égal à 1 et séparation des panels.
+
+**Prérequis bloquant :** un manifest D11a et un manifest D11b valides, liés au
+même panel et au même domaine. D12 ne peut pas utiliser le seul VCF dense comme
+entrée observable du pipeline.
+
+**Méthode retenue :** D12 conserve les diploïdes D11 non sélectionnés comme
+strates pures. Pour un mélange entre deux strates, deux diploïdes sources
+produisent les paires réciproques `A1|B2` et `B1|A2`. Chaque copie haplotypique
+est ainsi utilisée exactement une fois et le mélange individuel vaut exactement
+50/50 sur le domaine. Une proportion inégale ou plus de deux composantes
+nécessiterait une mosaïque chromosomique ; elle est interdite à D12 et différée
+à D14.
+
+La configuration D12 est finalisée, empreintée et explicite sur les strates,
+les proportions, l'effectif pair de chaque mélange et la graine
+`haplotypes`. La sortie contient séparément le VCF phasé dense privé, la vérité
+d'ascendance, la provenance limitée aux identifiants synthétiques D11 et un VCF
+observable réduit aux marqueurs D11b. Ce dernier ne contient aucune étiquette
+d'ascendance. Les rôles `CALIBRATION` et `VALIDATION` utilisent des préfixes
+distincts et ne peuvent être mélangés dans un même run.
 
 ### D13 — Générer pedigrees et parentés
 
