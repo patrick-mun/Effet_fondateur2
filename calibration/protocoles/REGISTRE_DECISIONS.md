@@ -130,3 +130,28 @@ Les autorisations de run restent soumises aux portes G1 à G4 du plan.
 
 Décision approuvée explicitement par le responsable du projet dans la session
 du 28 octobre 2026 après lecture du protocole D03 et de la révision D04.
+
+## CAL-DEC-003 — Autorisation du diagnostic technique 03–04 de D19
+
+Date : 30 octobre 2026. Portée : intégration régionale synthétique, hors pilote
+et qualification. Autorité : demande explicite de l'utilisateur « traite c'est
+de point pour qu'il devienne evaluable », après présentation de l'approbation
+du registre technique, de PLINK et des scénarios cible absente/présente.
+
+Cette autorisation est enregistrée pour les nouveaux registres synthétiques
+strictement identiques aux registres neutres D18, après contrôle de leurs
+identités, sources, effectifs et ordres. Elle ne prétend ni à une revue clinique
+ni à une validation des familles. Le rôle enregistré est `calibration_owner`,
+sans nom ou identifiant personnel. Toute modification de ces registres ou du
+périmètre exige une nouvelle décision ; les anciens runs restent immuables.
+
+Les nouveaux runs sont limités aux étapes 00–04 avec PLINK. Le scénario
+principal conserve toutes les observations D18 et utilise une cible technique
+publique documentée absente de leurs sondes. Ses génotypes sont synthétiques,
+équilibrés par une règle déterministe explicite sans statut clinique. La
+confirmation de référence et HGVS concerne seulement l'annotation publique
+ClinVar, jamais une mesure sur les sujets simulés. Un scénario négatif dérivé
+ajoute cette cible à une copie des observations et doit être refusé par 04.
+
+Aucune donnée d'étude, aucun nouveau seuil, aucune interprétation clinique,
+aucune qualification ni passage à `calibrated=true` n'est autorisé ici.

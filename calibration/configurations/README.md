@@ -42,3 +42,26 @@ La copie porte uniquement sur H2 ; H1, les négatifs IBD et les pedigrees sont
 protégés. Le cadre observable exige 1 500 kb, 50 sondes, 50 kb/sonde au
 maximum et un trou interne inférieur ou égal à 1 000 kb. Les marqueurs
 flanquants sont exigés sans déplacer les bornes en cas de manque.
+
+`d17_micro_chr5_calibration_v1.json` utilise la graine de mesure `1005` et
+huit profils appariés : contrôle, manque 1 %/5 %, dosage 1 %, points de phase
+2 %, frontières de phase 2 %, rétention de sondes 50 % et défauts combinés.
+Les quotas et dénominateurs sont définis dans le plan D17. Les taux sont des
+stress techniques présélectionnés, pas une mesure de l'erreur empirique de la
+puce. Les graines de validation devront être distinctes ; aucune cible
+absente de la puce n'est ajoutée.
+
+`d18_micro_chr5_calibration_v1.json` fixe la graine de blinding `1006`, le rôle
+de calibration, la cible d'analyse configurée et la politique de métadonnées
+neutres. La portée est exclusivement régionale et la configuration pipeline
+livrée est limitée à 00–02, sans approbation humaine automatique. Les profils
+et sujets ne sont reconnaissables que via la correspondance privée.
+
+`d19_technical_target_v1.json` décrit un scénario de concordance 03–04,
+distinct des injections biologiques D14–D18. L'annotation publique APC
+rs1801155 est épinglée à ClinVar RCV001195214.19 ; les génotypes ne proviennent
+d'aucun patient et suivent une règle RR/RA/AA selon le rang aveugle modulo 3.
+La décision `CAL-DEC-003` autorise seulement le registre technique neutre et
+l'intégration régionale 00–04 avec PLINK. Aucun nouveau seuil ni graine ;
+la distribution n'est pas une fréquence populationnelle. Les anciens fichiers
+D18 et leurs configurations 00–02 restent immuables.

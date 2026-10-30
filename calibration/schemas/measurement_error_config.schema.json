@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Configuration D17 des perturbations de mesure",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "configuration_id", "configuration_state", "method_id", "panel_role", "measurement_error_seed", "target_policy", "profiles"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "configuration_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "configuration_state": {"const": "FINALIZED"},
+    "method_id": {"const": "paired_measurement_perturbations_v1"},
+    "panel_role": {"enum": ["CALIBRATION", "VALIDATION"]},
+    "measurement_error_seed": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+    "target_policy": {"const": "KEEP_IF_OBSERVED_NO_GENOTYPE_PROTECTION"},
+    "profiles": {"type": "array", "minItems": 2, "maxItems": 32, "items": {"$ref": "#/$defs/profile"}}
+  },
+  "$defs": {
+    "rate": {"type": "number", "minimum": 0, "maximum": 1},
+    "profile": {
+      "type": "object", "additionalProperties": false,
+      "required": ["profile_id", "marker_retention_fraction", "missing_rate", "genotyping_error_rate", "phase_point_rate", "phase_switch_rate"],
+      "properties": {
+        "profile_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+        "marker_retention_fraction": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "missing_rate": {"$ref": "#/$defs/rate"},
+        "genotyping_error_rate": {"$ref": "#/$defs/rate"},
+        "phase_point_rate": {"$ref": "#/$defs/rate"},
+        "phase_switch_rate": {"$ref": "#/$defs/rate"}
+      }
+    }
+  }
+}

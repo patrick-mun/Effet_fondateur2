@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0.0",
+  "method_id": "d19_technical_target_fixture_v1",
+  "source": {
+    "source_id": "NCBI_ClinVar_RCV001195214_19",
+    "url": "https://www.ncbi.nlm.nih.gov/clinvar/RCV001195214.19/",
+    "accessed_at": "2026-10-30T04:54:38Z",
+    "public_annotation_only": true,
+    "clinical_classification_used": false
+  },
+  "target_metadata": {
+    "schema_version": "1.0.0",
+    "assembly": "GRCh38",
+    "gene": "APC",
+    "chromosome": 5,
+    "position_bp": 112839514,
+    "ref": "T",
+    "alt": "A",
+    "transcript": "NM_000038.6",
+    "hgvs_c": "c.3920T>A",
+    "hgvs_p": "p.Ile1307Lys",
+    "project_variant_id": "technical_target_rs1801155",
+    "rsid": "rs1801155",
+    "reference_validation": {
+      "status": "CONFIRMED",
+      "source_id": "NCBI_ClinVar_RCV001195214_19",
+      "confirmed_at": "2026-10-30T04:54:38Z"
+    },
+    "annotation_validation": {
+      "status": "CONFIRMED",
+      "source_id": "NCBI_ClinVar_RCV001195214_19",
+      "confirmed_at": "2026-10-30T04:54:38Z"
+    }
+  },
+  "genotype_rule": "CANONICAL_REGISTRY_INDEX_MODULO_3_REFREF_REFALT_ALTALT",
+  "manual_approval": {
+    "approved": true,
+    "decision_id": "CAL-DEC-003",
+    "reviewer_role": "calibration_owner",
+    "approved_at": "2026-10-30T04:54:38Z"
+  },
+  "plink_executable": "plink"
+}

@@ -1069,6 +1069,76 @@ de phase selon des profils versionnés.
 **Livrable :** registre des erreurs injectées.
 **Réussite :** aucune erreur non enregistrée dans la vérité.
 
+**Prérequis :** un run D16 finalisé et ses huit artefacts vérifiés par SHA-256,
+un rôle identique et une configuration D17 finalisée. Aucune donnée de l'étude,
+aucun cache du pipeline et aucun appel d'outil génétique ne sont nécessaires.
+
+**Méthode D17 v1 :** `paired_measurement_perturbations_v1`. La vérité dense
+D16 est projetée sur les sondes observables ; les dosages doivent correspondre
+exactement au VCF D16 non phasé. Les profils partent tous de cette même vérité,
+jamais du profil précédent. Ce sont des observations appariées, pas des
+réplications indépendantes. Le registre `measurement_error` possède une graine
+explicite, distincte des graines biologiques ; des sous-flux SHA-256 sont
+dérivés par rôle, profil et opération, indépendamment de l'ordre des profils.
+Les graines propres au futur panel de validation devront être distinctes.
+
+La configuration technique initiale comprend huit profils : contrôle intact,
+manque 1 % et 5 %, erreur de dosage 1 %, phase ponctuelle 2 %, commutations
+2 %, rétention de 50 % des sondes et combinaison de défauts. Le combiné
+utilise 50 % de rétention, 2 % de manque, 0,5 % de dosage, 1 % de phase
+ponctuelle et 1 % de frontières. Ces niveaux sont présélectionnés pour
+éprouver le logiciel, sans prétention de représenter l'erreur empirique de la
+puce. Les corrélations de lot, intensités et incertitudes de carte/bornes ne
+sont pas étudiées dans cette version.
+
+L'ordre des opérations est figé : densité → dosage → commutation → phase
+ponctuelle → manque. Chaque quota vaut `taux × effectif`, arrondi au plus
+proche avec demi supérieur, puis tiré uniformément sans remise. Les taux de
+dosage et de manque portent sur les cellules retenues ; les points de phase
+portent sur les hétérozygotes après erreur de dosage. Une nouvelle erreur de
+dosage est choisie uniformément parmi les deux autres dosages bialléliques ;
+si le résultat est hétérozygote, son orientation est tirée équiprobablement.
+
+Une frontière de commutation est située entre deux hétérozygotes successifs
+retenus d'un même sujet/chromosome. Elle inverse les hétérozygotes depuis le
+second site jusqu'à la frontière suivante ; l'état repart à zéro sur un autre
+chromosome. Le premier hétérozygote n'est pas une frontière. La fréquence
+injectée des frontières, le nombre de GT inversés et une future métrique de
+phase doivent rester distincts. Une erreur ponctuelle ne touche qu'un site ;
+elle peut compenser une commutation, et le manque peut masquer un défaut
+antérieur. Le registre conserve l'historique complet, pas uniquement les
+discordances finales.
+
+La densité est réduite par retrait de lignes entières, sans modifier les
+segments vrais ni les seuils IBD/ROH. La cible est conservée uniquement si elle
+appartient déjà aux sondes ; elle n'est jamais ajoutée et son génotype n'est
+pas protégé du manque ou des erreurs. Aucun défaut n'est appliqué à une sonde
+retirée. Un panel vide est refusé.
+
+Chaque événement conserve un identifiant ordonné, le profil, le sujet (nul
+pour un retrait de sonde), le type, le champ, les valeurs avant/après et le
+locus `chromosome/bp/REF/ALT/sonde`, conformément aux champs D06. Les frontières
+et tous les GT inversés par blocs sont enregistrés séparément. Un rejeu qui
+ne rappelle ni l'injecteur ni ses tirages vérifie les avant/après, les blocs,
+les quotas, puis relit les fichiers exportés cellule par cellule. Toute
+divergence bloque la publication atomique ; aucun run n'est écrasé.
+
+Les sorties restent toutes privées jusqu'à D18 : VCF observable non phasé,
+VCF candidat phasé perturbé et registre JSONL compressé par profil. Le candidat
+phasé sert aux évaluateurs de résistance, jamais à remplacer la phase vraie
+ou à fournir une sortie SHAPEIT fictive au pipeline. La phase injectée n'est
+pas visible dans le VCF non phasé. Le contrôle technique exige zéro changement
+non enregistré et aucune modification des huit artefacts biologiques D16.
+Le manifest inventorie la configuration copiée, la vérité phasée sur sondes
+et trois artefacts par profil (26 artefacts pour huit profils), leurs SHA-256,
+quotas, sous-graines, dénominateurs, versions et résultats d'audit.
+
+Le rapport indépendant `CAL-DEV-D17` documente la génération et ses limites.
+Les performances et leurs intervalles restent `NOT_EVALUABLE` avant appels et
+évaluateurs D20/D23/D26/D29 ; `calibrated` reste `false`. Le raccord au
+manifest global D06/D07 et l'export aveugle restent contrôlés lors des étapes
+d'intégration ultérieures : D17 ne prétend pas les avoir exécutés.
+
 ### D18 — Exporter les entrées aveugles
 
 **Action :** produire les formats attendus par le pipeline sans y inclure la
@@ -1076,11 +1146,138 @@ vérité.
 **Livrable :** `blinded_inputs/` et inventaire.
 **Réussite :** validation des formats et absence de champs de vérité.
 
+**Méthode D18 v1 :** `observed_only_acpa_blinding_v1`. Les empreintes d'un
+run D17 finalisé et de ses 26 artefacts sont vérifiées ; seuls ses VCF
+`OBSERVED_MEASUREMENT_PANEL` sont décodés. Aucun candidat phasé, génotype dense
+vrai ou registre d'erreurs n'est utilisé pour compléter l'observation.
+La graine `blinding`, distincte de `measurement_error`, détermine des noms
+opaques de lots et de sujets ainsi qu'une permutation de colonnes par lot.
+La correspondance profil→lot et sujet→pseudonyme demeure sous `private_truth/`.
+Chaque profil reste une observation appariée du même panel.
+
+Chaque lot sous `blinded_inputs/bundles/` contient :
+
+- le VCF observé non phasé, avec uniquement les champs autorisés reconstruits ;
+- un export ACPA minimal par sujet, aux cinq colonnes réellement lues par
+  `01_validate_sources` et `03_convert_acpa` ;
+- `metadata/samples.tsv`, au contrat canonique de l'étape 02 ;
+- `pipeline.yaml`, au schéma réel du pipeline, limité aux étapes 00–02.
+
+Les appels ACPA sont les allèles forward synthétiques issus du VCF GRCh38 ;
+les valeurs absentes deviennent explicitement `NoCall`, jamais une référence
+homozygote. Aucun rsID, signal, score de confiance ni annotation ChAS absent
+n'est inventé. Le VCF gzip de contrôle n'est pas un VCF BGZF indexé et n'est
+pas consommé par cette configuration ACPA.
+
+**Politique de métadonnées v1 :** `UNKNOWN_CLINICAL_AND_UNREPORTED_PEDIGREE`.
+Sexe et statut clinique valent UNKNOWN ; groupe UNSPECIFIED ; génotype cible,
+origine de mesure et lot sont non renseignés. PID/MID=0 signifie filiation
+non renseignée et FID est une clé technique individuelle, pas une preuve
+d'indépendance. Aucune famille, ascendance, classe porteuse ni étiquette de
+scénario vraie n'est exportée. Les drapeaux de portée restent régionaux :
+`INCLUDE_GENOMEWIDE=false`, `INCLUDE_TARGET_CHROMOSOME=true`.
+
+Cette version ne fabrique ni annotation moléculaire CONFIRMED, ni HGVS, ni
+approbation humaine. Les étapes 03 et suivantes restent désactivées : la
+configuration s'exécute depuis son lot pour valider 00–02, puis attend la
+revue du registre. Les sorties de run doivent être fournies explicitement
+hors de `blinded_inputs/`, qui reste immuable. Les métadonnées d'observation autorisées, les informations
+moléculaires et la décision humaine nécessaires à une analyse familiale
+complète restent des prérequis explicites, pas des données déduites de la
+vérité. La cible d'analyse est un paramètre public configuré, vérifié contre
+le domaine D17 et, lorsqu'elle est observable, contre ses REF/ALT.
+
+L'inventaire opérateur est fermé et ne contient que les chemins relatifs
+internes aux lots, rôles, effectifs et empreintes de leurs propres fichiers.
+Il n'expose ni profil, graine, correspondance, source privée ni empreinte de
+vérité. Les configurations ne référencent aucun parent ou chemin privé. Un
+fichier, dossier ou lien supplémentaire est refusé avant publication atomique.
+La procédure n'est pas un cloisonnement système contre un opérateur disposant
+du générateur et de ses graines : seul l'arbre aveugle doit lui être remis.
+
+La validation relit les deux sérialisations et compare tous les appels, loci,
+identifiants et manques après réalignement. Elle utilise les vrais lecteurs
+01/02, teste le lecteur 03 sans PLINK et un run synthétique limité à 00–02.
+Le lecteur 03 compte les NoCall dans ses appels invalides ; ce compteur
+attendu ne doit pas être interprété comme une erreur supplémentaire d'export.
+Les quatre schémas D18 couvrent configuration, inventaire opérateur,
+correspondance privée et manifest privé. Le rapport indépendant `CAL-DEV-D18`
+reste agrégé, sans identifiant individuel ni table de correspondance.
+
+Le contrôle de formats régionaux ne qualifie ni 22 autosomes, ni l'analyse
+familiale, ni les performances : `calibrated=false`. Le scellement global
+D06/D07, les portes de passage du pilote et les évaluateurs D19 restent à
+réaliser ; aucun pipeline complet n'est lancé par D18.
+
 ### D19 — Implémenter l'évaluateur technique
 
 **Action :** comparer fichiers, effectifs, ordres, génotypes et empreintes.
 **Livrable :** évaluateurs `00–04`.
 **Réussite :** détection de toute perte, duplication ou substitution injectée.
+
+**État :** implémentée le 30 octobre 2026, avec cinq évaluations indépendantes
+et les rapports `CAL-DEV-D19` et `CAL-REP-00` à `CAL-REP-04`. Les comparateurs
+détectent pertes, ajouts, doublons, désordres et substitutions dans les tables,
+les axes et les génotypes, manques inclus. Un décodeur BED indépendant est
+vérifié contre un oracle binaire de la spécification PLINK. A1/A2 n'est pas
+assimilé à REF/ALT ; les six champs FAM et le fond du jeu enrichi sont contrôlés.
+Les sorties et références sont liées par empreintes, contrats et identités ;
+le reçu de clôture précède la comparaison. L'évaluateur ne lance aucun run.
+
+Le rejeu diagnostique initial `d19_pipeline_cal_chr5_v1` exécute uniquement
+00–02 sur les huit lots opaques D18, sans outil génétique ni approbation
+automatique. Son évaluation `d19_integration_cal_chr5_v2` donne huit PASS pour
+chacune de 00, 01 et 02 ; 03 et 04 donnent huit `NOT_EVALUABLE`, car non
+exécutées. Les tests fonctionnels des évaluateurs 03–04 ne sont pas une
+qualification intégrée de ces étapes. La cible D18 est déjà sur la puce : le
+contrat 04 exigeant une insertion nouvelle, une politique explicite et des
+prérequis autorisés sont nécessaires avant son exécution. Rien n'est retiré ou
+inventé pour contourner ce garde. Aucun seuil scientifique n'est modifié.
+Ces PASS de concordance ne remplacent pas les critères transversaux D04/D08
+(journal système d'accès non instrumenté ici).
+`calibrated=false`, `founder_effect_proven=false` ; D06/D07 restent à sceller
+pour les futurs runs du pilote. Prochaine action : D20.
+
+**Complément d'intégration 03–04 :** `CAL-DEC-003` autorise les nouveaux
+registres techniques identiques à D18 et les diagnostics régionaux 00–04 avec
+PLINK, sans revue clinique/familiale prétendue. Les modules
+`technical_scenarios.py`, `run_technical_scenarios.py` et
+`technical_rejection.py`, avec deux schémas et une configuration explicite,
+complètent le dispositif sans changer le pipeline de production ni les
+anciens runs. Le reçu et l'évaluation sont liés au nouveau manifest d'entrées.
+
+Le scénario `TARGET_ABSENT_INSERTION` copie les huit observations D18 à
+l'identique. Il utilise une cible technique publique distincte, APC rs1801155
+GRCh38 chr5:112839514 T>A, NM_000038.6:c.3920T>A, documentée par ClinVar
+RCV001195214.19. La confirmation porte uniquement sur référence/annotation.
+Les génotypes sont synthétiques : rang du registre aveugle modulo trois →
+RR, RA, AA ; aucune clinique, fréquence réelle ou nouvelle graine n'intervient.
+La cible est extérieure à la fenêtre biologique D14–D18 : ce diagnostic ne
+mesure donc ni partage, ni âge, ni IBD ou ROH sur ce variant.
+
+L'intégration `d19_pipeline_0304_cal_chr5_v1` a exécuté réellement 00–04 sur
+les huit lots de 908 sujets. L'évaluation `d19_evaluation_0304_cal_chr5_v1`
+donne huit PASS pour chacune des cinq étapes. Les 3 096 280 cellules observées
+sont conservées sans discordance de conversion ou de manque ; les 7 264
+appels cibles simulés sont ajoutés sans discordance et sans changer le fond.
+Les contrôles positifs 03 et 04 sont désormais évaluables en intégration.
+
+Le scénario séparé `TARGET_PRESENT_REJECTION` ajoute cette cible à une copie
+d'un lot, sans modifier D18. Le run `d19_pipeline_duplicate_cal_chr5_v2`
+échoue intentionnellement en 04 (`FAILED`, code métier V2=4, CLI=2). Son
+évaluation `d19_evaluation_duplicate_cal_chr5_v1` valide le refus exact
+`target_variant_already_present`, la tentative empreintée, l'absence de sortie
+04 et la base intacte. Ce PASS du garde n'est pas une insertion réussie et son
+taux de discordance d'insertion reste `null`. Le premier essai négatif `v1`
+reste dans `.failed` pour diagnostic : le lanceur attendait à tort le code
+shell 4 au lieu du code 2 de la CLI, sans défaut du garde lui-même.
+
+Les rapports indépendants finaux sont sous
+`d19_reports_0304_cal_chr5_v2` et `d19_reports_duplicate_cal_chr5_v2`, dans le
+workspace ignoré. Les versions `v1` sont intermédiaires de mise en forme.
+Sans trio complet, Mendel reste `NOT_APPLICABLE` ; les critères transversaux,
+le génome entier et la qualification scientifique ne sont pas validés par
+ces PASS techniques. `calibrated=false` et `founder_effect_proven=false`.
 
 ### D20 — Implémenter l'évaluateur QC
 

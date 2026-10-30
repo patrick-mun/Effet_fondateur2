@@ -109,3 +109,34 @@ observable et les compteurs d'erreur nuls. `gamma_inputs_modified` et
 `calibrated` restent `false`.
 La vérité IBD induite déclare explicitement le partage H2–H1 supplémentaire
 créé sur l'intersection ROH/IBD de la paire couplée.
+
+Les trois schémas `measurement_error_config`, `measurement_error_event` et
+`measurement_error_manifest` encadrent D17 : profils stricts, graine de mesure,
+registre chronologique des valeurs avant/après et manifest des 26 artefacts
+pour huit observations appariées. Les frontières et GT inversés sont distincts.
+Le validateur Python complète les schémas par les quotas, sous-graines,
+dénominateurs, inventaires et le contrôle intact. Les vérités D16 restent
+inchangées ; aucun candidat phasé n'est une entrée aveugle.
+
+Les schémas `blinded_export_config`, `blinded_input_inventory`, `blinding_map`
+et `blinded_export_manifest` encadrent D18. L'inventaire opérateur ne peut
+référencer que les fichiers autorisés de lots opaques ; le manifest et la
+correspondance privés conservent les sources, profils, graines et liaisons.
+La validation Python impose aussi les bijections, dénominateurs, chemins par
+rôle, artefacts exhaustifs et correspondances avec le registre exporté.
+
+Les quatre schémas D19 `technical_run_index`, `technical_evaluation`,
+`technical_evaluation_manifest` et `technical_target_expectation` encadrent
+le reçu CLOSED, les cinq résultats par lot, leur scellement agrégé et l'attente
+optionnelle de cible synthétique explicite. Aucune métrique sans mesure n'est
+remplacée par zéro. La validation Python contrôle les identités des étapes,
+les populations identiques, les empreintes et la cohérence verdict/motifs et
+des compteurs ; elle refuse toute fuite de chemin ou source réelle.
+
+`technical_scenario_config` et `technical_panel_manifest` ajoutent le dérivé
+D19 autorisant 00–04. L'annotation passe aussi le contrat moléculaire existant ;
+les génotypes restent synthétiques. Les fichiers, populations, copies D18 et
+ajouts du négatif sont contrôlés en Python. Le reçu et le manifest d'évaluation
+peuvent ancrer ce panel et préciser son scénario ; ces extensions restent
+facultatives pour relire les anciens runs 00–02. Le contexte et la provenance
+de la cible sont alors obligatoires ensemble.

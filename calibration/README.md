@@ -221,6 +221,222 @@ témoin négatif signifie absence d'injection, sans exclure une ROH de fond.
 Le rapport `CAL-DEV-D16` reste une validation technique régionale. Les métriques
 de détection seront mesurées par l'évaluateur D26 et le rapport `CAL-REP-16`.
 
+## Matérialisation D17
+
+D17 applique huit profils de mesure au même panel D16, avec graine
+`measurement_error` explicite. La couche biologique D16 n'est jamais modifiée.
+Le registre conserve chaque retrait de sonde, dosage erroné, inversion de
+phase, frontière de commutation et appel manquant, avec valeurs avant/après.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.materialize_measurement_errors \
+  --d16-root calibration_workspace/<run_d16> \
+  --config-path calibration/configurations/d17_micro_chr5_calibration_v1.json \
+  --workspace-root calibration_workspace \
+  --run-id <identifiant_neuf_d17>
+```
+
+Chaque profil part de la vérité sur sondes, pas du profil précédent. Le VCF
+non phasé est distinct du candidat phasé privé, réservé aux évaluateurs de
+résistance. Une phase injectée ne doit jamais être remise au pipeline comme
+une sortie SHAPEIT. Les fichiers restent privés jusqu'à l'export D18.
+Le manque et le dosage portent sur les cellules retenues ; la phase ponctuelle
+sur les hétérozygotes ; les commutations sur leurs frontières successives par
+sujet/chromosome. Les quotas sont arrondis avec demi supérieur ; les blocs
+peuvent inverser davantage de GT qu'il n'existe de frontières. Les défauts
+composés peuvent se masquer ou se compenser, sans effacer leur historique.
+
+Le contrôle intact et les sept variantes sont des observations appariées,
+pas huit réplications indépendantes. Les niveaux sont des stress techniques,
+pas un modèle empirique de l'erreur de la puce. Le retrait de sondes ne modifie
+ni les bornes vraies ni les seuils IBD/ROH. La cible est gardée si elle est
+déjà observable ; son génotype n'est pas protégé des erreurs.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.report_measurement_errors \
+  --run-root calibration_workspace/<run_d17> \
+  --template-path <report_skill>/templates/recherche.html \
+  --output-root calibration_workspace/<rapport_d17_neuf>
+```
+
+`CAL-DEV-D17` ne mesure pas les performances du pipeline : appels réels et
+évaluateurs restent requis. `calibrated` reste `false`. Aucun nouvel outil ni
+aucune dépendance ne sont ajoutés.
+
+## Export aveugle D18
+
+D18 consomme uniquement les VCF observés D17 après contrôle de toutes les
+empreintes. Les lots et sujets sont pseudonymisés, les ordres permutés et les
+correspondances conservées exclusivement dans le contrôle privé.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.export_blinded_inputs \
+  --d17-root calibration_workspace/<run_d17> \
+  --config-path calibration/configurations/d18_micro_chr5_calibration_v1.json \
+  --workspace-root calibration_workspace \
+  --run-id <identifiant_neuf_d18>
+```
+
+`blinded_inputs/` contient un inventaire opérateur et des lots opaques. Chaque
+lot comporte `observed.vcf.gz`, `acpa_samples/`, `metadata/samples.tsv` et
+`pipeline.yaml`. Le VCF est un gzip de contrôle, pas une entrée BGZF indexée ;
+la configuration consomme les ACPA. Aucun registre d'erreurs, candidat phasé,
+profil nommé ou chemin vers la vérité n'est livré au pipeline.
+
+Le registre indique sexe/clinique UNKNOWN, groupe UNSPECIFIED, filiation et
+génotype cible non renseignés. FID est une clé individuelle technique : il
+ne prouve pas l'absence de parenté. Aucun diagnostic, annotation moléculaire
+CONFIRMED, HGVS ou accord humain n'est fabriqué. Les étapes 03 et suivantes
+restent désactivées : des informations d'observation autorisées et une revue
+humaine restent nécessaires pour l'analyse familiale complète.
+
+Après activation de `.venv` depuis la racine, l'opérateur peut lancer la
+configuration depuis le répertoire du lot ; tous les chemins d'entrée sont
+relatifs à ce répertoire :
+
+```bash
+cd calibration_workspace/<run_d18>/blinded_inputs/bundles/<lot_opaque>
+effet-fondateur run --config pipeline.yaml \
+  --runs-dir <chemin_absolu_de_sortie_hors_blinded_inputs>
+```
+
+Cette commande, non exécutée automatiquement, est limitée à 00–02 et n'accorde
+pas l'approbation du registre. Les sorties doivent rester hors de l'arbre
+aveugle immuable ; le répertoire par défaut n'est donc pas employé ici.
+La portée chromosome unique est explicite ;
+aucun succès genome-wide n'est revendiqué. L'opérateur ne doit recevoir que
+l'arbre `blinded_inputs/`, pas le workspace entier ni les graines privées.
+L'inventaire fermé refuse fichiers, dossiers et liens supplémentaires.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.report_blinded_export \
+  --run-root calibration_workspace/<run_d18> \
+  --template-path <report_skill>/templates/recherche.html \
+  --output-root calibration_workspace/<rapport_d18_neuf>
+```
+
+Le rapport `CAL-DEV-D18` reste agrégé, sans identifiant de sujet ni
+correspondance de profil. Le scellement D06/D07 et les évaluateurs D19 sont
+ultérieurs ; aucun outil externe ni aucune dépendance ne sont ajoutés.
+
+## Évaluation technique D19
+
+D19 sépare le rejeu aveugle et l'évaluation. Le runner diagnostique ci-dessous
+refuse toute configuration autre que 00–02, tout outil génétique activé et
+toute approbation automatique. Prévenir avant ce test d'intégration ; aucun
+run d'étude n'est concerné. Les sorties restent hors des entrées D18 immuables.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.run_technical_inputs \
+  --d18-root calibration_workspace/<run_d18> \
+  --workspace-root calibration_workspace \
+  --run-id <rejeu_d19_neuf>
+
+.venv/bin/python -m effet_fondateur.calibration.evaluate_technical \
+  --d18-root calibration_workspace/<run_d18> \
+  --run-index-path calibration_workspace/<rejeu_d19_neuf>/run_index.json \
+  --workspace-root calibration_workspace \
+  --run-id <evaluation_d19_neuve>
+
+.venv/bin/python -m effet_fondateur.calibration.report_technical_evaluation \
+  --run-root calibration_workspace/<evaluation_d19_neuve> \
+  --template-path <report_skill>/templates/recherche.html \
+  --output-root calibration_workspace/<rapports_d19_neufs>
+```
+
+Le reçu `technical_run_index` ancre le manifest D18 et, pour chaque lot,
+le chemin relatif du run terminé, les empreintes de manifest et
+d'environnement, et éventuellement une attente cible privée empreintée.
+Le runner livré laisse cette attente absente. L'évaluateur refuse un état
+RUNNING avant d'ouvrir la correspondance privée. Il n'exécute rien ; un reçu
+absent produit `NOT_EVALUABLE`, une sortie déclarée réussie mais corrompue ou
+manquante produit `FAIL`. Les résultats sans mesure portent `null`, pas zéro.
+
+Les cinq fichiers privés `evaluation_00.json` à `evaluation_04.json` sont
+scellés par un manifest. `load_checked_evaluation` contrôle leurs populations,
+identités, empreintes, motifs et agrégats. Les six rapports HTML autonomes
+conservent les statuts par étape et restent ignorés par Git ; leur export PDF
+nécessite le contrôle de pagination habituel du skill report-formater.
+
+Le rejeu des huit lots régionaux D18 donne PASS en 00–02 ; 03–04 restent non
+exécutées et non évaluables. Les tests séparés vérifient le décodage BED,
+l'absence de perte des génotypes/manques, l'ordre, les six champs FAM et la
+préservation du fond lors de l'insertion d'une cible explicite. Ils ne
+qualifient pas le pipeline génome entier. La cible D18 est déjà parmi les
+marqueurs de base ; 04 exige une cible nouvelle et ne doit pas être activée
+sans politique explicite, métadonnées adaptées et approbation humaine.
+Les paramètres scientifiques et `calibrated=false` restent inchangés.
+Les PASS portent sur la concordance D19 : ils ne remplacent pas les critères
+transversaux D04/D08, notamment le journal système d'accès non instrumenté
+ici, ni le scellement global D06/D07 requis avant qualification.
+
+### Complément D19 : rendre 03 et 04 évaluables
+
+`technical_scenarios.py` prépare un dérivé neuf sans modifier D18. La
+configuration `configurations/d19_technical_target_v1.json` fixe une annotation
+publique, une règle déterministe et l'approbation technique autorisée par
+`CAL-DEC-003`. Ce n'est pas une revue clinique/familiale. Toute modification
+de ces registres neutres ou du périmètre exige une nouvelle autorisation ;
+le runner n'en fabrique jamais une.
+
+La cible technique publique est APC rs1801155, GRCh38 chr5:112839514 T>A,
+NM_000038.6:c.3920T>A, p.Ile1307Lys. Seule sa définition issue de
+[ClinVar RCV001195214.19](https://www.ncbi.nlm.nih.gov/clinvar/RCV001195214.19/)
+est utilisée : ni classification clinique ni génotypes de vrais patients ne
+sont importés. Les confirmations du contrat concernent référence/annotation,
+pas un examen de laboratoire des sujets simulés. Cette cible extérieure à la
+fenêtre D14–D18 sert uniquement au test d'insertion 04 et ne remplace pas la
+cible biologique du panel.
+
+Les rangs du registre aveugle modulo trois reçoivent RR, RA, AA. Cette règle
+est indépendante du groupe et de la clinique, sans nouvelle graine ni
+prétention à une fréquence réelle. L'attente privée est scellée avant le run ;
+seule sa sérialisation comme génotypes explicites entre dans le pipeline.
+Les observations D18 préexistantes sont conservées.
+
+Prévenir avant l'intégration réelle : seul PLINK est activé et les étapes
+restent bornées à 00–04. Utiliser des identifiants neufs :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.technical_scenarios \
+  --d18-root calibration_workspace/<run_d18> \
+  --configuration-path calibration/configurations/d19_technical_target_v1.json \
+  --workspace-root calibration_workspace \
+  --run-id <entrees_0304_neuves>
+
+.venv/bin/python -m effet_fondateur.calibration.run_technical_scenarios \
+  --panel-root calibration_workspace/<entrees_0304_neuves> \
+  --workspace-root calibration_workspace \
+  --run-id <rejeu_0304_neuf>
+
+.venv/bin/python -m effet_fondateur.calibration.evaluate_technical \
+  --d18-root calibration_workspace/<run_d18> \
+  --technical-panel-root calibration_workspace/<entrees_0304_neuves> \
+  --run-index-path calibration_workspace/<rejeu_0304_neuf>/run_index.json \
+  --workspace-root calibration_workspace \
+  --run-id <evaluation_0304_neuve>
+```
+
+Le scénario par défaut `TARGET_ABSENT_INSERTION` conserve les huit lots. Pour le négatif,
+préparer un autre run avec `--scenario TARGET_PRESENT_REJECTION` : un lot
+représentatif reçoit un ajout explicite de la cible dans une copie du VCF et
+des ACPA. Exécuter et évaluer ce run avec les mêmes commandes et de nouveaux
+identifiants. Le pipeline doit rester `FAILED/BLOCKED` en 04 avec code métier
+V2=4 ; sa CLI retourne 2. Le contrôle n'est PASS que si la tentative empreintée
+porte exactement `target_variant_already_present`, si la base est intacte et
+si aucune sortie 04 n'est publiée. Un autre échec n'est jamais accepté.
+Ce PASS du garde n'est pas une insertion réussie ; son taux de discordance
+d'insertion reste `null`.
+
+Le manifest des entrées ancre les fichiers, la configuration et la source
+D18. L'évaluation vérifie aussi la dérivation indépendante des observations et
+lie le reçu au bon panel. Générer les rapports avec la commande D19 précédente,
+dans un dossier distinct pour chaque scénario.
+
+Sans trio documenté, Mendel reste `NOT_APPLICABLE`. Ces diagnostics régionaux
+ne remplacent pas les futurs panels génome entier, le pilote ou la
+qualification scientifique ; `calibrated=false` reste inchangé.
+
 ## État actuel
 
 D15 injecte une paire positive et une paire négative pour chacune des cinq

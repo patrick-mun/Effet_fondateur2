@@ -152,6 +152,34 @@ et coexistence ROH/IBD chez un positif D15. La vérité IBD H1 et les
 transmissions restent contrôlées ; les ROH ne fournissent aucune longueur à
 Gamma. Les commandes et limites sont précisées dans `calibration/README.md`.
 
+La D17 décline le même panel D16 en huit observations appariées : contrôle,
+manque, erreurs de dosage, phase ponctuelle, commutations, densité réduite et
+combinaison. Un registre avant/après permet le rejeu exhaustif de chaque
+défaut ; les vérités biologiques restent inchangées. Les candidats phasés sont
+privés et ne remplacent pas les sorties de phasage du pipeline. Ce stress
+technique ne qualifie pas les performances ; voir `calibration/README.md`.
+
+La D18 exporte les seules observations D17 sous noms opaques : ACPA, VCF non
+phasés, registre neutre et configuration 00–02. Profils, correspondances,
+vérités et erreurs restent privés. Cet export régional valide les formats ;
+les métadonnées nécessaires à une analyse familiale complète ne sont pas
+inventées et l'approbation du registre reste humaine.
+
+La D19 ajoute cinq évaluateurs techniques indépendants (00–04) et six
+rapports autonomes. Le rejeu régional des huit lots D18 est limité à 00–02 :
+ces étapes passent les contrôles ; 03–04 restent `NOT_EVALUABLE` sur ce rejeu.
+Les lecteurs BED et contrôles de cible sont testés sur des fixtures séparées,
+sans activer ces étapes ni fabriquer une approbation. Voir les commandes et
+limites dans `calibration/README.md` ; `calibrated` reste `false`.
+
+Le complément D19 prépare des scénarios dédiés pour exécuter réellement
+00–04 avec PLINK : observations D18 intactes, cible technique publique
+distincte et génotypes explicitement simulés. Une décision humaine limitée
+au registre technique autorise ces nouveaux runs. Le positif teste l'ajout
+d'une cible absente ; le négatif vérifie son refus si elle est déjà présente.
+Ces contrôles ne qualifient ni le génome entier ni les méthodes scientifiques
+ultérieures et ne changent pas `calibrated=false`.
+
 Pour quitter l'environnement :
 
 ```bash

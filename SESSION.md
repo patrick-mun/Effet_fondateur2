@@ -1,8 +1,8 @@
 # Suivi de session
 
-Dernière mise à jour : 29 octobre 2026
+Dernière mise à jour : 30 octobre 2026
 
-## Plan du panel de simulation et de calibration — 29 octobre 2026
+## Plan du panel de simulation et de calibration — 30 octobre 2026
 
 - D03 version `1.0.0` et D04 version `0.2.0` ont été approuvés humainement le
   28 octobre 2026. D03 porte le statut `APPROVED` et D04 le statut
@@ -353,6 +353,135 @@ Dernière mise à jour : 29 octobre 2026
   exclusivement des horodatages gzip des entrées synthétiques de test. Les
   fixtures D15/D16 utilisent désormais une compression déterministe ; leurs
   comparaisons forcent deux heures distinctes, sans affaiblir les assertions.
+- D17 est implémentée dans `simulation/measurement_errors.py` et
+  `materialize_measurement_errors.py`, avec trois schémas stricts et
+  `report_measurement_errors.py`. La méthode
+  `paired_measurement_perturbations_v1` utilise la graine de mesure `1005`
+  et des sous-flux SHA-256 distincts par rôle/profil/opération. Huit profils
+  partent du même D16 : contrôle intact, manque 1 %/5 %, dosage 1 %, phase
+  ponctuelle 2 %, frontières 2 %, densité 50 % et combinaison. Les quotas
+  utilisent l'arrondi au plus proche avec demi supérieur ; les frontières,
+  blocs inversés et points de phase sont explicitement distingués.
+- Le run final `d17_integration_cal_chr5_v2` conserve 908 sujets et 487
+  sondes initiales ; les profils de densité réduite en gardent 244. Ses
+  105 050 événements privés et 26 artefacts sont audités par rejeu puis
+  relecture exhaustive des exports. Tous les audits sont PASS avec zéro
+  changement non enregistré. SHA-256 du manifest final :
+  `48f9010078af21c53a4f3fb8f3b56afd5ec3264732755f342ead4de14cbedc09`.
+  Le premier run `v1` précède la finalisation des identifiants d'événements :
+  il reste un diagnostic, pas la référence finale.
+- Un audit indépendant confirme les huit sources D16 inchangées, le contrôle
+  identique à la vérité et les deux exports non phasés des profils de phase
+  octet pour octet identiques au contrôle. Les comptes de manque et les 4 422
+  dosages modifiés du profil isolé sont vérifiés. Le candidat phasé demeure
+  privé, réservé à l'évaluateur ; il ne remplace jamais une sortie SHAPEIT.
+  La cible déjà observable est conservée, sans protection de son génotype.
+- Validation D17 : 51 tests ciblés et 594 tests de calibration réussis ;
+  imports, compilation, schémas et `git diff --check` valides. La suite hors
+  calibration n'a pas été relancée ; aucun module scientifique de production,
+  aucune dépendance, aucune donnée d'étude et aucun pipeline complet ne sont
+  concernés. Le rapport autonome `CAL-DEV-D17` est sous
+  `calibration_workspace/d17_validation_report_chr5_v1/` : HTML, JSON agrégé,
+  PDF de sept pages, deux figures, deux tableaux et empreintes. Structure en
+  quatorze sections et contrôle visuel selon report-formater ; pagination,
+  sommaire, pieds courants et absence de débordement vérifiés dans Chrome.
+  Ces profils sont appariés et représentent un stress technique, pas un modèle
+  empirique de puce ni des réplications biologiques indépendantes. Les
+  performances restent NOT_EVALUABLE et `calibrated=false`. Le raccord aux
+  manifests globaux D06/D07 reste à réaliser ; l'export D18 est décrit ci-dessous.
+- D18 est implémentée dans `export_blinded_inputs.py`, avec quatre schémas,
+  une configuration versionnée et le rapport `report_blinded_export.py`.
+  La méthode `observed_only_acpa_blinding_v1`, graine `1006`, décode seulement
+  les VCF observés D17. Les profils, identifiants sources et correspondances
+  restent privés ; les noms et ordres des sujets/lots sont rendus opaques.
+- Le run final `d18_integration_cal_chr5_v1` exporte huit lots de 908 sujets :
+  7 264 ACPA, huit VCF, huit registres et huit configurations, soit 7 288
+  fichiers plus l'inventaire opérateur. Les 3 096 280 cellules observées sont
+  réalignées indépendamment sans discordance ; les 30 963 appels absents
+  restent absents et les sources D17 inchangées. Manifest SHA-256 :
+  `009d7bc8ccfc9b9da870f36fef8563e54d18756b5fb44c0ede98a95afdeb5d99`.
+  Inventaire SHA-256 :
+  `30a8516a806de0eb58bc2b64dce9455f086f36c96755cc74b39288bbabf111c8`.
+- La portée D18 v1 est explicitement régionale et technique : configurations
+  00–02 uniquement, sans approbation automatique. Sexe/clinique UNKNOWN,
+  groupe UNSPECIFIED, filiation et génotypes cibles non renseignés ; FID est
+  une clé individuelle technique, pas une preuve d'indépendance familiale.
+  Aucun statut moléculaire CONFIRMED, HGVS ou diagnostic n'est inventé.
+  Des métadonnées d'observation autorisées et une revue humaine sont encore
+  nécessaires pour l'analyse familiale complète. Les sorties doivent rester
+  hors de l'arbre aveugle immuable. Le VCF gzip auxiliaire n'est pas BGZF indexé.
+- Validation D18 : 32 tests ciblés, 29 tests des lecteurs/configurations du
+  pipeline et 626 tests de calibration réussis ; imports, compilation,
+  schémas et `git diff --check` valides. Les vrais lecteurs 01/02/03 sont
+  contrôlés et un run synthétique limité à 00–02 attend bien l'accord humain.
+  Aucun pipeline complet, outil génétique externe, donnée d'étude ni changement
+  de module scientifique de production. La suite complète hors calibration
+  n'a pas été relancée. Rapport final `CAL-DEV-D18` sous
+  `calibration_workspace/d18_validation_report_chr5_v3/` : HTML autonome,
+  JSON agrégé sans sujet, PDF de six pages, deux figures, un tableau et
+  empreintes. Les quatorze sections, sommaire, pieds, blocs et débordements
+  sont contrôlés dans Chrome et relus visuellement selon report-formater.
+  Les rapports `v1/v2` restent des essais de mise en page : correction d'une
+  ligne isolée, regroupement du tableau et bloc des limites maintenu entier
+  pour empêcher un renvoi de sommaire vers un fragment vide de section.
+  `calibrated=false` ; qualification scientifique NOT_EVALUABLE.
+- D19 est implémentée et relue : comparateurs indépendants, lecteur BED avec
+  oracle PLINK, adaptateurs 00–04, six schémas et rapports par étape. Tables,
+  axes, allèles physiques, manques, six champs FAM et fond du jeu cible sont
+  contrôlés ; le taux propre à la cible est distinct du taux global enrichi.
+  Le premier diagnostic `d19_pipeline_cal_chr5_v1` / `d19_integration_cal_chr5_v2`
+  reste immuable avec PASS en 00–02 et NOT_EVALUABLE en 03–04 ; il est complété
+  par les intégrations ci-dessous. L'évaluateur ne lance aucun processus.
+- `CAL-DEC-003` consigne la demande de rendre 03–04 évaluables et autorise le
+  registre technique neutre identique à D18, sans revue clinique/familiale
+  prétendue. `technical_scenarios.py` prépare des dérivés fermés ;
+  `run_technical_scenarios.py` exécute seulement 00–04 avec PLINK. Les
+  configurations, attentes privées et sources sont empreintées ; le reçu
+  CLOSED précède l'évaluation. Aucun pipeline complet ni donnée d'étude.
+- Le scénario positif `d19_inputs_0304_cal_chr5_v1` conserve toutes les
+  observations D18 et ajoute comme entrée séparée une cible technique APC
+  rs1801155, annotée par ClinVar RCV001195214.19. Les confirmations concernent
+  référence/HGVS publics, jamais une mesure sur les sujets. Les génotypes
+  synthétiques RR/RA/AA suivent le rang aveugle modulo trois, sans clinique ni
+  nouvelle graine. Cette cible hors fenêtre ne remplace pas la cible D14–D18.
+- Le run réel `d19_pipeline_0304_cal_chr5_v1` termine 00–04 sur les huit lots
+  de 908 sujets, avec PLINK v1.9.0-b.7.11. L'évaluation finale
+  `d19_evaluation_0304_cal_chr5_v1` donne huit PASS par étape : 3 096 280
+  cellules observées conservées sans discordance de conversion/manque,
+  7 264 appels cibles ajoutés sans discordance et fond inchangé. 03 et 04 sont
+  désormais évaluables en intégration technique régionale. Manifest SHA-256 :
+  `b0fb5ce409b6c125de11c7b86b9f4701009014ad0953345dddf461b19c63c22f`.
+- Le négatif `d19_inputs_duplicate_cal_chr5_v1` ajoute cette cible à une copie
+  d'un lot. `d19_pipeline_duplicate_cal_chr5_v2` échoue intentionnellement en
+  04 (FAILED, V2=4, CLI=2). `d19_evaluation_duplicate_cal_chr5_v1` donne PASS au
+  contrôle du refus précis, pas à une insertion : motif empreinté
+  `target_variant_already_present`, tentative liée, aucune publication 04 et
+  base intacte. Le taux d'erreur d'insertion reste null. Manifest SHA-256 :
+  `0a09b4fd8db412943ef1757a300c801a78689f793c5b3b0b230b30f8f7c82ded`.
+  Le premier négatif `v1.failed` reste diagnostique : le lanceur attendait
+  initialement à tort le code shell 4 au lieu de 2 ; le garde fonctionnait.
+- Rapports finaux séparés sous `calibration_workspace/d19_reports_0304_cal_chr5_v2/`
+  et `d19_reports_duplicate_cal_chr5_v2/` : CAL-DEV-D19 et CAL-REP-00 à 04 par
+  scénario. Les versions `v1` sont des rendus intermédiaires. Tous ces artefacts
+  sont ignorés par Git. Aucun module scientifique de production ni dépendance
+  n'est modifié. Livraison Git D17–D19 demandée sur la branche
+  `calibration/d07-d10-foundations`, sans PR ni fusion sur main. Les sources,
+  configurations, schémas, tests et documents sont inclus ; les panels,
+  vérités, sorties et rapports générés restent hors Git.
+- Sans trio complet, Mendel reste NOT_APPLICABLE. Ces PASS ne remplacent pas
+  les critères transversaux D04/D08, le journal système d'accès non instrumenté,
+  le génome entier ni D06/D07 à sceller avant pilote. `calibrated=false`,
+  `founder_effect_proven=false`. Prochaine action : D20, sans prolonger
+  automatiquement ces configurations techniques au-delà de 04.
+- Validation finale : 76 tests ciblés D19 (dont 29 du complément 03–04),
+  702 tests de calibration et 28 tests ciblés de production 01–04 réussis.
+  Imports, six schémas techniques et `git diff --check` valides ; suite complète
+  hors calibration non relancée. Les tests unitaires simulent PLINK avec un
+  encodeur BED complet ; les intégrations réelles ci-dessus restent séparées.
+  Les douze rapports indépendants HTML/PDF ont chacun 14 sections, deux figures,
+  un tableau et leurs empreintes ; sept pages pour le scénario positif,
+  six à sept pour le négatif. Pagination, sommaires, pieds et absence de
+  débordement contrôlés dans Chrome, pages PDF relues selon report-formater.
 - Le plan de développement est créé sous
   `calibration/PLAN_DEVELOPPEMENT_PANEL_SIMULATION.md`. Il sépare strictement
   données aveugles, vérité simulée, panel de calibration et panel de validation.
@@ -380,8 +509,11 @@ Dernière mise à jour : 29 octobre 2026
   D14 est désormais matériellement contrôlée pour la chaîne et la censure sur
   le domaine court, puis pour les recombinaisons internes sur le domaine D14b
   large. D14b lève le blocage documentaire et technique placé avant D15. La
-  D15 et D16 sont désormais techniquement validées sur ce domaine. La prochaine
-  action concrète est D17, injection tracée des imperfections de mesure.
+  D15 à D18 sont désormais techniquement validées sur ce domaine, dans leurs
+  portées respectives. D19 fournit les évaluateurs de concordance 00–04 et
+  des intégrations positives réelles 00–04, plus un contrôle de rejet en 04.
+  Prochaine action : D20, évaluateurs QC 05 et 10, sans transformer les
+  entrées manquantes en succès.
 
 ## Nouveau run complet V2 — 27 octobre 2026
 
@@ -1379,12 +1511,15 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 
 ## Priorités de la prochaine session
 
-1. Lancer un nouveau run complet avec
-   `config/studies/dock6.16b.next.yaml` et le surveiller jusqu'à `16C`.
-2. Vérifier les audits, empreintes, effectifs agrégés et le statut 16C du nouveau
-   run sans exposer de données individuelles.
-3. Conserver les étapes 17–19 désactivées tant que leur raccord à 16C n'a pas
-   été spécifié et testé séparément.
+1. Poursuivre avec D20 : évaluateurs QC 05 et 10, en distinguant détection
+   d'un défaut injecté et fausse exclusion. Partir des observations D17/D18 et
+   de l'évaluation D19 `d19_evaluation_0304_cal_chr5_v1` ; ne pas contourner les
+   gardes ou poursuivre automatiquement son profil technique après 04.
+2. Préserver les empreintes, observations appariées et séparation
+   calibration-validation ; produire les rapports QC indépendants. Le
+   scellement global D06/D07 reste requis avant les runs du pilote.
+3. Ne pas confondre D17/D18 du plan de calibration avec les étapes 17–19 du
+   pipeline scientifique. Aucun nouveau run de l'étude n'est demandé.
 
 Le plan `PLAN_ETAPE_16B_ENRICHISSEMENT_HAPLOTYPE_FONDATEUR.md` est maintenant
 implémenté : `16B_evaluate_founder_haplotype_enrichment` préserve 15 comme LD de
@@ -1513,12 +1648,10 @@ Au début de la prochaine session :
 ```bash
 cd /Users/utilisateur/Documents/python_programme/Effet_fondateur2
 source .venv/bin/activate
-git checkout main
-git pull --ff-only origin main
 git status -sb
+git branch --show-current
 ```
 
-Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action est la revue manuelle des sorties IBS du run
-`2026-08-12T045841Z_dock6_reunion_founder_effect_b92312e6`, avant toute
-activation de la datation de l'étape `14`.
+Lire ensuite `AGENTS.md`, ce fichier et le plan de développement de calibration.
+La branche de travail est `calibration/d07-d10-foundations` ; ne pas changer de
+branche ni lancer un run d'étude automatiquement. Prochaine action : D20.

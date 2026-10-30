@@ -82,3 +82,44 @@ avant écriture. Les huit artefacts conservent séparément ROH, IBD original,
 IBD induit H2–H1, pedigree, transmissions, audit de densité et VCF.
 `report_roh_injection.py` publie le
 rapport de développement à partir d'un modèle report-formater explicite.
+
+`simulation/measurement_errors.py` et `materialize_measurement_errors.py`
+implémentent D17 : vérité phasée projetée sur sondes, profils appariés,
+retrait de marqueurs, dosage erroné, points et blocs de phase, puis manque.
+Un registre chronologique privé permet un rejeu sans rappel de l'injecteur ;
+les deux VCF sont relus et comparés intégralement avant publication atomique.
+La densité peut être réduite sans changer les seuils scientifiques ; les
+sources biologiques D16 sont vérifiées avant/après. Les candidats phasés ne
+sont jamais présentés comme des sorties de phasage du pipeline.
+`report_measurement_errors.py` produit le rapport autonome CAL-DEV-D17 depuis
+les seuls agrégats du manifest et un modèle report-formater fourni en argument.
+
+`export_blinded_inputs.py` implémente D18 à partir des seuls VCF observés D17.
+Les colonnes sont pseudonymisées/permutées ; les champs autorisés sont
+reconstruits dans des VCF et ACPA, un registre neutre et un profil pipeline
+00–02. La correspondance, les profils et graines ne quittent pas le contrôle
+privé. Relecture exhaustive, vrais lecteurs 01/02, inventaire fermé, schémas
+et empreintes précèdent la publication atomique. Les entrées moléculaires et
+familiales non disponibles restent explicitement manquantes.
+`report_blinded_export.py` rend CAL-DEV-D18 sans exposer de sujet individuel.
+
+`technical_evaluation.py` fournit les comparateurs purs et le lecteur BED
+indépendant D19. `evaluate_technical.py` lie les sorties 00–04 aux références
+D18, vérifie les empreintes/contrats, les six champs FAM, les axes et appels,
+et distingue FAIL de NOT_EVALUABLE. Une attente cible 04 doit être explicite,
+privée, liée au lot et à la définition configurée. `run_technical_inputs.py`
+est un runner diagnostique séparé limité à 00–02, sans outils génétiques ni
+approbation automatique ; l'évaluateur lui-même reste en lecture seule.
+`report_technical_evaluation.py` produit CAL-DEV-D19 et cinq CAL-REP autonomes.
+Le rejeu régional ne valide pas les étapes 03–04 non exécutées et ne change
+aucun calcul scientifique.
+
+`technical_scenarios.py` prépare des copies fermées pour 00–04 avec annotation
+publique, génotypes synthétiques explicites et approbation technique fournie.
+`run_technical_scenarios.py` exécute seulement 00–04 avec PLINK, distinctement
+du runner historique 00–02. Le positif conserve D18 intact ; le négatif ajoute
+une cible à une copie pour vérifier le refus de doublon.
+`technical_rejection.py` exige code métier, motif exact, identité de tentative,
+absence de publication et base inchangée. `evaluate_technical` accepte
+`--technical-panel-root` uniquement si le reçu est lié par empreinte ; les
+anciens formats D19 restent lisibles.

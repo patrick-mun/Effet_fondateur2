@@ -1,0 +1,90 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "method_id",
+    "source",
+    "target_metadata",
+    "genotype_rule",
+    "manual_approval",
+    "plink_executable"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "method_id": {
+      "const": "d19_technical_target_fixture_v1"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "url",
+        "accessed_at",
+        "public_annotation_only",
+        "clinical_classification_used"
+      ],
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]+$"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "accessed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "public_annotation_only": {
+          "const": true
+        },
+        "clinical_classification_used": {
+          "const": false
+        }
+      }
+    },
+    "target_metadata": {
+      "type": "object"
+    },
+    "genotype_rule": {
+      "const": "CANONICAL_REGISTRY_INDEX_MODULO_3_REFREF_REFALT_ALTALT"
+    },
+    "manual_approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "approved",
+        "decision_id",
+        "reviewer_role",
+        "approved_at"
+      ],
+      "properties": {
+        "approved": {
+          "const": true
+        },
+        "decision_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]+$"
+        },
+        "reviewer_role": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]+$"
+        },
+        "approved_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "plink_executable": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

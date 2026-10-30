@@ -1,0 +1,93 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "assembly",
+    "bundle_id",
+    "genotype_source",
+    "target",
+    "genotypes"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "assembly": {
+      "const": "GRCh38"
+    },
+    "bundle_id": {
+      "type": "string",
+      "pattern": "^B[0-9a-f]{16}$"
+    },
+    "genotype_source": {
+      "const": "EXPLICIT_SYNTHETIC_TARGET_EXPECTATION"
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chromosome",
+        "position_bp",
+        "variant_id",
+        "ref",
+        "alt"
+      ],
+      "properties": {
+        "chromosome": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 22
+        },
+        "position_bp": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "variant_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        },
+        "ref": {
+          "enum": [
+            "A",
+            "C",
+            "G",
+            "T"
+          ]
+        },
+        "alt": {
+          "enum": [
+            "A",
+            "C",
+            "G",
+            "T"
+          ]
+        }
+      }
+    },
+    "genotypes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sample_id",
+          "genotype"
+        ],
+        "properties": {
+          "sample_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          "genotype": {
+            "type": "string",
+            "pattern": "^[ACGT]/[ACGT]$"
+          }
+        }
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "technical_target_expectation"
+}

@@ -83,3 +83,39 @@ supplémentaire induit par le cas couplé.
 Les matérialisations temporaires vérifient schémas, empreintes,
 déterminisme, permissions, absence d'écrasement et rapport agrégé sans nom
 d'échantillon.
+
+Les tests D17 contrôlent les huit profils, les quotas exacts, les dosages
+effectivement modifiés, le manque complet, les sondes retirées, la cible et la
+préservation de la vérité. La phase ponctuelle conserve les dosages ; les
+commutations inversent les blocs et repartent à zéro par chromosome. Les
+registres incomplets, les exports altérés, les sous-graines ou dénominateurs
+incohérents et les fuites de chemin sont refusés. Le rejeu, les empreintes,
+permissions privées, publications atomiques, reproductibilité entre deux
+horloges et rapport sans identifiant individuel sont testés en dossiers
+temporaires exclusivement.
+
+Les tests D18 vérifient permutation et pseudonymisation inversibles, appels
+ACPA/VCF et manque inchangés, vrais lecteurs 01/02/03, configuration limitée
+à 00–02 et accord humain non automatique. Ils couvrent reproductibilité,
+permissions, altérations de source/export, fuite de champ ou fichier non
+inventorié, liens, retrait atomique après échec et rapport agrégé sans sujet.
+Toutes les données sont synthétiques et écrites en dossiers temporaires.
+
+Les tests D19 couvrent pertes, ajouts, doublons, permutations et substitutions
+des tables et matrices. Un oracle BED de la spécification PLINK est séparé de
+l'encodeur de fixture ; en-têtes, tailles, padding, allèles absents, variantes
+monomorphes, manque complet et champs FAM sont contrôlés. Un petit rejeu réel
+Python 00–02 vérifie les adaptateurs sans outil génétique ; des mutations
+réempreintées de ses sorties doivent rester FAIL. Exécution absente = NE,
+artefact réussi mais absent = FAIL, processus RUNNING = refus avant ouverture
+privée. Les cinq agrégats et six rapports indépendants sont contrôlés.
+
+`test_technical_scenarios.py` contrôle le complément D19 03–04 : dérivation
+D18 immuable, arbre fermé, cible publique, provenance synthétique, règle sans
+clinique, approbation fournie, gardes de chemins et reçus de clôture.
+`fixtures/fake_plink_technical.py` simule conversion/fusion BED et un rapport
+Mendel vide dans les tests unitaires ; il ne calcule aucune parenté ni erreur
+Mendel réelle. Les vrais adaptateurs Python 00–04 sont exécutés avec ce faux
+binaire, puis évalués indépendamment. Le refus précis de doublon est distingué
+d'un autre échec, d'une sortie publiée ou d'une base modifiée. L'exécution
+réelle de PLINK reste une intégration séparée annoncée, hors de pytest.

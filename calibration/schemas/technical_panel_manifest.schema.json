@@ -1,0 +1,158 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "method_id",
+    "manifest_state",
+    "source_d18_manifest_sha256",
+    "configuration_sha256",
+    "created_at",
+    "scenario",
+    "inventory",
+    "artifacts",
+    "calibrated",
+    "founder_effect_proven"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "method_id": {
+      "const": "d19_technical_target_fixture_v1"
+    },
+    "manifest_state": {
+      "const": "FINALIZED"
+    },
+    "source_d18_manifest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "configuration_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "scenario": {
+      "enum": [
+        "TARGET_ABSENT_INSERTION",
+        "TARGET_PRESENT_REJECTION"
+      ]
+    },
+    "inventory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "assembly",
+        "bundles",
+        "artifacts"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0"
+        },
+        "assembly": {
+          "const": "GRCh38"
+        },
+        "bundles": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "bundle_id",
+              "sample_count",
+              "marker_count"
+            ],
+            "properties": {
+              "bundle_id": {
+                "type": "string",
+                "pattern": "^B[0-9a-f]{16}$"
+              },
+              "sample_count": {
+                "type": "integer",
+                "minimum": 3
+              },
+              "marker_count": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        },
+        "artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "bundle_id",
+              "role",
+              "path",
+              "sha256",
+              "size_bytes"
+            ],
+            "properties": {
+              "bundle_id": {
+                "type": "string",
+                "pattern": "^B[0-9a-f]{16}$"
+              },
+              "role": {
+                "enum": [
+                  "ACPA_SOURCE"
+                ]
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^(?!.*(?:\\.\\.|dock6_real|data/input))[A-Za-z0-9][A-Za-z0-9._/-]*$"
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "size_bytes": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "sha256"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^(?!.*(?:\\.\\.|dock6_real|data/input))[A-Za-z0-9][A-Za-z0-9._/-]*$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "calibrated": {
+      "const": false
+    },
+    "founder_effect_proven": {
+      "const": false
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

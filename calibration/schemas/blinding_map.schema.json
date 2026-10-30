@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Correspondance privée D18 ; jamais une entrée pipeline",
+  "type": "array", "minItems": 2,
+  "items": {
+    "type": "object", "additionalProperties": false,
+    "required": ["profile_id", "bundle_id", "source_observed_sha256", "samples"],
+    "properties": {
+      "profile_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+      "bundle_id": {"type": "string", "pattern": "^B[0-9a-f]{16}$"},
+      "source_observed_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+      "samples": {
+        "type": "array", "minItems": 1,
+        "items": {
+          "type": "object", "additionalProperties": false,
+          "required": ["source_sample_id", "blinded_sample_id"],
+          "properties": {
+            "source_sample_id": {"type": "string", "minLength": 1},
+            "blinded_sample_id": {"type": "string", "pattern": "^S[0-9a-f]{16}$"}
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0.0",
+  "configuration_id": "d18_micro_chr5_calibration_v1",
+  "configuration_state": "FINALIZED",
+  "method_id": "observed_only_acpa_blinding_v1",
+  "panel_role": "CALIBRATION",
+  "blinding_seed": 1006,
+  "assembly": "GRCh38",
+  "metadata_policy": "UNKNOWN_CLINICAL_AND_UNREPORTED_PEDIGREE",
+  "pipeline_scope": "SOURCE_VALIDATION_ONLY",
+  "target": {"chromosome": 5, "position_bp": 84991179, "ref": "T", "alt": "A"}
+}

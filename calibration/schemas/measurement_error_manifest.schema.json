@@ -1,0 +1,478 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Manifest privé D17",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "manifest_state",
+    "measurement_error_manifest_id",
+    "created_at",
+    "method_id",
+    "panel_role",
+    "scope",
+    "domain",
+    "configuration",
+    "source",
+    "software",
+    "sample_count",
+    "source_marker_count",
+    "profiles",
+    "artifacts",
+    "biological_truth_modified",
+    "calibrated",
+    "gamma_inputs_modified",
+    "founder_effect_proven"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "manifest_state": {
+      "const": "FINALIZED"
+    },
+    "measurement_error_manifest_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "method_id": {
+      "const": "paired_measurement_perturbations_v1"
+    },
+    "panel_role": {
+      "enum": [
+        "CALIBRATION",
+        "VALIDATION"
+      ]
+    },
+    "scope": {
+      "const": "REGIONAL_PAIRED_MEASUREMENT_STRESS_TEST"
+    },
+    "domain": {
+      "$ref": "#/$defs/domain"
+    },
+    "configuration": {
+      "$ref": "#/$defs/configuration"
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "software": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "python",
+        "numpy"
+      ],
+      "properties": {
+        "python": {
+          "type": "string",
+          "minLength": 1
+        },
+        "numpy": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "sample_count": {
+      "$ref": "#/$defs/countPositive"
+    },
+    "source_marker_count": {
+      "$ref": "#/$defs/countPositive"
+    },
+    "profiles": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 32,
+      "items": {
+        "$ref": "#/$defs/profileSummary"
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 8,
+      "items": {
+        "$ref": "#/$defs/artifact"
+      }
+    },
+    "biological_truth_modified": {
+      "const": false
+    },
+    "calibrated": {
+      "const": false
+    },
+    "gamma_inputs_modified": {
+      "const": false
+    },
+    "founder_effect_proven": {
+      "const": false
+    }
+  },
+  "$defs": {
+    "sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "countPositive": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "domain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chromosome",
+        "start_bp",
+        "end_bp",
+        "start_cm",
+        "end_cm",
+        "target_position_bp",
+        "target_position_cm",
+        "position_unit",
+        "genetic_distance_unit"
+      ],
+      "properties": {
+        "chromosome": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 22
+        },
+        "start_bp": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "end_bp": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "start_cm": {
+          "type": "number"
+        },
+        "end_cm": {
+          "type": "number"
+        },
+        "target_position_bp": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "target_position_cm": {
+          "type": "number"
+        },
+        "position_unit": {
+          "const": "BP_1_BASED_CLOSED"
+        },
+        "genetic_distance_unit": {
+          "const": "cM"
+        }
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "configuration_id",
+        "sha256",
+        "measurement_error_seed"
+      ],
+      "properties": {
+        "configuration_id": {
+          "$ref": "#/$defs/id"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha"
+        },
+        "measurement_error_seed": {
+          "$ref": "#/$defs/seed"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stage",
+        "manifest_sha256",
+        "roh_simulation_manifest_id",
+        "artifacts"
+      ],
+      "properties": {
+        "stage": {
+          "const": "D16"
+        },
+        "manifest_sha256": {
+          "$ref": "#/$defs/sha"
+        },
+        "roh_simulation_manifest_id": {
+          "$ref": "#/$defs/id"
+        },
+        "artifacts": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "role",
+              "sha256"
+            ],
+            "properties": {
+              "role": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "$ref": "#/$defs/sha"
+              }
+            }
+          }
+        }
+      }
+    },
+    "profileSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_id",
+        "seeds",
+        "requested",
+        "source_marker_count",
+        "retained_marker_count",
+        "sample_count",
+        "retained_cell_count",
+        "heterozygote_count",
+        "eligible_switch_boundary_count",
+        "event_counts",
+        "event_count",
+        "target_observed",
+        "target_retained",
+        "audit"
+      ],
+      "properties": {
+        "profile_id": {
+          "$ref": "#/$defs/id"
+        },
+        "seeds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "density",
+            "genotype",
+            "phase_switch",
+            "phase_point",
+            "missing"
+          ],
+          "properties": {
+            "density": {
+              "$ref": "#/$defs/seed"
+            },
+            "genotype": {
+              "$ref": "#/$defs/seed"
+            },
+            "phase_switch": {
+              "$ref": "#/$defs/seed"
+            },
+            "phase_point": {
+              "$ref": "#/$defs/seed"
+            },
+            "missing": {
+              "$ref": "#/$defs/seed"
+            }
+          }
+        },
+        "requested": {
+          "$ref": "#/$defs/profile"
+        },
+        "source_marker_count": {
+          "$ref": "#/$defs/countPositive"
+        },
+        "retained_marker_count": {
+          "$ref": "#/$defs/countPositive"
+        },
+        "sample_count": {
+          "$ref": "#/$defs/countPositive"
+        },
+        "retained_cell_count": {
+          "$ref": "#/$defs/countPositive"
+        },
+        "heterozygote_count": {
+          "$ref": "#/$defs/count"
+        },
+        "eligible_switch_boundary_count": {
+          "$ref": "#/$defs/count"
+        },
+        "event_count": {
+          "$ref": "#/$defs/count"
+        },
+        "event_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "MARKER_DROP",
+            "GENOTYPE",
+            "PHASE_SWITCH_BOUNDARY",
+            "PHASE_SWITCH_GT",
+            "PHASE_POINT",
+            "MISSING_GT"
+          ],
+          "properties": {
+            "MARKER_DROP": {
+              "$ref": "#/$defs/count"
+            },
+            "GENOTYPE": {
+              "$ref": "#/$defs/count"
+            },
+            "PHASE_SWITCH_BOUNDARY": {
+              "$ref": "#/$defs/count"
+            },
+            "PHASE_SWITCH_GT": {
+              "$ref": "#/$defs/count"
+            },
+            "PHASE_POINT": {
+              "$ref": "#/$defs/count"
+            },
+            "MISSING_GT": {
+              "$ref": "#/$defs/count"
+            }
+          }
+        },
+        "target_observed": {
+          "type": "boolean"
+        },
+        "target_retained": {
+          "const": true
+        },
+        "audit": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "unregistered_change_count",
+            "phased_export_mismatch_count",
+            "unphased_export_mismatch_count"
+          ],
+          "properties": {
+            "status": {
+              "const": "PASS"
+            },
+            "unregistered_change_count": {
+              "const": 0
+            },
+            "phased_export_mismatch_count": {
+              "const": 0
+            },
+            "unphased_export_mismatch_count": {
+              "const": 0
+            }
+          }
+        }
+      }
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_id",
+        "marker_retention_fraction",
+        "missing_rate",
+        "genotyping_error_rate",
+        "phase_point_rate",
+        "phase_switch_rate"
+      ],
+      "properties": {
+        "profile_id": {
+          "$ref": "#/$defs/id"
+        },
+        "marker_retention_fraction": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "missing_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "genotyping_error_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "phase_point_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "phase_switch_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "profile_id",
+        "path",
+        "sha256",
+        "size_bytes",
+        "record_count"
+      ],
+      "properties": {
+        "role": {
+          "enum": [
+            "CONFIGURATION",
+            "BASELINE_PHASED_TRUTH",
+            "OBSERVED_MEASUREMENT_PANEL",
+            "CANDIDATE_PHASED_MEASUREMENT_PANEL",
+            "MEASUREMENT_ERROR_REGISTRY"
+          ]
+        },
+        "profile_id": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/id"
+            }
+          ]
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^private_truth/d17/(?!.*(?:\\.\\.|dock6_real|data/input))[A-Za-z0-9_./-]+$"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "record_count": {
+          "$ref": "#/$defs/count"
+        }
+      }
+    }
+  }
+}

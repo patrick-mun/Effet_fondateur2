@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Événement privé D17 ; ordre de rejeu strict",
+  "type": "object", "additionalProperties": false,
+  "required": ["error_event_id", "error_profile_id", "sample_id", "error_type", "affected_field", "original_value", "injected_value", "chromosome", "position_bp", "ref", "alt", "marker_id", "injected"],
+  "properties": {
+    "error_event_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.D17_ERROR_[0-9]{9}$"},
+    "error_profile_id": {"type": "string", "minLength": 1},
+    "sample_id": {"type": ["string", "null"], "minLength": 1},
+    "error_type": {"enum": ["MARKER_DROP", "GENOTYPE", "PHASE_SWITCH_BOUNDARY", "PHASE_SWITCH_GT", "PHASE_POINT", "MISSING_GT"]},
+    "affected_field": {"enum": ["VARIANT_PRESENCE", "GT", "PHASE_ORIENTATION"]},
+    "original_value": {"type": "string", "minLength": 1},
+    "injected_value": {"type": "string", "minLength": 1},
+    "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+    "position_bp": {"type": "integer", "minimum": 1},
+    "ref": {"enum": ["A", "C", "G", "T"]},
+    "alt": {"enum": ["A", "C", "G", "T"]},
+    "marker_id": {"type": "string", "minLength": 1},
+    "injected": {"const": true}
+  },
+  "allOf": [
+    {"if": {"properties": {"error_type": {"const": "MARKER_DROP"}}}, "then": {"properties": {"sample_id": {"type": "null"}, "affected_field": {"const": "VARIANT_PRESENCE"}, "original_value": {"const": "RETAINED"}, "injected_value": {"const": "REMOVED"}}}, "else": {"properties": {"sample_id": {"type": "string", "minLength": 1}}}},
+    {"if": {"properties": {"error_type": {"const": "PHASE_SWITCH_BOUNDARY"}}}, "then": {"properties": {"affected_field": {"const": "PHASE_ORIENTATION"}, "original_value": {"enum": ["0", "1"]}, "injected_value": {"enum": ["0", "1"]}}}},
+    {"if": {"properties": {"error_type": {"enum": ["GENOTYPE", "PHASE_SWITCH_GT", "PHASE_POINT", "MISSING_GT"]}}}, "then": {"properties": {"affected_field": {"const": "GT"}, "original_value": {"pattern": "^[01]\\|[01]$"}, "injected_value": {"pattern": "^([01]\\|[01]|\\.\\|\\.)$"}}}}
+  ]
+}
