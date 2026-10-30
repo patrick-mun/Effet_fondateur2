@@ -119,3 +119,64 @@ Mendel réelle. Les vrais adaptateurs Python 00–04 sont exécutés avec ce fau
 binaire, puis évalués indépendamment. Le refus précis de doublon est distingué
 d'un autre échec, d'une sortie publiée ou d'une base modifiée. L'exécution
 réelle de PLINK reste une intégration séparée annoncée, hors de pytest.
+
+Les tests D20 `test_qc_oracle.py` et `test_qc_bench.py` vérifient les règles QC,
+HWE contre des valeurs connues et une énumération entière, les frontières de
+seuils, l'ordre de retrait des sujets, les politiques par cohorte, le manque,
+les injections appariées, la reproductibilité et les unités de confusion.
+Des mutations de décisions, motifs, seuils, valeurs et lignes doivent être
+détectées ; les liens, empreintes altérées, clôtures absentes et activations
+hors scope sont refusés avant processus externe. Les tests de production
+`test_v2_qc_preliminary.py` et `test_v2_qc_final.py` emploient PLINK simulé.
+Le rejeu D20 avec PLINK réel est une intégration distincte, jamais déclenchée
+par ces tests unitaires.
+
+Les tests D21 `test_kinship_oracle.py`, `test_kinship_bench.py` et
+`test_kinship_report.py` vérifient les sept pedigrees, coefficients rationnels,
+transmissions et origines, profils appariés, MAF des fondateurs, LD sur appels
+conjoints, équations KING sur comptes manuels, frontières des degrés,
+priorités et maximalité du graphe. Des mutations de métriques, classification,
+identités, empreintes et profils sont refusées. Une fixture prouve qu'un code
+fonctionnellement conforme peut échouer au critère d'indépendance vraie.
+Wilson/bootstrap et les rapports gardent les faibles effectifs et les FAIL
+visibles. Aucun PLINK/KING réel n'est lancé dans ces tests ; le runner D21
+réel reste une intégration séparée annoncée.
+
+Les tests D22 `test_structure_oracle.py`, `test_structure_contracts.py`,
+`test_structure_evaluation.py`, `test_structure_bench.py` et
+`test_structure_report.py` vérifient simulation déterministe, exclusions de
+loci sur la référence, PCA Gram/SVD de référence, invariances et queues de
+probabilité, mutants de scores/statuts/loadings et sept cohortes. Le vrai
+composant Python 09 est appelé sans outil externe pour les gels et refus.
+Les gardes de périmètre et de rôle sont vérifiés avant tout processus.
+Le test d'effectif reproduit le défaut de schéma sur 10/19/100/108/199/1000
+avant correction ; les effectifs invalides restent refusés. Aucun PLINK ou
+KING réel n'est lancé par ces tests ; l'intégration D22 reste séparée.
+
+`test_structure_report_evidence.py` vérifie le calcul des descriptions
+graphiques, la conservation des effectifs et la suppression des identifiants.
+Les tests de rendu exigent graphiques quantitatifs, formules, numérotation
+continue, limites et verdicts inchangés ; aucun appel externe n'est nécessaire.
+
+Les tests D23a `test_phasing_preparation.py` contrôlent configurations strictes,
+sous-graines, méioses déterministes, absence de réutilisation des groupes
+donneurs, sélection de marqueurs, source incomplète et confinement. La révision
+de graine doit préserver le parent et tous les artefacts génétiques ; un
+changement scientifique ou un octet génétique altéré est refusé.
+`test_phasing_preparation_report.py` exige deux graphiques, deux équations,
+quatorze sections, confidentialité et absence de prétention de performance.
+Les tests de production `tests/test_v2_phasing_reference_selection.py`
+contrôlent l'entrée optionnelle signée, les gardes 12/12A, la sélection exacte
+et un parcours 12 complet avec exécutables simulés. Aucun outil génétique
+réel n'est lancé par ces tests ; D23a réel est une intégration séparée annoncée.
+
+Les tests D23 `test_phasing_bench.py`, `test_phasing_evaluation.py`,
+`test_phasing_oracle.py`, `test_phasing_publication_oracle.py` et
+`test_phasing_report.py` couvrent profils reproductibles, contrats et
+corrections de fixtures, phase analytique parfaite/inversée/commutée,
+erreurs isolées et rares, ancrage cible nul/à égalité, blocs PS, homozygotes,
+manque, dosages, recodage REF/ALT, permutations, identifiants de loci,
+préservation du masquage, référence divergente, IC familiaux et inventaire
+clos. Les rendus exigent quatre rapports, graphiques, équations et absence
+d'identifiants. Tous les appels externes sont simulés dans ces tests ;
+l'intégration réelle D23 est une commande distincte et explicitement annoncée.

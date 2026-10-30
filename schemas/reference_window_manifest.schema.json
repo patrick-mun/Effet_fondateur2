@@ -8,7 +8,7 @@
   "properties": {
     "schema_version": {"const": "1.0.0"},
     "created_at": {"type": "string", "format": "date-time"},
-    "method_id": {"const": "bcftools_all_samples_region_extract_v1"},
+    "method_id": {"enum": ["bcftools_all_samples_region_extract_v1", "bcftools_selected_samples_region_extract_v1"]},
     "assembly": {"const": "GRCh38"},
     "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
     "region": {
@@ -22,7 +22,8 @@
     },
     "sample_count": {"type": "integer", "minimum": 1},
     "variant_count": {"type": "integer", "minimum": 1},
-    "sample_scope": {"const": "ALL_RELEASE_SAMPLES"},
+    "sample_scope": {"enum": ["ALL_RELEASE_SAMPLES", "EXPLICIT_PARTITION_SELECTION"]},
+    "sample_selection": {"$ref": "#/$defs/selection"},
     "population_scope": {"const": "ALL_AVAILABLE_1KGP_POPULATIONS"},
     "source": {
       "type": "object",
@@ -72,7 +73,22 @@
       }
     }
   },
+  "allOf": [{
+    "if": {"properties": {"method_id": {"const": "bcftools_selected_samples_region_extract_v1"}}},
+    "then": {"required": ["sample_selection"], "properties": {"sample_scope": {"const": "EXPLICIT_PARTITION_SELECTION"}}},
+    "else": {"not": {"required": ["sample_selection"]}, "properties": {"sample_scope": {"const": "ALL_RELEASE_SAMPLES"}}}
+  }],
   "$defs": {
+    "selection": {
+      "type": "object", "additionalProperties": false,
+      "required": ["selection_sha256", "membership_sha256", "partition_manifest_sha256", "sample_count"],
+      "properties": {
+        "selection_sha256": {"$ref": "#/$defs/sha256"},
+        "membership_sha256": {"$ref": "#/$defs/sha256"},
+        "partition_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "sample_count": {"type": "integer", "minimum": 1}
+      }
+    },
     "stableIdentifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
     "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "file": {

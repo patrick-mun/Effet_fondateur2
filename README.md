@@ -138,6 +138,35 @@ sont vérifiés avant simulation et un reçu empreinté lie le rejeu réel
 D11a–D14 au manifest de fenêtre. Les commandes et contrats sont documentés
 dans `calibration/README.md`.
 
+La D22 évalue séparément la structure 08 et le gel 09 sur quatre cas
+synthétiques de 128 sujets, avec mélanges, atypiques et projection. Les deux
+composants passent leurs contrôles : PCA comparée à un oracle Gram/eigh,
+invariances, sept cohortes, deux gels identiques et refus des revues invalides.
+04–07 sont des fixtures déclarées, pas des étapes exécutées ou qualifiées.
+Le schéma des valeurs propres a été corrigé : il refusait à tort des effectifs
+valides comme 108 ; aucun calcul PCA ni seuil n'est changé. Le FAIL 07 reste
+ouvert et son étude est reportée après l'ensemble de l'évaluation, à la demande
+de l'utilisateur. D22 ne qualifie aucune cohorte d'étude ; `calibrated=false`.
+
+Les rapports D22 disposent maintenant d'un rendu enrichi de graphiques
+scientifiques et d'équations expliquées, sans changement d'analyse. Cette
+exigence est conservée dans AGENTS.md et les conventions pour les prochains
+rapports ; les anciennes versions restent archivées dans le workspace ignoré.
+
+La préparation D23a ajoute un panel de calibration 1000G lié à la puce sur
+22 autosomes : 40 sujets synthétiques, 23 155 marqueurs, huit trios et seize
+sujets isolés. La référence D10 de 1 403 sujets est imposable à 12/12A par
+`inputs.phasing_reference_selection`, entrée optionnelle empreintée ; les
+profils historiques sans sélection gardent leur comportement. Les graines
+de simulation et de phasage sont distinctes. Aucun phasage ni pipeline complet
+n'est exécuté par cette préparation. D23 évalue désormais séparément
+10A/11/12/12A sur trois profils appariés, avec quatre rapports illustrés et
+mathématiques. Les contrôles techniques passent, mais la phase autosomale du
+sous-panel clairsemé atteint 30,47 % de commutations au profil de base : aucune
+qualification IBD ni performance scellée n'en découle. Les seuils restent en
+revue, `calibrated=false`, sans modification de l'étude réelle.
+Commandes, rapport indépendant et limites : `calibration/README.md`.
+
 La D15 ajoute les injections IBD régionales sur la fenêtre D14b scellée.
 Chaque longueur possède une paire positive et une paire sans injection,
 sélectionnées hors pedigree et hors porteurs D14 ; les contrôles portent sur
@@ -179,6 +208,28 @@ au registre technique autorise ces nouveaux runs. Le positif teste l'ajout
 d'une cible absente ; le négatif vérifie son refus si elle est déjà présente.
 Ces contrôles ne qualifient ni le génome entier ni les méthodes scientifiques
 ultérieures et ne changent pas `calibrated=false`.
+
+La D20 ajoute les évaluateurs QC 05/10 et un banc mathématique séparé :
+192 sujets synthétiques, 22 autosomes, deux lots et 14 cas appariés avec
+défauts connus. Le vrai pipeline exécute 00–05 ; 10 est testée isolément
+avec des cohortes contractuelles préspecifiées, sans prétendre avoir exécuté
+09. Les matrices de confusion, motifs et génotypes retenus sont vérifiés par
+un oracle indépendant. Ce banc ne remplace pas le panel biologique 1000G
+ni une qualification de performance. Commandes : `calibration/README.md`.
+Ce banc a révélé une perte de précision à l'export de 10 : les très petites
+p-values HWE étaient remplacées par zéro. La correction préserve leur valeur
+sans changer le test, le seuil ni les décisions d'exclusion.
+
+La D21 ajoute un banc de parenté séparé : 112 unités généalogiques, 224
+sujets simulés, 22 autosomes et trois profils appariés. Les étapes 06/07
+sont exécutées réellement avec PLINK/KING, puis évaluées contre les génotypes
+et le pedigree privés. 06 passe ; 07 est fonctionnellement conforme mais
+échoue au critère d'indépendance vraie de sa proposition (5/6/3 paires
+apparentées conservées selon le profil). Les matrices et intervalles sont
+mesurés, pas NOT_EVALUABLE. Les exclusions restent non approuvées ; aucune
+cohorte 09 ni qualification biologique n'est revendiquée. Voir
+`calibration/protocoles/D21_KINSHIP_PRESPECIFICATION.md` et les commandes
+dans `calibration/README.md`.
 
 Pour quitter l'environnement :
 

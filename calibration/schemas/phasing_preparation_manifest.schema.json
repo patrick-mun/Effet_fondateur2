@@ -1,0 +1,448 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/calibration/schemas/phasing_preparation_manifest.schema.json",
+  "title": "Contrat D23a — phasing_preparation_manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "method_id",
+    "preparation_state",
+    "created_at",
+    "configuration",
+    "tool_versions",
+    "counts",
+    "chromosomes",
+    "source_fingerprints",
+    "audit",
+    "phasing_executed",
+    "performance_status",
+    "calibrated",
+    "founder_effect_proven",
+    "artifacts",
+    "configuration_sha256",
+    "public_catalog_sha256",
+    "target_configuration_sha256",
+    "partition_manifest_sha256",
+    "reference_selection_sha256",
+    "chip_package_sha256",
+    "chip_marker_table_sha256",
+    "map_archive_sha256"
+  ],
+  "properties": {
+    "source_preparation_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "implementation_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "method_id": {
+      "const": "chip_autosomal_phasing_preparation_v1"
+    },
+    "preparation_state": {
+      "const": "FINALIZED"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "method_id",
+        "configuration_id",
+        "panel_role",
+        "founder_seed",
+        "meiosis_seed",
+        "trio_count",
+        "unrelated_count",
+        "candidate_markers_per_autosome",
+        "maximum_markers_per_autosome",
+        "minimum_markers_per_autosome",
+        "minimum_total_markers",
+        "target_flank_bp",
+        "rare_maf_upper_bound",
+        "target_configuration",
+        "target_configuration_sha256",
+        "target_rule",
+        "reference_rule",
+        "source_timeout_seconds"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0"
+        },
+        "method_id": {
+          "const": "chip_autosomal_phasing_preparation_v1"
+        },
+        "configuration_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        },
+        "panel_role": {
+          "const": "CALIBRATION"
+        },
+        "founder_seed": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "phasing_seed": {"type": "integer", "minimum": 1},
+        "meiosis_seed": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "trio_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "unrelated_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "candidate_markers_per_autosome": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maximum_markers_per_autosome": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "minimum_markers_per_autosome": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "minimum_total_markers": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "target_flank_bp": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rare_maf_upper_bound": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 0.5
+        },
+        "target_configuration": {
+          "type": "string",
+          "pattern": "^calibration/configurations/[A-Za-z0-9._-]+\\.json$"
+        },
+        "target_configuration_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "target_rule": {
+          "const": "EXPLICIT_FOUNDER_INDEX_MODULO_3_MENDELIAN_CHILD"
+        },
+        "reference_rule": {
+          "const": "EXACT_D10_PHASING_REFERENCE_EXCLUDE_BOTH_DONOR_PARTITIONS"
+        },
+        "source_timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "tool_versions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "samples",
+        "founders",
+        "trios",
+        "independent_simulation_units",
+        "source_donor_groups",
+        "reference_samples",
+        "markers",
+        "calibration_donors",
+        "validation_donors"
+      ],
+      "properties": {
+        "samples": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "founders": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "trios": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "independent_simulation_units": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "source_donor_groups": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reference_samples": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "markers": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "calibration_donors": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "validation_donors": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "chromosomes": {
+      "type": "array",
+      "minItems": 22,
+      "maxItems": 22,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "chip_marker_count",
+          "eligible_marker_count",
+          "candidate_marker_count",
+          "harmonized_marker_count",
+          "incomplete_donor_marker_count",
+          "retained_chip_marker_count",
+          "observed_marker_count",
+          "reference_variant_count",
+          "rare_variant_count",
+          "rare_heterozygote_count",
+          "common_heterozygote_count",
+          "monomorphic_variant_count",
+          "meiosis_count",
+          "chromosome",
+          "harmonization_exclusions"
+        ],
+        "properties": {
+          "chip_marker_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "eligible_marker_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "candidate_marker_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "harmonized_marker_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "incomplete_donor_marker_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "retained_chip_marker_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "observed_marker_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reference_variant_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "rare_variant_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "rare_heterozygote_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "common_heterozygote_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "monomorphic_variant_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "meiosis_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "chromosome": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 22
+          },
+          "harmonization_exclusions": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "source_fingerprints": {
+      "type": "array",
+      "minItems": 22,
+      "maxItems": 22,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "chromosome",
+          "vcf_sha256",
+          "index_sha256",
+          "vcf_md5",
+          "index_md5"
+        ],
+        "properties": {
+          "chromosome": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 22
+          },
+          "vcf_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "index_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "vcf_md5": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$"
+          },
+          "index_md5": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$"
+          }
+        }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "compared_genotype_cells",
+        "genotype_mismatch_count",
+        "acpa_mismatch_count",
+        "founder_copy_mismatch_count",
+        "transmission_mismatch_count",
+        "target_mismatch_count",
+        "pedigree_mismatch_count"
+      ],
+      "properties": {
+        "compared_genotype_cells": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "genotype_mismatch_count": {
+          "const": 0
+        },
+        "acpa_mismatch_count": {
+          "const": 0
+        },
+        "founder_copy_mismatch_count": {
+          "const": 0
+        },
+        "transmission_mismatch_count": {
+          "const": 0
+        },
+        "target_mismatch_count": {
+          "const": 0
+        },
+        "pedigree_mismatch_count": {
+          "const": 0
+        }
+      }
+    },
+    "phasing_executed": {
+      "const": false
+    },
+    "performance_status": {
+      "const": "NOT_MEASURED_PREPARATION_ONLY"
+    },
+    "calibrated": {
+      "const": false
+    },
+    "founder_effect_proven": {
+      "const": false
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "sha256",
+          "size_bytes"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._/-]+$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "configuration_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "public_catalog_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "target_configuration_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "partition_manifest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "reference_selection_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "chip_package_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "chip_marker_table_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "map_archive_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

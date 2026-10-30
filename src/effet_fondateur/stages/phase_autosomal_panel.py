@@ -23,6 +23,7 @@ from effet_fondateur.contracts import DocumentValidationError, build_file_artifa
 from effet_fondateur.orchestrator.state import utc_now
 from effet_fondateur.phasing.shapeit5 import parse_shapeit5_adapter_config, probe_shapeit5
 from effet_fondateur.references.genetic_maps import ensure_genetic_map_cached, resolve_genetic_map
+from effet_fondateur.references.selection import stage_reference_selection
 from effet_fondateur.stages.analyze_reference_ancestry import _extract_remote_reference, _reference_panel
 
 
@@ -199,6 +200,13 @@ def _validated_phased_variants(bcftools: str, bcf: Path, chromosome: int, expect
     return rows
 
 
+def _validate_selected_reference(bcftools: str, vcf: Path, expected_samples: list[str], timeout: int) -> None:
+    """Contrôle le contenu extrait, pas seulement la clé de cache déclarée."""
+    observed = _run([bcftools, "query", "--list-samples", str(vcf)], timeout, "reference_selection_query_failed").stdout.splitlines()
+    if observed != expected_samples:
+        raise AutosomalPhasingBlockError("reference_selection_sample_set_or_order_mismatch")
+
+
 def execute(stage_inputs_path: Path, output_dir: Path) -> int:
     """Extrait la référence aux marqueurs observés puis phase chromosome par chromosome."""
     started_at, started_clock = utc_now(), monotonic()
@@ -232,12 +240,15 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         raise AutosomalPhasingInputError("invalid_parameter:reference_cache_offline")
     run_dir = output_dir.parent.parent
     config = load_pipeline_config(run_dir / "config.resolved.yaml")
+    selection = stage_reference_selection(stage_inputs, config, run_dir, reference_panel_id)
     ids = (
         "config_input_reference_panel_catalog", "config_input_ancestry_reference_catalog", "config_input_genetic_map_catalog",
         "samples_master", "autosomal_phasing_panel_bed", "autosomal_phasing_panel_bim",
         "autosomal_phasing_panel_fam", "autosomal_phasing_panel_dataset",
     )
     artifacts = {name: _artifact(stage_inputs, name) for name in ids}
+    if selection is not None:
+        artifacts["config_input_phasing_reference_selection"] = _artifact(stage_inputs, "config_input_phasing_reference_selection")
     paths = {name: _path(value, run_dir) for name, value in artifacts.items()}
     descriptor = read_json(paths["autosomal_phasing_panel_dataset"])
     validate_json_document(descriptor, "plink_dataset.schema.json")
@@ -255,6 +266,8 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
     shapeit5 = probe_shapeit5(adapter)
     metadata_cache = cache_ancestry_metadata(catalog_path=paths["config_input_ancestry_reference_catalog"], cache_root=cache_root, offline=offline, timeout_seconds=extract_timeout)
     reference_samples = [sample.sample_id for sample in load_reference_samples(metadata_cache)]
+    if selection is not None:
+        reference_samples = selection.checked_samples(reference_samples)
     panel = _reference_panel(paths["config_input_reference_panel_catalog"], reference_panel_id)
     if panel["assembly"] != descriptor["assembly"]:
         raise AutosomalPhasingInputError("reference_assembly_mismatch")
@@ -326,6 +339,8 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             chromosome_dir = output_dir / f"chr{chromosome}"
             chromosome_dir.mkdir()
             reference = cached_references[chromosome]
+            if selection is not None:
+                _validate_selected_reference(bcftools, reference.vcf_path, reference_samples, tool_timeout)
             reference_by_position = _reference_alleles(bcftools, reference.vcf_path, chromosome, tool_timeout)
             selected: list[tuple[str, int, str]] = []
             for variant_id, position, allele_1, allele_2 in variants[chromosome]:
@@ -380,6 +395,8 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             for kind, path, media in (("bcf", phased_bcf, "application/octet-stream"), ("index", phased_index, "application/octet-stream"), ("ibd_map", ibd_map, "text/plain"), ("log", log_path, "text/plain")):
                 output_artifacts.append(build_file_artifact(physical_path=path, published_path=str(published / path.relative_to(output_dir).as_posix()), artifact_id=f"autosomal_phased_chr{chromosome}_{kind}", artifact_type=f"autosomal_phased_{kind}", media_type=media, producer_stage=producer, producer_signature=stage_inputs["signature"], assembly=descriptor["assembly"], sample_set_id=descriptor["sample_set_id"], variant_set_id=descriptor["variant_set_id"], sensitivity="sensitive_genetic" if kind == "bcf" else "internal"))
     manifest = {"schema_version": "1.0.0", "method_id": "shapeit5_reference_common_autosomes_v1", "assembly": descriptor["assembly"], "sample_set_id": descriptor["sample_set_id"], "variant_set_id": descriptor["variant_set_id"], "sample_count": len(expected_samples), "variant_count": total_phased, "chromosomes": chromosome_records, "checks": {name: "PASS" for name in ("same_samples_all_chromosomes", "complete_genotypes", "all_genotypes_phased", "reference_alleles", "maps_monotonic", "all_22_autosomes")}}
+    if selection is not None:
+        manifest["sample_selection"] = selection.audit_summary()
     validate_json_document(manifest, "autosomal_phasing_manifest.schema.json")
     manifest_path = output_dir / "autosomal_phasing_manifest.json"
     atomic_write_json(manifest_path, manifest)

@@ -419,6 +419,22 @@ Chaque rapport contiendra exactement les sections suivantes :
 
 ### 6.3 Règles de rendu
 
+Exigence permanente de l'utilisateur (30 octobre 2026) : les rapports doivent
+expliquer les résultats au moyen de graphiques scientifiques et de rappels
+mathématiques, avec variables, unités, hypothèses et limites. Les cartes de
+chiffres et les schémas de parcours ne remplacent pas ces graphiques.
+
+- Pour une étape quantitative, prévoir au moins deux graphiques de résultats
+  parmi les deux à quatre figures : distributions, incertitudes, PCA agrégée,
+  matrices de confusion, effectifs et motifs de sélection, selon la question.
+- Pour une étape logique, représenter les ensembles et règles de décision ;
+  justifier explicitement l'absence de graphique ou de formule statistique
+  plutôt qu'en inventer. Distinguer dispersion et intervalle de confiance.
+- Préparer et empreinter les agrégations graphiques séparément du rendu,
+  sans modifier les analyses closes, les verdicts ou les seuils.
+- Faire une lecture rapide dans le résumé, puis détailler graphiques et
+  équations dans les sections 8–10. Vérifier leur lisibilité dans le PDF.
+
 - Ne publier que des résultats agrégés.
 - Numéroter sans rupture toutes les figures et tables.
 - Citer la source de chaque valeur et de chaque figure.
@@ -1285,11 +1301,102 @@ ces PASS techniques. `calibrated=false` et `founder_effect_proven=false`.
 **Livrable :** évaluateurs `05` et `10`.
 **Réussite :** matrice de confusion et motifs complets.
 
+La préspecification D20 et la configuration `d20_qc_bench_v1.json` résolvent
+les manques de D18 : banc séparé IID de 192 sujets, 22 autosomes, deux lots
+et quatorze cas appariés. Il ne s'agit pas d'une extension biologique 1000G
+ou d'une reproduction de la densité CytoScan. La décision CAL-DEC-004 borne
+l'autorisation au nouveau registre technique et aux composants QC.
+
+Le vrai pipeline exécute 00–05. 10 utilise son point d'entrée public avec
+des cohortes préspecifiées avant exécution, producteur
+`D20_COHORT_CONTRACT_FIXTURE` : 06–09 ne sont pas exécutées ni validées.
+L'oracle ne réutilise pas les helpers QC de production et contrôle manques,
+MAF, hétérozygotie/F, HWE exact, lots, motifs et génotypes retenus. Les
+matrices de conformité restent séparées par règle, cohorte et unité ; le
+clone a sa vérité de détection propre. Les taux sans classe sont null, et la
+couverture agrégée exige positifs et négatifs pour les dix-neuf règles.
+
+La relecture a révélé un véritable défaut de 10 : le rendu décimal écrasait
+les petites p-values HWE. Le test minimal échoue avant correction ; le
+formateur corrigé normalise seulement le vrai zéro signé. Aucun test
+scientifique ou seuil n'est modifié. L'évaluation stricte
+`d20_qc_evaluation_v4` conserve 05 PASS et 10 FAIL sur une seule mesure
+numérique du premier run. Les décisions et les jeux retenus étaient déjà
+corrects. Un nouveau run, distinct et immuable, vérifie la correction ;
+les premières évaluations moins strictes ne remplacent pas ce diagnostic.
+
+Les rapports CAL-REP-05 et CAL-REP-10 sont autonomes, complétés par
+CAL-DEV-D20. La qualification reste REVIEW_REQUIRED, sans intervalles
+populationnels estimés sur ces stress appariés ; `calibrated=false`.
+Le contrôle sexuel est hors du contrat autosomique. Le cas cible rare
+singleton ne teste pas une comparaison entre lots ; celle-ci est couverte
+par les autres cas, sans extrapolation de performance.
+
+Validation intégrée finale : `d20_qc_pipeline_v2` et
+`d20_qc_evaluation_v5` sous le workspace ignoré, 14 PASS par étape, six
+règles en 05 et treize en 10, sans classe manquante. Les 7 535 502 cellules
+retenues concordent avec l'oracle et les 168 fichiers PLINK retenus sont
+identiques entre les runs avant/après correction. Les 785 tests ciblant
+calibration et production QC passent. Les trois rapports finaux HTML/PDF
+sont sous `d20_qc_reports_v2`, chacun avec six pages, quatorze sections,
+sommaire et pieds contrôlés dans Chrome. D20 est techniquement terminée ;
+la prochaine étape est D21, sans qualification scientifique prématurée.
+
 ### D21 — Implémenter l'évaluateur de parenté
 
 **Action :** comparer degrés KING et ensembles indépendants à la vérité.
 **Livrable :** évaluateurs `06` et `07`.
 **Réussite :** métriques par degré, ascendance et niveau de manque.
+
+État : implémentée et évaluée, **pas de qualification de 07**. Les prérequis
+manquants ont été ajoutés dans un banc indépendant, préspecifié avant run :
+112 unités de pedigree séparées, 224 sujets, 22 autosomes, 11 264 loci,
+deux strates de fréquences artificielles et sept relations (clone, PC,
+germains, demi-germains, cousins, cousins décalés d'une génération,
+non-apparentés). Trois profils appariés : complet, manque 5 %, densité 25 %.
+Ce modèle mendélien IID n'est pas une simulation de LD/ascendance biologique
+ni une extension des données 1000G. Les strates remplacent ici seulement
+le facteur technique de fréquences ; aucune robustesse par population
+humaine réelle n'est revendiquée.
+
+`D21_KINSHIP_PRESPECIFICATION.md`, deux schémas et la configuration
+`d21_kinship_bench_v1.json` fixent le domaine. CAL-DEC-005 autorise le nouveau
+registre neutre, sans approuver les exclusions. Le runner borné exécute
+réellement 00–03/05–07, PLINK et KING ; il laisse la proposition 07 en attente
+de `kinship_exclusion_approval`, sans gel 09 ni étape suivante automatique.
+
+L'oracle 06 décode les génotypes retenus et contrôle MAF sur fondateurs,
+motifs, couverture et LD. L'oracle 07 recalcule KING, classification,
+concordance parentale et proposition maximale orientée qualité, puis compare
+au graphe de vérité séparé. Les négatifs cibles sont mesurés, jamais inférés
+depuis une absence dans `.kin0`. Les matrices complètes incluent MISSING,
+avec Wilson par degré et bootstrap familial stratifié conditionnel au panel.
+Le minimum de qualification de 200 unités par classe n'est pas atteint.
+
+Références sous le workspace ignoré : `d21_kinship_inputs_v1`,
+`d21_kinship_pipeline_v1`, `d21_kinship_evaluation_v2`. Résultats : 06 PASS
+dans les trois profils, 22 autosomes et 9 417/5 143/2 377 marqueurs. En 07,
+conformité fonctionnelle PASS mais critère d'indépendance vraie FAIL :
+5/6/3 paires théoriquement apparentées restent dans la proposition. La BA
+est 93,75/89,58/89,58 %, sans paire cible manquante (112 par profil).
+L'erreur concerne principalement le quatrième degré. Les faux liens rapportés
+augmentent avec les profils dégradés ; la moindre taille de proposition
+ne doit pas être interprétée comme une meilleure détection. Le diagnostic
+avant pruning est exploratoire, sans changement de seuil.
+
+Les rapports séparés CAL-DEV-D21, CAL-REP-06 et CAL-REP-07 sont sous
+`d21_kinship_reports_v1`, avec HTML, JSON agrégé et PDF contrôlé selon
+report-formater. L'évaluateur est terminé ; le FAIL n'est pas maquillé en
+NOT_EVALUABLE ou PASS. Une étude de sensibilité de 07 et une décision restent
+nécessaires avant qualification, reportées par l'utilisateur après l'ensemble
+de l'évaluation. D22 est testée séparément, sans résoudre 07. `calibrated=false`
+et `founder_effect_proven=false` restent inchangés.
+
+Validation D21 : 828 tests de calibration et production QC/06/07 réussis,
+puis 41 tests D21 relancés après les derniers gardes (834 tests distincts
+au total). Imports, schémas et whitespace contrôlés. Les trois PDF comportent
+respectivement six, six et sept pages ; sommaires et pieds exacts, aucun
+débordement et relecture visuelle des pages clés.
 
 ### D22 — Implémenter l'évaluateur de structure
 
@@ -1297,12 +1404,177 @@ ces PASS techniques. `calibrated=false` et `founder_effect_proven=false`.
 **Livrable :** évaluateurs `08` et `09`.
 **Réussite :** décisions reproductibles sans fuite d'étiquette vraie.
 
+État : évaluateurs 08/09 implémentés et évaluables, quatre PASS par composant.
+L'utilisateur reporte explicitement l'étude de sensibilité du FAIL 07 après
+l'ensemble de l'évaluation ; ce point reste ouvert, sans modification de D21.
+
+Le banc D22 séparé comporte 128 sujets, 22 autosomes et 1 408 loci IID :
+108 références (40 A, 40 B, 24 mélanges, quatre atypiques) et 20 projetés.
+Les strates sont des fréquences artificielles, pas des ascendances humaines.
+Quatre cas appariés : base, génotypes projetés modifiés, rôles descriptifs
+permutés, manque 5 %. Protocole et configuration sont fixés avant les runs.
+
+00–03 s'exécutent réellement avec PLINK, puis 08 et 09 via leurs points
+d'entrée publics. Les contrats 04–07 sont des fixtures explicitement
+`D22_UPSTREAM_CONTRACT_FIXTURE`, non des succès d'orchestration. Les revues
+techniques portent `calibration_contract_fixture` ; CAL-DEC-006 autorise
+seulement ce banc et ne résout aucune exclusion D21 ou d'étude.
+
+Un défaut réel de schéma a bloqué le premier run : REFERENCE_SAMPLE_COUNT
+refusait les entiers commençant par 1 (108 notamment). Six cas de régression
+échouent avant correction. Le schéma accepte maintenant les entiers
+canoniques >= 2, sans changement du calcul PCA ou des seuils. Le diagnostic
+échoué est conservé ; le nouveau run utilise les mêmes observations.
+
+L'oracle PCA utilise Gram/eigh au lieu de la SVD de production. Toutes les
+tables numériques et décisionnelles concordent ; invariance aux projetés
+et aux étiquettes après le seul alignement de signe. Les quatre atypiques
+indépendants et leurs quatre copies projetées sont détectés, sans alerte
+des négatifs. IC Wilson de sensibilité sur quatre unités : 51,01–100 % ;
+aucun intervalle n'assimile les copies projetées à des unités indépendantes.
+Les mélanges ont une coordonnée moyenne ~0,5 entre centroïdes, ce qui n'est
+pas une estimation validée de proportion d'ascendance biologique.
+
+L'oracle 09 vérifie 896 lignes de membres et 84 décisions par gel, sept keep,
+motifs, sources, unités, comptes et représentants. Deux gels par cas ont
+zéro différence. Quatre contrôles négatifs refusent absence de revue,
+empreinte différente, liste incomplète et date sans fuseau, sans publication.
+
+Références : `d22_structure_inputs_v2`, `d22_structure_pipeline_v2`,
+`d22_structure_evaluation_v2`, rapports `d22_structure_reports_v1` sous le
+workspace ignoré. Le premier run `.failed` et l'évaluation v1 restent
+immuables ; v2 ajoute des contrôles de liaison sans changer les résultats.
+Les rapports CAL-DEV-D22, CAL-REP-08 et CAL-REP-09 sont autonomes HTML/PDF
+selon report-formater. Ces PASS sont techniques et isolés ; les performances
+restent REVIEW_REQUIRED. `calibrated=false`, `founder_effect_proven=false`.
+Prochaine étape : D23 après vérification des outils et références de phasage.
+
+Validation : 871 tests de calibration et production 08/09/contrats réussis,
+puis six tests de sécurité/rendu ajoutés et réussis ; les 47 tests D22 repassent
+après relecture (877 tests distincts). Schémas, imports et whitespace valides. PDF six/six/sept
+pages, quatorze sections chacun, pagination et pages clés contrôlées.
+
+Reprise de présentation du 30 octobre 2026 : le rendu enrichi validé est
+`d22_structure_reports_v3` (présentation 2.0), sans réexécution des analyses ni
+modification des verdicts. CAL-DEV-D22 et CAL-REP-08 ont chacun quatre figures,
+trois rappels mathématiques et neuf pages ; CAL-REP-09 a deux figures, deux
+rappels mathématiques et huit pages. Les agrégations descriptives sont séparées
+du rendu, sans identifiants, et liées aux sources closes par SHA-256 dans
+`visual_data.json`. Le rendu v1 reste conservé ; v2 est un brouillon de mise
+en page. Les 51 tests D22 passent ; pagination, débordements et pages de
+graphiques/formules ont été contrôlés dans les PDF. L'exigence permanente de
+graphiques scientifiques et de mathématiques expliquées est inscrite en
+section 6.3, dans AGENTS.md et dans les conventions de développement.
+
 ### D23 — Implémenter l'évaluateur de phasage
 
 **Action :** calculer erreurs de commutation, erreurs ponctuelles et phase de la
 mutation.
 **Livrable :** évaluateurs `10A`, `11`, `12` et `12A`.
 **Réussite :** métriques stratifiées et bornes d'incertitude.
+
+**D23 réalisée le 30 octobre 2026, qualification non acquise.** Le protocole
+`protocoles/D23_PHASING_PRESPECIFICATION.md` et la configuration
+`configurations/d23_phasing_bench_v1.json` sont fixés avant résultats.
+Trois profils appariés, unités familiales, comparaison modulo H1/H2, ancrage
+hors cible et bornes bootstrap sont explicités. Les ressources D23a v2 restent
+immuables. Les contrats amont du banc sont des fixtures déclarées, pas une
+qualification des étapes 03–09. Les quatre évaluations et rapports sont clos.
+
+Contrôle d'entrée avant lancement, le 30 octobre 2026 : SHAPEIT5
+5.1.1 est installé et les 22 VCF/index publics sont présents sur le Bureau.
+Seule leur présence était initialement constatée ; D23a a ensuite vérifié
+leur intégrité complète avant de les utiliser, comme détaillé ci-dessous.
+Le panel D18 demeure régional chr5 et limité aux validations de source ;
+les bancs IID D21/D22 ne constituent pas la vérité de phase requise.
+
+**Préparation D23a approuvée (CAL-DEC-007), puis exécution D23 demandée
+(CAL-DEC-008) ; contrôles réalisés dans cet ordre :**
+
+1. Étendre la préparation contrôlée aux 22 autosomes et aux marqueurs de la
+   puce ; conserver des cartes GRCh38 vérifiées et des vérités de phase
+   privées. Les partitions calibration/validation doivent rester séparées.
+2. Raccorder explicitement la référence D10 aux deux parcours de phasage.
+   Les partitions D10 ont été vérifiées sans intersection (900/899 donneurs,
+   1 403 références). Le constat initial était l'absence de raccord 12/12A :
+   la référence publique complète de 12 et les 2 504 références publiques
+   sélectionnées par 12A ne garantissent pas l'exclusion des donneurs.
+   Le renommage synthétique empêche un simple contrôle d'identifiants
+   étude/référence de détecter cette réutilisation d'haplotypes.
+3. Compléter sous une règle explicite les observations synthétiques nécessaires
+   (pedigree et génotypes de la cible), sans statut clinique inventé et sans
+   transmettre la phase vraie au pipeline. Ne pas modifier D18 clos.
+4. Préspecifier les unités indépendantes, strates, dénominateurs et contrôles
+   positifs/négatifs des évaluateurs ; comparer la phase modulo permutation
+   globale H1/H2. L'orientation de la cible demande un ancrage distinct de la
+   cible elle-même, jamais une comparaison naïve des étiquettes H1/H2.
+5. Lancer ensuite une intégration bornée séparée, sans étude réelle ni
+   résolution de 07, et produire les quatre rapports indépendants avec
+   graphiques, équations, effectifs et incertitudes. Un PASS de conformité ne
+   qualifie pas automatiquement les performances de phase.
+
+D23a réalisée : `d23a_phasing_inputs_v2`, manifest SHA-256
+`e91d686f5cc63d17a95f64dc52bb481d0836c898f23d03344a801b59b60d33cb`.
+40 sujets (8 trios et 16 isolés), 32 fondateurs issus de 64 groupes donneurs
+D10 distincts, 23 155 marqueurs sur 22 autosomes ; 23 154 sondes de puce et
+une cible synthétique supplémentaire APC chr5, issue de l'annotation D19,
+pas DOCK6. Les génotypes moléculaires sont explicites, la clinique UNKNOWN.
+Les 22 VCF/index du Bureau sont vérifiés aux MD5 officiels et SHA-256 ;
+aucun cache interne, donnée d'étude ou génotype de validation utilisé.
+
+La nouvelle entrée optionnelle signée `inputs.phasing_reference_selection`
+et le garde `require_reference_sample_selection=true` imposent les 1 403
+références D10 à 12/12A. Sujets, ordre et extraits sont vérifiés, aucune
+intersection silencieuse ; les profils historiques sont inchangés. Le
+catalogue historique exact D10 est conservé pour respecter son engagement.
+Les cartes sont acquises depuis l'archive publique épinglée, hors cache
+interne ; une archive locale non conforme est refusée sans assouplissement.
+
+Le brouillon v1 est interdit d'usage : graine des méioses proposée au phasage.
+La clôture v2 sépare fondateurs/méioses/phasage (2301/2302/2303), lie le parent
+et ne change que trois fichiers de paramètres/chemins. Tous les artefacts
+génétiques gardent leurs SHA-256. Les 926 200 génotypes, copies fondatrices,
+transmissions, pedigrees et cibles sont relus sans discordance ; 7 563 appels
+hétérozygotes rares sont disponibles, pas des réplications indépendantes.
+
+Rapport CAL-DEV-D23A final sous `d23a_phasing_reports_v3` : sept pages,
+quatorze sections, deux graphiques et deux rappels mathématiques, PDF relu
+avec pagination/sommaire/pieds et absence de débordement contrôlés. Suite
+complète initiale : 1 197 tests réussis ; après durcissements, 61 tests ciblés
+et quatre tests de production 12 réussis. D23a seule ne lançait aucun SHAPEIT5
+ni pipeline complet ; son profil reste limité à 00–02.
+
+D23 utilise `d23_phasing_pipeline_v1` (10A/12A) et les reprises régionales
+`d23_regional_baseline_v3`, `d23_regional_density_v1`,
+`d23_regional_missing_v1` (11/12). Les deux défauts de l'adaptateur initial
+étaient des ensembles manquants dans les enveloppes et l'ordre TSV de l'audit
+cible ; corrigés sans changement génétique et couverts par des régressions.
+Les essais restent conservés, le code du runner au lancement est archivé dans
+le workspace avec son SHA d'origine. Aucun faux succès amont 03–09.
+
+`d23_phasing_evaluation_v1`, SHA-256
+`6c3d39f550efadb04faa43692518f059b52b8fb7e22c6f852c1373fc70cf1d47`,
+donne trois PASS de conformité par étape, zéro altération des génotypes et
+tous les critères de performance obligatoires mesurables. Sur la base :
+SER régional 377/8 752 = 4,31 %, IC familial descriptif 3,16–5,87 % ;
+SER autosomal 77 743/255 178 = 30,47 %, IC 27,94–34,10 % ; orientation cible
+13/17 = 76,47 %, IC 55,56–94,12 %. La phase rare donne respectivement
+37/226 = 16,37 % et 2 851/7 426 = 38,39 % d'erreurs. Les quatre rapports
+HTML/PDF indépendants sont dans `d23_phasing_reports_v3` (7/7/10/10 pages),
+avec graphiques, équations, strates et IC familiaux ; v1/v2 sont des rendus
+intermédiaires. Tous ont 14 sections et zéro débordement contrôlé. Validation :
+919 tests calibration/sélection et 25 tests de production liés réussis ;
+imports, schémas et whitespace valides, suite complète du dépôt non relancée.
+
+La qualification demeure REVIEW_REQUIRED : aucun seuil D04 n'est scellé.
+Le taux autosomal élevé sur cette puce très sous-échantillonnée ne permet
+pas de revendiquer un phasage fiable pour IBD. Une sensibilité à plus forte
+densité est à préspecifier avant qualification, sans modifier les seuils
+après résultats. Le point 07 n'est pas résolu, `calibrated=false` et
+`founder_effect_proven=false`. D24 doit faire son propre contrôle d'entrée,
+notamment de vérité de segment fondateur : D23a ne l'apporte pas à elle seule.
+12 exploite le pedigree via son adaptateur, 12A n'en passe pas à SHAPEIT5 :
+les différences de SER ne doivent pas être attribuées à la seule densité.
 
 ### D24 — Implémenter l'évaluateur d'haplotype fondateur
 

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/schemas/phasing_reference_selection.schema.json",
+  "title": "Sélection explicite des références de phasage",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "method_id", "assembly", "source_panel_id", "partition_manifest_sha256", "membership_sha256", "sample_count", "sample_ids"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "method_id": {"const": "explicit_partition_reference_selection_v1"},
+    "assembly": {"const": "GRCh38"},
+    "source_panel_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "partition_manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "membership_sha256": {"$ref": "#/$defs/sha256"},
+    "sample_count": {"type": "integer", "minimum": 1},
+    "sample_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"}}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}

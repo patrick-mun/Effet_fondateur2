@@ -29,7 +29,7 @@
         "EXPLAINED_VARIANCE_RATIO": {"$ref": "#/$defs/nonnegativeDecimal"},
         "CUMULATIVE_EXPLAINED_VARIANCE_RATIO": {"$ref": "#/$defs/nonnegativeDecimal"},
         "SINGULAR_VALUE": {"$ref": "#/$defs/nonnegativeDecimal"},
-        "REFERENCE_SAMPLE_COUNT": {"type": "string", "pattern": "^[2-9][0-9]*$"},
+        "REFERENCE_SAMPLE_COUNT": {"type": "string", "pattern": "^([2-9]|[1-9][0-9]+)$"},
         "INFORMATIVE_VARIANT_COUNT": {"type": "string", "pattern": "^[1-9][0-9]*$"}
       }
     }

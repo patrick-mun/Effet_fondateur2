@@ -52,6 +52,7 @@ from effet_fondateur.references import (
     harmonize_reference_window,
     resolve_reference_panel,
 )
+from effet_fondateur.references.selection import stage_reference_selection
 
 
 class PhaseTargetRegionInputError(ValueError):
@@ -504,6 +505,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
     run_dir = output_dir.parent.parent
     config = load_pipeline_config(run_dir / "config.resolved.yaml")
     parameters = _parameters(stage_inputs["parameters"])
+    selection = stage_reference_selection(stage_inputs, config, run_dir, parameters["reference_panel_id"])
     artifact_ids = (
         "config_input_target_variant_metadata",
         "config_input_reference_panel_catalog",
@@ -519,6 +521,8 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         artifact_id: _artifact_by_id(stage_inputs, artifact_id)
         for artifact_id in artifact_ids
     }
+    if selection is not None:
+        input_artifacts["config_input_phasing_reference_selection"] = _artifact_by_id(stage_inputs, "config_input_phasing_reference_selection")
     paths = {
         artifact_id: _validated_artifact_path(artifact, run_dir)
         for artifact_id, artifact in input_artifacts.items()
@@ -557,6 +561,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         bcftools_command=bcftools_command,
         threads=parameters["reference_extract_threads"],
         timeout_seconds=parameters["reference_extract_timeout_seconds"],
+        **({"sample_selection": selection} if selection is not None else {}),
     )
     harmonized = harmonize_reference_window(
         reference_window,
@@ -584,6 +589,8 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
     reference_sample_set_id = (
         f"reference_{resolved.panel_id}_{resolved.release_id}_chr{chromosome}"
     )
+    if selection is not None:
+        reference_sample_set_id += "_selected_" + selection.membership_sha256[:12]
     reference_variant_set_id = (
         f"reference_variants_{harmonization_manifest['files']['vcf']['sha256'][:16]}"
     )

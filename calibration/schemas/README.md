@@ -140,3 +140,45 @@ ajouts du négatif sont contrôlés en Python. Le reçu et le manifest d'évalua
 peuvent ancrer ce panel et préciser son scénario ; ces extensions restent
 facultatives pour relire les anciens runs 00–02. Le contexte et la provenance
 de la cible sont alors obligatoires ensemble.
+
+`qc_bench_config` fixe le domaine du banc de composants D20, la graine,
+l'annotation publique épinglée par empreinte, l'autorisation CAL-DEC-004 et
+les paramètres explicites de 05/10 ; les clés inconnues sont refusées.
+`qc_bench_document` encadre le panel FINALIZED, les runs CLOSED et l'évaluation
+close. Le validateur Python complète ces contrats par le confinement,
+l'inventaire exhaustif, les empreintes, le rejeu des injections et les
+comparaisons indépendantes. Les cohortes de 10 portent une provenance de
+fixture explicite et ne sont jamais présentées comme des sorties de 09.
+
+`kinship_bench_config` borne D21 : trois graines distinctes, deux strates,
+trois profils, géométrie autosomique et paramètres explicites. Le validateur
+Python complète le schéma par les contrôles de collision et de couverture.
+`kinship_bench_document` encadre le panel FINALIZED, le reçu CLOSED et
+l'évaluation close ; inventaires exhaustifs, confinement et SHA-256 sont
+contrôlés avant lecture de la vérité. Les résultats scientifiques FAIL sont
+acceptés comme résultats évaluables, jamais convertis en succès du pipeline.
+
+`structure_bench_config` fixe le domaine D22, les graines, l'annotation
+épinglée, les paramètres PCA et la portée technique des revues. Les clés
+inconnues et rôles de revue scientifiques sont refusés.
+`structure_bench_document` encadre panel FINALIZED, reçu CLOSED et évaluation
+close ; inventaires exhaustifs, SHA-256 et confinement sont contrôlés en
+Python. Les manifestations 00–03 restent distinctes des composants 08/09,
+sans fausse exécution 04–07 ou qualification de parenté.
+
+`phasing_preparation_config` encadre D23a et ses paramètres explicites ; le
+chargeur actif exige notamment une graine de phasage distincte des graines
+de simulation. `phasing_preparation_manifest` valide les 22 autosomes,
+comptes, zéros de discordance, inventaire et empreintes. Sa configuration
+historique autorise la lecture du brouillon v1 pour révision seulement ;
+la vérification d'usage exige la clôture avec graines séparées. Aucun `$ref`
+réseau n'est nécessaire. Le contrat de sélection utilisé par le pipeline
+est sous `schemas/phasing_reference_selection.schema.json` à la racine.
+
+`phasing_bench_config` ferme les paramètres D23 et interdit les graines
+confondues via le chargeur Python. `phasing_evaluation` ferme séparément les
+résultats 10A/11/12/12A, métriques, dénominateurs, IC familiaux, strates et
+critères D04 ; aucun champ individuel libre n'est accepté.
+`phasing_evaluation_manifest` lie les quatre résultats clos aux sources,
+configurations, critères, protocole et implémentations par SHA-256.
+Les `$ref` partagés sont internes à chaque schéma, sans résolution réseau.

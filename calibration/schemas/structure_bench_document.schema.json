@@ -1,0 +1,351 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "method_id",
+        "artifacts",
+        "calibrated",
+        "founder_effect_proven",
+        "manifest_state",
+        "created_at",
+        "configuration_sha256",
+        "bundles"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0"
+        },
+        "method_id": {
+          "const": "iid_structure_component_bench_v1"
+        },
+        "artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/artifact"
+          }
+        },
+        "calibrated": {
+          "const": false
+        },
+        "founder_effect_proven": {
+          "const": false
+        },
+        "manifest_state": {
+          "const": "FINALIZED"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "configuration_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "bundles": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "bundle_id",
+              "sample_count",
+              "marker_count"
+            ],
+            "properties": {
+              "bundle_id": {
+                "enum": [
+                  "B00",
+                  "B01",
+                  "B02",
+                  "B03"
+                ]
+              },
+              "sample_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "marker_count": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "method_id",
+        "artifacts",
+        "calibrated",
+        "founder_effect_proven",
+        "closure_state",
+        "panel_manifest_sha256",
+        "runs"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0"
+        },
+        "method_id": {
+          "const": "iid_structure_component_bench_v1"
+        },
+        "artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/artifact"
+          }
+        },
+        "calibrated": {
+          "const": false
+        },
+        "founder_effect_proven": {
+          "const": false
+        },
+        "closure_state": {
+          "const": "CLOSED"
+        },
+        "panel_manifest_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "runs": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "bundle_id",
+              "run_path",
+              "manifest_sha256",
+              "upstream_returncode",
+              "population_returncode",
+              "freeze_directories",
+              "review_rejections",
+              "scope",
+              "fixture_producer"
+            ],
+            "properties": {
+              "bundle_id": {
+                "enum": [
+                  "B00",
+                  "B01",
+                  "B02",
+                  "B03"
+                ]
+              },
+              "run_path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "manifest_sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "upstream_returncode": {
+                "const": 0
+              },
+              "population_returncode": {
+                "const": 0
+              },
+              "freeze_directories": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "review_rejections": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "case",
+                    "directory",
+                    "returncode",
+                    "reason"
+                  ],
+                  "properties": {
+                    "case": {
+                      "enum": [
+                        "MISSING_REVIEWS",
+                        "WRONG_SHA",
+                        "INCOMPLETE_LIST",
+                        "NO_TIMEZONE"
+                      ]
+                    },
+                    "directory": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "returncode": {
+                      "enum": [
+                        2,
+                        4
+                      ]
+                    },
+                    "reason": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              },
+              "scope": {
+                "const": "ISOLATED_COMPONENTS_08_09_NOT_04_07"
+              },
+              "fixture_producer": {
+                "const": "D22_UPSTREAM_CONTRACT_FIXTURE"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "method_id",
+        "artifacts",
+        "calibrated",
+        "founder_effect_proven",
+        "evaluation_state",
+        "created_at",
+        "configuration",
+        "tool_versions",
+        "panel_manifest_sha256",
+        "run_index_sha256",
+        "scope",
+        "kinship_07_issue",
+        "stages"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0"
+        },
+        "method_id": {
+          "const": "iid_structure_component_bench_v1"
+        },
+        "artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/artifact"
+          }
+        },
+        "calibrated": {
+          "const": false
+        },
+        "founder_effect_proven": {
+          "const": false
+        },
+        "evaluation_state": {
+          "const": "CLOSED"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "configuration": {
+          "type": "object"
+        },
+        "tool_versions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "panel_manifest_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "run_index_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "scope": {
+          "const": "ISOLATED_COMPONENTS_08_09_NOT_04_07"
+        },
+        "kinship_07_issue": {
+          "const": "OPEN_DEFERRED_UNTIL_GLOBAL_REVIEW_BY_USER"
+        },
+        "stages": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "stage_id",
+              "status",
+              "case_count",
+              "fail_count"
+            ],
+            "properties": {
+              "stage_id": {
+                "enum": [
+                  "08",
+                  "09"
+                ]
+              },
+              "status": {
+                "enum": [
+                  "PASS",
+                  "FAIL"
+                ]
+              },
+              "case_count": {
+                "const": 4
+              },
+              "fail_count": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

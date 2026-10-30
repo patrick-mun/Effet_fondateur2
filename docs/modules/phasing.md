@@ -52,6 +52,24 @@ tools:
 Les commandes peuvent être des chemins absolus. Sur la machine de développement,
 elles sont disponibles après `conda activate effet-fondateur-shapeit5`.
 
+## Sélection de référence optionnelle pour la calibration
+
+`inputs.phasing_reference_selection` fournit une liste JSON ordonnée et
+empreintée, liée au manifest de partition D10. Les étapes 12 et 12A la
+déclarent comme entrée optionnelle dans leur signature. L'option d'étape
+`require_reference_sample_selection: true` bloque si elle manque ; une liste
+configurée mais absente des artefacts bloque également. Aucun nom inconnu
+ou doublon n'est éliminé silencieusement.
+
+12 sélectionne les sujets lors de l'extraction, avant harmonisation, avec un
+identifiant d'univers et une méthode d'extraction distincts. 12A sélectionne
+avant construction de la clé de cache puis relit l'ordre et les sujets du
+VCF extrait. Les audits contiennent les empreintes et effectifs, pas la liste
+des sujets. Sans sélection configurée, les profils historiques sont inchangés.
+La préparation vérifie la disjonction des donneurs d'origine ; un simple test
+des noms synthétiques ne suffit pas à la démontrer. Voir D23a dans
+`calibration/README.md`. Ce raccord ne qualifie pas à lui seul le phasage.
+
 ## Limites du contrat 12.0
 
 Cette sous-étape ne télécharge aucune référence, ne convertit pas PLINK en BCF et

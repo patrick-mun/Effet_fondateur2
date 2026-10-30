@@ -1,0 +1,315 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "method_id",
+        "artifacts",
+        "calibrated",
+        "founder_effect_proven",
+        "manifest_state",
+        "created_at",
+        "configuration_sha256",
+        "bundles"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0"
+        },
+        "method_id": {
+          "const": "iid_autosomal_qc_component_bench_v1"
+        },
+        "artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
+        },
+        "calibrated": {
+          "const": false
+        },
+        "founder_effect_proven": {
+          "const": false
+        },
+        "manifest_state": {
+          "const": "FINALIZED"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "configuration_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "bundles": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 14,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "bundle_id",
+              "sample_count",
+              "marker_count"
+            ],
+            "properties": {
+              "bundle_id": {
+                "type": "string",
+                "pattern": "^B[0-9]{2}$"
+              },
+              "sample_count": {
+                "const": 192
+              },
+              "marker_count": {
+                "const": 1408
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "method_id",
+        "artifacts",
+        "calibrated",
+        "founder_effect_proven",
+        "closure_state",
+        "panel_manifest_sha256",
+        "runs"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0"
+        },
+        "method_id": {
+          "const": "iid_autosomal_qc_component_bench_v1"
+        },
+        "artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
+        },
+        "calibrated": {
+          "const": false
+        },
+        "founder_effect_proven": {
+          "const": false
+        },
+        "closure_state": {
+          "const": "CLOSED"
+        },
+        "panel_manifest_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "runs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 14,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "bundle_id",
+              "run_path",
+              "manifest_sha256",
+              "final_inputs_sha256",
+              "preliminary_returncode",
+              "final_returncode",
+              "final_scope",
+              "cohort_producer"
+            ],
+            "properties": {
+              "bundle_id": {
+                "type": "string",
+                "pattern": "^B[0-9]{2}$"
+              },
+              "run_path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "manifest_sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "final_inputs_sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "preliminary_returncode": {
+                "const": 0
+              },
+              "final_returncode": {
+                "const": 0
+              },
+              "final_scope": {
+                "const": "ISOLATED_FINAL_QC_NOT_STAGE_09"
+              },
+              "cohort_producer": {
+                "const": "D20_COHORT_CONTRACT_FIXTURE"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "method_id",
+        "artifacts",
+        "calibrated",
+        "founder_effect_proven",
+        "evaluation_state",
+        "created_at",
+        "panel_manifest_sha256",
+        "run_index_sha256",
+        "configuration",
+        "plink_versions",
+        "stages"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0"
+        },
+        "method_id": {
+          "const": "iid_autosomal_qc_component_bench_v1"
+        },
+        "artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
+        },
+        "calibrated": {
+          "const": false
+        },
+        "founder_effect_proven": {
+          "const": false
+        },
+        "evaluation_state": {
+          "const": "CLOSED"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "panel_manifest_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "run_index_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "configuration": {
+          "type": "object"
+        },
+        "plink_versions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "stages": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "stage_id",
+              "status",
+              "case_count",
+              "fail_count"
+            ],
+            "properties": {
+              "stage_id": {
+                "enum": [
+                  "05",
+                  "10"
+                ]
+              },
+              "status": {
+                "enum": [
+                  "PASS",
+                  "FAIL"
+                ]
+              },
+              "case_count": {
+                "const": 14
+              },
+              "fail_count": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 14
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

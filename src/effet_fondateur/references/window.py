@@ -18,6 +18,7 @@ from effet_fondateur.contracts import DocumentValidationError, validate_json_doc
 from effet_fondateur.orchestrator.state import utc_now
 from effet_fondateur.references.cache import CachedReferencePanel
 from effet_fondateur.references.catalog import ResolvedReferencePanel
+from effet_fondateur.references.selection import ReferenceSampleSelection
 
 
 CommandRunner = Callable[[Sequence[str], float], subprocess.CompletedProcess[str]]
@@ -298,8 +299,9 @@ def extract_reference_window(
     threads: int = 1,
     timeout_seconds: float = 7_200,
     command_runner: CommandRunner = _default_runner,
+    sample_selection: ReferenceSampleSelection | None = None,
 ) -> ExtractedReferenceWindow:
-    """Extrait et valide une fenêtre en conservant tous les échantillons du panel."""
+    """Extrait une fenêtre complète ou une sélection explicitement déclarée."""
     start = _positive_integer(start_bp, "start_bp")
     end = _positive_integer(end_bp, "end_bp")
     resolved_threads = _positive_integer(threads, "threads")
@@ -329,6 +331,11 @@ def extract_reference_window(
     )
     if len(source_samples) != resolved.sample_count:
         raise ReferenceWindowIntegrityError("reference_source_sample_count_mismatch")
+    expected_samples = source_samples
+    if sample_selection is not None:
+        if sample_selection.source_panel_id != resolved.panel_id:
+            raise ReferenceWindowIntegrityError("reference_selection_panel_mismatch")
+        expected_samples = sample_selection.checked_samples(source_samples)
 
     output_dir.parent.mkdir(parents=True, exist_ok=True)
     staging_dir = Path(
@@ -340,12 +347,18 @@ def extract_reference_window(
         vcf_path = staging_dir / vcf_name
         index_path = staging_dir / f"{vcf_name}.tbi"
         region = f"chr{resolved.chromosome}:{start}-{end}"
+        selection_arguments: list[str] = []
+        if sample_selection is not None:
+            selection_path = staging_dir / "reference.samples.txt"
+            selection_path.write_text("".join(sample + "\n" for sample in expected_samples), encoding="utf-8")
+            selection_arguments = ["--samples-file", str(selection_path)]
         _run_checked(
             command_runner,
             [
                 executable,
                 "view",
                 "--no-update",
+                *selection_arguments,
                 "--regions",
                 region,
                 "--output-type",
@@ -376,7 +389,7 @@ def extract_reference_window(
         output_samples = _sample_ids(
             executable, vcf_path, command_runner, timeout, "read_window_samples"
         )
-        if output_samples != source_samples:
+        if output_samples != expected_samples:
             raise ReferenceWindowIntegrityError("reference_window_sample_set_or_order_mismatch")
         variant_count = _variant_count(executable, vcf_path, command_runner, timeout)
         _validate_phased_genotypes(executable, vcf_path, command_runner, timeout)
@@ -424,6 +437,11 @@ def extract_reference_window(
                 "tabix_index": "PASS",
             },
         }
+        if sample_selection is not None:
+            manifest["method_id"] = "bcftools_selected_samples_region_extract_v1"
+            manifest["sample_scope"] = "EXPLICIT_PARTITION_SELECTION"
+            manifest["sample_selection"] = sample_selection.audit_summary()
+            selection_path.unlink()
         validate_json_document(manifest, "reference_window_manifest.schema.json")
         atomic_write_json(staging_dir / "reference_window_manifest.json", manifest)
         os.replace(staging_dir, output_dir)

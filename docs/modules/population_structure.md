@@ -46,6 +46,11 @@ Le nombre réellement calculé est limité par `requested_components`, le rang d
 la référence et dix colonnes contractuelles `PC1` à `PC10`. Les colonnes au-delà
 du rang disponible restent vides.
 
+`REFERENCE_SAMPLE_COUNT` accepte tout entier canonique supérieur ou égal à
+deux, y compris 10–19 et 100–199. D22 a révélé puis corrigé une expression
+de schéma qui refusait à tort ces effectifs ; aucun calcul PCA ni seuil
+d'atypique n'est changé.
+
 ## Outliers
 
 Sur les premiers axes configurés, l'étape calcule :

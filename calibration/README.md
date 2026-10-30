@@ -437,6 +437,330 @@ Sans trio documenté, Mendel reste `NOT_APPLICABLE`. Ces diagnostics régionaux
 ne remplacent pas les futurs panels génome entier, le pilote ou la
 qualification scientifique ; `calibrated=false` reste inchangé.
 
+## Évaluation QC D20
+
+Lire d'abord `protocoles/D20_QC_PRESPECIFICATION.md`. D18 ne suffit pas à
+tester le QC global et les effets de lots. D20 construit donc un banc de
+composants mathématique distinct, pas un élargissement du panel 1000G :
+192 sujets fictifs, 1 408 loci indépendants sur 22 autosomes, deux lots et
+14 cas appariés. Les génotypes cibles sont explicites, jamais inférés depuis
+la clinique. La graine et les seuils sont dans la configuration versionnée ;
+les motifs d'injection sont fixés par la version de méthode et le protocole.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.qc_bench \
+  --configuration-path calibration/configurations/d20_qc_bench_v1.json \
+  --workspace-root calibration_workspace --run-id <nouveaux_inputs_d20>
+```
+
+Après annonce de l'intégration réelle, lancer uniquement 00–05 avec PLINK,
+puis le point d'entrée 10 isolé. Ses cohortes sont fournies par
+`D20_COHORT_CONTRACT_FIXTURE`, pas par une fausse exécution de 09 :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.run_qc_bench \
+  --panel-root calibration_workspace/<inputs_d20> \
+  --workspace-root calibration_workspace --run-id <nouveau_run_d20>
+```
+
+L'évaluateur ne lance aucun processus. Il exige un reçu CLOSED, vérifie les
+empreintes, rejoue les injections et compare les métriques, décisions,
+motifs, cohortes et toutes les cellules des jeux retenus :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.evaluate_qc \
+  --panel-root calibration_workspace/<inputs_d20> \
+  --run-root calibration_workspace/<run_d20> \
+  --workspace-root calibration_workspace --run-id <nouvelle_evaluation_d20>
+
+.venv/bin/python -m effet_fondateur.calibration.report_qc \
+  --run-root calibration_workspace/<evaluation_d20> \
+  --template-path <report_skill>/templates/recherche.html \
+  --output-root calibration_workspace/<nouveaux_rapports_d20>
+```
+
+Les trois rapports CAL-DEV-D20, CAL-REP-05 et CAL-REP-10 sont indépendants,
+agrégés et contrôlés dans Chrome/PDF selon report-formater. Les matrices
+mesurent la conformité à l'oracle, séparément par unité et par cohorte ;
+le clone a sa vérité de détection propre. La couverture exige des positifs
+et négatifs, mais les cas appariés ne fournissent pas un intervalle de
+performance populationnelle. `REVIEW_REQUIRED` reste la décision scientifique,
+sans changement de seuil, de méthode de production ni de `calibrated=false`.
+Le contrôle sexuel n'est pas simulé par ces entrées autosomiques ; les
+étapes 06–09, la LD, les haplotypes et la datation restent hors périmètre.
+
+Le comparateur strict a révélé un défaut réel de formatage en 10 : une
+p-value HWE brute non nulle était publiée en zéro. Le premier diagnostic
+conserve son FAIL numérique. La correction du seul formateur préserve les
+petites valeurs ; un nouveau run et le test de régression vérifient ce
+comportement sans réécrire les résultats ou modifier la méthode HWE.
+
+## Évaluation de parenté D21
+
+Lire `protocoles/D21_KINSHIP_PRESPECIFICATION.md`. Le panel régional D18 et
+le banc QC D20 ne suffisent pas à mesurer tous les degrés de parenté sur
+22 autosomes. D21 ajoute 112 unités de pedigree séparées (224 sujets),
+11 264 loci avant interventions et trois profils appariés : complet,
+manque 5 %, densité 25 %. Deux strates de fréquences artificielles et sept
+relations couvrent clone, degrés 1–4 et négatifs. Ce gene-drop IID mendélien
+n'utilise ni données d'étude, ni 1000G, ni cache. Il ne simule pas de segments
+ou de LD biologique ; les copies LD connues sont des contrôles techniques.
+
+Préparation puis intégration **réelle bornée**, à annoncer avant lancement :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.kinship_bench \
+  --configuration-path calibration/configurations/d21_kinship_bench_v1.json \
+  --workspace-root calibration_workspace --run-id <nouveaux_inputs_d21>
+
+.venv/bin/python -m effet_fondateur.calibration.run_kinship_bench \
+  --panel-root calibration_workspace/<inputs_d21> \
+  --workspace-root calibration_workspace --run-id <nouveau_run_d21>
+```
+
+Le runner n'autorise que 00–03/05–07 et laisse `kinship_exclusion_approval`
+en attente. CAL-DEC-005 autorise le registre synthétique, pas les exclusions.
+Aucune étape 04 ou 08–19 n'est appelée. Après clôture et contrôle des hashes :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.evaluate_kinship \
+  --panel-root calibration_workspace/<inputs_d21> \
+  --run-root calibration_workspace/<run_d21> \
+  --workspace-root calibration_workspace --run-id <nouvelle_evaluation_d21>
+
+.venv/bin/python -m effet_fondateur.calibration.report_kinship \
+  --run-root calibration_workspace/<evaluation_d21> \
+  --template-path <report_skill>/templates/recherche.html \
+  --output-root calibration_workspace/<nouveaux_rapports_d21>
+```
+
+Références locales : `d21_kinship_inputs_v1`, `d21_kinship_pipeline_v1`,
+`d21_kinship_evaluation_v2`, rapports `d21_kinship_reports_v1`. La première
+évaluation reste immuable ; v2 ajoute des diagnostics et contrôles de rejeu.
+06 donne trois PASS (22 autosomes ; 9 417/5 143/2 377 marqueurs retenus).
+07 concorde avec l'oracle numérique, les décisions et le graphe observé,
+mais donne trois FAIL au critère de vérité : 5/6/3 paires apparentées sont
+conservées ensemble. BA : 93,75/89,58/89,58 %. Toutes les 112 paires cibles
+par profil sont mesurées ; aucune absence KING n'est imputée non apparentée.
+Les faux liens rapportés sont 11/176/503, sans taux extrapolé aux paires
+inter-FID censurées : moins de paires interdites ne prouve pas une amélioration.
+
+CAL-REP-06, CAL-REP-07 et CAL-DEV-D21 sont indépendants, agrégés et rendus
+selon report-formater. Matrices par degré, strate et profil ; Wilson
+descriptif et bootstrap familial conditionnel au panel sélectionné, sans
+qualification sur ces faibles effectifs (16 unités par degré, D1=32 ;
+minimum prévu 200). Les diagnostics avant pruning sont exploratoires,
+pas une seconde exécution KING. Aucun seuil modifié, aucun défaut fonctionnel
+06/07 démontré par ce run, aucune cohorte 09 gelée. D21 est implémentée et
+évaluable ; la performance 07 n'est pas qualifiée, `calibrated=false`.
+
+## Évaluation de structure et gel D22
+
+Lire `protocoles/D22_STRUCTURE_PRESPECIFICATION.md`. Le FAIL 07 reste ouvert,
+son étude est reportée par l'utilisateur après l'ensemble de l'évaluation.
+Le nouveau banc ne consomme ni D21, ni données d'étude/1000G/cache : 128 sujets,
+22 autosomes, 1 408 loci IID, groupes de fréquences artificielles, mélanges et
+atypiques connus. Quatre cas appariés testent base, projetés modifiés,
+permutation des rôles descriptifs et manque 5 %.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.structure_bench \
+  --configuration-path calibration/configurations/d22_structure_bench_v1.json \
+  --workspace-root calibration_workspace --run-id <nouveaux_inputs_d22>
+
+# Intégration réelle bornée, à annoncer avant lancement.
+.venv/bin/python -m effet_fondateur.calibration.run_structure_bench \
+  --panel-root calibration_workspace/<inputs_d22> \
+  --workspace-root calibration_workspace --run-id <nouveau_run_d22>
+
+.venv/bin/python -m effet_fondateur.calibration.evaluate_structure \
+  --panel-root calibration_workspace/<inputs_d22> \
+  --run-root calibration_workspace/<run_d22> \
+  --workspace-root calibration_workspace --run-id <nouvelle_evaluation_d22>
+
+.venv/bin/python -m effet_fondateur.calibration.report_structure \
+  --run-root calibration_workspace/<evaluation_d22> \
+  --panel-root calibration_workspace/<inputs_d22> \
+  --pipeline-root calibration_workspace/<run_d22> \
+  --template-path <report_skill>/templates/recherche.html \
+  --output-root calibration_workspace/<nouveaux_rapports_d22>
+```
+
+Le vrai pipeline se limite à 00–03. 08 et 09 sont ensuite exécutées comme
+composants isolés ; les contrats 04–07 ont la provenance explicite
+`D22_UPSTREAM_CONTRACT_FIXTURE`. La référence de 108 sujets est préspecifiée.
+Les revues 09 sont des fixtures de test autorisées par CAL-DEC-006, rôle
+`calibration_contract_fixture` : aucune approbation scientifique humaine,
+exclusion d'étude ou résolution de D21 n'est revendiquée. Deux gels identiques
+en données/paramètres sont requis par cas, plus quatre refus de revues invalides.
+
+Références finales : `d22_structure_inputs_v2`, `d22_structure_pipeline_v2`,
+`d22_structure_evaluation_v2`, rapports `d22_structure_reports_v1`. Les quatre
+cas passent en 08 et 09. La PCA concorde avec Gram/eigh, les changements de
+projetés ou rôles ne modifient pas la référence (signes alignés). Huit atypiques
+sont détectés, mais seuls quatre sont indépendants : IC Wilson de sensibilité
+51,01–100 %, et 0/104 alertes chez les négatifs indépendants. Les coordonnées
+des mélanges entre centroïdes ne constituent pas une estimation ADMIXTURE.
+Les sept cohortes et keep concordent exactement, avec zéro différence entre
+gels, 896 lignes de membres et 84 décisions par gel. Le cas de permutation
+change légitimement certains rôles de cohortes, pas les axes PCA.
+
+Le premier run échoue sur un défaut du schéma de 08 : la forme d'effectif
+refusait 108. Les tests reproduisent le défaut avant correction ; le schéma
+accepte maintenant tout entier canonique >= 2, sans changer le calcul ou le
+seuil. L'échec initial est conservé, jamais réécrit en succès. Aucun résultat
+ne qualifie un panel genome-wide réaliste, 07, les ascendances humaines ou le
+pipeline complet ; performance REVIEW_REQUIRED et `calibrated=false`.
+
+Le rendu D22 enrichi validé est sous `d22_structure_reports_v3` (présentation
+2.0) ; le rendu initial v1 reste immuable, v2 est un brouillon de mise en page.
+Les graphiques montrent PCA agrégée (barycentres ± dispersion,
+pas sujets individuels), variance expliquée, distances au seuil, intervalles
+de détection et effectifs/motifs des cohortes. `visual_data.json` conserve les
+agrégations et empreintes des sources closes, sans identifiants. Les rappels
+mathématiques définissent standardisation/projection, distance χ², Wilson,
+ensembles de cohortes et comparaison des gels. Aucun PLINK, PCA ou test n'est
+relancé ; l'évaluation v2 et ses verdicts restent inchangés.
+
+Cette présentation scientifique devient une exigence permanente des futurs
+rapports, dans AGENTS.md, CONVENTIONS_DEVELOPPEMENT.md et le contrat du plan.
+
+## D23 — Évaluation du phasage
+
+Protocole : `protocoles/D23_PHASING_PRESPECIFICATION.md` ; paramètres fermés :
+`configurations/d23_phasing_bench_v1.json`. Le banc utilise exclusivement D23a
+v2, trois profils appariés (base, densité moitié, manque diploïde 1 %), la
+référence D10 exacte et des caches propres au workspace. L'amont QC/cohorte est
+une fixture contractuelle déclarée, pas une exécution ou qualification 03–09.
+Le point scientifique 07 reste ouvert. Aucun lancement du pipeline d'étude.
+
+Intégration réelle bornée, à annoncer avant lancement :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.phasing_bench \
+  --preparation-root calibration_workspace/d23a_phasing_inputs_v2 \
+  --configuration-path calibration/configurations/d23_phasing_bench_v1.json \
+  --workspace-root calibration_workspace \
+  --run-id <nouveau_run_d23> \
+  --reference-source-dir <dossier_public_1000g> \
+  --shapeit-bin-dir <dossier_bin_SHAPEIT5>
+```
+
+Le premier essai historique a révélé deux défauts de l'adaptateur de fixtures :
+ensembles absents des artefacts et colonnes TSV hors ordre canonique. Les
+reprises régionales restent indépendantes, sans réécrire les essais initiaux :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.run_phasing_regional \
+  --source-root calibration_workspace/<run_d23_initial> \
+  --configuration-path calibration/configurations/d23_phasing_bench_v1.json \
+  --workspace-root calibration_workspace \
+  --run-id <reprise_regionale_neuve> \
+  --profile BASELINE
+```
+
+Répéter pour `DENSITY_50` et `MISSING_1PCT` uniquement si une reprise est
+nécessaire. L'évaluateur historique lie les trois reçus régionaux à leurs
+entrées initiales et exige la clôture des outils avant d'ouvrir la vérité :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.evaluate_phasing \
+  --preparation-root calibration_workspace/d23a_phasing_inputs_v2 \
+  --run-root calibration_workspace/<run_d23_initial> \
+  --regional-roots calibration_workspace/<reprise_base> \
+    calibration_workspace/<reprise_densite> \
+    calibration_workspace/<reprise_manque> \
+  --configuration-path calibration/configurations/d23_phasing_bench_v1.json \
+  --workspace-root calibration_workspace \
+  --run-id <evaluation_d23_neuve>
+
+.venv/bin/python -m effet_fondateur.calibration.report_phasing \
+  --evaluation-root calibration_workspace/<evaluation_d23_neuve> \
+  --template-path <report_skill>/templates/recherche.html \
+  --output-root calibration_workspace/<rapports_d23_neufs>
+```
+
+Quatre rapports autonomes `CAL-REP-10A`, `CAL-REP-11`, `CAL-REP-12` et
+`CAL-REP-12A` comportent graphiques quantitatifs, équations, critères D04 et
+limites. Le rendu ne reçoit que les agrégats clos ; les schémas refusent les
+champs individuels et une qualification de performance PASS sans scellement.
+Les PDF, vérités et sorties restent ignorés par Git. Les IC descriptifs
+rééchantillonnent 24 unités (8 trios +16 isolés), jamais 40 sujets IID ni les
+trois profils appariés. `calibrated=false`, `founder_effect_proven=false`.
+
+Référence livrée : `d23_phasing_evaluation_v1` et
+`d23_phasing_reports_v3` (les rendus v1/v2 sont intermédiaires). Les quatre
+étapes passent la conformité sur les trois profils. La base mesure 4,31 %
+de commutations régionales et 30,47 % en autosomal ; la qualité n'est donc
+pas qualifiée pour IBD. 12 utilise les trios, 12A non : ne pas attribuer
+cet écart à la seule densité. Les seuils D04 restent non scellés, les rapports
+maintiennent la revue manuelle et le point 07 ouvert.
+
+## D23a — Préparation autosomique du phasage
+
+Lire `protocoles/D23A_PHASING_PREPARATION.md` et CAL-DEC-007. La configuration
+active est `configurations/d23a_phasing_panel_v2.json` : 8 trios, 16 sujets
+isolés, 32 fondateurs issus de 64 groupes donneurs D10 distincts. Ce banc est
+un sous-échantillon de la puce, pas une reproduction de sa densité complète
+ni le futur pilote aveugle. La cible technique APC chr5 de D19 est injectée
+sous règle explicite, jamais inférée depuis la clinique ; ce n'est pas DOCK6.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.materialize_phasing_panel \
+  --configuration calibration/configurations/d23a_phasing_panel_v2.json \
+  --partition-root calibration_workspace/<partitions_d10> \
+  --source-directory <dossier_public_1000g_hors_cache> \
+  --chip-package <archive_officielle_cytoscan.zip> \
+  --workspace-root calibration_workspace \
+  --run-id <nouveau_run_d23a>
+```
+
+Les 22 VCF/index sont vérifiés contre les MD5 officiels et empreintés SHA-256.
+L'archive des cartes épinglée est acquise dans ce nouveau workspace, jamais
+dans le cache interne. `--map-archive <archive_epinglee>` permet une source
+locale, mais une archive de même nom avec une autre empreinte est refusée.
+Le catalogue historique `references/public_reference_catalog_d10_v1.json`
+conserve exactement l'engagement D10, sans réécrire son manifest.
+
+Les entrées incluent ACPA/VCF non phasés, pedigree synthétique et génotypes
+moléculaires explicites, référence D10 et paramètres 12/12A. Le profil
+`pipeline.yaml` reste borné à 00–02, sans revue automatique ; le fichier
+`phasing_parameters.yaml` n'est pas à lui seul une configuration de run.
+`require_reference_sample_selection: true` impose une entrée signée, sans
+retour silencieux à une référence contenant les donneurs. Les chemins de
+cache du futur run D23 devront également rester dans le workspace dédié.
+
+Référence locale active : `calibration_workspace/d23a_phasing_inputs_v2`.
+Elle contient 40 sujets, 23 155 marqueurs (23 154 sondes et une cible
+synthétique supplémentaire), 22 références dérivées de 1 403 sujets D10,
+et 7 563 génotypes hétérozygotes rares (MAF ≤ 5 %). Les 926 200 génotypes
+exportés, copies fondatrices, transmissions, pedigrees et appels cibles
+concordent exhaustivement. Ces comptes ne mesurent pas la précision SHAPEIT5.
+
+Le brouillon v1 reste conservé et ne doit pas être utilisé : il proposait la
+même graine pour simulation et phasage. La clôture v2 lie son manifest source
+et vérifie que seuls trois fichiers de paramètres/chemins changent ; tous
+les artefacts génétiques gardent leurs SHA-256, puis les exports sont relus.
+La commande `--from-preparation <brouillon_clos>` permet cette révision bornée,
+exclusive des sources d'extraction et incapable de changer la simulation.
+Les graines actives sont 2301 (fondateurs), 2302 (méioses), 2303 (futur phasage).
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.report_phasing_preparation \
+  --panel-root calibration_workspace/d23a_phasing_inputs_v2 \
+  --template-path <report_skill>/templates/recherche.html \
+  --output-root calibration_workspace/<nouveau_rendu_d23a>
+```
+
+Le rapport CAL-DEV-D23A reprend seulement les agrégats clos : couverture des
+marqueurs et opportunités rares, équations de séparation/dosage/transmission,
+limites et provenance. Les quatre rapports 10A/11/12/12A appartiennent à D23,
+pas à cette préparation. Aucun SHAPEIT5, pipeline d'étude ou génotype aveugle
+de validation exécuté/ouvert ; aucun changement de 07 ou de `calibrated=false`.
+
+Rendu final vérifié : `calibration_workspace/d23a_phasing_reports_v3/`
+`CAL-DEV-D23A/rapport.pdf`, sept pages. Les rendus v1/v2 restent des brouillons.
+
 ## État actuel
 
 D15 injecte une paire positive et une paire négative pour chacune des cinq

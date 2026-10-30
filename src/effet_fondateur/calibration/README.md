@@ -123,3 +123,64 @@ une cible à une copie pour vérifier le refus de doublon.
 absence de publication et base inchangée. `evaluate_technical` accepte
 `--technical-panel-root` uniquement si le reçu est lié par empreinte ; les
 anciens formats D19 restent lisibles.
+
+`qc_bench.py` prépare D20 : quatorze stress IID appariés autosomiques,
+registres neutres et cohortes de fixture publiques, distincts des vérités
+privées. `qc_oracle.py` calcule indépendamment manques, MAF, hétérozygotie,
+F avec correction small-sample, HWE exact et décisions séquentielles.
+`run_qc_bench.py` borne l'exécution à 00–05 puis au composant 10 isolé ; aucun
+faux succès 09/10 n'est ajouté au manifest d'orchestration.
+`evaluate_qc.py` contrôle clôture, contrats, motifs, métriques, matrices de
+confusion et triplets retenus. `report_qc.py` publie les trois rapports
+autonomes sans recalcul statistique. Les critères du pilote restent non
+scellés : les PASS de conformité ne qualifient pas la performance biologique.
+
+`simulation/kinship_bench.py` génère D21 par gene-drop mendélien IID, avec
+coefficients de pedigree exacts et origines des copies. `kinship_bench.py`
+sépare les observations neutres et la vérité privée ; `run_kinship_bench.py`
+borne le vrai pipeline à 00–03/05–07, sans approbation des exclusions.
+`kinship_oracle.py`, `kinship_panel_oracle.py` et `kinship_stage_oracle.py`
+contrôlent indépendamment les génotypes, MAF/LD, équations KING, degrés,
+proposition et vérité. `evaluate_kinship.py` exige clôture, empreintes et
+rejeu exact. `report_kinship.py` publie les trois rapports indépendants,
+sans calcul statistique. La conformité du code et l'exactitude de détection
+restent deux verdicts distincts ; les profils appariés ne sont pas cumulés.
+
+`structure_bench.py` prépare D22 et ses fixtures amont explicites, distinctes
+de D21. `run_structure_bench.py` appelle 00–03 puis 08/09 isolées, avec revues
+de test déclarées et gels répétés. `structure_oracle.py` reconstruit la PCA
+par Gram/eigh et la queue chi-deux indépendante à deux axes ;
+`cohort_oracle.py` reconstitue les sept cohortes sans helper de 09.
+`evaluate_structure.py` exige clôture, rejeu, sources, signatures et entrées
+cohérentes ; il vérifie les tableaux, invariances, keep et répétitions.
+`report_structure.py` publie trois rapports agrégés, sans recalcul statistique.
+Le FAIL 07 est conservé pour la revue globale, pas résolu par ce gel isolé.
+
+Le rendu D22 v2 utilise `structure_report_evidence.py` pour extraire des
+descriptions agrégées des sorties closes, liées à l'évaluation par empreintes.
+`structure_report_graphics.py` les met en SVG ; `structure_report_math.py`
+explique les équations réellement utilisées. Le moteur de rendu ne recalcule
+aucune PCA ni décision. Les arguments `--panel-root` et `--pipeline-root`
+désignent les sources closes des nouveaux graphiques, en plus du `--run-root`
+d'évaluation. Les données visuelles ne contiennent aucun identifiant individuel.
+
+`phasing_preparation.py` et `materialize_phasing_panel.py` préparent D23a
+sur les 22 autosomes, sans lancer SHAPEIT5 : empreintes publiques, liaison
+puce, copies fondatrices D10, transmissions Haldane, génotypes moléculaires
+explicites, référence disjointe et relecture complète. La clôture v2 change
+seulement les paramètres de phasage/chemins, jamais les génotypes du brouillon
+v1 ; les graines de simulation restent privées. `report_phasing_preparation.py`
+produit CAL-DEV-D23A avec deux graphiques et deux rappels mathématiques,
+sans recalcul ni prétention de qualification du phasage.
+
+`phasing_bench.py` exécute D23 : conversion VCF–PLINK et composants réels
+10A/11/12/12A, avec fixtures QC/cohorte déclarées. `run_phasing_regional.py`
+assure une reprise indépendante des anciens contrats mal enveloppés sans
+changer les génotypes. `phasing_oracle.py` aligne la phase modulo H1/H2,
+compte transitions, motifs isolés, erreurs rares et orientation hors cible ;
+le bootstrap conserve les familles. `evaluate_phasing.py` contrôle clôture,
+inventaires, signatures, dosages, cartes, univers et critères D04, puis ouvre
+seul la vérité. `phasing_report_graphics.py` et `report_phasing.py` publient
+quatre rapports indépendants depuis les seuls agrégats fermés. Un taux
+mesurable reste distinct d'une performance qualifiée ; aucune calibration
+scientifique ou validation externe n'est attribuée automatiquement.

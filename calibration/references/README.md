@@ -51,3 +51,10 @@ l'acquisition et la revue du 29 octobre 2026. D11b lit le ZIP conservé hors du
 dépôt, produit directement le TSV sous `calibration_workspace/` et refuse une
 empreinte, une base SQLite ou des métadonnées incompatibles. Ces deux charges
 utiles restent locales et hors Git.
+
+`public_reference_catalog_d10_v1.json` est l'instantané exact du catalogue
+1.0.0 auquel le manifest D10 s'engage par SHA-256. Il reste une ressource
+active de vérification, pas un remplacement du catalogue 1.1.0 incluant la
+puce. D23a compare les empreintes des sources communes, puis valide D10
+contre cet instantané ; aucune réécriture ni relaxation de l'engagement
+historique n'est autorisée. Il ne contient aucun individu ou génotype.

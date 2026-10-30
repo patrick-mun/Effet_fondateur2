@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "method_id": "chip_autosomal_phasing_preparation_v1",
+  "configuration_id": "d23a_phasing_panel_v2",
+  "panel_role": "CALIBRATION",
+  "founder_seed": 2301,
+  "meiosis_seed": 2302,
+  "trio_count": 8,
+  "unrelated_count": 16,
+  "candidate_markers_per_autosome": 4096,
+  "maximum_markers_per_autosome": 1024,
+  "minimum_markers_per_autosome": 256,
+  "minimum_total_markers": 10000,
+  "target_flank_bp": 5000000,
+  "rare_maf_upper_bound": 0.05,
+  "target_configuration": "calibration/configurations/d19_technical_target_v1.json",
+  "target_configuration_sha256": "c316c57a432ed7ed53cfc8fe99cad9c7ec0489115e1c5ea19523c677d5857bc5",
+  "target_rule": "EXPLICIT_FOUNDER_INDEX_MODULO_3_MENDELIAN_CHILD",
+  "reference_rule": "EXACT_D10_PHASING_REFERENCE_EXCLUDE_BOTH_DONOR_PARTITIONS",
+  "source_timeout_seconds": 600,
+  "phasing_seed": 2303
+}

@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "method_id",
+    "preparation_manifest_sha256",
+    "profiles",
+    "missingness_fraction",
+    "rare_maf_upper_bound",
+    "map_absolute_tolerance_cm",
+    "missingness_seed",
+    "phasing_seed",
+    "bootstrap_seed",
+    "bootstrap_replicates",
+    "density_gap_bp",
+    "target_flank_bp",
+    "command_timeout_seconds",
+    "minimum_total_variants",
+    "minimum_variants_per_autosome"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "method_id": {
+      "const": "paired_chip_phasing_bench_v1"
+    },
+    "preparation_manifest_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "profiles": {
+      "const": [
+        "BASELINE",
+        "DENSITY_50",
+        "MISSING_1PCT"
+      ]
+    },
+    "missingness_fraction": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "exclusiveMaximum": 0.5
+    },
+    "rare_maf_upper_bound": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "exclusiveMaximum": 0.5
+    },
+    "map_absolute_tolerance_cm": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 0.001
+    },
+    "missingness_seed": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4294967295
+    },
+    "phasing_seed": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4294967295
+    },
+    "bootstrap_seed": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4294967295
+    },
+    "bootstrap_replicates": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4294967295
+    },
+    "density_gap_bp": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4294967295
+    },
+    "target_flank_bp": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4294967295
+    },
+    "command_timeout_seconds": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4294967295
+    },
+    "minimum_total_variants": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4294967295
+    },
+    "minimum_variants_per_autosome": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4294967295
+    }
+  }
+}

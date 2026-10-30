@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0.0",
+  "method_id": "paired_chip_phasing_bench_v1",
+  "preparation_manifest_sha256": "e91d686f5cc63d17a95f64dc52bb481d0836c898f23d03344a801b59b60d33cb",
+  "profiles": ["BASELINE", "DENSITY_50", "MISSING_1PCT"],
+  "missingness_fraction": 0.01,
+  "missingness_seed": 2304,
+  "phasing_seed": 2303,
+  "bootstrap_seed": 2305,
+  "bootstrap_replicates": 2000,
+  "rare_maf_upper_bound": 0.05,
+  "density_gap_bp": 100000,
+  "target_flank_bp": 5000000,
+  "map_absolute_tolerance_cm": 1e-8,
+  "command_timeout_seconds": 1800,
+  "minimum_total_variants": 10000,
+  "minimum_variants_per_autosome": 100
+}
