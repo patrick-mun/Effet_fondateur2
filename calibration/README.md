@@ -696,6 +696,48 @@ pas qualifiée pour IBD. 12 utilise les trios, 12A non : ne pas attribuer
 cet écart à la seule densité. Les seuils D04 restent non scellés, les rapports
 maintiennent la revue manuelle et le point 07 ouvert.
 
+## D23b — Sensibilité contrôlée densité × pedigree
+
+Lire `protocoles/D23B_DENSITY_PEDIGREE_PRESPECIFICATION.md` et `CAL-DEC-009`.
+La préparation maximale utilise
+`configurations/d23b_phasing_maximum_panel_v1.json` et le banc factoriel
+`configurations/d23b_phasing_sensitivity_v1.json`. Les profils 25/50/75/100 %
+sont emboîtés par chromosome ; seuls la densité et, en régional, la présence
+du pedigree changent. La cible chr5 reste technique et ne constitue pas une
+vérité positive DOCK6.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.phasing_sensitivity_bench \
+  --preparation-root calibration_workspace/<preparation_maximale_close> \
+  --configuration-path calibration/configurations/d23b_phasing_sensitivity_v1.json \
+  --workspace-root calibration_workspace \
+  --run-id <nouveau_run_d23b> \
+  --reference-source-dir <dossier_public_1000g> \
+  --shapeit-bin-dir <dossier_bin_SHAPEIT5>
+
+.venv/bin/python -m effet_fondateur.calibration.evaluate_phasing_sensitivity \
+  --preparation-root calibration_workspace/<preparation_maximale_close> \
+  --run-root calibration_workspace/<run_d23b_clos> \
+  --configuration-path calibration/configurations/d23b_phasing_sensitivity_v1.json \
+  --workspace-root calibration_workspace \
+  --run-id <nouvelle_evaluation_d23b>
+
+.venv/bin/python -m effet_fondateur.calibration.report_phasing_sensitivity \
+  --evaluation-root calibration_workspace/<evaluation_d23b_close> \
+  --preparation-root calibration_workspace/<preparation_maximale_close> \
+  --template-path <report_skill>/templates/research.html \
+  --output-root calibration_workspace/<nouveau_rapport_d23b>
+```
+
+Références locales closes : `d23b_phasing_maximum_inputs_v2`,
+`d23b_phasing_sensitivity_run_v1`,
+`d23b_phasing_sensitivity_evaluation_v1` et rapport final
+`d23b_phasing_sensitivity_reports_v5/CAL-DEV-D23B` (version narrative 1.1.0 ;
+les rendus v3/v4 sont intermédiaires). La densité maximale réduit
+fortement la SER dans ce banc, mais le Hamming et l'erreur rare restent élevés.
+La performance demeure `REVIEW_REQUIRED`; `calibrated=false` et
+`founder_effect_proven=false`. D24 n'est pas inclus dans D23b.
+
 ## D23a — Préparation autosomique du phasage
 
 Lire `protocoles/D23A_PHASING_PREPARATION.md` et CAL-DEC-007. La configuration

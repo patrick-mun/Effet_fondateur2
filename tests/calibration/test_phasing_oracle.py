@@ -89,6 +89,20 @@ def test_bootstrap_units_reproducible_and_empty_denominators() -> None:
     assert bootstrap_ratio(np.array([0]), np.array([2]), seed=1, replicates=10)["interval_95"] is None
 
 
+def test_optional_unit_counts_reconcile_with_aggregate() -> None:
+    original = fixture()
+    result = score_phase(
+        original, original, founder_indices=[0, 1], unit_indices=[0, 1],
+        target=(5, 4), rare_maf_upper_bound=.05, density_gap_bp=100_000,
+        bootstrap_seed=2305, bootstrap_replicates=20, include_unit_counts=True,
+    )
+    rows = result["unit_counts"]["switch_error_rate"]["ALL"]
+    aggregate = result["metrics"]["switch_error_rate"]["ALL"]
+    assert sum(row["numerator"] for row in rows) == aggregate["numerator"]
+    assert sum(row["denominator"] for row in rows) == aggregate["denominator"]
+    assert len(rows) == result["independent_units"] == 2
+
+
 def test_parser_preserves_gt_phase_and_rejects_duplicates() -> None:
     lines = ["#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1\tS2\n",
              "chr5\t1\tm1\tA\tG\t.\tPASS\t.\tGT:PS\t0|1:1\t0/1:.\n"]

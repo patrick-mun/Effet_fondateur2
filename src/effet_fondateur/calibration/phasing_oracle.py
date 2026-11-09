@@ -114,7 +114,8 @@ def bootstrap_ratio(numerators: np.ndarray, denominators: np.ndarray, *, seed: i
 
 
 def score_phase(truth: PhasePanel, predicted: PhasePanel, *, founder_indices: list[int], unit_indices: list[int], target: tuple[int, int],
-                rare_maf_upper_bound: float, density_gap_bp: int, bootstrap_seed: int, bootstrap_replicates: int) -> dict[str, Any]:
+                rare_maf_upper_bound: float, density_gap_bp: int, bootstrap_seed: int, bootstrap_replicates: int,
+                include_unit_counts: bool = False) -> dict[str, Any]:
     """Mesure switches, Hamming, motifs isolés, phase rare et orientation cible.
 
     La liste de loci vrais est l'univers observé du profil considéré. Une
@@ -198,8 +199,20 @@ def score_phase(truth: PhasePanel, predicted: PhasePanel, *, founder_indices: li
                     runs["length_1" if length == 1 else "length_2_to_5" if length <= 5 else "length_6_plus"] += 1
     results = {name: {label: bootstrap_ratio(values[:, 0], values[:, 1], seed=bootstrap_seed, replicates=bootstrap_replicates)
                       for (metric, label), values in metrics.items() if metric == name} for name in sorted({key[0] for key in metrics})}
-    return dict(alignment=alignment, samples=len(truth.samples), observed_loci=len(truth.loci), independent_units=unit_count,
-                complete_genotypes=int(complete.sum()), missing_genotypes=int((~complete).sum()), genotype_discordances=int((complete & ~dosage_ok).sum()),
-                truth_heterozygotes=int(het.sum()), phased_heterozygotes=int(valid.sum()), unphased_heterozygotes=int((het & dosage_ok & ~phased).sum()),
-                target_heterozygotes=int((het & target_mask[:, None]).sum()), metrics=results, error_run_lengths=runs,
-                qualification_status="REVIEW_REQUIRED", calibrated=False, founder_effect_proven=False)
+    result = dict(alignment=alignment, samples=len(truth.samples), observed_loci=len(truth.loci), independent_units=unit_count,
+                  complete_genotypes=int(complete.sum()), missing_genotypes=int((~complete).sum()), genotype_discordances=int((complete & ~dosage_ok).sum()),
+                  truth_heterozygotes=int(het.sum()), phased_heterozygotes=int(valid.sum()), unphased_heterozygotes=int((het & dosage_ok & ~phased).sum()),
+                  target_heterozygotes=int((het & target_mask[:, None]).sum()), metrics=results, error_run_lengths=runs,
+                  qualification_status="REVIEW_REQUIRED", calibrated=False, founder_effect_proven=False)
+    if include_unit_counts:
+        result["unit_counts"] = {
+            name: {
+                label: [
+                    {"numerator": int(row[0]), "denominator": int(row[1])}
+                    for row in values
+                ]
+                for (metric, label), values in metrics.items() if metric == name
+            }
+            for name in sorted({key[0] for key in metrics})
+        }
+    return result

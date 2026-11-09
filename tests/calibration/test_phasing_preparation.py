@@ -8,7 +8,8 @@ import pytest
 import yaml
 
 from effet_fondateur.calibration.phasing_preparation import (
-    _public_path, _source_rows, build_chromosome, choose_founders, evenly_spaced,
+    _public_path, _source_rows, _validate_reference_sample_order,
+    build_chromosome, choose_founders, evenly_spaced,
     inventory, load_configuration, transmission_track, verify_preparation,
     finalize_preparation,
 )
@@ -89,6 +90,15 @@ def test_source_parser_refuses_partial_unphased_and_ambiguous_records() -> None:
     assert len(variants) == 2 and set(calls) == {10}
     variants, calls = _source_rows(records + "chr1\t10\tv3\tG\tA\t1|0\t0|0\n", 1, 2)
     assert 10 not in calls
+
+
+def test_reference_extraction_requires_exact_membership_and_order() -> None:
+    expected = ["HG00096", "HG00097", "HG00099"]
+    _validate_reference_sample_order(expected, expected)
+    with pytest.raises(ValueError, match="reference_membership_or_order_invalid"):
+        _validate_reference_sample_order(list(reversed(expected)), expected)
+    with pytest.raises(ValueError, match="reference_membership_or_order_invalid"):
+        _validate_reference_sample_order(expected[:-1], expected)
 
 
 def test_public_path_forbids_real_inputs_caches_and_symlinks(tmp_path: Path) -> None:

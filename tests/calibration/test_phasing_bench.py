@@ -52,7 +52,9 @@ def test_unknown_profile_rejected() -> None:
         observed_profile(panel(), "OTHER", {}, {})
 
 
-def test_new_fixture_creation_has_canonical_tables_and_bound_dataset_sets(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("include_pedigree", [True, False])
+def test_new_fixture_creation_has_canonical_tables_and_bound_dataset_sets(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, include_pedigree: bool) -> None:
     """Régression des deux défauts d'intégration, PLINK intégralement simulé."""
     import json
     import yaml
@@ -64,7 +66,7 @@ def test_new_fixture_creation_has_canonical_tables_and_bound_dataset_sets(tmp_pa
     metadata = preparation / "blinded_inputs/metadata"
     metadata.mkdir(parents=True)
     root.mkdir()
-    registry = [dict(zip(SAMPLE_COLUMNS, (sample,sample+".txt","F1",sample,"0","0","UNKNOWN","UNKNOWN","UNSPECIFIED","","","","true","true",""),strict=True)) for sample in source.samples]
+    registry = [dict(zip(SAMPLE_COLUMNS, (sample,sample+".txt","F1",sample,"S1" if sample == "S2" else "0","0","UNKNOWN","UNKNOWN","UNSPECIFIED","","","","true","true",""),strict=True)) for sample in source.samples]
     write_table(metadata / "samples.tsv", SAMPLE_COLUMNS, registry)
     genotype_rows = [dict(SAMPLE_ID=sample, GENOTYPE="A/G", GENOTYPE_SOURCE="SIMULATION", MEASUREMENT_METHOD="NOT_MEASURED") for sample in source.samples]
     write_table(preparation / "blinded_inputs/target_genotypes.tsv", tuple(genotype_rows[0]), genotype_rows)
@@ -83,9 +85,17 @@ def test_new_fixture_creation_has_canonical_tables_and_bound_dataset_sets(tmp_pa
         prefix.with_suffix(".bim").write_text(''.join(f'{row[0].removeprefix("chr")} {row[2]} 0 {row[1]} {row[4]} {row[3]}\n' for row in variants))
         return 0
     monkeypatch.setattr("effet_fondateur.calibration.phasing_bench._command",fake_command)
-    artifacts = fixture_inputs(root,preparation,source,dict(command_timeout_seconds=1),target)
+    artifacts = fixture_inputs(
+        root, preparation, source, dict(command_timeout_seconds=1), target,
+        include_pedigree=include_pedigree,
+    )
     audit = next(item for item in artifacts if item["artifact_id"] == "target_genotype_audit")
     validate_tsv_table(Path(audit["path"]),"target_genotype_audit.schema.json")
+    output_registry = next(item for item in artifacts if item["artifact_id"] == "samples_master")
+    output_rows = Path(output_registry["path"]).read_text().splitlines()
+    assert ("\tS1\t0\t" in output_rows[2]) is include_pedigree
+    fam_rows = (root / "stages" / "D23_UPSTREAM_CONTRACT_FIXTURE" / "genomewide_pre_qc.fam").read_text().splitlines()
+    assert (fam_rows[1].split()[2] == "S1") is include_pedigree
     for prefix in ("genomewide_pre_qc","target_chromosome_all_qc"):
         descriptor = json.loads(Path(next(item for item in artifacts if item["artifact_id"] == prefix+"_dataset")["path"]).read_text())
         for item in artifacts:

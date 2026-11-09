@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "method_id", "closure_state", "created_at", "preparation_manifest_sha256", "source_run_sha256", "configuration_sha256", "implementation_sha256", "oracle_implementation_sha256", "prespecification_sha256", "independent_units", "performance_qualification", "limitations", "artifacts", "calibrated", "founder_effect_proven"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "method_id": {"const": "paired_density_pedigree_phasing_evaluation_v1"},
+    "closure_state": {"const": "CLOSED"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "preparation_manifest_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "source_run_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "configuration_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "implementation_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "oracle_implementation_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "prespecification_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "independent_units": {"const": 24},
+    "performance_qualification": {"const": "REVIEW_REQUIRED"},
+    "limitations": {
+      "const": ["SYNTHETIC_TECHNICAL_TARGET_NOT_DOCK6", "SINGLE_PANEL_SINGLE_PHASING_SOFTWARE", "DESCRIPTIVE_PAIRED_INTERVALS_NOT_CAUSAL", "PERFORMANCE_THRESHOLDS_NOT_SEALED", "D21_SCIENTIFIC_FAIL_07_UNCHANGED"]
+    },
+    "artifacts": {
+      "type": "array", "minItems": 3, "maxItems": 3,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": {"enum": ["technical_evaluations.json", "performance_evaluations.json", "paired_contrasts.json"]},
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+        }
+      }
+    },
+    "calibrated": {"const": false},
+    "founder_effect_proven": {"const": false}
+  }
+}

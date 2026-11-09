@@ -1,6 +1,50 @@
 # Suivi de session
 
-Dernière mise à jour : 30 octobre 2026
+Dernière mise à jour : 9 novembre 2026
+
+## D23b — parties 1 à 3 réalisées, performance toujours non qualifiée
+
+- Le protocole complémentaire préspecifié
+  `calibration/protocoles/D23B_DENSITY_PEDIGREE_PRESPECIFICATION.md` et la
+  décision `CAL-DEC-009` séparent la sensibilité à la densité de celle au
+  pedigree. Les 40 sujets, 24 unités indépendantes, référence D10, cartes,
+  paramètres et vérité simulée restent appariés ; aucune donnée réelle ni
+  cache interne n'est utilisé.
+- La préparation maximale close
+  `d23b_phasing_maximum_inputs_v2` contient 243 844 SNP autosomiques de puce
+  harmonisés plus la cible technique chr5. Ses 9 753 800 cellules génotypiques,
+  transmissions, copies fondatrices, cibles et pedigrees concordent sans
+  erreur. SHA-256 du manifest :
+  `fca3001c45d2dfb474a55df72998cf2d5d49033925b858bad4ce8c75399fc65f`.
+- Le banc clos `d23b_phasing_sensitivity_run_v1` exécute quatre densités
+  emboîtées 25/50/75/100 %, avec et sans pedigree en régional et sans pedigree
+  par contrat en autosomal. Les 24 composants réels 10A/11/12/12A et les douze
+  contrôles 10A/11 passent. SHA-256 du reçu :
+  `b5952e29da004988e6c72e5b10c2f249fe30961e45888641f49cbb4c6f6da391`.
+- L'évaluation close `d23b_phasing_sensitivity_evaluation_v1` reste
+  `REVIEW_REQUIRED`. La SER autosomale décroît de 17,87 % à 25 % de densité à
+  4,47 % au maximum ; la SER régionale avec pedigree décroît de 14,95 % à
+  4,31 %. Au maximum, retirer le pedigree change la SER régionale de +0,15
+  point (IC bootstrap apparié −0,41 à +0,83) : effet non résolu. À 25 %, le
+  contraste vaut +4,55 points (IC +1,85 à +7,01). Tous les 2 000 tirages sont
+  valides. SHA-256 de l'évaluation :
+  `987fd09f0e27239a141d492beb257389462786b91ea7902ba73a51351279b399`.
+- La densité améliore donc nettement la SER dans ce banc contrôlé, sans être
+  démontrée comme cause unique générale. Le Hamming reste élevé au maximum
+  (19,29 % en régional, 35,78 % en autosomal) et la phase rare aussi ; aucune
+  qualification scientifique n'est acquise. `calibrated=false` et
+  `founder_effect_proven=false` sont maintenus.
+- Rapport autonome final :
+  `calibration_workspace/d23b_phasing_sensitivity_reports_v5/CAL-DEV-D23B/`
+  (version narrative 1.1.0, HTML, PDF 23 pages, quatre graphiques, trois
+  équations, six tableaux, interprétation détaillée, agrégats et empreintes).
+  Les rendus v3/v4 sont intermédiaires. D24 n'est pas lancé ; prochaine action : auditer
+  l'existence d'une vérité indépendante de segments fondateurs, de contrôles
+  négatifs et d'au moins trois unités indépendantes avant toute partie 4.
+- Validation finale : 86 tests ciblés de phasage puis les 910 tests de
+  `tests/calibration/` réussis ; imports, compilation, schémas, empreintes du
+  rapport et `git diff --check` valides. La suite complète du dépôt n'a pas été
+  relancée. Aucun commit, push ou merge n'a été effectué.
 
 ## D23 — réalisée, qualité du phasage non qualifiée
 

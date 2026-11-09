@@ -4,6 +4,30 @@ Ce registre conserve les décisions humaines qui modifient le périmètre, les
 critères ou l'interprétation du projet de calibration. Une décision ne vaut ni
 résultat scientifique ni qualification automatique d'une étape du pipeline.
 
+## CAL-DEC-009 — Investigation D23b densité × pedigree
+
+Le 9 novembre 2026, après revue des résultats D23, l'utilisateur demande
+explicitement d'exécuter les parties 1 à 3 de la reprise proposée :
+préspecification d'une comparaison contrôlée, détermination du maximum de
+marqueurs exploitable et utilisation de ce maximum comme parcours primaire,
+avant de reprendre séparément les parties 4 et 5 relatives à D24. Statut :
+`DEMANDEE_EXPLICITEMENT`.
+
+L'autorisation porte sur le protocole
+`D23B_DENSITY_PEDIGREE_PRESPECIFICATION.md`, une nouvelle préparation issue
+des mêmes donneurs, sujets, transmissions, références et paramètres D23a, les
+phasages bornés 10A/11/12/12A nécessaires, leur évaluateur et leur rapport
+indépendant. Les profils de densité sont emboîtés et le facteur pedigree est
+manipulé uniquement dans le parcours régional qui le prend réellement en
+charge. La densité maximale reste primaire quel que soit le résultat.
+
+Cette décision n'autorise aucune donnée `dock6_real`, aucun cache interne de
+l'étude, aucune préparation ou exécution D24, aucun réglage sur le panel de
+validation, aucun seuil scellé et aucun passage à `calibrated=true` ou
+`founder_effect_proven=true`. Le FAIL 07 reste différé. Les nouveaux artefacts
+générés restent sous `calibration_workspace/`; aucun commit, push ou merge
+n'est autorisé par cette demande.
+
 ## CAL-DEC-008 — Exécution bornée D23
 
 Le 30 octobre 2026, l'utilisateur demande explicitement : « lance l'étape

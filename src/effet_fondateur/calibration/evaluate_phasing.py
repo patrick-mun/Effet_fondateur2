@@ -191,7 +191,7 @@ def acceptance_results(stage: str, result: dict[str, Any]) -> list[dict[str, Any
 
 def evaluate_phase_outputs(paths: dict[str, Path], stage: str, truth: PhasePanel, registry: list[dict[str, str]], config: dict[str, Any],
                            target: dict[str, Any], expected_samples: list[str], reference_selection: dict[str, Any],
-                           observation: Any, preparation: Path) -> dict[str, Any]:
+                           observation: Any, preparation: Path, *, include_unit_counts: bool = False) -> dict[str, Any]:
     """Métriques et conformité indépendantes, sans prendre les PASS publiés pour oracle."""
     files = [paths["shapeit5_final_bcf"]] if stage == "12" else [paths[f"autosomal_phased_chr{chromosome}_bcf"] for chromosome in range(1, 23)]
     panels = [_read_phased(path, config["command_timeout_seconds"]) for path in files]
@@ -205,7 +205,8 @@ def evaluate_phase_outputs(paths: dict[str, Path], stage: str, truth: PhasePanel
     founders = [index for index, sample in enumerate(truth.samples) if rows[sample]["PID"] == rows[sample]["MID"] == "0"]
     unit_indices = [units[rows[sample]["FID"]] for sample in truth.samples]
     performance = score_phase(truth, predicted, founder_indices=founders, unit_indices=unit_indices, target=(target["chromosome"], target["position_bp"]),
-                              rare_maf_upper_bound=config["rare_maf_upper_bound"], density_gap_bp=config["density_gap_bp"], bootstrap_seed=config["bootstrap_seed"], bootstrap_replicates=config["bootstrap_replicates"])
+                              rare_maf_upper_bound=config["rare_maf_upper_bound"], density_gap_bp=config["density_gap_bp"], bootstrap_seed=config["bootstrap_seed"], bootstrap_replicates=config["bootstrap_replicates"],
+                              include_unit_counts=include_unit_counts)
     observed_by_locus = {(int(row[0].removeprefix("chr")), int(row[1])): index for index, row in enumerate(observation.variants)}
     observed_calls = observation.alleles[[observed_by_locus[locus[:2]] for locus in truth.loci]]
     aligned, _, _, _ = align_prediction(truth, predicted)

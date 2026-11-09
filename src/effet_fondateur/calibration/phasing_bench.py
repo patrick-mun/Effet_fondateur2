@@ -102,8 +102,14 @@ def _descriptor(prefix: Path, scope: str, chromosome: int | None) -> Path:
     return output
 
 
-def fixture_inputs(root: Path, preparation: Path, panel: MeasurementPanel, config: dict[str, Any], target: dict[str, Any]) -> list[dict[str, Any]]:
-    """Convertit réellement puis déclare les contrats QC comme fixtures, pas PASS amont."""
+def fixture_inputs(root: Path, preparation: Path, panel: MeasurementPanel, config: dict[str, Any], target: dict[str, Any],
+                   *, include_pedigree: bool = True) -> list[dict[str, Any]]:
+    """Convertit puis déclare les fixtures, avec pedigree explicitement contrôlé.
+
+    Quand ``include_pedigree`` est faux, seuls PID/MID sont neutralisés dans
+    les entrées transmises aux composants. Le registre de vérité indépendant
+    conservé dans la préparation n'est jamais modifié.
+    """
     fixture = root / "stages" / PRODUCER
     fixture.mkdir(parents=True)
     write_observation(fixture / "observed.vcf", panel)
@@ -118,7 +124,8 @@ def fixture_inputs(root: Path, preparation: Path, panel: MeasurementPanel, confi
     with prefix.with_suffix(".fam").open("w") as handle:
         for line in fam:
             row = by_sample[line[1]]
-            handle.write(" ".join((row["FID"], row["IID"], row["PID"], row["MID"], "0", "-9")) + "\n")
+            pid, mid = (row["PID"], row["MID"]) if include_pedigree else ("0", "0")
+            handle.write(" ".join((row["FID"], row["IID"], pid, mid, "0", "-9")) + "\n")
     write_table(fixture / "keep.txt", ("FID", "IID"), [])
     (fixture / "keep.txt").write_text("".join(f'{by_sample[line[1]]["FID"]}\t{line[1]}\n' for line in fam))
     target_prefix = fixture / "target_chromosome_all_qc"
@@ -132,7 +139,11 @@ def fixture_inputs(root: Path, preparation: Path, panel: MeasurementPanel, confi
         definitions.extend((base.name + "_" + suffix, base.with_suffix("." + suffix), None) for suffix in ("bed", "bim", "fam"))
         definitions.append((base.name + "_dataset", descriptor, "plink_dataset.schema.json"))
     registry = fixture / "samples_master.tsv"
-    shutil.copyfile(preparation / "blinded_inputs/metadata/samples.tsv", registry)
+    if include_pedigree:
+        shutil.copyfile(preparation / "blinded_inputs/metadata/samples.tsv", registry)
+    else:
+        columns = tuple(rows[0])
+        write_table(registry, columns, [dict(row, PID="0", MID="0") for row in rows])
     genotypes = raw_table(preparation / "blinded_inputs/target_genotypes.tsv")
     audit = [dict(**row, FID=by_sample[row["SAMPLE_ID"]]["FID"], IID=by_sample[row["SAMPLE_ID"]]["IID"], STATUS="ACCEPTED") for row in genotypes]
     audit_columns = ("SAMPLE_ID", "FID", "IID", "GENOTYPE", "GENOTYPE_SOURCE", "MEASUREMENT_METHOD", "STATUS")

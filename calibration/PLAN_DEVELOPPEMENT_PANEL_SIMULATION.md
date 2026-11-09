@@ -1576,6 +1576,37 @@ notamment de vérité de segment fondateur : D23a ne l'apporte pas à elle seule
 12 exploite le pedigree via son adaptateur, 12A n'en passe pas à SHAPEIT5 :
 les différences de SER ne doivent pas être attribuées à la seule densité.
 
+**Investigation complémentaire D23b réalisée le 9 novembre 2026 — parties 1
+à 3 uniquement.** Le protocole
+`protocoles/D23B_DENSITY_PEDIGREE_PRESPECIFICATION.md`, la décision
+`CAL-DEC-009` et les configurations `d23b_phasing_maximum_panel_v1.json` et
+`d23b_phasing_sensitivity_v1.json` ont été fixés avant le nouveau phasage.
+Le maximum exploitable harmonisé compte 243 844 SNP autosomiques de puce, plus
+la cible technique chr5. Les profils emboîtés 25/50/75/100 % conservent les
+mêmes 40 sujets, 24 unités indépendantes, 1 403 références, cartes, paramètres
+et vérité simulée ; le parcours régional est évalué avec et sans pedigree.
+
+Les 24 composants 10A/11/12/12A et les douze contrôles techniques 10A/11
+passent. La SER autosomale vaut 17,87 %, 9,55 %, 6,14 % puis 4,47 % ; la SER
+régionale avec pedigree vaut 14,95 %, 7,83 %, 5,47 % puis 4,31 %. Au maximum,
+le contraste régional sans moins avec pedigree vaut +0,15 point, IC bootstrap
+apparié −0,41 à +0,83 ; seul le contraste à 25 % exclut zéro (+4,55 points,
+IC +1,85 à +7,01). La densité est donc associée à une amélioration nette dans
+ce banc, mais n'est pas établie comme cause unique générale. Le Hamming maximal
+reste de 19,29 % en régional et 35,78 % en autosomal : performance
+`REVIEW_REQUIRED`, `calibrated=false`, `founder_effect_proven=false`.
+
+Sources closes : `d23b_phasing_maximum_inputs_v2`,
+`d23b_phasing_sensitivity_run_v1` et
+`d23b_phasing_sensitivity_evaluation_v1`. Le rapport autonome final est
+`d23b_phasing_sensitivity_reports_v5/CAL-DEV-D23B` dans le workspace ignoré.
+Cette version narrative 1.1.0 explique le plan apparié, les cinq métriques,
+chaque contraste, la distinction entre PASS technique et qualification
+scientifique, les anomalies et les limites ; les rendus v3/v4 sont
+intermédiaires.
+D24 n'a pas été lancé : sa première action reste un audit séparé de la vérité
+de segments fondateurs, des contrôles négatifs et des unités indépendantes.
+
 ### D24 — Implémenter l'évaluateur d'haplotype fondateur
 
 **Action :** comparer segment récupéré et segment vrai.

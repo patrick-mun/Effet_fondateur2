@@ -341,6 +341,13 @@ class ChromosomePreparationContext:
     ledger: list[dict[str, Any]]
     bcftools: str
     donor_index: dict[str, int]
+    reference: list[str]
+
+
+def _validate_reference_sample_order(actual_samples: Sequence[str], expected_samples: Sequence[str]) -> None:
+    """Bloque toute extraction dont l'appartenance ou l'ordre de référence dérive."""
+    if list(actual_samples) != list(expected_samples):
+        raise ValueError("d23a_reference_membership_or_order_invalid")
 
 
 def _prepare_chromosome(chromosome: int, context: ChromosomePreparationContext) -> tuple[list[tuple[str, ...]], np.ndarray, dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
@@ -359,6 +366,7 @@ def _prepare_chromosome(chromosome: int, context: ChromosomePreparationContext) 
     ledger = context.ledger
     bcftools = context.bcftools
     donor_index = context.donor_index
+    reference = context.reference
     LOGGER.info("D23a : autosome %d/22 — empreintes puis extraction bornée", chromosome)
     vcf = source_directory / technical["vcf_filename_template"].format(chromosome=chromosome)
     index = source_directory / technical["index_filename_template"].format(chromosome=chromosome)
@@ -420,8 +428,7 @@ def _prepare_chromosome(chromosome: int, context: ChromosomePreparationContext) 
           "--min-alleles", "2", "--max-alleles", "2", "--types", "snps", "-Oz", "-o", str(reference_file), str(vcf)], config["source_timeout_seconds"], ledger)
     _run([bcftools, "index", "--tbi", str(reference_file)], 120, ledger)
     actual_samples = _run([bcftools, "query", "--list-samples", str(reference_file)], 120, ledger).splitlines()
-    if actual_samples != reference:
-        raise ValueError("d23a_reference_membership_or_order_invalid")
+    _validate_reference_sample_order(actual_samples, reference)
     reference_count = int(_run([bcftools, "index", "--nrecords", str(reference_file)], 120, ledger).strip())
     if reference_count != len(ordered):
         raise ValueError("d23a_reference_variant_count_invalid")
@@ -532,7 +539,21 @@ def prepare_panel(*, configuration: Path, partition_root: Path, source_directory
         sample_count = len(origins) + config["trio_count"]
         samples = ["S" + hashlib.sha256(f'{config["founder_seed"]}:sample:{index}'.encode()).hexdigest()[:16] for index in range(sample_count)]
         context = ChromosomePreparationContext(
-            source_directory, technical, source_specs, chip_markers, map_directory, target, config, origins, donors, private, resources, ledger, bcftools, donor_index
+            source_directory=source_directory,
+            technical=technical,
+            source_specs=source_specs,
+            chip_markers=chip_markers,
+            map_directory=map_directory,
+            target=target,
+            config=config,
+            origins=origins,
+            donors=donors,
+            private=private,
+            resources=resources,
+            ledger=ledger,
+            bcftools=bcftools,
+            donor_index=donor_index,
+            reference=reference,
         )
         for chromosome in range(1, 23):
             chromosome_rows, values, summary, events, fingerprint = _prepare_chromosome(chromosome, context)
