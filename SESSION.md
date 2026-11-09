@@ -1,13 +1,106 @@
 # Suivi de session
 
-Dernière mise à jour : 28 octobre 2026
+Dernière mise à jour : 9 novembre 2026
 
-## Plan du panel de simulation et de calibration — 28 octobre 2026
+## D23b — parties 1 à 3 réalisées, performance toujours non qualifiée
+
+- Le protocole complémentaire préspecifié
+  `calibration/protocoles/D23B_DENSITY_PEDIGREE_PRESPECIFICATION.md` et la
+  décision `CAL-DEC-009` séparent la sensibilité à la densité de celle au
+  pedigree. Les 40 sujets, 24 unités indépendantes, référence D10, cartes,
+  paramètres et vérité simulée restent appariés ; aucune donnée réelle ni
+  cache interne n'est utilisé.
+- La préparation maximale close
+  `d23b_phasing_maximum_inputs_v2` contient 243 844 SNP autosomiques de puce
+  harmonisés plus la cible technique chr5. Ses 9 753 800 cellules génotypiques,
+  transmissions, copies fondatrices, cibles et pedigrees concordent sans
+  erreur. SHA-256 du manifest :
+  `fca3001c45d2dfb474a55df72998cf2d5d49033925b858bad4ce8c75399fc65f`.
+- Le banc clos `d23b_phasing_sensitivity_run_v1` exécute quatre densités
+  emboîtées 25/50/75/100 %, avec et sans pedigree en régional et sans pedigree
+  par contrat en autosomal. Les 24 composants réels 10A/11/12/12A et les douze
+  contrôles 10A/11 passent. SHA-256 du reçu :
+  `b5952e29da004988e6c72e5b10c2f249fe30961e45888641f49cbb4c6f6da391`.
+- L'évaluation close `d23b_phasing_sensitivity_evaluation_v1` reste
+  `REVIEW_REQUIRED`. La SER autosomale décroît de 17,87 % à 25 % de densité à
+  4,47 % au maximum ; la SER régionale avec pedigree décroît de 14,95 % à
+  4,31 %. Au maximum, retirer le pedigree change la SER régionale de +0,15
+  point (IC bootstrap apparié −0,41 à +0,83) : effet non résolu. À 25 %, le
+  contraste vaut +4,55 points (IC +1,85 à +7,01). Tous les 2 000 tirages sont
+  valides. SHA-256 de l'évaluation :
+  `987fd09f0e27239a141d492beb257389462786b91ea7902ba73a51351279b399`.
+- La densité améliore donc nettement la SER dans ce banc contrôlé, sans être
+  démontrée comme cause unique générale. Le Hamming reste élevé au maximum
+  (19,29 % en régional, 35,78 % en autosomal) et la phase rare aussi ; aucune
+  qualification scientifique n'est acquise. `calibrated=false` et
+  `founder_effect_proven=false` sont maintenus.
+- Rapport autonome final :
+  `calibration_workspace/d23b_phasing_sensitivity_reports_v5/CAL-DEV-D23B/`
+  (version narrative 1.1.0, HTML, PDF 23 pages, quatre graphiques, trois
+  équations, six tableaux, interprétation détaillée, agrégats et empreintes).
+  Les rendus v3/v4 sont intermédiaires. D24 n'est pas lancé ; prochaine action : auditer
+  l'existence d'une vérité indépendante de segments fondateurs, de contrôles
+  négatifs et d'au moins trois unités indépendantes avant toute partie 4.
+- Validation finale : 86 tests ciblés de phasage puis les 910 tests de
+  `tests/calibration/` réussis ; imports, compilation, schémas, empreintes du
+  rapport et `git diff --check` valides. La suite complète du dépôt n'a pas été
+  relancée. Aucun commit, push ou merge n'a été effectué.
+
+## D23 — réalisée, qualité du phasage non qualifiée
+
+- Demande explicite de lancement D23 ; protocole fixé avant résultats dans
+  `calibration/protocoles/D23_PHASING_PRESPECIFICATION.md`. Trois profils
+  appariés sur D23a v2 : base, densité moitié, manque 1 %. Référence D10 exacte,
+  vérité séparée, un thread SHAPEIT5, aucune étude réelle ni résolution de 07.
+- Banc `d23_phasing_pipeline_v1` clos : 10A/12A réelles sur les trois profils.
+  Reprises 11/12 closes sous `d23_regional_baseline_v3`,
+  `d23_regional_density_v1` et `d23_regional_missing_v1`.
+- Les enveloppes QC/cohorte sont des fixtures explicites, pas des étapes
+  amont prétendument exécutées. Deux défauts de l'adaptateur ont été isolés :
+  ensembles absents des artefacts et ordre TSV de l'audit cible. Reprise
+  régionale séparée, sans changer les génotypes ; essais conservés.
+- `d23_phasing_evaluation_v1` : trois PASS de conformité par étape ; aucun
+  défaut de conservation des génotypes/cartes et aucun critère de performance
+  obligatoire non mesurable. SHA-256 :
+  `6c3d39f550efadb04faa43692518f059b52b8fb7e22c6f852c1373fc70cf1d47`.
+- Base : SER régional 4,31 % (IC familial 3,16–5,87 %), autosomal 30,47 %
+  (27,94–34,10 %) ; orientation cible 13/17 (76,47 %, IC 55,56–94,12 %).
+  Erreurs rares : 16,37 % en régional et 38,39 % en autosomal. Le sous-panel
+  clairsemé ne démontre donc pas une phase fiable pour IBD ; prévoir une
+  sensibilité à la densité avant qualification, sans adapter les seuils.
+- Rapports finaux `d23_phasing_reports_v3` : CAL-REP-10A/11/12/12A, PDF de
+  7/7/10/10 pages, 14 sections, 2/2/3/3 graphiques et deux blocs d'équations.
+  Sommaires, pieds, débordements contrôlés ; figures/formules relues dans les
+  vrais PDF. Les rendus v1/v2 restent intermédiaires. Les rapports distinguent
+  le pedigree utilisé par 12 de l'absence d'argument de pedigree en 12A ;
+  l'écart de SER n'isole pas un effet causal de la seule densité.
+- D04 : conformité PASS, performance REVIEW_REQUIRED (seuils non scellés).
+  Revue humaine 12 maintenue (six porteurs signalés non fiables par profil) ;
+  aucune donnée d'étude touchée, `calibrated=false`, `founder_effect_proven=false`.
+  Les défauts d'adaptateur sont aussi corrigés à la création des futurs bancs ;
+  le code initial exact est conservé sous `d23_launch_sources_v1` dans le
+  workspace et correspond au SHA du reçu historique.
+- Sauvegarde D20–D23 demandée sur `calibration/d07-d10-foundations` :
+  commit et push sur cette branche uniquement, sans PR ni fusion sur `main`.
+  Les données, rapports et résultats générés restent hors du commit.
+- Contrôle avant cette sauvegarde : 977 tests ciblés réussis (calibration,
+  sélection de référence, QC final, fenêtres, structure, orchestrateur et
+  phasage), imports et schémas JSON valides, diff indexé sans erreur de
+  whitespace. Suite complète du dépôt non relancée.
+- Validation finale : 919 tests calibration/sélection de référence et 25 tests
+  de production liés au phasage/région/IBD réussis ; les deux tests de rendu
+  sont rejoués après la dernière clarification éditoriale. Imports, compilation,
+  schémas JSON et contrôles de whitespace (nouveaux fichiers inclus) valides.
+  Suite complète du dépôt non relancée. Aucun calcul scientifique de production
+  ni dépendance modifié dans D23.
+
+## Plan du panel de simulation et de calibration — 30 octobre 2026
 
 - D03 version `1.0.0` et D04 version `0.2.0` ont été approuvés humainement le
   28 octobre 2026. D03 porte le statut `APPROVED` et D04 le statut
   `APPROVED_PRE_PILOT` : les règles sont approuvées, mais les seuils
-  `pilot_then_seal` restent non renseignés et aucun panel n'est encore autorisé.
+  `pilot_then_seal` restent non renseignés ; cela n'autorise pas à ouvrir la
+  validation indépendante ou à qualifier un pilote par cette seule approbation.
   La décision est enregistrée sous `CAL-DEC-002`.
 - D04 a été relu contre D03. Le biais de datation est désormais signé et
   distinct du MAE et de la RMSE ; les formules, dénominateurs, intervalles
@@ -56,6 +149,634 @@ Dernière mise à jour : 28 octobre 2026
   conserve son profil, le champ touché et les valeurs avant/après. Toute source
   réelle, correspondance d'identifiant, fuite vers le manifest aveugle ou
   recouvrement calibration-validation déclaré est refusé.
+- L'étape D07 est terminée avec
+  `calibration/schemas/calibration_run_manifest.schema.json` et 127 tests
+  ciblés. Le manifest finalisé est privé au contrôle de calibration et ancre la
+  configuration, la vérité, les six graines, le commit propre, l'environnement
+  Python verrouillé, les sources, les outils, les commandes normalisées, les
+  ressources, les artefacts, les reprises, les écarts et l'ordre de rejeu. Les
+  chemins absolus, locaux ou réels sont refusés et une commande `PIPELINE` ne
+  peut pas référencer `private_truth/`. Le registre des graines est désormais
+  lui-même exigé comme artefact privé inventorié.
+- L'étape D08 est terminée avec
+  `src/effet_fondateur/calibration/isolation.py` et 55 tests ciblés. Le garde
+  valide la racine de workspace, résout tous les artefacts sans ouvrir leur
+  contenu, refuse les chemins `data/input` et `dock6_real`, les traversées, les
+  liens symboliques et physiques, puis contrôle identifiants, producteurs,
+  outils, entrées/sorties, ordre de rejeu et ancres D07. Une commande pipeline
+  ne peut consommer que des artefacts `BLINDED_INPUT`. Le contrôle inter-panel
+  refuse tout partage d'identifiant, graine ou source synthétique ; seules les
+  références publiques identiques et explicitement déclarées partagées sont
+  admises.
+- L'étape D09 est terminée avec
+  `calibration/references/public_reference_catalog.json`, son schéma strict et
+  26 tests ciblés. La liste fermée couvre le panel phasé 1kGP GRCh38, ses
+  métadonnées de population, l'index des 2 504 références non apparentées et
+  les cartes SHAPEIT4/HapMap GRCh38 épinglées par commit. Chaque source fixe
+  identifiant, version, origine, assemblage, conditions d'usage et SHA-256,
+  puis lie par empreinte le catalogue technique existant du pipeline.
+- D09 n'a téléchargé aucun VCF, BCF ni panel. Le panel 1kGP est figé par le
+  SHA-256 de son manifeste officiel et les MD5 fournisseur ; tout fichier
+  acquis ultérieurement devra recevoir un SHA-256 local dans le manifest D07
+  avant usage. Les conditions IGSR permettent l'usage sous leurs termes ; les
+  cartes sont limitées à l'usage local et interdites de redistribution par le
+  projet, car la licence MIT du dépôt ne démontre pas seule tous les droits sur
+  les données HapMap dérivées.
+- L'étape D10 est implémentée avec
+  `calibration/schemas/reference_partition_manifest.schema.json`,
+  `src/effet_fondateur/calibration/partitioning.py`, le matérialisateur privé et
+  55 tests ciblés. Le contrat sépare donneurs de calibration, donneurs de
+  validation et référence
+  de phasage commune ; toute source est affectée exactement une fois et les
+  intersections d'identifiants ou de groupes d'indépendance valent zéro.
+- Le partitionnement D10 travaille par composante connexe de pedigree ou de
+  parenté. Un groupe mixte est retiré en bloc de la référence de phasage, puis
+  les groupes donneurs sont répartis de façon déterministe et équilibrée sans
+  graine supplémentaire. Le manifest ne contient aucun identifiant brut : les
+  listes canoniques et leurs SHA-256 resteront sous
+  `calibration_workspace/.../private_truth/partitions/`.
+- Les métadonnées publiques D09 étaient déjà présentes dans le cache avec les
+  SHA-256 attendus. La matérialisation
+  `calibration_workspace/d10_1kg_3202_20220422_v1/`, ignorée par Git, affecte
+  exactement 3 202 sources : 900 donneurs de calibration, 899 donneurs de
+  validation et 1 403 références de phasage. Elle couvre 1 873 groupes
+  d'indépendance, possède trois listes privées empreintées, un manifest valide
+  et zéro intersection interdite. Le SHA-256 du manifest privé est
+  `404d96a52c74b4dfe880e5b22c9f506f202ddc95fa5a182082302ae2765c97c4`.
+  Aucun VCF ni outil génétique n'a été lancé. Validation finale D10 : 55 tests
+  ciblés et 381 tests de calibration réussis, imports, compilation et
+  `git diff --check` sans erreur.
+- La couche dense D11a est implémentée avec
+  `calibration/schemas/base_haplotype_manifest.schema.json`,
+  `src/effet_fondateur/calibration/simulation/base_haplotypes.py` et le
+  matérialisateur privé. La méthode réapparie au sein de chaque population les
+  copies de donneurs distincts, utilise chaque haplotype exactement une fois et
+  dérive le génotype non phasé sans approximation. La transmission
+  parent–enfant reste explicitement différée à D13.
+- Les 22 VCF phasés 1000G et leurs index sont conservés hors dépôt dans le
+  dossier public du Bureau. Le chromosome 19 correspond aux MD5 fournisseur et
+  aux SHA-256 locaux D09. Les 900 donneurs de calibration et 899 donneurs de
+  validation D10 y sont tous présents ; chaque panel couvre 18 populations et
+  aucune population ne possède un donneur isolé.
+- Le test d'intégration D11a réel de référence, annoncé et limité à la
+  calibration sur `chr19:11000000-11100000`, existe sous le workspace ignoré
+  avec l'identifiant `d11_integration_cal_chr19_11000000_11100000_v2`. Il a produit 900
+  diploïdes synthétiques, 1 800 haplotypes et 2 484 SNV sur 18 strates. Les neuf
+  contrôles denses passent, les génotypes sont concordants à 100 %, aucun donneur
+  n'apparaît dans les VCF synthétiques ou le manifest, les quatre empreintes
+  correspondent et les permissions privées sont valides. Le SHA-256 du
+  manifest privé est
+  `855e624b7b65a81f9644a245faeae6fb87b1951db3a1fc6ad9e533c0a0bec472`.
+  Ce run diagnostique de 100 kb ne remplace pas le futur micro-panel D33.
+- La correction D11b sépare la vérité dense de l'observation CytoScan 750K
+  Accel. Le paquet officiel `hg38/NA36.r1`, conservé hors dépôt et hors cache,
+  mesure 533 747 512 octets et possède le SHA-256
+  `6a696ef3d2e61e9db74ead91c6410e15efc90da6a8bfc814f5da034e364607a3`.
+  Son entrée Thermo Fisher est inscrite au catalogue D09 version `1.1.0` avec
+  usage limité à la calibration locale et redistribution interdite.
+- D11b lit directement `CytoScan750k_Accel_Array.na36.annot.db` dans le ZIP,
+  vérifie l'intégrité SQLite, le schéma et les métadonnées, puis normalise sa
+  table `Annotations` dans le workspace privé. La base compte 960 877
+  annotations, 254 822 SNP et 247 777 SNP autosomiques. La liste de 10 000 SNP
+  `snplist.r3.txt` sert uniquement au SNPQC et n'est pas utilisée pour définir
+  l'univers de la puce. Le TSV normalisé possède le SHA-256
+  `7b1da53203d3422cb4d71693dd3f6074689ccfa80522048f55b6a7b52a093f82`.
+- Le run D11b réel borné
+  `d11b_integration_cal_chr19_11000000_11100000_v1` est lié au run D11a de
+  100 kb. Parmi les 2 484 SNV denses, un seul marqueur de puce est présent :
+  `S-3RUGR`, chr19:11 013 062, `C/T`. Il est lié en orientation directe, sans
+  exclusion ni ambiguïté ; le VCF observable et la table de liaison comptent
+  chacun exactement un variant. Le schéma, les quatre empreintes d'artefact,
+  les permissions privées et l'absence de chemin local passent. Le SHA-256 du
+  manifest D11b est
+  `2b0665a8521315cc0efa07c47bbf93c7e91336064ad0457c43473ea1829bba55`.
+- Validation de la correction D11b : 47 tests ciblés et 452 tests de
+  calibration réussis ; imports, compilation et `git diff --check` réussis.
+  Le contrat D10 accepte les catalogues D09 `1.0.0` et `1.1.0` afin de préserver
+  les manifests historiques tout en liant les futures matérialisations au
+  catalogue courant. La suite complète compte 765 réussites et un seul échec
+  préexistant sans rapport : le test synthétique 16A voit le dossier local du
+  panel 1000G mais n'y trouve pas le VCF complet du chromosome 5. Aucun module
+  16A n'a été modifié.
+- L'étape D12 est implémentée avec deux schémas stricts, une configuration
+  diagnostique versionnée, le générateur de structure de population et son
+  matérialisateur atomique. Sans recombinaison, D12 autorise uniquement les
+  strates pures et les mélanges exacts à deux composantes 50/50. Deux diploïdes
+  D11 produisent les sorties réciproques `A1|B2` et `B1|A2` ; chaque haplotype
+  est ainsi utilisé exactement une fois. Les proportions inégales et les
+  mélanges à plus de deux composantes sont différés à D14.
+- Le run borné
+  `d12_integration_cal_chr19_11000000_11100000_v1` lie les manifests D11a et
+  D11b précédents au même panel de calibration et au même domaine de 100 kb.
+  Il contient 900 diploïdes, 1 800 haplotypes, 2 484 variants denses et 20
+  mélanges CEU/YRI 50/50 ; les 880 autres individus restent dans leur strate
+  pure. Le panel aveugle conserve uniquement la sonde CytoScan `S-3RUGR`, sans
+  étiquette d'ascendance ni identifiant donneur. Les sommes de proportions,
+  la bijection, la conservation allélique, les permissions et les quatre
+  empreintes d'artefact passent avec zéro erreur. Le SHA-256 du manifest D12
+  est `21bc2a2b375e77c48b1544939125041fe2431c4c0867792bb4d66e9cd52c0b31`.
+  Les 13 tests D12 ciblés et les 465 tests de calibration passent. La suite
+  complète compte 778 réussites et le seul échec 16A préexistant décrit plus
+  haut, causé par l'absence locale du VCF 1000G chromosome 5. Comme D11, cette
+  intégration diagnostique ne remplace pas le micro-panel D33.
+- Après renommage du dossier externe 1000G vers sa cible historique, les 44
+  liens symboliques VCF/index du cache sont de nouveau valides. Le VCF et
+  l'index du chromosome 5 correspondent aux MD5 officiels. Les 11 tests du
+  module 16A passent désormais ; la suite complète n'a pas été relancée.
+- D12 a été rejouée sous
+  `d12_integration_cal_chr19_11000000_11100000_v2`. Les huit contrôles passent,
+  tous les compteurs d'erreur restent nuls et les quatre artefacts ont
+  exactement les mêmes SHA-256 que ceux de `v1`. Le SHA-256 du nouveau manifest,
+  qui diffère normalement par l'identifiant et l'horodatage du run, est
+  `841b3bc6bf8a739bfeb436de2ac2d72b9fc279395e87f51ade0f20cd2f8ae262`.
+- L'étape D13 est implémentée avec deux schémas stricts, une configuration
+  diagnostique, le générateur de pedigrees et son matérialisateur atomique. Une
+  unité de cousins germains utilise quatre fondateurs D12 distincts, produit
+  quatre descendants et quatre trios, puis dérive récursivement les parentés
+  théoriques du premier au troisième degré. D13 transmet des haplotypes entiers
+  et réserve explicitement les recombinaisons à D14.
+- Le premier essai D13 `v1` a été invalidé avant acceptation : l'ascendance des
+  descendants métissés y était moyennée depuis les parents au lieu de suivre
+  les copies réellement transmises. Il est conservé uniquement comme trace
+  d'audit. Le correctif lie désormais par SHA-256 la provenance haplotypique
+  D12 et recalcule chaque ascendance D13 depuis les deux copies héritées.
+- Le run de référence
+  `d13_integration_cal_chr19_11000000_11100000_v3` contient 900 fondateurs,
+  huit descendants, deux familles, huit trios et 16 transmissions. Les 2 484
+  variants denses et l'unique marqueur observable sont conservés ; les 58
+  paires de vérité couvrent 26 relations non apparentées, 18 au premier degré,
+  12 au deuxième et deux au troisième. Les neuf contrôles passent avec zéro
+  erreur mendélienne, de copie, d'allèle, de parent ou d'ascendance. Les sept
+  artefacts, le schéma, les effectifs, l'aveuglement et les permissions sont
+  valides. Les 477 tests de calibration et les 791 tests du dépôt passent. Le
+  calcul de parenté reste borné à chaque unité familiale de huit membres afin
+  d'éviter une matrice quadratique sur tous les fondateurs. Le SHA-256 du
+  manifest D13 de référence est
+  `222927ea28c0bfdc2e29778e9c5a08f75f4f5cae1abbb0ca76e238a1d7365722`.
+  Ses sept charges utiles sont octet pour octet identiques au run corrigé `v2` ;
+  seul le calcul interne de parenté a été borné par famille.
+- L'étape D14 est implémentée avec deux schémas stricts, une configuration
+  diagnostique, un moteur de recombinaison fondé sur la carte D11a et un
+  matérialisateur atomique. Chaque bras suit le premier événement d'une loi
+  exponentielle de taux `âge / 100` par cM. Les événements hors domaine sont
+  censurés sans être comptés ; la mosaïque est propagée par origine D12 pour
+  préserver les transmissions D13.
+- Le run `d14_integration_cal_chr19_11000000_11100000_age150_v2` utilise un âge
+  vrai de 150 générations et le SNV synthétique `chr19:11050057 C/T`. Il compte
+  deux familles, cinq copies porteuses, 2 484 variants denses et un marqueur
+  observable. Les quatre bras sont censurés aux bords de la fenêtre de
+  `0,1356203263 cM`, donc aucun breakpoint interne n'est revendiqué. Les tests
+  sur carte longue couvrent séparément les recombinaisons internes.
+- Les neuf artefacts D14, leurs effectifs et SHA-256, les coordonnées, les
+  génotypes cibles, les permissions et l'aveuglement sont valides ; Mendel reste
+  sans erreur après 408 substitutions alléliques de mosaïque. Les 485 tests de
+  calibration et les 799 tests du dépôt passent. Le SHA-256 du manifest privé
+  D14 est
+  `c1e848f512027bcffae70895869bf49fa1df827f752c56743056a8d167ae04b3`.
+  Ses neuf charges utiles sont identiques à celles du premier run `v1`, rejoué
+  avant ajout des gardes finales de disjonction des origines.
+- Le plan passe en version `0.3` et introduit D14b avant D15. Une fenêtre
+  principale est désormais dimensionnée en `cM` pour limiter à `0,05` la
+  probabilité théorique de censure de chaque bras : sa demi-largeur minimale
+  vaut `-100 × ln(0,05) / âge`, soit `299,573 / âge cM`. Les dix âges de la
+  grille possèdent leurs largeurs préspecifiées ; une cible sans marge
+  suffisante est déclarée `INFEASIBLE_WINDOW`, sans extrapolation ni rabotage.
+- D14b sépare les fenêtres principales utilisées pour les métriques des
+  fenêtres volontairement tronquées réservées au contrôle de la censure. Il
+  impose une sélection déterministe fondée uniquement sur D09/D11/D11b, les
+  inventaires dense/observable, les seuils de marqueurs D15/16C, un manifest
+  privé empreinté et un rejeu lié de la chaîne D11a–D14. Un tirage censuré ne
+  peut pas être rejeté ou rejoué pour obtenir un résultat plus favorable.
+- D14b est implémentée avec deux schémas de fenêtre, un schéma de reçu de
+  rejeu, un moteur de quantile/interpolation sans extrapolation, un
+  matérialisateur atomique et un scelleur de chaîne. La configuration
+  `d14b_micro_chr5_age100_calibration_v1` utilise une cible synthétique
+  publique sur le chromosome 5, indépendante de DOCK6, à 100 générations.
+- Le run `d14b_integration_cal_chr5_age100_v1` matérialise une fenêtre
+  principale de `5,9914769625 cM` entre `82 789 211` et `91 015 050 bp`, ainsi
+  qu'un défi de censure de `0,2000055436 cM`. La fenêtre principale contient
+  165 290 SNV denses et 487 marqueurs CytoScan harmonisés ; les scénarios 1,
+  1,5, 2, 3 et 5 cM sont tous `EVALUABLE`, avec respectivement 95, 145, 178,
+  261 et 400 marqueurs. Son manifest possède le SHA-256
+  `52e95f594abbb32ff2bebb6d873671530ba14c787b9b8a02c2cf123dd0e779b8`.
+- Le rejeu réel D11a–D14 sur cette fenêtre conserve 900 individus de base,
+  1 800 haplotypes, 18 strates, 165 290 variants denses et 487 variants
+  observables. D13 ajoute huit descendants et 16 transmissions avec zéro
+  erreur mendélienne. D14 réalise quatre breakpoints internes dans deux
+  familles, sans bras censuré, après 22 292 substitutions de mosaïque et sans
+  erreur mendélienne. Les manifests D11a, D11b, D12, D13 et D14 ont pour
+  SHA-256 respectifs `2597f489951130bc974c3633b1c552d9aed6eb1157200de03a12eddec3cf5e47`,
+  `c54a7465fb95314c0d5692dc26049b5f5b981852329bcbf717635ec9cea4a874`,
+  `062764cdf4bd3cf1ec2578fde2f12d4c3da1ab5132bac584b0dd65f78e8b9f1c`,
+  `61771aae1507a329cedc613095ac9b1b8a19ced386b6c4db6a6052c40e032bd1`
+  et `3489ca6330e100d9977e13d2d5884a8f81f8b11f2ae4f620a18192ba1a58322a`.
+- Le reçu privé `d14b_replay_cal_chr5_age100_v1` vérifie les cinq liaisons de
+  manifests, le domaine, la cible, le rôle de panel, les recombinaisons
+  internes et Mendel sans modifier les runs finalisés. Son SHA-256 est
+  `b0193ae7f1a0d3bc1c51332f156efb72392d49ee20b04ac05e85d0b9972c246f`.
+  L'ensemble des sept runs D14b et D11a–D14 occupe environ 70 Mio dans le
+  workspace ignoré ; D11a complète a nécessité environ 16 minutes à elle seule,
+  ce qui devra guider le futur sous-échantillonnage contractuel du micro-panel.
+- Validation finale D14b : 23 tests ciblés, 508 tests de calibration et les
+  822 tests du dépôt réussissent. Les deux configurations et les deux documents
+  D14b générés valident leurs schémas ; compilation, imports et
+  `git diff --check` réussissent. Aucun fichier de `dock6_real`, aucun run
+  scientifique existant et aucun artefact généré n'ont été ajoutés au dépôt.
+- D15 est implémentée dans `simulation/ibd.py` et `materialize_ibd.py`, avec
+  deux schémas stricts et le rapport autonome `report_ibd_injection.py`.
+  La méthode `disjoint_unrelated_haplotype_copy_v1` utilise les cinq longueurs
+  et seuils D14b scellés. La graine `2884982008` est dérivée par SHA-256 de la
+  graine de recombinaison `1004`, du rôle et de l'identifiant de méthode.
+- Le run `d15_integration_cal_chr5_v1` contient cinq paires positives et cinq
+  paires sans injection, avec 25 sujets/matrices disjoints hors pedigree et
+  hors porteurs D14. Les 165 290 variants denses et 487 marqueurs observables
+  sont conservés. Après 35 570 substitutions, les erreurs de copie, les
+  modifications négatives et les erreurs mendéliennes restent nulles. Une
+  comparaison indépendante des fichiers confirme les copies H1 et les cinq
+  négatifs inchangés ; les longueurs 1, 1,5, 2, 3 et 5 cM conservent 95, 145,
+  178, 261 et 400 marqueurs. SHA-256 du manifest D15 :
+  `04efe545f60549963f77e76b39388b67086f8522d8d8636f46c58615b756c96b`.
+- Les négatifs signifient absence d'injection ; leur IBD historique reste
+  inconnu. Les bornes vraies décrivent l'origine commune injectée, sans
+  garantir les limites maximales d'un appel. La matrice et les bornes sont une
+  surcharge locale d'origine à appliquer avant les évaluations d'ascendance.
+  Ce contrôle régional par paire ne qualifie pas le consensus familial 16C,
+  les 22 autosomes ni les effectifs requis ; `calibrated` reste `false`.
+- Validation D15 : 15 tests ciblés et 523 tests de calibration réussis ;
+  imports, schémas et `git diff --check` valides. La suite complète hors
+  calibration n'a pas été relancée : les modules de production et leurs
+  imports publics ne sont pas modifiés par D15.
+- Rapport indépendant `CAL-DEV-D15` généré avec le modèle report-formater,
+  sous `calibration_workspace/d15_validation_report_chr5_v2/` : HTML
+  autonome, JSON agrégé, PDF de six pages et empreintes. Les quatorze sections,
+  les renvois du sommaire et les pieds de contenu ont été contrôlés dans
+  Chrome après pagination complète. L'essai de rapport `v1` est conservé
+  comme diagnostic : l'export CLI initial avait précédé la fin de pagination.
+- D16 est implémentée dans `simulation/roh.py` et `materialize_roh.py`, avec
+  quatre schémas stricts et le rapport indépendant `report_roh_injection.py`.
+  La méthode `within_sample_h1_to_h2_roh_copy_v1` conserve H1 et copie H1 vers
+  H2 dans trois ROH de 2 Mb : éloignée de la cible, centrée sans IBD injecté,
+  centrée chez un positif D15. Un quatrième sujet reste sans injection ; cela
+  ne garantit pas l'absence de ROH historique. Les autres sujets sélectionnés
+  sont hors pedigree, hors porteurs D14 et hors paires/matrices D15.
+- Le run final `d16_integration_cal_chr5_v2`, graine dérivée `3385969657`,
+  conserve 165 290 variants denses et 487 marqueurs observables. Les ROH
+  contiennent 99, 127 et 127 sondes ; 3 814 substitutions H2 sont effectuées.
+  Les erreurs ROH, IBD, mendéliennes, les modifications H1 et des négatifs sont
+  nulles. Une comparaison indépendante complète confirme que seules les trois
+  copies H2 autorisées changent ; la vérité IBD D15 est conservée à l'identique.
+- Le couplage ROH/IBD crée une relation H2–H1 supplémentaire dans la paire D15,
+  enregistrée séparément : environ 1,39749 cM, vérifiés sur 41 840 variants.
+  Ce partage n'est pas une répétition indépendante. Les huit artefacts sont
+  liés au manifest SHA-256
+  `6da095542763fb517dafc23701f3607d0e3b8410f395d5f0a5138e6d09cc0d9f`.
+  Le run `v1`, antérieur à cette vérité dérivée explicite, reste un audit
+  provisoire et ne doit pas servir de référence finale.
+- Validation D16 : 20 tests ciblés et 543 tests de calibration réussis ;
+  imports, schémas et `git diff --check` valides. La suite hors calibration
+  n'a pas été relancée ; aucun module scientifique de production n'est changé.
+  Aucun pipeline complet ni aucune donnée d'étude n'ont été utilisés pour D16.
+  Le rapport `CAL-DEV-D16` est dans
+  `calibration_workspace/d16_validation_report_chr5_v2/` : HTML autonome,
+  JSON agrégé, PDF de six pages, deux figures et empreintes. Pagination,
+  sommaire, pieds de page et absence de débordement sont contrôlés dans Chrome.
+  Le modèle report-formater impose les quatorze sections et la vérification
+  visuelle. Qualification de détection réservée à D26 ; `calibrated=false`.
+- Contrôle avant sauvegarde : un échec intermittent de rejeu D16 provenait
+  exclusivement des horodatages gzip des entrées synthétiques de test. Les
+  fixtures D15/D16 utilisent désormais une compression déterministe ; leurs
+  comparaisons forcent deux heures distinctes, sans affaiblir les assertions.
+- D17 est implémentée dans `simulation/measurement_errors.py` et
+  `materialize_measurement_errors.py`, avec trois schémas stricts et
+  `report_measurement_errors.py`. La méthode
+  `paired_measurement_perturbations_v1` utilise la graine de mesure `1005`
+  et des sous-flux SHA-256 distincts par rôle/profil/opération. Huit profils
+  partent du même D16 : contrôle intact, manque 1 %/5 %, dosage 1 %, phase
+  ponctuelle 2 %, frontières 2 %, densité 50 % et combinaison. Les quotas
+  utilisent l'arrondi au plus proche avec demi supérieur ; les frontières,
+  blocs inversés et points de phase sont explicitement distingués.
+- Le run final `d17_integration_cal_chr5_v2` conserve 908 sujets et 487
+  sondes initiales ; les profils de densité réduite en gardent 244. Ses
+  105 050 événements privés et 26 artefacts sont audités par rejeu puis
+  relecture exhaustive des exports. Tous les audits sont PASS avec zéro
+  changement non enregistré. SHA-256 du manifest final :
+  `48f9010078af21c53a4f3fb8f3b56afd5ec3264732755f342ead4de14cbedc09`.
+  Le premier run `v1` précède la finalisation des identifiants d'événements :
+  il reste un diagnostic, pas la référence finale.
+- Un audit indépendant confirme les huit sources D16 inchangées, le contrôle
+  identique à la vérité et les deux exports non phasés des profils de phase
+  octet pour octet identiques au contrôle. Les comptes de manque et les 4 422
+  dosages modifiés du profil isolé sont vérifiés. Le candidat phasé demeure
+  privé, réservé à l'évaluateur ; il ne remplace jamais une sortie SHAPEIT.
+  La cible déjà observable est conservée, sans protection de son génotype.
+- Validation D17 : 51 tests ciblés et 594 tests de calibration réussis ;
+  imports, compilation, schémas et `git diff --check` valides. La suite hors
+  calibration n'a pas été relancée ; aucun module scientifique de production,
+  aucune dépendance, aucune donnée d'étude et aucun pipeline complet ne sont
+  concernés. Le rapport autonome `CAL-DEV-D17` est sous
+  `calibration_workspace/d17_validation_report_chr5_v1/` : HTML, JSON agrégé,
+  PDF de sept pages, deux figures, deux tableaux et empreintes. Structure en
+  quatorze sections et contrôle visuel selon report-formater ; pagination,
+  sommaire, pieds courants et absence de débordement vérifiés dans Chrome.
+  Ces profils sont appariés et représentent un stress technique, pas un modèle
+  empirique de puce ni des réplications biologiques indépendantes. Les
+  performances restent NOT_EVALUABLE et `calibrated=false`. Le raccord aux
+  manifests globaux D06/D07 reste à réaliser ; l'export D18 est décrit ci-dessous.
+- D18 est implémentée dans `export_blinded_inputs.py`, avec quatre schémas,
+  une configuration versionnée et le rapport `report_blinded_export.py`.
+  La méthode `observed_only_acpa_blinding_v1`, graine `1006`, décode seulement
+  les VCF observés D17. Les profils, identifiants sources et correspondances
+  restent privés ; les noms et ordres des sujets/lots sont rendus opaques.
+- Le run final `d18_integration_cal_chr5_v1` exporte huit lots de 908 sujets :
+  7 264 ACPA, huit VCF, huit registres et huit configurations, soit 7 288
+  fichiers plus l'inventaire opérateur. Les 3 096 280 cellules observées sont
+  réalignées indépendamment sans discordance ; les 30 963 appels absents
+  restent absents et les sources D17 inchangées. Manifest SHA-256 :
+  `009d7bc8ccfc9b9da870f36fef8563e54d18756b5fb44c0ede98a95afdeb5d99`.
+  Inventaire SHA-256 :
+  `30a8516a806de0eb58bc2b64dce9455f086f36c96755cc74b39288bbabf111c8`.
+- La portée D18 v1 est explicitement régionale et technique : configurations
+  00–02 uniquement, sans approbation automatique. Sexe/clinique UNKNOWN,
+  groupe UNSPECIFIED, filiation et génotypes cibles non renseignés ; FID est
+  une clé individuelle technique, pas une preuve d'indépendance familiale.
+  Aucun statut moléculaire CONFIRMED, HGVS ou diagnostic n'est inventé.
+  Des métadonnées d'observation autorisées et une revue humaine sont encore
+  nécessaires pour l'analyse familiale complète. Les sorties doivent rester
+  hors de l'arbre aveugle immuable. Le VCF gzip auxiliaire n'est pas BGZF indexé.
+- Validation D18 : 32 tests ciblés, 29 tests des lecteurs/configurations du
+  pipeline et 626 tests de calibration réussis ; imports, compilation,
+  schémas et `git diff --check` valides. Les vrais lecteurs 01/02/03 sont
+  contrôlés et un run synthétique limité à 00–02 attend bien l'accord humain.
+  Aucun pipeline complet, outil génétique externe, donnée d'étude ni changement
+  de module scientifique de production. La suite complète hors calibration
+  n'a pas été relancée. Rapport final `CAL-DEV-D18` sous
+  `calibration_workspace/d18_validation_report_chr5_v3/` : HTML autonome,
+  JSON agrégé sans sujet, PDF de six pages, deux figures, un tableau et
+  empreintes. Les quatorze sections, sommaire, pieds, blocs et débordements
+  sont contrôlés dans Chrome et relus visuellement selon report-formater.
+  Les rapports `v1/v2` restent des essais de mise en page : correction d'une
+  ligne isolée, regroupement du tableau et bloc des limites maintenu entier
+  pour empêcher un renvoi de sommaire vers un fragment vide de section.
+  `calibrated=false` ; qualification scientifique NOT_EVALUABLE.
+- D19 est implémentée et relue : comparateurs indépendants, lecteur BED avec
+  oracle PLINK, adaptateurs 00–04, six schémas et rapports par étape. Tables,
+  axes, allèles physiques, manques, six champs FAM et fond du jeu cible sont
+  contrôlés ; le taux propre à la cible est distinct du taux global enrichi.
+  Le premier diagnostic `d19_pipeline_cal_chr5_v1` / `d19_integration_cal_chr5_v2`
+  reste immuable avec PASS en 00–02 et NOT_EVALUABLE en 03–04 ; il est complété
+  par les intégrations ci-dessous. L'évaluateur ne lance aucun processus.
+- `CAL-DEC-003` consigne la demande de rendre 03–04 évaluables et autorise le
+  registre technique neutre identique à D18, sans revue clinique/familiale
+  prétendue. `technical_scenarios.py` prépare des dérivés fermés ;
+  `run_technical_scenarios.py` exécute seulement 00–04 avec PLINK. Les
+  configurations, attentes privées et sources sont empreintées ; le reçu
+  CLOSED précède l'évaluation. Aucun pipeline complet ni donnée d'étude.
+- Le scénario positif `d19_inputs_0304_cal_chr5_v1` conserve toutes les
+  observations D18 et ajoute comme entrée séparée une cible technique APC
+  rs1801155, annotée par ClinVar RCV001195214.19. Les confirmations concernent
+  référence/HGVS publics, jamais une mesure sur les sujets. Les génotypes
+  synthétiques RR/RA/AA suivent le rang aveugle modulo trois, sans clinique ni
+  nouvelle graine. Cette cible hors fenêtre ne remplace pas la cible D14–D18.
+- Le run réel `d19_pipeline_0304_cal_chr5_v1` termine 00–04 sur les huit lots
+  de 908 sujets, avec PLINK v1.9.0-b.7.11. L'évaluation finale
+  `d19_evaluation_0304_cal_chr5_v1` donne huit PASS par étape : 3 096 280
+  cellules observées conservées sans discordance de conversion/manque,
+  7 264 appels cibles ajoutés sans discordance et fond inchangé. 03 et 04 sont
+  désormais évaluables en intégration technique régionale. Manifest SHA-256 :
+  `b0fb5ce409b6c125de11c7b86b9f4701009014ad0953345dddf461b19c63c22f`.
+- Le négatif `d19_inputs_duplicate_cal_chr5_v1` ajoute cette cible à une copie
+  d'un lot. `d19_pipeline_duplicate_cal_chr5_v2` échoue intentionnellement en
+  04 (FAILED, V2=4, CLI=2). `d19_evaluation_duplicate_cal_chr5_v1` donne PASS au
+  contrôle du refus précis, pas à une insertion : motif empreinté
+  `target_variant_already_present`, tentative liée, aucune publication 04 et
+  base intacte. Le taux d'erreur d'insertion reste null. Manifest SHA-256 :
+  `0a09b4fd8db412943ef1757a300c801a78689f793c5b3b0b230b30f8f7c82ded`.
+  Le premier négatif `v1.failed` reste diagnostique : le lanceur attendait
+  initialement à tort le code shell 4 au lieu de 2 ; le garde fonctionnait.
+- Rapports finaux séparés sous `calibration_workspace/d19_reports_0304_cal_chr5_v2/`
+  et `d19_reports_duplicate_cal_chr5_v2/` : CAL-DEV-D19 et CAL-REP-00 à 04 par
+  scénario. Les versions `v1` sont des rendus intermédiaires. Tous ces artefacts
+  sont ignorés par Git. Aucun module scientifique de production ni dépendance
+  n'est modifié. Livraison Git D17–D19 demandée sur la branche
+  `calibration/d07-d10-foundations`, sans PR ni fusion sur main. Les sources,
+  configurations, schémas, tests et documents sont inclus ; les panels,
+  vérités, sorties et rapports générés restent hors Git.
+- Sans trio complet, Mendel reste NOT_APPLICABLE. Ces PASS ne remplacent pas
+  les critères transversaux D04/D08, le journal système d'accès non instrumenté,
+  le génome entier ni D06/D07 à sceller avant pilote. `calibrated=false`,
+  `founder_effect_proven=false`. D20 utilise le banc distinct décrit ci-dessous,
+  sans prolonger automatiquement les configurations D19 au-delà de 04.
+- Validation D19 : 76 tests ciblés (dont 29 du complément 03–04),
+  702 tests de calibration et 28 tests ciblés de production 01–04 réussis.
+  Imports, six schémas techniques et `git diff --check` valides ; suite complète
+  hors calibration non relancée. Les tests unitaires simulent PLINK avec un
+  encodeur BED complet ; les intégrations réelles ci-dessus restent séparées.
+  Les douze rapports indépendants HTML/PDF ont chacun 14 sections, deux figures,
+  un tableau et leurs empreintes ; sept pages pour le scénario positif,
+  six à sept pour le négatif. Pagination, sommaires, pieds et absence de
+  débordement contrôlés dans Chrome, pages PDF relues selon report-formater.
+- D20 est implémentée : préspecification, deux schémas, banc IID distinct du
+  panel biologique, oracle QC indépendant, runner borné et rapports séparés.
+  CAL-DEC-004 autorise le nouveau registre synthétique neutre : 192 sujets,
+  22 autosomes, 1 408 loci indépendants, deux lots, 14 cas appariés et graine
+  explicite. Aucune donnée d'étude ou du cache n'est utilisée. Les injections
+  de manque, MAF, hétérozygotie, lots, clone, HWE et exception cible couvrent
+  positifs et négatifs des 19 règles mesurées, sans extrapolation biologique.
+- 00–05 s'exécutent réellement avec PLINK ; 10 est appelée isolément avec
+  des cohortes préspecifiées, producteur D20_COHORT_CONTRACT_FIXTURE. Aucune
+  exécution 06–09 ni faux succès 09/10 dans le manifest d'orchestration.
+  Sexes inconnus : contrôle hors contrat autosomique. Le singleton porteur
+  du cas cible rare ne qualifie pas une comparaison entre lots ; les autres
+  cas apportent la couverture. Les matrices mesurent la conformité à l'oracle,
+  sauf le clone qui dispose d'une vérité de détection directe.
+- Le comparateur strict D20 a révélé un vrai défaut de sérialisation de 10 :
+  `_decimal` écrasait les très petites p-values HWE en zéro. La sortie brute
+  PLINK et une énumération entière indépendante confirment le diagnostic.
+  Le test de régression échoue avant correction puis passe ; le formateur
+  normalise désormais seulement le vrai zéro signé. Aucun test scientifique,
+  seuil, appartenance ou décision d'exclusion n'est changé. Les 168 fichiers
+  BED/BIM/FAM retenus des deux runs sont identiques par SHA-256.
+- Références D20 sous le workspace ignoré : `d20_qc_inputs_v1`, premier run
+  `d20_qc_pipeline_v1`, diagnostic strict `d20_qc_evaluation_v4` (05 PASS,
+  10 FAIL sur une métrique numérique), run corrigé `d20_qc_pipeline_v2` et
+  évaluation finale `d20_qc_evaluation_v5`. Celle-ci donne 14 PASS par étape,
+  six règles en 05 et treize en 10, sans classe manquante ; 7 535 502 cellules
+  retenues contrôlées sans discordance. Manifest d'évaluation SHA-256 :
+  `9c85f886a6a7d5f10448587c1af26131dd91521100aa1edada797fed8da978fe`.
+  Les évaluations v1–v3 utilisaient un contrôle moins strict ; elles ne
+  remplacent ni le FAIL v4 ni la validation corrigée v5.
+- Rapports D20 finaux sous `d20_qc_reports_v2` : CAL-DEV-D20, CAL-REP-05 et
+  CAL-REP-10, HTML/JSON/PDF et empreintes. Chaque PDF compte six pages,
+  quatorze sections, deux figures et un tableau ; sommaires, pieds et absence
+  de débordement contrôlés dans Chrome selon report-formater, puis PDF relus
+  visuellement (dossier complet D20 et pages résultats/limites de 05 et 10).
+  Le dossier
+  `d20_qc_reports_v1` conserve le diagnostic FAIL ; le dossier draft est un
+  essai de mise en page, pas le rendu final.
+- Validation D20 : 785 tests réussis (762 calibration, 23 production QC 05/10),
+  imports et contrôles de whitespace des fichiers suivis comme nouveaux.
+  Aucun ajout de dépendance ; seule la sérialisation de `qc_final` change en
+  production. La suite complète hors calibration/QC n'est pas relancée.
+  `calibrated=false`, décision scientifique REVIEW_REQUIRED ; aucun intervalle
+  populationnel sur ces cas appariés. Modifications non commitées ; aucune PR
+  ni poussée demandée pour D20. D21 est maintenant décrite ci-dessous.
+- D21 est implémentée : préspecification, deux schémas, simulation mendélienne
+  IID, runner borné, oracles indépendants 06/07 et rapports autonomes. Le panel
+  régional D18 et D20 ne suffisaient pas ; le banc ajouté comporte 112 unités
+  de pedigree séparées, 224 sujets, 11 264 loci sur 22 autosomes, deux strates
+  artificielles et sept relations couvrant clone, degrés 1–4 et négatifs.
+  Trois profils appariés : complet, manque 5 %, densité 25 %. Aucune donnée
+  d'étude/1000G/cache ; pas de LD biologique ni de recombinaison par segments.
+- CAL-DEC-005 autorise seulement le registre synthétique et 00–03/05–07.
+  PLINK 1.9 et KING 2.3.2 sont exécutés réellement, sans 04 ou 08–19.
+  `kinship_exclusion_approval` reste en attente dans les trois runs ; aucune
+  exclusion approuvée ni cohorte 09 gelée. Les 112 paires cibles par profil
+  sont mesurées explicitement, dont les négatifs intra-FID ; absence .kin0
+  n'est jamais assimilée à UNRELATED. Deux clones cryptiques sont détectés.
+- Références D21 : `d21_kinship_inputs_v1`, `d21_kinship_pipeline_v1`,
+  `d21_kinship_evaluation_v2` sous le workspace ignoré. L'évaluation v1 est
+  conservée ; v2 ajoute les diagnostics exploratoires et le rejeu du registre.
+  SHA-256 final :
+  `98504dc77674c73cbfc7c46884b0274ebf4960f16944d80aef72556dcd6b8029`.
+- Résultats : 06 PASS sur les trois profils, 22 autosomes, 9 417/5 143/2 377
+  marqueurs. 07 concorde avec les calculs KING, classifications publiées,
+  filiations et proposition de l'oracle, mais FAIL au critère d'indépendance
+  vraie : 5/6/3 paires apparentées sont conservées ensemble, principalement
+  liées au quatrième degré. BA 93,75/89,58/89,58 %, sans cible manquante.
+  Les faux liens rapportés augmentent (11/176/503) : moins d'individus retenus
+  ne signifie pas davantage de puissance. Aucun défaut fonctionnel de 06/07
+  n'est démontré et aucun seuil scientifique n'est modifié après observation.
+- Wilson par degré, bootstrap familial stratifié et performances par strate
+  sont publiés ; intervalles descriptifs conditionnels au panel sélectionné,
+  sans réexécuter le pruning. Minimum de qualification de 200 unités par
+  classe non atteint (16, sauf D1=32). Le diagnostic avant pruning est
+  exploratoire, pas une seconde exécution KING ni une preuve causale.
+- Rapports sous `d21_kinship_reports_v1` : CAL-DEV-D21 et CAL-REP-06 (six
+  pages), CAL-REP-07 (sept pages), HTML/JSON/PDF selon report-formater.
+  Quatorze sections par rapport, deux figures, sommaire et pieds vérifiés
+  dans Chrome, zéro débordement ; pages de résultats, intervalles et sommaire
+  relues sur les PDF natifs. Tout résultat généré reste hors Git.
+- Validation D21 : suite étendue de calibration et production QC/06/07,
+  828 tests réussis, puis rejeu des 41 tests D21 après durcissement des gardes
+  de profils, coordonnées et périmètre jusqu'au degré 4. Soit 834 tests
+  distincts couverts (803 calibration, 31 production) ; aucune dépendance
+  ajoutée. Imports, deux schémas et whitespace des fichiers suivis/nouveaux
+  valides. La suite complète hors de ce périmètre n'est pas relancée.
+- D21 est terminée comme évaluateur, pas comme qualification de performance.
+  `calibrated=false`, `founder_effect_proven=false`, REVIEW_REQUIRED.
+  Les modifications D20 préexistantes restent préservées ; aucun commit,
+  push ou PR demandé. Sur décision ultérieure de l'utilisateur, l'étude du
+  FAIL 07 est reportée après l'ensemble de l'évaluation ; D22 se poursuit
+  séparément sans qualifier ni modifier 07.
+- D22 est implémentée et évaluée : quatre cas synthétiques appariés, 128 sujets,
+  22 autosomes, 1 408 loci IID. Référence préspecifiée de 108 sujets (40 A,
+  40 B, 24 mélanges, quatre atypiques) et 20 projetés. Fréquences artificielles,
+  pas de population humaine/1000G, LD biologique, puce réelle ou données d'étude.
+- CAL-DEC-006 autorise 00–03 réelles puis composants 08/09 isolés. Les entrées
+  04–07 sont des fixtures D22_UPSTREAM_CONTRACT_FIXTURE. Les revues de 09
+  portent calibration_contract_fixture : pas de revue humaine scientifique,
+  résolution d'exclusion réelle ou approbation de D21. Le manifest de pipeline
+  ne prétend aucun succès 04–09 ; le reçu séparé ancre les vrais composants.
+- Le premier run D22 a révélé un défaut réel de schéma en 08 : la regex de
+  REFERENCE_SAMPLE_COUNT rejetait à tort 108 et les autres entiers commençant
+  par 1. Six cas minimaux échouent avant correction. Le schéma accepte tous
+  les entiers canoniques >= 2, sans changement de calcul ou seuil PCA.
+  L'échec initial reste sous d22_structure_pipeline_v1.failed ; le rejeu
+  utilise les mêmes entrées et produit quatre cas clos.
+- Références D22 sous workspace ignoré : d22_structure_inputs_v2,
+  d22_structure_pipeline_v2 et d22_structure_evaluation_v2. SHA-256 final :
+  `c51bd328e2ac682255ace95cc4e766941f68b2620654440ef34f874de10990bd`.
+  Les inputs v1 sont une préparation de développement non exécutée ;
+  l'évaluation v1 est conservée. La v2 durcit les liaisons/signatures sans
+  changer les mesures. Aucun résultat D20/D21 n'est modifié.
+- 08 : quatre PASS de conformité contre Gram/eigh indépendant de la SVD.
+  1 406 loci informatifs dans les trois premiers cas, 1 385 avec manque 5 %.
+  Huit atypiques détectés, dont quatre copies projetées, et zéro alerte négative.
+  Sur la seule référence indépendante : 4/4 positifs, IC Wilson 51,01–100 %,
+  0/104 négatifs, IC 0–3,56 %. Pas d'intervalle sur les copies dépendantes.
+  Les mélanges ont une coordonnée moyenne ~0,5 entre centroïdes, sans
+  prétention d'estimation d'ascendance. Les scores de référence sont invariants
+  aux projetés et rôles descriptifs après le seul alignement de signe.
+- 09 : quatre PASS ; sept cohortes, 896 lignes de membres et 84 décisions par
+  gel conformes à l'oracle. Deux gels par cas, zéro différence des tables,
+  rapports et sept keep. Quatre contrôles négatifs refusent revues absentes,
+  mauvais SHA, liste incomplète et date sans fuseau, sans cohorte publiée.
+- Rapports D22 enrichis le 30 octobre 2026, selon report-formater :
+  d22_structure_reports_v3 (présentation 2.0), CAL-DEV-D22 et CAL-REP-08
+  (neuf pages, quatre figures et trois rappels mathématiques chacun),
+  CAL-REP-09 (huit pages, deux figures et deux rappels mathématiques).
+  HTML/JSON/PDF autonomes, quatorze sections ; sommaires, pieds et absence
+  de débordement contrôlés dans Chrome ; graphiques et formules relus en PDF.
+  Le rendu initial v1 reste conservé ; v2 est un brouillon de mise en page.
+  visual_data.json contient les agrégations sans identifiants et les empreintes
+  des sources closes. Aucun run ni calcul PCA n'a été relancé : évaluation et
+  verdicts inchangés. Les 51 tests D22 passent pour cette reprise du rendu.
+- Exigence utilisateur permanente : les prochains rapports doivent présenter
+  des graphiques scientifiques de résultats et les équations/règles réellement
+  utilisées, avec variables, unités, hypothèses, seuils et incertitudes.
+  Inscrite dans AGENTS.md, calibration/CONVENTIONS_DEVELOPPEMENT.md,
+  le plan section 6.3 et calibration/templates/README.md. Des cartes chiffrées
+  ou un schéma de parcours ne remplacent pas les graphiques ; ne jamais exposer
+  d'identifiants individuels ni confondre dispersion, IC et indépendance.
+- Validation D22 : 871 tests de calibration/production 08/09/contrats réussis,
+  puis six tests ajoutés de sécurité/rendu réussis. Les 47 tests D22 repassent
+  après la relecture finale : 877 tests distincts couverts (850 calibration,
+  27 production). Imports, schémas et whitespace contrôlés ;
+  aucune dépendance ajoutée. Suite complète hors périmètre non relancée.
+- Ces PASS D22 restent isolés et techniques : REVIEW_REQUIRED,
+  calibrated=false, founder_effect_proven=false. FAIL 07 toujours ouvert,
+  étude reportée à la revue globale. Aucun commit/push demandé. Prochaine
+  action : D23, évaluation du phasage 10A/11/12/12A, après contrôle de ses
+  outils et références ; aucun lancement automatique de l'étude.
+- D23a approuvée puis réalisée le 30 octobre 2026, CAL-DEC-007. D18 régional
+  et les bancs IID D21/D22 ne suffisaient pas au contrôle du phasage.
+  Nouveau panel 1000G lié à la puce : 40 sujets, 8 trios et 16 isolés,
+  32 fondateurs issus de 64 groupes donneurs D10 distincts. Les 22 VCF/index
+  publics du Bureau ont été vérifiés contre les MD5 officiels et SHA-256,
+  sans lecture du cache interne ni des données d'étude. Référence D10 :
+  1 403 sujets, disjointe des 900/899 donneurs calibration/validation ; aucun
+  génotype du panel de validation n'est inspecté. L'instantané exact du
+  catalogue D10 1.0.0 est conservé comme ressource active de vérification,
+  sans réécriture du manifest historique. L'archive locale de cartes non
+  conforme a été refusée ; la carte publique épinglée est acquise dans le
+  nouveau workspace. Les sources du Bureau restent inchangées.
+- Raccord optionnel implémenté : inputs.phasing_reference_selection est une
+  entrée signée de 12/12A ; require_reference_sample_selection=true interdit
+  tout retour silencieux au panel complet. 12 sélectionne avant harmonisation,
+  avec méthode et identifiant d'univers distincts ; 12A filtre avant la clé
+  de cache et vérifie le contenu extrait. Sans sélection, profils historiques
+  inchangés. Les noms synthétiques seuls ne prouvent pas l'absence de donneurs.
+- Référence active D23a : calibration_workspace/d23a_phasing_inputs_v2,
+  manifest SHA-256 e91d686f5cc63d17a95f64dc52bb481d0836c898f23d03344a801b59b60d33cb.
+  23 155 marqueurs : 23 154 sondes, une cible technique supplémentaire APC
+  chr5 (annotation D19, pas DOCK6). Génotypes moléculaires injectés sous règle
+  explicite, enfants par transmissions Haldane, clinique UNKNOWN. Les 926 200
+  génotypes, copies fondatrices, transmissions, pedigrees et cibles sont
+  relus sans discordance ; 7 563 génotypes hétérozygotes rares disponibles.
+  Puce sous-échantillonnée, pas de qualification de densité ou de KING.
+- Le brouillon d23a_phasing_inputs_v1 est conservé mais interdit d'usage : il
+  proposait la graine des méioses pour le futur phasage. Clôture v2 avec
+  fondateurs 2301/méioses 2302 privés et phasage futur 2303. Seuls trois
+  fichiers de paramètres/chemins changent ; tous les artefacts génétiques
+  gardent leur SHA-256, l'audit est rejoué et le manifest parent est lié.
+  La commande --from-preparation interdit toute modification scientifique.
+  Le profil public reste 00–02, sans approbation automatique ; le fichier
+  phasing_parameters.yaml n'est pas une configuration complète de D23.
+- Rapport final D23a : d23a_phasing_reports_v3/CAL-DEV-D23A, HTML/JSON/PDF
+  autonomes selon report-formater ; sept pages, quatorze sections, deux
+  graphiques et deux rappels mathématiques. Pagination/sommaire/pieds et zéro
+  débordement contrôlés dans Chrome, formules/figures/limites relues en PDF.
+  Agrégats seulement, aucun identifiant individuel. Rendus v1/v2 conservés
+  comme brouillons de présentation.
+- Validation D23a : suite complète initiale 1 197 tests réussis, puis 61 tests
+  ciblés et les quatre tests de production 12 repassent après durcissements.
+  Le nouveau parcours 12 avec sélection utilise des exécutables simulés ;
+  l'intégration réelle D23a exécute seulement bcftools, jamais SHAPEIT5.
+  Imports, schémas et whitespace contrôlés ; aucune dépendance ajoutée.
+  D22 garde son SHA inchangé, D20/D21 préservés. Aucun commit/push demandé.
+  D23a est une préparation, pas une validation des performances : D23 et ses
+  quatre évaluateurs/rapports restent à développer. FAIL 07 ouvert, étude
+  reportée après l'évaluation ; calibrated=false, founder_effect_proven=false.
 - Le plan de développement est créé sous
   `calibration/PLAN_DEVELOPPEMENT_PANEL_SIMULATION.md`. Il sépare strictement
   données aveugles, vérité simulée, panel de calibration et panel de validation.
@@ -74,9 +795,20 @@ Dernière mise à jour : 28 octobre 2026
 - Aucun fichier de `dock6_real` ne peut servir au réglage. Aucun changement de
   méthode, aucune correction de datation et aucun passage de 16C à
   `calibrated: true` ne sont autorisés sans rapports audités et décision humaine.
-- Aucune simulation ni aucun outil externe n'a été lancé. Les prochaines étapes
-  sont D07 pour le manifest reproductible de run, puis D08 pour les gardes
-  d'isolation, avant toute demande d'ouverture du micro-panel.
+- Les intégrations D11a et D11b bornées n'ont ni lancé le pipeline complet ni
+  lu ou modifié une donnée d'étude. Les manifests D11a et D11b valides sont liés
+  au même panel et au même domaine : le prérequis technique de D12 est
+  satisfait. Avec un seul marqueur de puce sur 100 kb, ce diagnostic ne
+  remplace toutefois pas le futur micro-panel D33 ni son contrôle de densité.
+  D12 et D13 sont désormais matériellement validées sur ce domaine. La
+  D14 est désormais matériellement contrôlée pour la chaîne et la censure sur
+  le domaine court, puis pour les recombinaisons internes sur le domaine D14b
+  large. D14b lève le blocage documentaire et technique placé avant D15. La
+  D15 à D18 sont désormais techniquement validées sur ce domaine, dans leurs
+  portées respectives. D19 fournit les évaluateurs de concordance 00–04 et
+  des intégrations positives réelles 00–04, plus un contrôle de rejet en 04.
+  D20 et D21 sont maintenant évaluées dans leurs périmètres respectifs,
+  sans transformer les entrées manquantes ou les FAIL en succès.
 
 ## Nouveau run complet V2 — 27 octobre 2026
 
@@ -1074,12 +1806,18 @@ signalées comme conditionnées par la sélection porteur/non-porteur.
 
 ## Priorités de la prochaine session
 
-1. Lancer un nouveau run complet avec
-   `config/studies/dock6.16b.next.yaml` et le surveiller jusqu'à `16C`.
-2. Vérifier les audits, empreintes, effectifs agrégés et le statut 16C du nouveau
-   run sans exposer de données individuelles.
-3. Conserver les étapes 17–19 désactivées tant que leur raccord à 16C n'a pas
-   été spécifié et testé séparément.
+1. Faire lire les quatre rapports D23 (`d23_phasing_reports_v3`) ; ne pas
+   confondre conformité PASS et qualité scientifique. Préparer D24 seulement
+   sur demande, avec contrôle de sa vérité de segment fondateur : D23a n'est
+   pas à elle seule un panel positif d'effet fondateur. Garder ouverte la
+   sensibilité de phase à plus forte densité avant qualification IBD.
+   Le FAIL scientifique 07 de D21 reste ouvert : son étude de sensibilité
+   est reportée après l'ensemble de l'évaluation, sur décision de l'utilisateur.
+2. Préserver les empreintes, observations appariées et séparation
+   calibration-validation. D20 à D23 ont leurs rapports indépendants ;
+   le scellement global D06/D07 reste requis avant les runs du pilote.
+3. Ne pas confondre D17/D18 du plan de calibration avec les étapes 17–19 du
+   pipeline scientifique. Aucun nouveau run de l'étude n'est demandé.
 
 Le plan `PLAN_ETAPE_16B_ENRICHISSEMENT_HAPLOTYPE_FONDATEUR.md` est maintenant
 implémenté : `16B_evaluate_founder_haplotype_enrichment` préserve 15 comme LD de
@@ -1208,12 +1946,12 @@ Au début de la prochaine session :
 ```bash
 cd /Users/utilisateur/Documents/python_programme/Effet_fondateur2
 source .venv/bin/activate
-git checkout main
-git pull --ff-only origin main
 git status -sb
+git branch --show-current
 ```
 
-Lire ensuite `AGENTS.md`, ce fichier et `PIPELINE_V2_PRECODE.md`. La prochaine
-action est la revue manuelle des sorties IBS du run
-`2026-08-12T045841Z_dock6_reunion_founder_effect_b92312e6`, avant toute
-activation de la datation de l'étape `14`.
+Lire ensuite `AGENTS.md`, ce fichier et le plan de développement de calibration.
+La branche de travail est `calibration/d07-d10-foundations` ; ne pas changer de
+branche ni lancer un run d'étude automatiquement. D23 est réalisée : discuter
+de la sensibilité à la densité et des prérequis D24 avant toute nouvelle
+analyse ; le FAIL 07 de D21 est conservé pour la revue globale finale.

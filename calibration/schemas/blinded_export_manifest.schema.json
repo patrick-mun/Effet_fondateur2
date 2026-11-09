@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Manifest privé d'export D18",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "manifest_state",
+    "method_id",
+    "blinded_export_manifest_id",
+    "created_at",
+    "panel_role",
+    "scope",
+    "source_manifest_sha256",
+    "configuration_sha256",
+    "blinding_seed",
+    "inventory_sha256",
+    "blinding_map_sha256",
+    "bundle_count",
+    "file_count",
+    "audits",
+    "biological_truth_modified",
+    "calibrated",
+    "founder_effect_proven"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "manifest_state": {
+      "const": "FINALIZED"
+    },
+    "method_id": {
+      "const": "observed_only_acpa_blinding_v1"
+    },
+    "blinded_export_manifest_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "panel_role": {
+      "enum": [
+        "CALIBRATION",
+        "VALIDATION"
+      ]
+    },
+    "scope": {
+      "const": "REGIONAL_SOURCE_VALIDATION_ONLY"
+    },
+    "source_manifest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "configuration_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "blinding_seed": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "inventory_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "blinding_map_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "bundle_count": {
+      "type": "integer",
+      "minimum": 2
+    },
+    "file_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "audits": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "bundle_id",
+          "sample_count",
+          "marker_count",
+          "missing_call_count",
+          "genotype_mismatch_count",
+          "truth_leak_count"
+        ],
+        "properties": {
+          "bundle_id": {
+            "type": "string",
+            "pattern": "^B[0-9a-f]{16}$"
+          },
+          "sample_count": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "marker_count": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "missing_call_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "genotype_mismatch_count": {
+            "const": 0
+          },
+          "truth_leak_count": {
+            "const": 0
+          }
+        }
+      }
+    },
+    "biological_truth_modified": {
+      "const": false
+    },
+    "calibrated": {
+      "const": false
+    },
+    "founder_effect_proven": {
+      "const": false
+    }
+  }
+}

@@ -1,0 +1,203 @@
+{
+  "schema_version": "1.0.0",
+  "catalog_id": "calibration_public_references_v1",
+  "catalog_version": "1.0.0",
+  "catalog_state": "FROZEN",
+  "reviewed_on": "2026-10-28",
+  "scope": {
+    "project": "Effet_fondateur2_calibration",
+    "purpose": "SYNTHETIC_CALIBRATION_ONLY",
+    "default_assembly": "GRCh38",
+    "real_study_data_allowed": false,
+    "remote_payload_sha256_required_before_use": true
+  },
+  "sources": [
+    {
+      "source_id": "igsr_1kg_3202_phased_grch38_20220422",
+      "source_type": "PHASED_HAPLOTYPE_PANEL",
+      "version": "20220422_3202_phased_SNV_INDEL_SV",
+      "allowed_roles": [
+        "DONOR_POOL_CANDIDATE",
+        "PHASING_REFERENCE_CANDIDATE"
+      ],
+      "origin": {
+        "provider": "IGSR_1000_GENOMES",
+        "canonical_url": "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/working/20220422_3202_phased_SNV_INDEL_SV",
+        "documentation_url": "https://www.internationalgenome.org/data-portal/data-collections/1000genomes_30x/"
+      },
+      "assembly": {
+        "scope": "GENOMIC_COORDINATES",
+        "name": "GRCh38",
+        "associated_panel_assembly": "GRCh38",
+        "verified": true,
+        "evidence_url": "https://www.internationalgenome.org/data-portal/data-collections/1000genomes_30x/"
+      },
+      "rights": {
+        "review_status": "TERMS_VERIFIED",
+        "use_decision": "ALLOWED_LOCAL_CALIBRATION",
+        "terms_label": "IGSR disclaimer and EMBL-EBI Terms of Use",
+        "terms_url": "https://www.internationalgenome.org/IGSR_disclaimer/",
+        "attribution_required": true,
+        "redistribution_allowed_by_project": false,
+        "reviewed_on": "2026-10-28",
+        "notes": "Le jeu 1000 Genomes est sans embargo, mais les conditions IGSR, les déclarations de réutilisation et les publications associées doivent rester vérifiées et citées."
+      },
+      "fingerprint": {
+        "algorithm": "SHA-256",
+        "sha256": "71366add1f73a5a3283b8d89d5253f0b5b6e963032eb4a7e1862c19228c4579d",
+        "scope": "PROVIDER_MANIFEST",
+        "verification": "PROVIDER_MANIFEST_PROJECT_VERIFIED",
+        "asset_url": "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/working/20220422_3202_phased_SNV_INDEL_SV/20220804_manifest.txt"
+      },
+      "catalog_binding": {
+        "repository_path": "config/references/1000g_high_coverage_grch38_phased.json",
+        "sha256": "80dae9656f5cac974b784b1f3c87e3120557e4facc064b0979878c0d8d95af6f"
+      },
+      "acquisition": {
+        "download_during_d09": false,
+        "provider_checksum_algorithm": "MD5",
+        "provider_checksum_required": true,
+        "local_sha256_required_before_use": true,
+        "local_sha256_record": "CALIBRATION_RUN_MANIFEST"
+      }
+    },
+    {
+      "source_id": "igsr_1kg_3202_population_metadata_20130606",
+      "source_type": "POPULATION_METADATA",
+      "version": "20130606_g1k_3202_samples_ped_population",
+      "allowed_roles": ["ANCESTRY_REFERENCE_METADATA"],
+      "origin": {
+        "provider": "IGSR_1000_GENOMES",
+        "canonical_url": "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/20130606_g1k_3202_samples_ped_population.txt",
+        "documentation_url": "https://www.internationalgenome.org/data-portal/data-collections/1000genomes_30x/"
+      },
+      "assembly": {
+        "scope": "ASSEMBLY_INDEPENDENT",
+        "name": "ASSEMBLY_INDEPENDENT",
+        "associated_panel_assembly": "GRCh38",
+        "verified": true,
+        "evidence_url": "https://www.internationalgenome.org/data-portal/data-collections/1000genomes_30x/"
+      },
+      "rights": {
+        "review_status": "TERMS_VERIFIED",
+        "use_decision": "ALLOWED_LOCAL_CALIBRATION",
+        "terms_label": "IGSR disclaimer and EMBL-EBI Terms of Use",
+        "terms_url": "https://www.internationalgenome.org/IGSR_disclaimer/",
+        "attribution_required": true,
+        "redistribution_allowed_by_project": false,
+        "reviewed_on": "2026-10-28",
+        "notes": "Les métadonnées sont utilisées uniquement pour construire des partitions de référence documentées ; aucune étiquette ne doit être interprétée comme une identité individuelle."
+      },
+      "fingerprint": {
+        "algorithm": "SHA-256",
+        "sha256": "4e164b717433fc9bfc16e29b20e5b4659b4216185b3275322d421fe3d323c132",
+        "scope": "REMOTE_ASSET",
+        "verification": "PROJECT_VERIFIED",
+        "asset_url": "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/20130606_g1k_3202_samples_ped_population.txt"
+      },
+      "catalog_binding": {
+        "repository_path": "config/references/1000g_ancestry_grch38.json",
+        "sha256": "f39c53159754a601040d802b6d7567dcaee5612f77fa8e2121695c8c0eecfa69"
+      },
+      "acquisition": {
+        "download_during_d09": false,
+        "provider_checksum_algorithm": "NONE",
+        "provider_checksum_required": false,
+        "local_sha256_required_before_use": true,
+        "local_sha256_record": "CALIBRATION_RUN_MANIFEST"
+      }
+    },
+    {
+      "source_id": "igsr_1kg_2504_unrelated_sequence_index",
+      "source_type": "UNRELATED_SAMPLE_INDEX",
+      "version": "1000G_2504_high_coverage.sequence.index",
+      "allowed_roles": ["UNRELATED_REFERENCE_METADATA"],
+      "origin": {
+        "provider": "IGSR_1000_GENOMES",
+        "canonical_url": "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/1000G_2504_high_coverage.sequence.index",
+        "documentation_url": "https://www.internationalgenome.org/data-portal/data-collections/1000genomes_30x/"
+      },
+      "assembly": {
+        "scope": "ASSOCIATED_PANEL",
+        "name": "ASSEMBLY_INDEPENDENT",
+        "associated_panel_assembly": "GRCh38",
+        "verified": true,
+        "evidence_url": "https://www.internationalgenome.org/data-portal/data-collections/1000genomes_30x/"
+      },
+      "rights": {
+        "review_status": "TERMS_VERIFIED",
+        "use_decision": "ALLOWED_LOCAL_CALIBRATION",
+        "terms_label": "IGSR disclaimer and EMBL-EBI Terms of Use",
+        "terms_url": "https://www.internationalgenome.org/IGSR_disclaimer/",
+        "attribution_required": true,
+        "redistribution_allowed_by_project": false,
+        "reviewed_on": "2026-10-28",
+        "notes": "L'index sert à identifier la partition publique non apparentée ; son contenu ne doit pas être confondu avec une preuve d'indépendance des panels simulés D10."
+      },
+      "fingerprint": {
+        "algorithm": "SHA-256",
+        "sha256": "0ac5fdda0b60b6575b1867827f53e39d723f915b325b10bf023b2dc3d71c08f2",
+        "scope": "REMOTE_ASSET",
+        "verification": "PROJECT_VERIFIED",
+        "asset_url": "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/1000G_2504_high_coverage.sequence.index"
+      },
+      "catalog_binding": {
+        "repository_path": "config/references/1000g_ancestry_grch38.json",
+        "sha256": "f39c53159754a601040d802b6d7567dcaee5612f77fa8e2121695c8c0eecfa69"
+      },
+      "acquisition": {
+        "download_during_d09": false,
+        "provider_checksum_algorithm": "NONE",
+        "provider_checksum_required": false,
+        "local_sha256_required_before_use": true,
+        "local_sha256_record": "CALIBRATION_RUN_MANIFEST"
+      }
+    },
+    {
+      "source_id": "shapeit4_hapmap_grch38_git_7a0cab7",
+      "source_type": "GENETIC_MAP",
+      "version": "git_7a0cab7ea8ce4a90fbadcd93a9f7d168af816f03",
+      "allowed_roles": ["RECOMBINATION_MAP"],
+      "origin": {
+        "provider": "SHAPEIT4_HAPMAP",
+        "canonical_url": "https://raw.githubusercontent.com/odelaneau/shapeit4/7a0cab7ea8ce4a90fbadcd93a9f7d168af816f03/maps/genetic_maps.b38.tar.gz",
+        "documentation_url": "https://github.com/odelaneau/shapeit4/blob/7a0cab7ea8ce4a90fbadcd93a9f7d168af816f03/docs/index.html"
+      },
+      "assembly": {
+        "scope": "GENOMIC_COORDINATES",
+        "name": "GRCh38",
+        "associated_panel_assembly": "GRCh38",
+        "verified": true,
+        "evidence_url": "https://github.com/odelaneau/shapeit4/blob/7a0cab7ea8ce4a90fbadcd93a9f7d168af816f03/docs/index.html"
+      },
+      "rights": {
+        "review_status": "REPOSITORY_TERMS_VERIFIED_SOURCE_RIGHTS_PARTIAL",
+        "use_decision": "ALLOWED_LOCAL_CALIBRATION",
+        "terms_label": "SHAPEIT4 repository MIT license; maps documented as originating from HapMap",
+        "terms_url": "https://raw.githubusercontent.com/odelaneau/shapeit4/7a0cab7ea8ce4a90fbadcd93a9f7d168af816f03/LICENSE",
+        "attribution_required": true,
+        "redistribution_allowed_by_project": false,
+        "reviewed_on": "2026-10-28",
+        "notes": "La licence MIT du dépôt est vérifiée, mais elle ne démontre pas à elle seule tous les droits sur les données HapMap dérivées. Le projet autorise l'usage local de l'archive épinglée et interdit sa redistribution sans revue séparée."
+      },
+      "fingerprint": {
+        "algorithm": "SHA-256",
+        "sha256": "04f97acc6524d75e1dbc397e72cf6776b2f1e33f72a06ee477ef69359a97c69e",
+        "scope": "REMOTE_ASSET",
+        "verification": "PROJECT_VERIFIED",
+        "asset_url": "https://raw.githubusercontent.com/odelaneau/shapeit4/7a0cab7ea8ce4a90fbadcd93a9f7d168af816f03/maps/genetic_maps.b38.tar.gz"
+      },
+      "catalog_binding": {
+        "repository_path": "config/references/shapeit4_hapmap_grch38.json",
+        "sha256": "8c3c1aca3e4b95888682e70ea4e7754125a3fb29a16e617eaabb6c9d61bddd1a"
+      },
+      "acquisition": {
+        "download_during_d09": false,
+        "provider_checksum_algorithm": "NONE",
+        "provider_checksum_required": false,
+        "local_sha256_required_before_use": true,
+        "local_sha256_record": "CALIBRATION_RUN_MANIFEST"
+      }
+    }
+  ]
+}

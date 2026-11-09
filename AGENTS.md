@@ -128,6 +128,19 @@ une estimation Gamma implémentée en Python.
 - Ne pas modifier une méthode scientifique ou son interprétation sans test,
   comparaison avec un résultat de référence et signalement explicite.
 
+## Rapports de calibration — exigence permanente
+
+- Produire des graphiques de résultats qui expliquent les mesures, pas
+  seulement des cartes de chiffres ou un schéma du parcours.
+- Rappeler les équations réellement utilisées, avec variables, unités,
+  hypothèses, seuils et limites ; pour une étape logique, représenter les
+  règles de décision plutôt qu'inventer une formule statistique.
+- Montrer l'incertitude et les effectifs indépendants lorsque mesurables.
+- Conserver la provenance des graphiques, la confidentialité, les verdicts
+  et les résultats sources ; ne jamais inventer une courbe ou une précision.
+- Appliquer les détails du contrat de rapport dans
+  `calibration/CONVENTIONS_DEVELOPPEMENT.md` et le plan de calibration.
+
 ## Validation
 
 - Commencer par `git diff --check`.

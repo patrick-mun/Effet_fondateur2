@@ -7,7 +7,176 @@ Les fixtures devront être petites, entièrement synthétiques et sans
 correspondance avec une personne ou une donnée de `dock6_real`.
 
 Les premiers contrôles couvrent le schéma de configuration D05, le manifest de
-vérité D06 ainsi que la cohérence documentaire de D03 et D04. Ils vérifient
-notamment le refus des clés dupliquées, des seuils pilote prématurément
-renseignés, des chemins de vérité non privés, des vérités non typées, des
-consommateurs manquants et de toute violation déclarée de l'aveuglement.
+vérité D06, le manifest reproductible de run D07 ainsi que la cohérence
+documentaire de D03 et D04. Ils vérifient notamment le refus des clés
+dupliquées, des seuils pilote prématurément renseignés, des chemins de vérité
+non privés, des vérités non typées, des consommateurs manquants, des
+provenances incomplètes, des commandes non portables et de toute violation
+déclarée de l'aveuglement. Les tests D08 utilisent uniquement des fichiers
+synthétiques temporaires et démontrent que les chemins réels, liens
+symboliques ou physiques et collisions calibration–validation sont bloqués
+avant l'ouverture d'un artefact. Les tests D09 valident le catalogue fermé des
+références publiques, l'unicité des sources, les versions, origines HTTPS,
+assemblages, droits d'usage local et empreintes, puis recalculent les SHA-256
+des trois catalogues techniques liés sans télécharger de donnée génétique. Les
+tests D10 démontrent sur des identifiants entièrement synthétiques que les
+groupes mixtes quittent la référence de phasage, qu'aucun groupe ne traverse
+les partitions, que toutes les sources sont affectées exactement une fois et
+que toute incohérence de chemin, empreinte, effectif ou catalogue est refusée.
+Ils contrôlent aussi la lecture des deux formats publics, la production
+atomique sous permissions privées, l'absence d'identifiant dans le manifest,
+le refus d'écrasement et le rejet d'une entrée corrompue.
+
+Les tests D11b construisent une fausse archive fournisseur et une base SQLite
+entièrement synthétiques. Ils vérifient la version `NA36.r1`, GRCh38, la
+normalisation depuis `Annotations` plutôt que depuis la liste SNPQC, les quatre
+relations alléliques, les exclusions ambiguës, les empreintes, le refus des
+dossiers d'exports individuels, le filtrage du VCF et le schéma du manifest.
+Aucun fichier ACPA réel n'est lu.
+
+Les tests D11 utilisent exclusivement quatre donneurs synthétiques. Ils
+contrôlent le schéma du manifest, le déterminisme de la graine, la bijection
+des copies, l'absence de paire issue du même donneur, la conservation exacte du
+LD haplotypique, la concordance des génotypes, l'interpolation de carte et la
+matérialisation atomique avec un exécuteur `bcftools` simulé.
+
+Les tests D12 utilisent uniquement des identifiants et VCF synthétiques. Ils
+contrôlent le schéma de configuration, la liaison empreintée D11a–D11b, le
+déterminisme, la bijection des haplotypes, les proportions 50/50 et leur somme,
+la conservation des allèles, l'univers de marqueurs D11b, les permissions
+privées et l'absence de strate ou de donneur dans le panel aveugle.
+
+Les tests D13 utilisent huit fondateurs entièrement synthétiques. Ils vérifient
+les deux schémas, le déterminisme de la graine, les quatre trios du modèle de
+cousins germains, les coefficients de parenté dérivés, la transmission exacte
+de chaque copie et l'absence de recombinaison. Un scénario métissé contrôle que
+l'ascendance du descendant suit les haplotypes réellement transmis, et non la
+moyenne déclarée de ses parents. La matérialisation temporaire vérifie aussi les
+empreintes D12, les permissions et l'absence de vérité dans le VCF aveugle.
+
+Les tests D14 couvrent la carte avec positions dupliquées cohérentes,
+l'interpolation réversible, les breakpoints internes, la censure des fenêtres
+courtes, le déterminisme, la disjonction familiale et l'injection du variant.
+La matérialisation temporaire lie trois manifests synthétiques, contrôle Mendel,
+valide le schéma final et vérifie l'aveuglement ainsi que les permissions.
+
+Les tests D14b couvrent la formule aux dix âges, l'arrondi extérieur des
+bornes, les fenêtres infaisables, les cartes non monotones, la séparation de
+la série principale et du défi, la densité insuffisante, le déterminisme de la
+matérialisation et les deux schémas. Le reçu de rejeu est testé avec une chaîne
+de manifests entièrement synthétique et refuse une empreinte D12 altérée.
+
+Les tests D15 contrôlent les cinq longueurs, le déterminisme, les 25 sujets
+disjoints, les copies positives, H2 et les variants extérieurs conservés, les
+négatifs inchangés, les bornes nulles, les GT invalides et les transmissions.
+Le matérialisateur est testé dans un workspace temporaire : schémas,
+reproductibilité des empreintes, refus d'écrasement, altération d'entrée,
+chemin réel interdit et rendu du rapport sans vérité individuelle.
+
+Les tests D16 couvrent la copie H1→H2, H1 conservée, l'autozygotie des trois
+intervalles, la coexistence ROH/IBD, le témoin sans injection, les copies
+extérieures inchangées, les limites de carte, les défauts de densité et les GT
+invalides. Ils refusent les modifications des négatifs/matrices IBD ou d'un
+sujet de transmission, ainsi qu'un partage IBD source devenu incohérent.
+Une régression dédiée vérifie les bornes et les copies du partage H2–H1
+supplémentaire induit par le cas couplé.
+Les matérialisations temporaires vérifient schémas, empreintes,
+déterminisme, permissions, absence d'écrasement et rapport agrégé sans nom
+d'échantillon.
+
+Les tests D17 contrôlent les huit profils, les quotas exacts, les dosages
+effectivement modifiés, le manque complet, les sondes retirées, la cible et la
+préservation de la vérité. La phase ponctuelle conserve les dosages ; les
+commutations inversent les blocs et repartent à zéro par chromosome. Les
+registres incomplets, les exports altérés, les sous-graines ou dénominateurs
+incohérents et les fuites de chemin sont refusés. Le rejeu, les empreintes,
+permissions privées, publications atomiques, reproductibilité entre deux
+horloges et rapport sans identifiant individuel sont testés en dossiers
+temporaires exclusivement.
+
+Les tests D18 vérifient permutation et pseudonymisation inversibles, appels
+ACPA/VCF et manque inchangés, vrais lecteurs 01/02/03, configuration limitée
+à 00–02 et accord humain non automatique. Ils couvrent reproductibilité,
+permissions, altérations de source/export, fuite de champ ou fichier non
+inventorié, liens, retrait atomique après échec et rapport agrégé sans sujet.
+Toutes les données sont synthétiques et écrites en dossiers temporaires.
+
+Les tests D19 couvrent pertes, ajouts, doublons, permutations et substitutions
+des tables et matrices. Un oracle BED de la spécification PLINK est séparé de
+l'encodeur de fixture ; en-têtes, tailles, padding, allèles absents, variantes
+monomorphes, manque complet et champs FAM sont contrôlés. Un petit rejeu réel
+Python 00–02 vérifie les adaptateurs sans outil génétique ; des mutations
+réempreintées de ses sorties doivent rester FAIL. Exécution absente = NE,
+artefact réussi mais absent = FAIL, processus RUNNING = refus avant ouverture
+privée. Les cinq agrégats et six rapports indépendants sont contrôlés.
+
+`test_technical_scenarios.py` contrôle le complément D19 03–04 : dérivation
+D18 immuable, arbre fermé, cible publique, provenance synthétique, règle sans
+clinique, approbation fournie, gardes de chemins et reçus de clôture.
+`fixtures/fake_plink_technical.py` simule conversion/fusion BED et un rapport
+Mendel vide dans les tests unitaires ; il ne calcule aucune parenté ni erreur
+Mendel réelle. Les vrais adaptateurs Python 00–04 sont exécutés avec ce faux
+binaire, puis évalués indépendamment. Le refus précis de doublon est distingué
+d'un autre échec, d'une sortie publiée ou d'une base modifiée. L'exécution
+réelle de PLINK reste une intégration séparée annoncée, hors de pytest.
+
+Les tests D20 `test_qc_oracle.py` et `test_qc_bench.py` vérifient les règles QC,
+HWE contre des valeurs connues et une énumération entière, les frontières de
+seuils, l'ordre de retrait des sujets, les politiques par cohorte, le manque,
+les injections appariées, la reproductibilité et les unités de confusion.
+Des mutations de décisions, motifs, seuils, valeurs et lignes doivent être
+détectées ; les liens, empreintes altérées, clôtures absentes et activations
+hors scope sont refusés avant processus externe. Les tests de production
+`test_v2_qc_preliminary.py` et `test_v2_qc_final.py` emploient PLINK simulé.
+Le rejeu D20 avec PLINK réel est une intégration distincte, jamais déclenchée
+par ces tests unitaires.
+
+Les tests D21 `test_kinship_oracle.py`, `test_kinship_bench.py` et
+`test_kinship_report.py` vérifient les sept pedigrees, coefficients rationnels,
+transmissions et origines, profils appariés, MAF des fondateurs, LD sur appels
+conjoints, équations KING sur comptes manuels, frontières des degrés,
+priorités et maximalité du graphe. Des mutations de métriques, classification,
+identités, empreintes et profils sont refusées. Une fixture prouve qu'un code
+fonctionnellement conforme peut échouer au critère d'indépendance vraie.
+Wilson/bootstrap et les rapports gardent les faibles effectifs et les FAIL
+visibles. Aucun PLINK/KING réel n'est lancé dans ces tests ; le runner D21
+réel reste une intégration séparée annoncée.
+
+Les tests D22 `test_structure_oracle.py`, `test_structure_contracts.py`,
+`test_structure_evaluation.py`, `test_structure_bench.py` et
+`test_structure_report.py` vérifient simulation déterministe, exclusions de
+loci sur la référence, PCA Gram/SVD de référence, invariances et queues de
+probabilité, mutants de scores/statuts/loadings et sept cohortes. Le vrai
+composant Python 09 est appelé sans outil externe pour les gels et refus.
+Les gardes de périmètre et de rôle sont vérifiés avant tout processus.
+Le test d'effectif reproduit le défaut de schéma sur 10/19/100/108/199/1000
+avant correction ; les effectifs invalides restent refusés. Aucun PLINK ou
+KING réel n'est lancé par ces tests ; l'intégration D22 reste séparée.
+
+`test_structure_report_evidence.py` vérifie le calcul des descriptions
+graphiques, la conservation des effectifs et la suppression des identifiants.
+Les tests de rendu exigent graphiques quantitatifs, formules, numérotation
+continue, limites et verdicts inchangés ; aucun appel externe n'est nécessaire.
+
+Les tests D23a `test_phasing_preparation.py` contrôlent configurations strictes,
+sous-graines, méioses déterministes, absence de réutilisation des groupes
+donneurs, sélection de marqueurs, source incomplète et confinement. La révision
+de graine doit préserver le parent et tous les artefacts génétiques ; un
+changement scientifique ou un octet génétique altéré est refusé.
+`test_phasing_preparation_report.py` exige deux graphiques, deux équations,
+quatorze sections, confidentialité et absence de prétention de performance.
+Les tests de production `tests/test_v2_phasing_reference_selection.py`
+contrôlent l'entrée optionnelle signée, les gardes 12/12A, la sélection exacte
+et un parcours 12 complet avec exécutables simulés. Aucun outil génétique
+réel n'est lancé par ces tests ; D23a réel est une intégration séparée annoncée.
+
+Les tests D23 `test_phasing_bench.py`, `test_phasing_evaluation.py`,
+`test_phasing_oracle.py`, `test_phasing_publication_oracle.py` et
+`test_phasing_report.py` couvrent profils reproductibles, contrats et
+corrections de fixtures, phase analytique parfaite/inversée/commutée,
+erreurs isolées et rares, ancrage cible nul/à égalité, blocs PS, homozygotes,
+manque, dosages, recodage REF/ALT, permutations, identifiants de loci,
+préservation du masquage, référence divergente, IC familiaux et inventaire
+clos. Les rendus exigent quatre rapports, graphiques, équations et absence
+d'identifiants. Tous les appels externes sont simulés dans ces tests ;
+l'intégration réelle D23 est une commande distincte et explicitement annoncée.

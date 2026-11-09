@@ -49,6 +49,188 @@ effet-fondateur run --config config/testing/synthetic.example.yaml
 python -m pytest tests/
 ```
 
+Le sous-système de calibration reste séparé du pipeline réel. Son étape D10
+matérialise les partitions publiques uniquement dans le workspace ignoré :
+
+```bash
+python -m effet_fondateur.calibration.materialize_partitions \
+  --public-catalog calibration/references/public_reference_catalog.json \
+  --population-metadata <fichier_public_population_3202> \
+  --unrelated-index <index_public_2504> \
+  --workspace-root calibration_workspace \
+  --partition-run-id <identifiant_nouveau>
+```
+
+La commande vérifie les SHA-256 D09, refuse l'écrasement et n'affiche que des
+effectifs agrégés. Les listes d'identifiants restent sous `private_truth/` et
+ne doivent jamais être ajoutées à Git.
+
+La D11a construit ensuite les haplotypes de base depuis un VCF public 1000G
+fourni explicitement, sans enregistrer son chemin local dans le manifest :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.materialize_base_haplotypes \
+  --public-catalog calibration/references/public_reference_catalog.json \
+  --technical-catalog config/references/1000g_high_coverage_grch38_phased.json \
+  --source-vcf <reference_chr19.vcf.gz> \
+  --source-index <reference_chr19.vcf.gz.tbi> \
+  --population-metadata <metadata_1000g> \
+  --genetic-map <carte_chr19.tsv> \
+  --genetic-map-manifest <manifest_cache_cartes.json> \
+  --partition-root calibration_workspace/<partition_d10> \
+  --workspace-root calibration_workspace \
+  --run-id <identifiant_nouveau> \
+  --panel-role CALIBRATION \
+  --chromosome 19 --start-bp <début> --end-bp <fin> \
+  --random-seed <graine_haplotypes>
+```
+
+Les VCF synthétiques, la provenance privée, la carte dérivée et leur manifest
+restent exclusivement sous `calibration_workspace/`.
+
+Avant D12, la D11b limite une copie observable de ces génotypes aux marqueurs
+SNP du dessin exact `CytoScan750K_Accel`, `NA36.r1`, `GRCh38` :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.materialize_chip_observation \
+  --public-catalog calibration/references/public_reference_catalog.json \
+  --dense-root calibration_workspace/<run_d11a> \
+  --official-chip-package <paquet_officiel_NA36.r1.zip> \
+  --expected-official-package-sha256 <sha256_paquet> \
+  --workspace-root calibration_workspace \
+  --run-id <run_d11b>
+```
+
+La liste de marqueurs ne doit jamais être dérivée d'un export individuel. La
+vérité dense reste privée ; le VCF observable conserve l'orientation 1000G et
+les identifiants synthétiques, sans étiquette d'ascendance.
+
+La table de liaison enregistre explicitement le brin et les permutations
+d'allèles. Voir `calibration/references/CYTOSCAN_750K_ACCEL_MARKERS.md`.
+
+La D12 construit ensuite les strates pures et les mélanges connus à partir des
+haplotypes D11a, tout en reconstruisant le panel aveugle uniquement sur les
+marqueurs D11b. Avant la simulation des recombinaisons D14, un mélange exact
+est limité à deux haplotypes de strates différentes, donc 50/50. La vérité
+d'ascendance et la provenance restent dans `calibration_workspace/`; aucune
+étiquette de strate n'est écrite dans le VCF observable.
+
+La D13 ajoute ensuite des pedigrees synthétiques de cousins germains. Quatre
+fondateurs D12 distincts produisent quatre descendants et quatre trios par
+famille, ce qui couvre les parentés théoriques du premier au troisième degré.
+Chaque enfant reçoit une copie haplotypique entière de chaque parent ; la
+recombinaison reste réservée à D14. La vérité privée conserve les transmissions
+et l'ascendance effectivement héritée, tandis que le VCF observable masque les
+familles, les strates et les identifiants D12.
+
+La D14 transforme ensuite une copie haplotypique par famille en mosaïque issue
+d'un même fondateur synthétique. Les distances aux premiers breakpoints sont
+tirées sur la carte génétique D11a selon l'âge vrai du scénario. Les bras qui
+dépassent la fenêtre restent censurés et ne sont pas présentés comme des
+recombinaisons observées. Le variant cible, les segments, les porteurs et
+l'ascendance locale restent des vérités privées distinctes du panel aveugle.
+
+La D14b dimensionne avant D15 les fenêtres en unités génétiques. Une fenêtre
+principale utilise la demi-largeur `-100 × ln(p) / âge` avec `p ≤ 0,05` par
+bras ; une fenêtre volontairement courte contrôle séparément la censure. La
+carte publique est interpolée sans extrapolation, les seuils de marqueurs IBD
+sont vérifiés avant simulation et un reçu empreinté lie le rejeu réel
+D11a–D14 au manifest de fenêtre. Les commandes et contrats sont documentés
+dans `calibration/README.md`.
+
+La D22 évalue séparément la structure 08 et le gel 09 sur quatre cas
+synthétiques de 128 sujets, avec mélanges, atypiques et projection. Les deux
+composants passent leurs contrôles : PCA comparée à un oracle Gram/eigh,
+invariances, sept cohortes, deux gels identiques et refus des revues invalides.
+04–07 sont des fixtures déclarées, pas des étapes exécutées ou qualifiées.
+Le schéma des valeurs propres a été corrigé : il refusait à tort des effectifs
+valides comme 108 ; aucun calcul PCA ni seuil n'est changé. Le FAIL 07 reste
+ouvert et son étude est reportée après l'ensemble de l'évaluation, à la demande
+de l'utilisateur. D22 ne qualifie aucune cohorte d'étude ; `calibrated=false`.
+
+Les rapports D22 disposent maintenant d'un rendu enrichi de graphiques
+scientifiques et d'équations expliquées, sans changement d'analyse. Cette
+exigence est conservée dans AGENTS.md et les conventions pour les prochains
+rapports ; les anciennes versions restent archivées dans le workspace ignoré.
+
+La préparation D23a ajoute un panel de calibration 1000G lié à la puce sur
+22 autosomes : 40 sujets synthétiques, 23 155 marqueurs, huit trios et seize
+sujets isolés. La référence D10 de 1 403 sujets est imposable à 12/12A par
+`inputs.phasing_reference_selection`, entrée optionnelle empreintée ; les
+profils historiques sans sélection gardent leur comportement. Les graines
+de simulation et de phasage sont distinctes. Aucun phasage ni pipeline complet
+n'est exécuté par cette préparation. D23 évalue désormais séparément
+10A/11/12/12A sur trois profils appariés, avec quatre rapports illustrés et
+mathématiques. Les contrôles techniques passent, mais la phase autosomale du
+sous-panel clairsemé atteint 30,47 % de commutations au profil de base : aucune
+qualification IBD ni performance scellée n'en découle. Les seuils restent en
+revue, `calibrated=false`, sans modification de l'étude réelle.
+Commandes, rapport indépendant et limites : `calibration/README.md`.
+
+La D15 ajoute les injections IBD régionales sur la fenêtre D14b scellée.
+Chaque longueur possède une paire positive et une paire sans injection,
+sélectionnées hors pedigree et hors porteurs D14 ; les contrôles portent sur
+les copies, la densité et les transmissions mendéliennes. Le rapport technique
+indépendant conserve les limites du fond public et `calibrated: false`.
+Les commandes de matérialisation et de rapport figurent dans
+`calibration/README.md`.
+
+La D16 ajoute ensuite des ROH autozygotes par copie locale H1→H2. Quatre
+scénarios distinguent absence d'injection, ROH hors cible, ROH sur la cible
+et coexistence ROH/IBD chez un positif D15. La vérité IBD H1 et les
+transmissions restent contrôlées ; les ROH ne fournissent aucune longueur à
+Gamma. Les commandes et limites sont précisées dans `calibration/README.md`.
+
+La D17 décline le même panel D16 en huit observations appariées : contrôle,
+manque, erreurs de dosage, phase ponctuelle, commutations, densité réduite et
+combinaison. Un registre avant/après permet le rejeu exhaustif de chaque
+défaut ; les vérités biologiques restent inchangées. Les candidats phasés sont
+privés et ne remplacent pas les sorties de phasage du pipeline. Ce stress
+technique ne qualifie pas les performances ; voir `calibration/README.md`.
+
+La D18 exporte les seules observations D17 sous noms opaques : ACPA, VCF non
+phasés, registre neutre et configuration 00–02. Profils, correspondances,
+vérités et erreurs restent privés. Cet export régional valide les formats ;
+les métadonnées nécessaires à une analyse familiale complète ne sont pas
+inventées et l'approbation du registre reste humaine.
+
+La D19 ajoute cinq évaluateurs techniques indépendants (00–04) et six
+rapports autonomes. Le rejeu régional des huit lots D18 est limité à 00–02 :
+ces étapes passent les contrôles ; 03–04 restent `NOT_EVALUABLE` sur ce rejeu.
+Les lecteurs BED et contrôles de cible sont testés sur des fixtures séparées,
+sans activer ces étapes ni fabriquer une approbation. Voir les commandes et
+limites dans `calibration/README.md` ; `calibrated` reste `false`.
+
+Le complément D19 prépare des scénarios dédiés pour exécuter réellement
+00–04 avec PLINK : observations D18 intactes, cible technique publique
+distincte et génotypes explicitement simulés. Une décision humaine limitée
+au registre technique autorise ces nouveaux runs. Le positif teste l'ajout
+d'une cible absente ; le négatif vérifie son refus si elle est déjà présente.
+Ces contrôles ne qualifient ni le génome entier ni les méthodes scientifiques
+ultérieures et ne changent pas `calibrated=false`.
+
+La D20 ajoute les évaluateurs QC 05/10 et un banc mathématique séparé :
+192 sujets synthétiques, 22 autosomes, deux lots et 14 cas appariés avec
+défauts connus. Le vrai pipeline exécute 00–05 ; 10 est testée isolément
+avec des cohortes contractuelles préspecifiées, sans prétendre avoir exécuté
+09. Les matrices de confusion, motifs et génotypes retenus sont vérifiés par
+un oracle indépendant. Ce banc ne remplace pas le panel biologique 1000G
+ni une qualification de performance. Commandes : `calibration/README.md`.
+Ce banc a révélé une perte de précision à l'export de 10 : les très petites
+p-values HWE étaient remplacées par zéro. La correction préserve leur valeur
+sans changer le test, le seuil ni les décisions d'exclusion.
+
+La D21 ajoute un banc de parenté séparé : 112 unités généalogiques, 224
+sujets simulés, 22 autosomes et trois profils appariés. Les étapes 06/07
+sont exécutées réellement avec PLINK/KING, puis évaluées contre les génotypes
+et le pedigree privés. 06 passe ; 07 est fonctionnellement conforme mais
+échoue au critère d'indépendance vraie de sa proposition (5/6/3 paires
+apparentées conservées selon le profil). Les matrices et intervalles sont
+mesurés, pas NOT_EVALUABLE. Les exclusions restent non approuvées ; aucune
+cohorte 09 ni qualification biologique n'est revendiquée. Voir
+`calibration/protocoles/D21_KINSHIP_PRESPECIFICATION.md` et les commandes
+dans `calibration/README.md`.
+
 Pour quitter l'environnement :
 
 ```bash

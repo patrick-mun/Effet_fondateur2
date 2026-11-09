@@ -1,0 +1,158 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "manifest_state",
+    "method_id",
+    "technical_evaluation_manifest_id",
+    "created_at",
+    "d18_manifest_sha256",
+    "run_index_sha256",
+    "bundle_count",
+    "stages",
+    "artifacts",
+    "scope",
+    "calibrated",
+    "founder_effect_proven"
+  ],
+  "properties": {
+    "technical_target": {
+      "type": "object", "additionalProperties": false,
+      "required": ["gene", "chromosome", "position_bp", "ref", "alt", "transcript", "hgvs_c", "hgvs_p", "rsid", "source_url", "source_id", "genotype_rule", "decision_id"],
+      "properties": {
+        "gene": {"type": "string"}, "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+        "position_bp": {"type": "integer", "minimum": 1}, "ref": {"type": "string"}, "alt": {"type": "string"},
+        "transcript": {"type": "string"}, "hgvs_c": {"type": "string"}, "hgvs_p": {"type": ["string", "null"]},
+        "rsid": {"type": ["string", "null"]}, "source_url": {"type": "string", "format": "uri"},
+        "source_id": {"type": "string"}, "genotype_rule": {"const": "CANONICAL_REGISTRY_INDEX_MODULO_3_REFREF_REFALT_ALTALT"},
+        "decision_id": {"type": "string"}
+      }
+    },
+    "technical_panel_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "scenario": {"enum": ["TARGET_ABSENT_INSERTION", "TARGET_PRESENT_REJECTION"]},
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "manifest_state": {
+      "const": "FINALIZED"
+    },
+    "method_id": {
+      "const": "independent_technical_concordance_v1"
+    },
+    "technical_evaluation_manifest_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "d18_manifest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "run_index_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "bundle_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "stages": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "stage_id",
+          "status",
+          "pass_count",
+          "fail_count",
+          "not_evaluable_count"
+        ],
+        "properties": {
+          "stage_id": {
+            "enum": [
+              "00",
+              "01",
+              "02",
+              "03",
+              "04"
+            ]
+          },
+          "status": {
+            "enum": [
+              "PASS",
+              "FAIL",
+              "NOT_EVALUABLE"
+            ]
+          },
+          "pass_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "fail_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "not_evaluable_count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "stage_id",
+          "path",
+          "sha256"
+        ],
+        "properties": {
+          "stage_id": {
+            "enum": [
+              "00",
+              "01",
+              "02",
+              "03",
+              "04"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^private_truth/d19/evaluation_0[0-4]\\.json$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "scope": {
+      "const": "REGIONAL_TECHNICAL_PARTIAL_PIPELINE"
+    },
+    "calibrated": {
+      "const": false
+    },
+    "founder_effect_proven": {
+      "const": false
+    }
+  },
+  "allOf": [
+    {"if": {"anyOf": [{"required": ["scenario"]}, {"required": ["technical_panel_manifest_sha256"]}, {"required": ["technical_target"]}]},
+     "then": {"required": ["scenario", "technical_panel_manifest_sha256", "technical_target"]}}
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "technical_evaluation_manifest"
+}

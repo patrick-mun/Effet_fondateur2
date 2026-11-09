@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "method_id",
+    "seed",
+    "missingness_seed",
+    "markers_per_autosome",
+    "pure_per_group",
+    "admixed_count",
+    "rare_count",
+    "projected_per_group",
+    "projected_rare_count",
+    "frequencies",
+    "missingness_fraction",
+    "relative_tolerance",
+    "absolute_tolerance",
+    "confidence_level",
+    "target_configuration",
+    "target_configuration_sha256",
+    "plink_executable",
+    "manual_approval",
+    "fixture_review_policy",
+    "population_parameters"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "method_id": {
+      "const": "iid_structure_component_bench_v1"
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "missingness_seed": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "markers_per_autosome": {
+      "type": "integer",
+      "minimum": 32,
+      "maximum": 256
+    },
+    "pure_per_group": {
+      "const": 40
+    },
+    "admixed_count": {
+      "const": 24
+    },
+    "rare_count": {
+      "const": 4
+    },
+    "projected_per_group": {
+      "const": 8
+    },
+    "projected_rare_count": {
+      "const": 4
+    },
+    "frequencies": {
+      "const": [
+        0.2,
+        0.8
+      ]
+    },
+    "missingness_fraction": {
+      "const": 0.05
+    },
+    "relative_tolerance": {
+      "const": 1e-8
+    },
+    "absolute_tolerance": {
+      "const": 1e-9
+    },
+    "confidence_level": {
+      "const": 0.95
+    },
+    "target_configuration": {
+      "const": "d19_technical_target_v1.json"
+    },
+    "target_configuration_sha256": {
+      "const": "c316c57a432ed7ed53cfc8fe99cad9c7ec0489115e1c5ea19523c677d5857bc5"
+    },
+    "plink_executable": {
+      "type": "string",
+      "minLength": 1
+    },
+    "manual_approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "approved",
+        "decision_id",
+        "reviewer_role",
+        "approved_at"
+      ],
+      "properties": {
+        "approved": {
+          "const": true
+        },
+        "decision_id": {
+          "const": "CAL-DEC-006"
+        },
+        "reviewer_role": {
+          "const": "calibration_owner"
+        },
+        "approved_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "fixture_review_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reviewer_role",
+        "reviewed_at",
+        "scope"
+      ],
+      "properties": {
+        "reviewer_role": {
+          "const": "calibration_contract_fixture"
+        },
+        "reviewed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "scope": {
+          "const": "SYNTHETIC_D22_ONLY_NOT_SCIENTIFIC_APPROVAL"
+        }
+      }
+    },
+    "population_parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requested_components",
+        "outlier_components",
+        "outlier_alpha",
+        "min_reference_samples",
+        "min_informative_variants",
+        "min_reference_call_rate",
+        "plink_timeout_seconds"
+      ],
+      "properties": {
+        "requested_components": {
+          "const": 3
+        },
+        "outlier_components": {
+          "const": 2
+        },
+        "outlier_alpha": {
+          "const": 0.01
+        },
+        "min_reference_samples": {
+          "const": 20
+        },
+        "min_informative_variants": {
+          "const": 100
+        },
+        "min_reference_call_rate": {
+          "const": 0.9
+        },
+        "plink_timeout_seconds": {
+          "const": 300
+        }
+      }
+    }
+  }
+}

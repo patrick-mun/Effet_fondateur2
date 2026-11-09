@@ -1,0 +1,434 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Manifest D16 des injections ROH régionales",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "manifest_state",
+    "roh_simulation_manifest_id",
+    "created_at",
+    "method_id",
+    "panel_role",
+    "scope",
+    "domain",
+    "configuration",
+    "inputs",
+    "seed",
+    "truth_policy",
+    "positive_roh_count",
+    "negative_roh_count",
+    "ibd_coupled_roh_count",
+    "induced_ibd_edge_count",
+    "observability",
+    "artifacts",
+    "integrity",
+    "calibrated",
+    "gamma_inputs_modified",
+    "founder_effect_proven"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "manifest_state": {
+      "const": "FINALIZED"
+    },
+    "roh_simulation_manifest_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "method_id": {
+      "const": "within_sample_h1_to_h2_roh_copy_v1"
+    },
+    "panel_role": {
+      "enum": [
+        "CALIBRATION",
+        "VALIDATION"
+      ]
+    },
+    "scope": {
+      "const": "REGIONAL_TECHNICAL_INJECTION"
+    },
+    "domain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chromosome",
+        "start_bp",
+        "end_bp",
+        "start_cm",
+        "end_cm",
+        "target_position_bp",
+        "target_position_cm",
+        "position_unit",
+        "genetic_distance_unit"
+      ],
+      "properties": {
+        "chromosome": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 22
+        },
+        "start_bp": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "end_bp": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "start_cm": {
+          "type": "number"
+        },
+        "end_cm": {
+          "type": "number"
+        },
+        "target_position_bp": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "target_position_cm": {
+          "type": "number"
+        },
+        "position_unit": {
+          "const": "BP_1_BASED_CLOSED"
+        },
+        "genetic_distance_unit": {
+          "const": "cM"
+        }
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "configuration_id",
+        "configuration_sha256"
+      ],
+      "properties": {
+        "configuration_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        },
+        "configuration_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "D15",
+        "D14",
+        "D11A"
+      ],
+      "properties": {
+        "D15": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "D14": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "D11A": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "seed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parent_recombination_seed",
+        "derived_seed",
+        "derivation"
+      ],
+      "properties": {
+        "parent_recombination_seed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "derived_seed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "derivation": {
+          "const": "SHA256(method_id:D16:parent_seed:panel_role)[0:4]_BIG_ENDIAN"
+        }
+      }
+    },
+    "truth_policy": {
+      "const": "INJECTED_AUTOZYGOUS_ORIGIN_BACKGROUND_ROH_UNKNOWN"
+    },
+    "positive_roh_count": {
+      "const": 3
+    },
+    "negative_roh_count": {
+      "const": 1
+    },
+    "ibd_coupled_roh_count": {
+      "const": 1
+    },
+    "induced_ibd_edge_count": {"const": 1},
+    "observability": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scenario_id",
+          "observed_marker_count",
+          "density_kb_per_marker",
+          "maximum_internal_gap_kb",
+          "left_flank_marker_count",
+          "right_flank_marker_count"
+        ],
+        "properties": {
+          "scenario_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          "observed_marker_count": {
+            "type": "integer",
+            "minimum": 50
+          },
+          "density_kb_per_marker": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 50
+          },
+          "maximum_internal_gap_kb": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1000
+          },
+          "left_flank_marker_count": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "right_flank_marker_count": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "role",
+          "path",
+          "sha256",
+          "size_bytes",
+          "record_count"
+        ],
+        "properties": {
+          "role": {
+            "enum": [
+              "DENSE_PHASED_ROH_PANEL",
+              "OBSERVED_ROH_PANEL",
+              "ROH_INJECTION_TRUTH",
+              "ROH_OBSERVABILITY_AUDIT",
+              "ROH_INDUCED_IBD_TRUTH",
+              "PRESERVED_IBD_TRUTH",
+              "PRESERVED_PEDIGREE_TRUTH",
+              "PRESERVED_TRANSMISSION_TRUTH"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^private_truth/d16/[A-Za-z0-9_.-]+$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "record_count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "allOf": [
+        {
+          "contains": {"properties": {"role": {"const": "ROH_INDUCED_IBD_TRUTH"}}, "required": ["role"]},
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "role": {
+                "const": "DENSE_PHASED_ROH_PANEL"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "role": {
+                "const": "OBSERVED_ROH_PANEL"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "role": {
+                "const": "ROH_INJECTION_TRUTH"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "role": {
+                "const": "ROH_OBSERVABILITY_AUDIT"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "role": {
+                "const": "PRESERVED_IBD_TRUTH"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "role": {
+                "const": "PRESERVED_PEDIGREE_TRUTH"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "role": {
+                "const": "PRESERVED_TRANSMISSION_TRUTH"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dense_variant_count",
+        "observed_variant_count",
+        "changed_h2_allele_count",
+        "h1_modified_count",
+        "roh_copy_error_count",
+        "ibd_copy_error_count",
+        "mendelian_error_count",
+        "negative_modified_count",
+        "induced_ibd_copy_error_count"
+      ],
+      "properties": {
+        "dense_variant_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "observed_variant_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "changed_h2_allele_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "h1_modified_count": {
+          "const": 0
+        },
+        "roh_copy_error_count": {
+          "const": 0
+        },
+        "ibd_copy_error_count": {
+          "const": 0
+        },
+        "mendelian_error_count": {
+          "const": 0
+        },
+        "negative_modified_count": {
+          "const": 0
+        },
+        "induced_ibd_copy_error_count": {"const": 0}
+      }
+    },
+    "calibrated": {
+      "const": false
+    },
+    "gamma_inputs_modified": {
+      "const": false
+    },
+    "founder_effect_proven": {
+      "const": false
+    }
+  }
+}

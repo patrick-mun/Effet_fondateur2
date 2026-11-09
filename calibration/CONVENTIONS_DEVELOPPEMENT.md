@@ -1,7 +1,7 @@
 # Conventions de développement de la calibration
 
-**Version :** 1.0
-**Date :** 28 octobre 2026
+**Version :** 1.1
+**Date :** 30 octobre 2026
 **Périmètre :** `calibration/`, `src/effet_fondateur/calibration/` et
 `tests/calibration/`
 
@@ -159,6 +159,28 @@ générateurs de rapports de calibration.
 - Utiliser `apply_patch` pour les modifications textuelles ciblées.
 
 ## 10. Rapports et interprétation
+
+Exigence permanente de l'utilisateur, 30 octobre 2026 : chaque rapport doit
+faciliter l'explication scientifique par des graphiques de résultats et une
+représentation mathématique adaptée, pas seulement documenter l'audit.
+
+- Prévoir deux à quatre visuels utiles, avec au moins deux graphiques
+  quantitatifs quand les données s'y prêtent : distributions, projections,
+  matrices de confusion, effectifs, comparaisons ou intervalles.
+- Les cartes de chiffres et schémas de parcours ne remplacent pas les
+  graphiques scientifiques. Une étape non quantitative expose sa logique et
+  justifie explicitement l'absence de graphique quantitatif.
+- Présenter les équations réellement implémentées avec symboles définis,
+  unités, hypothèses, seuils, domaine de validité et interprétation. Pour une
+  sélection de cohortes, privilégier ensembles et règles de décision.
+- Expliquer chaque graphique et chaque formule dans le texte. Légendes,
+  axes, unités, effectifs, type d'incertitude et sources sont obligatoires.
+- Séparer dispersion et intervalle de confiance, données indépendantes et
+  copies/profils appariés. Aucun identifiant individuel dans un graphique.
+- Les agrégations destinées aux figures sont préparées séparément du rendu,
+  empreintées et rattachées aux sorties closes. Le rendu ne refait ni PCA,
+  estimation, test ou qualification.
+- Relire les figures et formules dans le PDF réel, en plus du contrôle HTML.
 
 - Les évaluateurs calculent les métriques ; le moteur de rendu ne recalcule
   aucune statistique scientifique.

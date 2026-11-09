@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0.0",
+  "population_structure_config_id": "d12_diagnostic_100kb_calibration_v1",
+  "config_state": "FINALIZED",
+  "method": {
+    "method_id": "reciprocal_whole_haplotype_mixture_v1",
+    "method_version": "1.0.0",
+    "random_seed": 1002,
+    "pure_policy": "RETAIN_UNUSED_D11_DIPLOIDS",
+    "mixture_unit": "RECIPROCAL_WHOLE_HAPLOTYPE_PAIR",
+    "supported_proportions": "PURE_OR_TWO_WAY_EQUAL"
+  },
+  "mixtures": [
+    {
+      "mixture_id": "ADMIX_CEU_YRI",
+      "individual_count": 20,
+      "components": [
+        {"stratum_id": "CEU", "proportion": 0.5},
+        {"stratum_id": "YRI", "proportion": 0.5}
+      ]
+    }
+  ]
+}

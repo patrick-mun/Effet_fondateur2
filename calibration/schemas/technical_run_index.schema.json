@@ -1,0 +1,116 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "closure_state",
+    "d18_manifest_sha256",
+    "runs"
+  ],
+  "properties": {
+    "technical_panel_manifest_sha256": {
+      "type": "string", "pattern": "^[0-9a-f]{64}$"
+    },
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "closure_state": {
+      "const": "CLOSED"
+    },
+    "d18_manifest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "runs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "bundle_id",
+          "run_path",
+          "manifest_sha256",
+          "environment_sha256",
+          "target_truth_path",
+          "target_truth_sha256"
+        ],
+        "properties": {
+          "rejection_evidence": {
+            "type": "object", "additionalProperties": false,
+            "required": ["path", "sha256"],
+            "properties": {
+              "path": {"type": "string", "pattern": "^stages/attempts/04_prepare_target_variant_dataset\\.[A-Za-z0-9]+\\.failed/stderr\\.log$"},
+              "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+            }
+          },
+          "bundle_id": {
+            "type": "string",
+            "pattern": "^B[0-9a-f]{16}$"
+          },
+          "run_path": {
+            "type": "string",
+            "pattern": "^(?!.*(?:\\.\\.|dock6_real|data/input))[A-Za-z0-9][A-Za-z0-9._/-]*$"
+          },
+          "manifest_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "environment_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "target_truth_path": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!.*(?:\\.\\.|dock6_real|data/input))[A-Za-z0-9][A-Za-z0-9._/-]*$"
+              }
+            ]
+          },
+          "target_truth_sha256": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "target_truth_path": {
+                  "type": "null"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "target_truth_sha256": {
+                  "type": "null"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "target_truth_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "technical_run_index"
+}

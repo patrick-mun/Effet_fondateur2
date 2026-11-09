@@ -62,6 +62,13 @@ immuables.
 - `qc_final_report.json`, `stage_outputs.json`, `audit.json` et
   `checksums.sha256`.
 
+Les valeurs sont sérialisées sur douze chiffres significatifs, en notation
+scientifique si nécessaire. Un vrai zéro signé est normalisé en `0`, mais une
+p-value HWE non nulle, même très petite, n'est jamais écrasée en zéro. D20 a
+identifié et corrigé cette perte de précision du formateur, sans modifier le
+test HWE, son seuil ni la décision d'exclusion. Les anciens runs restent
+immuables ; seule une nouvelle exécution produit les valeurs corrigées.
+
 ## Codes de retour
 
 - `0` : trois jeux finaux non vides publiés et variant cible conservé ;

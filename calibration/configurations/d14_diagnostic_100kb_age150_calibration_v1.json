@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0.0",
+  "founder_simulation_config_id": "d14_diagnostic_100kb_age150_calibration_v1",
+  "config_state": "FINALIZED",
+  "replication_id": "D14_DIAGNOSTIC_AGE150_R001",
+  "method": {
+    "method_id": "map_first_breakpoint_founder_mosaic_v1",
+    "method_version": "1.0.0",
+    "random_seed": 1004,
+    "age_generations": 150,
+    "family_selection": "ALL_D13_PEDIGREE_FAMILIES",
+    "carrier_lineage_selection": "RANDOM_TERMINAL_DESCENDANT_HAPLOTYPE",
+    "founder_haplotype_selection": "RANDOM_UNRELATED_D13_HAPLOTYPE",
+    "breakpoint_process": "INDEPENDENT_EXPONENTIAL_FIRST_EVENT_EACH_SIDE",
+    "edge_policy": "RIGHT_CENSOR_AT_MAP_DOMAIN"
+  },
+  "target_variant": {
+    "variant_id": "SYNTHETIC_TARGET_D14",
+    "chromosome": 19,
+    "position_bp": 11050057,
+    "reference_allele": "C",
+    "alternate_allele": "T",
+    "position_policy": "EXISTING_BIALLELIC_SNV_RESET_TO_SYNTHETIC_MUTATION"
+  }
+}

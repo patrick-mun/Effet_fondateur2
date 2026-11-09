@@ -1,0 +1,656 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/calibration/schemas/calibration_run_manifest.schema.json",
+  "title": "Manifest finalisé d'un run de calibration",
+  "description": "Provenance privée et reproductible d'un run synthétique, distincte des entrées remises au pipeline.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_manifest_id",
+    "calibration_run_id",
+    "config_id",
+    "phase",
+    "panel",
+    "manifest_state",
+    "access_scope",
+    "created_at",
+    "completed_at",
+    "run_status",
+    "attempt",
+    "provenance",
+    "contracts",
+    "random_seeds",
+    "sources",
+    "tools",
+    "commands",
+    "artifacts",
+    "replay",
+    "integrity",
+    "deviations"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "run_manifest_id": {"$ref": "#/$defs/stableIdentifier"},
+    "calibration_run_id": {"$ref": "#/$defs/stableIdentifier"},
+    "config_id": {"$ref": "#/$defs/stableIdentifier"},
+    "phase": {
+      "enum": [
+        "micro_panel",
+        "pilot_calibration",
+        "pilot_validation",
+        "qualification_calibration",
+        "qualification_validation"
+      ]
+    },
+    "panel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["panel_id", "role", "individual_count"],
+      "properties": {
+        "panel_id": {"$ref": "#/$defs/stableIdentifier"},
+        "role": {"enum": ["TECHNICAL", "CALIBRATION", "VALIDATION"]},
+        "individual_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "manifest_state": {"const": "FINALIZED"},
+    "access_scope": {"const": "CALIBRATION_CONTROL_PRIVATE"},
+    "created_at": {"$ref": "#/$defs/dateTime"},
+    "completed_at": {"$ref": "#/$defs/dateTime"},
+    "run_status": {"enum": ["SUCCEEDED", "FAILED", "BLOCKED", "INVALIDATED"]},
+    "attempt": {"$ref": "#/$defs/attemptRecord"},
+    "provenance": {"$ref": "#/$defs/provenanceRecord"},
+    "contracts": {"$ref": "#/$defs/contractsRecord"},
+    "random_seeds": {"$ref": "#/$defs/seedRegistry"},
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/sourceRecord"}
+    },
+    "tools": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/toolRecord"}
+    },
+    "commands": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/commandRecord"}
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 6,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/artifactRecord"},
+      "allOf": [
+        {"contains": {"properties": {"artifact_type": {"const": "CONFIGURATION"}}, "required": ["artifact_type"]}},
+        {"contains": {"properties": {"artifact_type": {"const": "TRUTH_MANIFEST"}}, "required": ["artifact_type"]}},
+        {"contains": {"properties": {"artifact_type": {"const": "PRIVATE_TRUTH"}}, "required": ["artifact_type"]}},
+        {"contains": {"properties": {"artifact_type": {"const": "BLINDED_INPUT"}}, "required": ["artifact_type"]}},
+        {"contains": {"properties": {"artifact_type": {"const": "ENVIRONMENT_LOCK"}}, "required": ["artifact_type"]}},
+        {"contains": {"properties": {"artifact_type": {"const": "CHECKSUM_INDEX"}}, "required": ["artifact_type"]}}
+      ]
+    },
+    "replay": {"$ref": "#/$defs/replayRecord"},
+    "integrity": {"$ref": "#/$defs/integrityRecord"},
+    "deviations": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/deviationRecord"}
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"phase": {"const": "micro_panel"}}, "required": ["phase"]},
+      "then": {
+        "properties": {
+          "panel": {
+            "properties": {
+              "role": {"const": "TECHNICAL"},
+              "individual_count": {"minimum": 24, "maximum": 60}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"phase": {"enum": ["pilot_calibration", "qualification_calibration"]}}, "required": ["phase"]},
+      "then": {"properties": {"panel": {"properties": {"role": {"const": "CALIBRATION"}}}}}
+    },
+    {
+      "if": {"properties": {"phase": {"enum": ["pilot_validation", "qualification_validation"]}}, "required": ["phase"]},
+      "then": {"properties": {"panel": {"properties": {"role": {"const": "VALIDATION"}}}}}
+    },
+    {
+      "if": {"properties": {"phase": {"enum": ["pilot_calibration", "pilot_validation"]}}, "required": ["phase"]},
+      "then": {"properties": {"panel": {"properties": {"individual_count": {"const": 500}}}}}
+    },
+    {
+      "if": {"properties": {"phase": {"enum": ["qualification_calibration", "qualification_validation"]}}, "required": ["phase"]},
+      "then": {"properties": {"panel": {"properties": {"individual_count": {"const": 2500}}}}}
+    },
+    {
+      "if": {"properties": {"run_status": {"const": "INVALIDATED"}}, "required": ["run_status"]},
+      "then": {
+        "properties": {
+          "deviations": {
+            "contains": {
+              "properties": {
+                "impact": {"const": "INVALIDATING"},
+                "decision": {"const": "INVALIDATE"}
+              },
+              "required": ["impact", "decision"]
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "stableIdentifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "semanticVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?$"
+    },
+    "dateTime": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]+)?(?:Z|[+-](?:0[0-9]|1[0-4]):[0-5][0-9])$"
+    },
+    "randomSeed": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "safeRelativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![\\\\/])(?!~)(?![A-Za-z][A-Za-z0-9+.-]*:)(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$))(?!.*[dD][oO][cC][kK]6_[rR][eE][aA][lL])(?!.*[dD][aA][tT][aA][\\\\/][iI][nN][pP][uU][tT])(?!.*[cC][aA][lL][iI][bB][rR][aA][tT][iI][oO][nN]_[wW][oO][rR][kK][sS][pP][aA][cC][eE])[^\\u0000]+$"
+    },
+    "privateTruthPath": {
+      "type": "string",
+      "pattern": "^private_truth/(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9][A-Za-z0-9._/-]*$"
+    },
+    "blindedInputPath": {
+      "type": "string",
+      "pattern": "^blinded_inputs/(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9][A-Za-z0-9._/-]*$"
+    },
+    "safeCommandArgument": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000,
+      "pattern": "^(?![\\\\/])(?!~)(?![A-Za-z][A-Za-z0-9+.-]*:)(?!.*=[\\\\/])(?!.*=~)(?!.*=[A-Za-z][A-Za-z0-9+.-]*:)(?!.*(?:^|[=\\\\/])\\.\\.(?:[\\\\/]|$))(?!.*[dD][oO][cC][kK]6_[rR][eE][aA][lL])(?!.*[dD][aA][tT][aA][\\\\/][iI][nN][pP][uU][tT])[^\\u0000]+$"
+    },
+    "normalizedArgv": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/safeCommandArgument"}
+    },
+    "schemaContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_id", "schema_version", "schema_sha256"],
+      "properties": {
+        "schema_id": {"$ref": "#/$defs/stableIdentifier"},
+        "schema_version": {"$ref": "#/$defs/semanticVersion"},
+        "schema_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "fileContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relative_path", "sha256", "schema"],
+      "properties": {
+        "relative_path": {"$ref": "#/$defs/safeRelativePath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "schema": {"$ref": "#/$defs/schemaContract"}
+      }
+    },
+    "truthFileContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relative_path", "sha256", "schema", "pipeline_access_allowed"],
+      "properties": {
+        "relative_path": {"$ref": "#/$defs/privateTruthPath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "schema": {"$ref": "#/$defs/schemaContract"},
+        "pipeline_access_allowed": {"const": false}
+      }
+    },
+    "contractsRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["configuration", "truth_manifest"],
+      "properties": {
+        "configuration": {"$ref": "#/$defs/fileContract"},
+        "truth_manifest": {"$ref": "#/$defs/truthFileContract"}
+      }
+    },
+    "attemptRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt_number",
+        "resumed_from_manifest_sha256",
+        "inputs_unchanged",
+        "parameters_unchanged",
+        "code_unchanged"
+      ],
+      "properties": {
+        "attempt_number": {"type": "integer", "minimum": 1},
+        "resumed_from_manifest_sha256": {"oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "inputs_unchanged": {"type": "boolean"},
+        "parameters_unchanged": {"type": "boolean"},
+        "code_unchanged": {"type": "boolean"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"attempt_number": {"const": 1}}, "required": ["attempt_number"]},
+          "then": {
+            "properties": {
+              "resumed_from_manifest_sha256": {"type": "null"},
+              "inputs_unchanged": {"const": true},
+              "parameters_unchanged": {"const": true},
+              "code_unchanged": {"const": true}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"attempt_number": {"minimum": 2}}, "required": ["attempt_number"]},
+          "then": {
+            "properties": {
+              "resumed_from_manifest_sha256": {"$ref": "#/$defs/sha256"},
+              "inputs_unchanged": {"const": true},
+              "parameters_unchanged": {"const": true},
+              "code_unchanged": {"const": true}
+            }
+          }
+        }
+      ]
+    },
+    "provenanceRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository_id",
+        "code_commit_sha",
+        "dirty_worktree",
+        "pipeline_version",
+        "python_implementation",
+        "python_version",
+        "platform_system",
+        "platform_release",
+        "machine",
+        "timezone",
+        "locale",
+        "dependency_lock_path",
+        "dependency_lock_sha256"
+      ],
+      "properties": {
+        "repository_id": {"$ref": "#/$defs/stableIdentifier"},
+        "code_commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "dirty_worktree": {"const": false},
+        "pipeline_version": {"$ref": "#/$defs/semanticVersion"},
+        "python_implementation": {"enum": ["CPython", "PyPy"]},
+        "python_version": {"type": "string", "pattern": "^3\\.12\\.[0-9]+$"},
+        "platform_system": {"type": "string", "minLength": 1},
+        "platform_release": {"type": "string", "minLength": 1},
+        "machine": {"type": "string", "minLength": 1},
+        "timezone": {"type": "string", "minLength": 1},
+        "locale": {"type": "string", "minLength": 1},
+        "dependency_lock_path": {"$ref": "#/$defs/safeRelativePath"},
+        "dependency_lock_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "seedRegistry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["registry_path", "registry_sha256", "values"],
+      "properties": {
+        "registry_path": {"$ref": "#/$defs/privateTruthPath"},
+        "registry_sha256": {"$ref": "#/$defs/sha256"},
+        "values": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["master", "haplotypes", "pedigrees", "recombination", "measurement_error", "blinding"],
+          "properties": {
+            "master": {"$ref": "#/$defs/randomSeed"},
+            "haplotypes": {"$ref": "#/$defs/randomSeed"},
+            "pedigrees": {"$ref": "#/$defs/randomSeed"},
+            "recombination": {"$ref": "#/$defs/randomSeed"},
+            "measurement_error": {"$ref": "#/$defs/randomSeed"},
+            "blinding": {"$ref": "#/$defs/randomSeed"}
+          }
+        }
+      }
+    },
+    "sourceRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "source_type",
+        "version",
+        "origin_id",
+        "license_id",
+        "assembly",
+        "local_artifact_id",
+        "sha256",
+        "size_bytes",
+        "acquired_at",
+        "shared_between_panels"
+      ],
+      "properties": {
+        "source_id": {"$ref": "#/$defs/stableIdentifier"},
+        "source_type": {"enum": ["PUBLIC_REFERENCE", "SYNTHETIC_FIXTURE", "GENERATED_PANEL", "SOFTWARE_ASSET"]},
+        "version": {"type": "string", "minLength": 1},
+        "origin_id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!.*[dD][oO][cC][kK]6_[rR][eE][aA][lL])(?!.*[dD][aA][tT][aA][\\\\/][iI][nN][pP][uU][tT])[^\\u0000]+$"
+        },
+        "license_id": {"type": "string", "minLength": 1},
+        "assembly": {"type": ["string", "null"], "minLength": 1},
+        "local_artifact_id": {"$ref": "#/$defs/stableIdentifier"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 0},
+        "acquired_at": {"$ref": "#/$defs/dateTime"},
+        "shared_between_panels": {"type": "boolean"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"shared_between_panels": {"const": true}}, "required": ["shared_between_panels"]},
+          "then": {"properties": {"source_type": {"const": "PUBLIC_REFERENCE"}}}
+        }
+      ]
+    },
+    "toolRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tool_id", "tool_type", "version", "invocation", "sha256", "version_probe_argv", "version_probe_output_sha256"],
+      "properties": {
+        "tool_id": {"$ref": "#/$defs/stableIdentifier"},
+        "tool_type": {"enum": ["PYTHON_PACKAGE", "EXECUTABLE", "JAR", "PIPELINE_INTERNAL"]},
+        "version": {"type": "string", "minLength": 1},
+        "invocation": {"$ref": "#/$defs/stableIdentifier"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "version_probe_argv": {"$ref": "#/$defs/normalizedArgv"},
+        "version_probe_output_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "environmentVariable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value"],
+      "properties": {
+        "name": {
+          "enum": ["LANG", "LC_ALL", "TZ", "PYTHONHASHSEED", "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"]
+        },
+        "value": {"type": "string", "minLength": 1, "maxLength": 100}
+      }
+    },
+    "resourceLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["threads", "timeout_seconds", "memory_mb"],
+      "properties": {
+        "threads": {"type": "integer", "minimum": 1},
+        "timeout_seconds": {"type": "integer", "minimum": 1},
+        "memory_mb": {"type": ["integer", "null"], "minimum": 1}
+      }
+    },
+    "commandRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command_id",
+        "scope",
+        "stage_id",
+        "tool_id",
+        "normalized_argv",
+        "working_directory",
+        "environment",
+        "seed_names",
+        "input_artifact_ids",
+        "output_artifact_ids",
+        "resource_limits",
+        "started_at",
+        "completed_at",
+        "duration_seconds",
+        "exit_code",
+        "status",
+        "stdout_artifact_id",
+        "stderr_artifact_id"
+      ],
+      "properties": {
+        "command_id": {"$ref": "#/$defs/stableIdentifier"},
+        "scope": {"enum": ["GENERATOR", "PIPELINE", "EVALUATOR", "REPORTER"]},
+        "stage_id": {"type": "string", "pattern": "^(?:GEN|EVAL|REP|(?:0[0-9]|1[0-9](?:[A-Z])?))$"},
+        "tool_id": {"$ref": "#/$defs/stableIdentifier"},
+        "normalized_argv": {"$ref": "#/$defs/normalizedArgv"},
+        "working_directory": {"enum": ["REPOSITORY_ROOT", "RUN_ROOT"]},
+        "environment": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/environmentVariable"}
+        },
+        "seed_names": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"enum": ["master", "haplotypes", "pedigrees", "recombination", "measurement_error", "blinding"]}
+        },
+        "input_artifact_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/stableIdentifier"}
+        },
+        "output_artifact_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/stableIdentifier"}
+        },
+        "resource_limits": {"$ref": "#/$defs/resourceLimits"},
+        "started_at": {"$ref": "#/$defs/dateTime"},
+        "completed_at": {"$ref": "#/$defs/dateTime"},
+        "duration_seconds": {"type": "number", "minimum": 0},
+        "exit_code": {"type": "integer"},
+        "status": {"enum": ["SUCCEEDED", "FAILED"]},
+        "stdout_artifact_id": {"oneOf": [{"$ref": "#/$defs/stableIdentifier"}, {"type": "null"}]},
+        "stderr_artifact_id": {"oneOf": [{"$ref": "#/$defs/stableIdentifier"}, {"type": "null"}]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"scope": {"const": "PIPELINE"}}, "required": ["scope"]},
+          "then": {
+            "properties": {
+              "normalized_argv": {
+                "not": {
+                  "contains": {
+                    "type": "string",
+                    "pattern": "[pP][rR][iI][vV][aA][tT][eE]_[tT][rR][uU][tT][hH]"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {"properties": {"status": {"const": "SUCCEEDED"}}, "required": ["status"]},
+          "then": {"properties": {"exit_code": {"const": 0}}}
+        },
+        {
+          "if": {"properties": {"status": {"const": "FAILED"}}, "required": ["status"]},
+          "then": {"properties": {"exit_code": {"not": {"const": 0}}}}
+        }
+      ]
+    },
+    "artifactRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_id",
+        "artifact_type",
+        "relative_path",
+        "sha256",
+        "size_bytes",
+        "media_type",
+        "producer_command_id",
+        "schema",
+        "sensitivity",
+        "immutable",
+        "pipeline_access_allowed"
+      ],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/stableIdentifier"},
+        "artifact_type": {
+          "enum": [
+            "CONFIGURATION",
+            "TRUTH_MANIFEST",
+            "BLINDED_INPUT",
+            "PRIVATE_TRUTH",
+            "PIPELINE_OUTPUT",
+            "EVALUATION",
+            "REPORT",
+            "LOG",
+            "ENVIRONMENT_LOCK",
+            "CHECKSUM_INDEX"
+          ]
+        },
+        "relative_path": {"$ref": "#/$defs/safeRelativePath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 0},
+        "media_type": {"type": "string", "pattern": "^[a-z0-9.+-]+/[A-Za-z0-9.+-]+$"},
+        "producer_command_id": {"oneOf": [{"$ref": "#/$defs/stableIdentifier"}, {"type": "null"}]},
+        "schema": {"oneOf": [{"$ref": "#/$defs/schemaContract"}, {"type": "null"}]},
+        "sensitivity": {"enum": ["PUBLIC_AGGREGATE", "SYNTHETIC_BLINDED", "SYNTHETIC_GENETIC_PRIVATE", "INTERNAL_CONTROL"]},
+        "immutable": {"const": true},
+        "pipeline_access_allowed": {"type": "boolean"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"artifact_type": {"enum": ["TRUTH_MANIFEST", "PRIVATE_TRUTH"]}}, "required": ["artifact_type"]},
+          "then": {
+            "properties": {
+              "relative_path": {"$ref": "#/$defs/privateTruthPath"},
+              "sensitivity": {"const": "SYNTHETIC_GENETIC_PRIVATE"},
+              "pipeline_access_allowed": {"const": false}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"artifact_type": {"const": "BLINDED_INPUT"}}, "required": ["artifact_type"]},
+          "then": {
+            "properties": {
+              "relative_path": {"$ref": "#/$defs/blindedInputPath"},
+              "sensitivity": {"const": "SYNTHETIC_BLINDED"},
+              "pipeline_access_allowed": {"const": true}
+            }
+          }
+        }
+      ]
+    },
+    "replayRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workspace_layout_version",
+        "start_from_clean_workspace",
+        "command_order",
+        "verification_argv",
+        "expected_checksum_index_sha256",
+        "determinism_expected",
+        "nondeterministic_components"
+      ],
+      "properties": {
+        "workspace_layout_version": {"$ref": "#/$defs/semanticVersion"},
+        "start_from_clean_workspace": {"const": true},
+        "command_order": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/stableIdentifier"}
+        },
+        "verification_argv": {"$ref": "#/$defs/normalizedArgv"},
+        "expected_checksum_index_sha256": {"$ref": "#/$defs/sha256"},
+        "determinism_expected": {"type": "boolean"},
+        "nondeterministic_components": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/stableIdentifier"}
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"determinism_expected": {"const": true}}, "required": ["determinism_expected"]},
+          "then": {"properties": {"nondeterministic_components": {"maxItems": 0}}}
+        },
+        {
+          "if": {"properties": {"determinism_expected": {"const": false}}, "required": ["determinism_expected"]},
+          "then": {"properties": {"nondeterministic_components": {"minItems": 1}}}
+        }
+      ]
+    },
+    "integrityRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "checksum_index_artifact_id",
+        "artifact_count",
+        "all_sources_hashed",
+        "all_tools_hashed",
+        "all_artifacts_hashed",
+        "commands_normalized",
+        "seeds_complete",
+        "real_data_source_count",
+        "private_truth_reference_in_pipeline_command_count",
+        "calibration_validation_identifier_overlap_count",
+        "run_overwrite_detected"
+      ],
+      "properties": {
+        "checksum_index_artifact_id": {"$ref": "#/$defs/stableIdentifier"},
+        "artifact_count": {"type": "integer", "minimum": 6},
+        "all_sources_hashed": {"const": true},
+        "all_tools_hashed": {"const": true},
+        "all_artifacts_hashed": {"const": true},
+        "commands_normalized": {"const": true},
+        "seeds_complete": {"const": true},
+        "real_data_source_count": {"const": 0},
+        "private_truth_reference_in_pipeline_command_count": {"const": 0},
+        "calibration_validation_identifier_overlap_count": {"const": 0},
+        "run_overwrite_detected": {"const": false}
+      }
+    },
+    "deviationRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deviation_id", "recorded_at", "justification", "impact", "decision"],
+      "properties": {
+        "deviation_id": {"$ref": "#/$defs/stableIdentifier"},
+        "recorded_at": {"$ref": "#/$defs/dateTime"},
+        "justification": {"type": "string", "minLength": 1},
+        "impact": {"enum": ["NONE", "LIMITATION", "INVALIDATING"]},
+        "decision": {"enum": ["RETAIN", "INVALIDATE", "REVIEW_REQUIRED"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"impact": {"const": "NONE"}}, "required": ["impact"]},
+          "then": {"properties": {"decision": {"const": "RETAIN"}}}
+        },
+        {
+          "if": {"properties": {"impact": {"const": "INVALIDATING"}}, "required": ["impact"]},
+          "then": {"properties": {"decision": {"const": "INVALIDATE"}}}
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0.0",
+  "configuration_id": "d16_micro_chr5_calibration_v1",
+  "config_state": "FINALIZED",
+  "panel_role": "CALIBRATION",
+  "method_id": "within_sample_h1_to_h2_roh_copy_v1",
+  "seed_parent": "D15_PARENT_RECOMBINATION_SEED",
+  "minimum_observed_markers": 50,
+  "minimum_length_kb": 1500,
+  "maximum_density_kb_per_marker": 50,
+  "maximum_internal_gap_kb": 1000,
+  "minimum_flank_markers_each_side": 2,
+  "scenarios": [
+    {
+      "scenario_id": "roh_absent",
+      "relationship_to_target": "NO_INJECTION",
+      "source_ibd_scenario_id": null,
+      "start_bp": null,
+      "end_bp": null
+    },
+    {
+      "scenario_id": "roh_target_distinct",
+      "relationship_to_target": "TARGET_DISTINCT",
+      "source_ibd_scenario_id": null,
+      "start_bp": 87500000,
+      "end_bp": 89499999
+    },
+    {
+      "scenario_id": "roh_target_overlap_only",
+      "relationship_to_target": "TARGET_OVERLAP",
+      "source_ibd_scenario_id": null,
+      "start_bp": 83991179,
+      "end_bp": 85991178
+    },
+    {
+      "scenario_id": "roh_target_overlap_with_ibd",
+      "relationship_to_target": "TARGET_OVERLAP",
+      "source_ibd_scenario_id": "primary_2cm_positive",
+      "start_bp": 83991179,
+      "end_bp": 85991178
+    }
+  ]
+}

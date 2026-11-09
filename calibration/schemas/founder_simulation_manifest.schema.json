@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/calibration/schemas/founder_simulation_manifest.schema.json",
+  "title": "Manifest privé de simulation fondatrice D14",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "founder_simulation_manifest_id", "manifest_state",
+    "created_at", "inputs", "configuration", "panel", "domain", "method",
+    "confidentiality", "artifacts", "integrity"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "founder_simulation_manifest_id": {"$ref": "#/$defs/id"},
+    "manifest_state": {"const": "FINALIZED"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["d13_manifest_id", "d13_manifest_sha256", "d12_manifest_id", "d12_manifest_sha256", "d11a_manifest_id", "d11a_manifest_sha256", "dense_sha256", "observed_sha256", "pedigree_sha256", "d13_provenance_sha256", "transmission_sha256", "d12_provenance_sha256", "genetic_map_sha256"],
+      "properties": {
+        "d13_manifest_id": {"$ref": "#/$defs/id"},
+        "d13_manifest_sha256": {"$ref": "#/$defs/sha"},
+        "d12_manifest_id": {"$ref": "#/$defs/id"},
+        "d12_manifest_sha256": {"$ref": "#/$defs/sha"},
+        "d11a_manifest_id": {"$ref": "#/$defs/id"},
+        "d11a_manifest_sha256": {"$ref": "#/$defs/sha"},
+        "dense_sha256": {"$ref": "#/$defs/sha"},
+        "observed_sha256": {"$ref": "#/$defs/sha"},
+        "pedigree_sha256": {"$ref": "#/$defs/sha"},
+        "d13_provenance_sha256": {"$ref": "#/$defs/sha"},
+        "transmission_sha256": {"$ref": "#/$defs/sha"},
+        "d12_provenance_sha256": {"$ref": "#/$defs/sha"},
+        "genetic_map_sha256": {"$ref": "#/$defs/sha"}
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["configuration_id", "configuration_sha256", "replication_id", "random_seed", "age_generations"],
+      "properties": {
+        "configuration_id": {"$ref": "#/$defs/id"},
+        "configuration_sha256": {"$ref": "#/$defs/sha"},
+        "replication_id": {"$ref": "#/$defs/id"},
+        "random_seed": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "age_generations": {"type": "integer", "minimum": 1}
+      }
+    },
+    "panel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "individual_count", "family_count", "carrier_sample_count", "carrier_haplotype_count"],
+      "properties": {
+        "role": {"enum": ["CALIBRATION", "VALIDATION"]},
+        "individual_count": {"type": "integer", "minimum": 1},
+        "family_count": {"type": "integer", "minimum": 1},
+        "carrier_sample_count": {"type": "integer", "minimum": 1},
+        "carrier_haplotype_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "domain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chromosome", "start_bp", "end_bp", "start_cm", "end_cm", "target_position_bp", "target_position_cm", "position_unit", "genetic_distance_unit"],
+      "properties": {
+        "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+        "start_bp": {"type": "integer", "minimum": 1},
+        "end_bp": {"type": "integer", "minimum": 1},
+        "start_cm": {"type": "number"},
+        "end_cm": {"type": "number"},
+        "target_position_bp": {"type": "integer", "minimum": 1},
+        "target_position_cm": {"type": "number"},
+        "position_unit": {"const": "BP_1_BASED_CLOSED"},
+        "genetic_distance_unit": {"const": "cM"}
+      }
+    },
+    "method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method_id", "method_version", "breakpoint_distribution", "rate_per_cm", "edge_policy", "recent_pedigree_policy", "target_variant_policy"],
+      "properties": {
+        "method_id": {"const": "map_first_breakpoint_founder_mosaic_v1"},
+        "method_version": {"const": "1.0.0"},
+        "breakpoint_distribution": {"const": "EXPONENTIAL_INDEPENDENT_EACH_SIDE"},
+        "rate_per_cm": {"type": "number", "exclusiveMinimum": 0},
+        "edge_policy": {"const": "RIGHT_CENSOR_AT_MAP_DOMAIN"},
+        "recent_pedigree_policy": {"const": "PROPAGATE_BY_D12_HAPLOTYPE_ORIGIN"},
+        "target_variant_policy": {"const": "RESET_EXISTING_SNV_TO_SYNTHETIC_MUTATION"}
+      }
+    },
+    "confidentiality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["real_sample_files_read", "truth_labels_in_blinded_panel", "local_source_paths_in_manifest", "artifacts_version_control_allowed"],
+      "properties": {
+        "real_sample_files_read": {"const": false},
+        "truth_labels_in_blinded_panel": {"const": false},
+        "local_source_paths_in_manifest": {"const": false},
+        "artifacts_version_control_allowed": {"const": false}
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/artifact"},
+      "allOf": [
+        {"contains": {"properties": {"role": {"const": "DENSE_PHASED_FOUNDER_PANEL"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "BLINDED_OBSERVED_FOUNDER_PANEL"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "FOUNDER_SEGMENT_TRUTH"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "FOUNDER_CARRIER_TRUTH"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "TARGET_VARIANT_TRUTH"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "LOCAL_ANCESTRY_MOSAIC_TRUTH"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "PEDIGREE_TRUTH"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "MENDELIAN_TRANSMISSION_TRUTH"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "BACKGROUND_D12_HAPLOTYPE_PROVENANCE"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1}
+      ]
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dense_variant_count", "observed_variant_count", "target_variant_count", "family_count", "left_censored_count", "right_censored_count", "recombination_event_count", "changed_haplotype_allele_count", "mendelian_error_count", "family_overlap_count", "checks"],
+      "properties": {
+        "dense_variant_count": {"type": "integer", "minimum": 1},
+        "observed_variant_count": {"type": "integer", "minimum": 1},
+        "target_variant_count": {"const": 1},
+        "family_count": {"type": "integer", "minimum": 1},
+        "left_censored_count": {"type": "integer", "minimum": 0},
+        "right_censored_count": {"type": "integer", "minimum": 0},
+        "recombination_event_count": {"type": "integer", "minimum": 0},
+        "changed_haplotype_allele_count": {"type": "integer", "minimum": 0},
+        "mendelian_error_count": {"const": 0},
+        "family_overlap_count": {"const": 0},
+        "checks": {
+          "type": "array",
+          "minItems": 9,
+          "maxItems": 9,
+          "uniqueItems": true,
+          "items": {"enum": ["D13_D12_D11_LINEAGE_MATCHED", "GENETIC_MAP_HASH_MATCHED", "TARGET_VARIANT_MATCHED", "FAMILIES_DISJOINT", "FOUNDER_TEMPLATE_EXTERNAL_TO_FAMILIES", "BREAKPOINTS_WITHIN_DOMAIN", "CM_BP_COORDINATES_COHERENT", "MENDELIAN_TRANSMISSIONS_EXACT", "BLINDED_PANEL_HAS_NO_TRUTH_LABEL"]}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "sha": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "role", "path", "sha256", "size_bytes", "record_count"],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/id"},
+        "role": {"enum": ["DENSE_PHASED_FOUNDER_PANEL", "BLINDED_OBSERVED_FOUNDER_PANEL", "FOUNDER_SEGMENT_TRUTH", "FOUNDER_CARRIER_TRUTH", "TARGET_VARIANT_TRUTH", "LOCAL_ANCESTRY_MOSAIC_TRUTH", "PEDIGREE_TRUTH", "MENDELIAN_TRANSMISSION_TRUTH", "BACKGROUND_D12_HAPLOTYPE_PROVENANCE"]},
+        "path": {"type": "string", "pattern": "^private_truth/d14/(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9][A-Za-z0-9._/-]*$"},
+        "sha256": {"$ref": "#/$defs/sha"},
+        "size_bytes": {"type": "integer", "minimum": 1},
+        "record_count": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

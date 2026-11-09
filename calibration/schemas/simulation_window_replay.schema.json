@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/calibration/schemas/simulation_window_replay.schema.json",
+  "title": "Reçu D14b du rejeu lié D11a-D14",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "simulation_window_replay_id", "receipt_state",
+    "created_at", "design", "stages", "result", "confidentiality", "checks"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "simulation_window_replay_id": {"$ref": "#/$defs/id"},
+    "receipt_state": {"const": "FINALIZED"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "design": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest_id", "manifest_sha256", "configuration_id",
+        "primary_window_id", "chromosome", "start_bp", "end_bp",
+        "target_position_bp"
+      ],
+      "properties": {
+        "manifest_id": {"$ref": "#/$defs/id"},
+        "manifest_sha256": {"$ref": "#/$defs/sha"},
+        "configuration_id": {"$ref": "#/$defs/id"},
+        "primary_window_id": {"$ref": "#/$defs/id"},
+        "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+        "start_bp": {"type": "integer", "minimum": 1},
+        "end_bp": {"type": "integer", "minimum": 1},
+        "target_position_bp": {"type": "integer", "minimum": 1}
+      }
+    },
+    "stages": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/stage"},
+      "allOf": [
+        {"contains": {"properties": {"stage": {"const": "D11A"}}, "required": ["stage"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"stage": {"const": "D11B"}}, "required": ["stage"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"stage": {"const": "D12"}}, "required": ["stage"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"stage": {"const": "D13"}}, "required": ["stage"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"stage": {"const": "D14"}}, "required": ["stage"]}, "minContains": 1, "maxContains": 1}
+      ]
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "panel_role", "dense_variant_count", "observed_variant_count",
+        "family_count", "recombination_event_count", "left_censored_count",
+        "right_censored_count", "mendelian_error_count"
+      ],
+      "properties": {
+        "panel_role": {"enum": ["CALIBRATION", "VALIDATION"]},
+        "dense_variant_count": {"type": "integer", "minimum": 1},
+        "observed_variant_count": {"type": "integer", "minimum": 1},
+        "family_count": {"type": "integer", "minimum": 1},
+        "recombination_event_count": {"type": "integer", "minimum": 1},
+        "left_censored_count": {"type": "integer", "minimum": 0},
+        "right_censored_count": {"type": "integer", "minimum": 0},
+        "mendelian_error_count": {"const": 0}
+      }
+    },
+    "confidentiality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "real_sample_files_read", "sample_identifiers_recorded",
+        "local_source_paths_recorded", "version_control_allowed"
+      ],
+      "properties": {
+        "real_sample_files_read": {"const": false},
+        "sample_identifiers_recorded": {"const": false},
+        "local_source_paths_recorded": {"const": false},
+        "version_control_allowed": {"const": false}
+      }
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 10,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "D14B_DESIGN_HASH_RECORDED",
+          "D11_PUBLIC_SOURCE_BINDING_MATCHED",
+          "D11B_D11_BINDING_MATCHED",
+          "D12_D11A_D11B_BINDINGS_MATCHED",
+          "D13_D12_BINDING_MATCHED",
+          "D14_D11_D12_D13_BINDINGS_MATCHED",
+          "PRIMARY_DOMAIN_CONTAINED",
+          "TARGET_POSITION_MATCHED",
+          "INTERNAL_RECOMBINATION_OBSERVED",
+          "MENDELIAN_ERRORS_ZERO"
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "sha": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stage", "manifest_id", "manifest_sha256", "chromosome", "start_bp",
+        "end_bp"
+      ],
+      "properties": {
+        "stage": {"enum": ["D11A", "D11B", "D12", "D13", "D14"]},
+        "manifest_id": {"$ref": "#/$defs/id"},
+        "manifest_sha256": {"$ref": "#/$defs/sha"},
+        "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+        "start_bp": {"type": "integer", "minimum": 1},
+        "end_bp": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}
