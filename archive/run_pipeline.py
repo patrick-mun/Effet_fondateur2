@@ -111,7 +111,7 @@ def main():
     # Rapport HTML et PDF (FPDF)
     html_path = os.path.join(output_dir, "rapport_final.html")
     generate_full_report(output_dir, "rapport_final.pdf", html_path)
-   
+
     html_path = os.path.abspath(html_path)
     webbrowser.open(f"file://{html_path}")
 

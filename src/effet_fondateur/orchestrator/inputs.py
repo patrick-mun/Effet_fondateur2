@@ -175,6 +175,13 @@ def resolve_stage_input_artifacts(
                 assembly=config["project"]["assembly"],
             )
         )
+    for input_key in definition.optional_config_input_files:
+        configured_path = config["inputs"].get(input_key)
+        if configured_path is not None:
+            artifacts.append(_config_file_artifact(
+                configured_path=configured_path, input_key=input_key,
+                config_sha256=config_sha256, assembly=config["project"]["assembly"],
+            ))
     for alternatives in definition.config_input_file_alternatives:
         selected = [
             key for key in alternatives if config["inputs"].get(key) is not None

@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/calibration/schemas/simulation_window_config.schema.json",
+  "title": "Configuration D14b des fenêtres génétiques de simulation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "simulation_window_config_id", "config_state",
+    "panel_role", "method", "marker_requirements", "window_specs"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "simulation_window_config_id": {"$ref": "#/$defs/id"},
+    "config_state": {"const": "FINALIZED"},
+    "panel_role": {"enum": ["CALIBRATION", "VALIDATION"]},
+    "method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method_id", "method_version", "maximum_arm_censor_probability",
+        "genetic_map_interpolation", "candidate_selection",
+        "outcome_filtering"
+      ],
+      "properties": {
+        "method_id": {"const": "map_quantile_window_design_v1"},
+        "method_version": {"const": "1.0.0"},
+        "maximum_arm_censor_probability": {
+          "type": "number", "exclusiveMinimum": 0, "maximum": 0.05
+        },
+        "genetic_map_interpolation": {
+          "const": "PIECEWISE_LINEAR_NO_EXTRAPOLATION"
+        },
+        "candidate_selection": {
+          "const": "PRESELECTED_PUBLIC_REFERENCE_TARGET"
+        },
+        "outcome_filtering": {"const": "FORBIDDEN"}
+      }
+    },
+    "marker_requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum_flank_markers_each_side", "ibd_scenarios"],
+      "properties": {
+        "minimum_flank_markers_each_side": {
+          "type": "integer", "minimum": 1
+        },
+        "ibd_scenarios": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "scenario_id", "segment_length_cm", "minimum_observed_markers"
+            ],
+            "properties": {
+              "scenario_id": {"$ref": "#/$defs/id"},
+              "segment_length_cm": {
+                "enum": [1, 1.5, 2, 3, 5]
+              },
+              "minimum_observed_markers": {
+                "type": "integer", "minimum": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "window_specs": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/windowSpec"},
+      "allOf": [
+        {
+          "contains": {
+            "properties": {"purpose": {"const": "PRIMARY"}},
+            "required": ["purpose"]
+          },
+          "minContains": 1
+        },
+        {
+          "contains": {
+            "properties": {"purpose": {"const": "CENSORING_CHALLENGE"}},
+            "required": ["purpose"]
+          },
+          "minContains": 1
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "variant_id", "position_bp", "reference_allele", "alternate_allele"
+      ],
+      "properties": {
+        "variant_id": {"$ref": "#/$defs/id"},
+        "position_bp": {"type": "integer", "minimum": 1},
+        "reference_allele": {"enum": ["A", "C", "G", "T"]},
+        "alternate_allele": {"enum": ["A", "C", "G", "T"]}
+      }
+    },
+    "windowSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "window_id", "purpose", "age_generations", "chromosome", "target"
+      ],
+      "properties": {
+        "window_id": {"$ref": "#/$defs/id"},
+        "purpose": {"enum": ["PRIMARY", "CENSORING_CHALLENGE"]},
+        "age_generations": {"type": "integer", "minimum": 1},
+        "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+        "target": {"$ref": "#/$defs/target"},
+        "challenge_half_width_cm": {
+          "type": "number", "exclusiveMinimum": 0
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"purpose": {"const": "PRIMARY"}},
+            "required": ["purpose"]
+          },
+          "then": {"not": {"required": ["challenge_half_width_cm"]}}
+        },
+        {
+          "if": {
+            "properties": {"purpose": {"const": "CENSORING_CHALLENGE"}},
+            "required": ["purpose"]
+          },
+          "then": {"required": ["challenge_half_width_cm"]}
+        }
+      ]
+    }
+  }
+}

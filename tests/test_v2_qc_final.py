@@ -8,7 +8,7 @@ import yaml
 
 from effet_fondateur.orchestrator import StageExecutionError
 from effet_fondateur.orchestrator.pipeline import run_pipeline
-from effet_fondateur.stages.qc_final import _hwe_by_variant
+from effet_fondateur.stages.qc_final import DATASET_POLICIES, _hwe_by_variant, _variant_rows
 from test_v2_freeze_cohorts import prepare_cohort_inputs
 
 
@@ -141,6 +141,22 @@ def test_hwe_parser_accepts_documented_all_sample_labels(test_label: str) -> Non
     rows = [{"SNP": "probe_1", "TEST": test_label, "P": "0.5"}]
 
     assert _hwe_by_variant(rows) == {"probe_1": 0.5}
+
+
+def test_final_qc_preserves_small_nonzero_hwe_probability() -> None:
+    """Une p-value PLINK valide ne doit pas être écrasée par le rendu décimal."""
+    rows, excluded = _variant_rows(
+        DATASET_POLICIES[0], [["1", "probe_1", "0", "100", "A", "G"]],
+        [dict(SNP="probe_1", N_MISS="0", N_GENO="96", F_MISS="0")],
+        [dict(SNP="probe_1", A1="A", A2="G", MAF="0.5")],
+        [dict(SNP="probe_1", TEST="ALL(NP)", P="2.373e-28")],
+        dict(controls_variant_missingness_max=.05, controls_maf_min=.05, controls_hwe_p_min=1e-6),
+        "target_variant",
+    )
+    assert float(rows[0]["HWE_P"]) == pytest.approx(2.373e-28, rel=1e-12, abs=0)
+    assert rows[0]["QC_STATUS"] == "EXCLUDED"
+    assert rows[0]["FILTER_CODES"] == "hwe_controls"
+    assert excluded == {"probe_1"}
 
 
 def test_final_qc_applies_distinct_cohort_policies(tmp_path: Path) -> None:

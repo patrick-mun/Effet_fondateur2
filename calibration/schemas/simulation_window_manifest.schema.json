@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/calibration/schemas/simulation_window_manifest.schema.json",
+  "title": "Manifest privé D14b des fenêtres génétiques de simulation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "simulation_window_manifest_id", "manifest_state",
+    "created_at", "configuration", "panel", "inputs", "method", "windows",
+    "confidentiality", "artifacts", "integrity"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "simulation_window_manifest_id": {"$ref": "#/$defs/id"},
+    "manifest_state": {"const": "FINALIZED"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["configuration_id", "configuration_sha256"],
+      "properties": {
+        "configuration_id": {"$ref": "#/$defs/id"},
+        "configuration_sha256": {"$ref": "#/$defs/sha"}
+      }
+    },
+    "panel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role"],
+      "properties": {
+        "role": {"enum": ["CALIBRATION", "VALIDATION"]}
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assembly", "public_reference_source_id", "source_vcf_filename",
+        "source_vcf_sha256", "source_index_sha256", "genetic_map_source_id",
+        "genetic_map_sha256", "chip_design_id", "chip_design_version",
+        "normalized_chip_markers_sha256"
+      ],
+      "properties": {
+        "assembly": {"const": "GRCh38"},
+        "public_reference_source_id": {
+          "const": "igsr_1kg_3202_phased_grch38_20220422"
+        },
+        "source_vcf_filename": {
+          "type": "string",
+          "pattern": "^1kGP_high_coverage_Illumina\\.chr(?:[1-9]|1[0-9]|2[0-2])\\.filtered\\.SNV_INDEL_SV_phased_panel\\.vcf\\.gz$"
+        },
+        "source_vcf_sha256": {"$ref": "#/$defs/sha"},
+        "source_index_sha256": {"$ref": "#/$defs/sha"},
+        "genetic_map_source_id": {
+          "const": "shapeit4_hapmap_grch38_git_7a0cab7"
+        },
+        "genetic_map_sha256": {"$ref": "#/$defs/sha"},
+        "chip_design_id": {"const": "CytoScan750K_Accel"},
+        "chip_design_version": {"const": "NA36.r1"},
+        "normalized_chip_markers_sha256": {"$ref": "#/$defs/sha"}
+      }
+    },
+    "method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method_id", "method_version", "maximum_arm_censor_probability",
+        "half_width_formula", "genetic_map_interpolation", "outcome_filtering"
+      ],
+      "properties": {
+        "method_id": {"const": "map_quantile_window_design_v1"},
+        "method_version": {"const": "1.0.0"},
+        "maximum_arm_censor_probability": {
+          "type": "number", "exclusiveMinimum": 0, "maximum": 0.05
+        },
+        "half_width_formula": {
+          "const": "-100*ln(maximum_arm_censor_probability)/age_generations"
+        },
+        "genetic_map_interpolation": {
+          "const": "PIECEWISE_LINEAR_NO_EXTRAPOLATION"
+        },
+        "outcome_filtering": {"const": "FORBIDDEN"}
+      }
+    },
+    "windows": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/window"},
+      "allOf": [
+        {
+          "contains": {
+            "properties": {"purpose": {"const": "PRIMARY"}},
+            "required": ["purpose"]
+          },
+          "minContains": 1
+        },
+        {
+          "contains": {
+            "properties": {"purpose": {"const": "CENSORING_CHALLENGE"}},
+            "required": ["purpose"]
+          },
+          "minContains": 1
+        }
+      ]
+    },
+    "confidentiality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "real_sample_files_read", "sample_identifiers_recorded",
+        "local_source_paths_in_manifest", "artifacts_version_control_allowed"
+      ],
+      "properties": {
+        "real_sample_files_read": {"const": false},
+        "sample_identifiers_recorded": {"const": false},
+        "local_source_paths_in_manifest": {"const": false},
+        "artifacts_version_control_allowed": {"const": false}
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/artifact"},
+      "allOf": [
+        {"contains": {"properties": {"role": {"const": "WINDOW_DEFINITION_TABLE"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "OBSERVABLE_MARKER_AUDIT"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1}
+      ]
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "window_count", "primary_window_count", "challenge_window_count",
+        "infeasible_window_count", "ibd_scenario_evaluation_count",
+        "ibd_not_evaluable_count", "checks"
+      ],
+      "properties": {
+        "window_count": {"type": "integer", "minimum": 2},
+        "primary_window_count": {"type": "integer", "minimum": 1},
+        "challenge_window_count": {"type": "integer", "minimum": 1},
+        "infeasible_window_count": {"const": 0},
+        "ibd_scenario_evaluation_count": {"type": "integer", "minimum": 1},
+        "ibd_not_evaluable_count": {"const": 0},
+        "checks": {
+          "type": "array",
+          "minItems": 9,
+          "maxItems": 9,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "PUBLIC_REFERENCE_HASHES_RECORDED",
+              "GENETIC_MAP_MONOTONIC_AND_COVERING",
+              "NO_GENETIC_MAP_EXTRAPOLATION",
+              "TARGET_VARIANT_EXACTLY_MATCHED",
+              "PRIMARY_ARM_CENSOR_PROBABILITY_WITHIN_LIMIT",
+              "CHALLENGE_WINDOWS_SEPARATE",
+              "IBD_MARKER_THRESHOLDS_MET",
+              "NO_OUTCOME_FILTERING",
+              "NO_REAL_STUDY_DATA"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "sha": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scenario_id", "segment_length_cm", "minimum_observed_markers",
+        "observed_marker_count", "minimum_flank_markers_each_side",
+        "left_flank_marker_count", "right_flank_marker_count", "status"
+      ],
+      "properties": {
+        "scenario_id": {"$ref": "#/$defs/id"},
+        "segment_length_cm": {"type": "number", "exclusiveMinimum": 0},
+        "minimum_observed_markers": {"type": "integer", "minimum": 1},
+        "observed_marker_count": {"type": "integer", "minimum": 0},
+        "minimum_flank_markers_each_side": {"type": "integer", "minimum": 1},
+        "left_flank_marker_count": {"type": "integer", "minimum": 0},
+        "right_flank_marker_count": {"type": "integer", "minimum": 0},
+        "status": {"enum": ["EVALUABLE", "NOT_EVALUABLE"]}
+      }
+    },
+    "window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "window_id", "purpose", "age_generations", "chromosome", "target",
+        "domain", "requested_half_width_cm", "realized_left_width_cm",
+        "realized_right_width_cm", "theoretical_arm_censor_probability",
+        "dense_variant_count", "observed_marker_count",
+        "left_observed_marker_count", "right_observed_marker_count",
+        "ibd_scenarios"
+      ],
+      "properties": {
+        "window_id": {"$ref": "#/$defs/id"},
+        "purpose": {"enum": ["PRIMARY", "CENSORING_CHALLENGE"]},
+        "age_generations": {"type": "integer", "minimum": 1},
+        "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "variant_id", "position_bp", "position_cm", "reference_allele",
+            "alternate_allele"
+          ],
+          "properties": {
+            "variant_id": {"$ref": "#/$defs/id"},
+            "position_bp": {"type": "integer", "minimum": 1},
+            "position_cm": {"type": "number"},
+            "reference_allele": {"enum": ["A", "C", "G", "T"]},
+            "alternate_allele": {"enum": ["A", "C", "G", "T"]}
+          }
+        },
+        "domain": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["start_bp", "end_bp", "start_cm", "end_cm"],
+          "properties": {
+            "start_bp": {"type": "integer", "minimum": 1},
+            "end_bp": {"type": "integer", "minimum": 1},
+            "start_cm": {"type": "number"},
+            "end_cm": {"type": "number"}
+          }
+        },
+        "requested_half_width_cm": {"type": "number", "exclusiveMinimum": 0},
+        "realized_left_width_cm": {"type": "number", "exclusiveMinimum": 0},
+        "realized_right_width_cm": {"type": "number", "exclusiveMinimum": 0},
+        "theoretical_arm_censor_probability": {
+          "type": "number", "exclusiveMinimum": 0, "maximum": 1
+        },
+        "dense_variant_count": {"type": "integer", "minimum": 1},
+        "observed_marker_count": {"type": "integer", "minimum": 1},
+        "left_observed_marker_count": {"type": "integer", "minimum": 0},
+        "right_observed_marker_count": {"type": "integer", "minimum": 0},
+        "ibd_scenarios": {
+          "type": "array", "items": {"$ref": "#/$defs/scenario"}
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_id", "role", "path", "sha256", "size_bytes", "record_count"
+      ],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/id"},
+        "role": {"enum": ["WINDOW_DEFINITION_TABLE", "OBSERVABLE_MARKER_AUDIT"]},
+        "path": {
+          "type": "string",
+          "pattern": "^private_truth/d14b/(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9][A-Za-z0-9._/-]*$"
+        },
+        "sha256": {"$ref": "#/$defs/sha"},
+        "size_bytes": {"type": "integer", "minimum": 1},
+        "record_count": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

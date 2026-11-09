@@ -212,6 +212,7 @@ PHASE_AUTOSOMAL_PANEL_STAGE = StageDefinition(
     critical=True,
     dependencies=("build_sample_registry", "prepare_autosomal_phasing_panel"),
     config_input_files=("reference_panel_catalog", "ancestry_reference_catalog", "genetic_map_catalog"),
+    optional_config_input_files=("phasing_reference_selection",),
     required_artifact_ids=(
         "samples_master", "autosomal_phasing_panel_bed", "autosomal_phasing_panel_bim",
         "autosomal_phasing_panel_fam", "autosomal_phasing_panel_dataset",
@@ -246,6 +247,7 @@ PHASE_TARGET_REGION_STAGE = StageDefinition(
         "prepare_target_region",
     ),
     config_input_files=("target_variant_metadata", "reference_panel_catalog"),
+    optional_config_input_files=("phasing_reference_selection",),
     required_artifact_ids=(
         "target_region_bim",
         "target_region_bed",

@@ -74,6 +74,36 @@ def test_founder_enrichment_configuration_is_strict(tmp_path: Path) -> None:
         load_pipeline_config(config_path)
 
 
+@pytest.mark.parametrize(
+    ("original", "replacement"),
+    (
+        ("control_frequency: null", "control_frequency: 0.01"),
+        (
+            "calibrated: false, calibration_specificity_acceptable: false, "
+            "control_frequency: null",
+            "calibrated: true, calibration_specificity_acceptable: true, "
+            "control_frequency: null",
+        ),
+    ),
+)
+def test_explicit_ibd_calibration_configuration_is_consistent(
+    tmp_path: Path,
+    original: str,
+    replacement: str,
+) -> None:
+    example = (REPOSITORY_ROOT / "config" / "pipeline.example.yaml").read_text(
+        encoding="utf-8"
+    )
+    config_path = tmp_path / "invalid-explicit-ibd-calibration.yaml"
+    config_path.write_text(
+        example.replace(original, replacement, 1),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigurationError):
+        load_pipeline_config(config_path)
+
+
 def test_dock6_profile_accepts_unconfirmed_target_fields() -> None:
     config = load_pipeline_config(
         REPOSITORY_ROOT / "config" / "studies" / "dock6.example.yaml"

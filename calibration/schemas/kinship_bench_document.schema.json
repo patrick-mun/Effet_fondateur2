@@ -1,0 +1,312 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "method_id",
+        "artifacts",
+        "calibrated",
+        "founder_effect_proven",
+        "manifest_state",
+        "created_at",
+        "configuration_sha256",
+        "bundles"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0"
+        },
+        "method_id": {
+          "const": "iid_pedigree_kinship_bench_v1"
+        },
+        "artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
+        },
+        "calibrated": {
+          "const": false
+        },
+        "founder_effect_proven": {
+          "const": false
+        },
+        "manifest_state": {
+          "const": "FINALIZED"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "configuration_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "bundles": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "bundle_id",
+              "sample_count",
+              "marker_count"
+            ],
+            "properties": {
+              "bundle_id": {
+                "enum": [
+                  "B00",
+                  "B01",
+                  "B02"
+                ]
+              },
+              "sample_count": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "marker_count": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "method_id",
+        "artifacts",
+        "calibrated",
+        "founder_effect_proven",
+        "closure_state",
+        "panel_manifest_sha256",
+        "runs"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0"
+        },
+        "method_id": {
+          "const": "iid_pedigree_kinship_bench_v1"
+        },
+        "artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
+        },
+        "calibrated": {
+          "const": false
+        },
+        "founder_effect_proven": {
+          "const": false
+        },
+        "closure_state": {
+          "const": "CLOSED"
+        },
+        "panel_manifest_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "runs": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "bundle_id",
+              "run_path",
+              "manifest_sha256",
+              "returncode",
+              "pending_manual_decisions"
+            ],
+            "properties": {
+              "bundle_id": {
+                "enum": [
+                  "B00",
+                  "B01",
+                  "B02"
+                ]
+              },
+              "run_path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "manifest_sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "returncode": {
+                "const": 0
+              },
+              "pending_manual_decisions": {
+                "const": [
+                  "kinship_exclusion_approval"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "method_id",
+        "artifacts",
+        "calibrated",
+        "founder_effect_proven",
+        "evaluation_state",
+        "created_at",
+        "configuration",
+        "tool_versions",
+        "panel_manifest_sha256",
+        "run_index_sha256",
+        "stages"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0"
+        },
+        "method_id": {
+          "const": "iid_pedigree_kinship_bench_v1"
+        },
+        "artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
+        },
+        "calibrated": {
+          "const": false
+        },
+        "founder_effect_proven": {
+          "const": false
+        },
+        "evaluation_state": {
+          "const": "CLOSED"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "configuration": {
+          "type": "object"
+        },
+        "tool_versions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "panel_manifest_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "run_index_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "stages": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "stage_id",
+              "status",
+              "case_count",
+              "fail_count"
+            ],
+            "properties": {
+              "stage_id": {
+                "enum": [
+                  "06",
+                  "07"
+                ]
+              },
+              "status": {
+                "enum": [
+                  "PASS",
+                  "FAIL"
+                ]
+              },
+              "case_count": {
+                "const": 3
+              },
+              "fail_count": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

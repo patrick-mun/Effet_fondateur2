@@ -1,0 +1,405 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "method_id",
+    "simulation_seed",
+    "missingness_seed",
+    "bootstrap_seed",
+    "bootstrap_replicates",
+    "confidence_level",
+    "markers_per_autosome",
+    "marker_start_bp",
+    "marker_spacing_bp",
+    "families_per_relation_per_stratum",
+    "strata",
+    "profiles",
+    "ld_copy_offsets",
+    "monomorphic_offset",
+    "king_absolute_tolerance",
+    "manual_approval",
+    "tools",
+    "preliminary_parameters",
+    "panel_parameters",
+    "kinship_parameters"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "method_id": {
+      "const": "iid_pedigree_kinship_bench_v1"
+    },
+    "simulation_seed": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "missingness_seed": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "bootstrap_seed": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "bootstrap_replicates": {
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 10000
+    },
+    "confidence_level": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "exclusiveMaximum": 1
+    },
+    "markers_per_autosome": {
+      "type": "integer",
+      "minimum": 32,
+      "maximum": 1024
+    },
+    "marker_start_bp": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "marker_spacing_bp": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "families_per_relation_per_stratum": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 16
+    },
+    "strata": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "stratum_id",
+          "allele_frequency"
+        ],
+        "properties": {
+          "stratum_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "allele_frequency": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "exclusiveMaximum": 1
+          }
+        }
+      }
+    },
+    "profiles": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile_id",
+          "missingness_fraction",
+          "marker_stride"
+        ],
+        "properties": {
+          "profile_id": {
+            "enum": [
+              "COMPLETE",
+              "MISSING_5PCT",
+              "DENSITY_25PCT"
+            ]
+          },
+          "missingness_fraction": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 0.05
+          },
+          "marker_stride": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4
+          }
+        }
+      }
+    },
+    "ld_copy_offsets": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "monomorphic_offset": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "king_absolute_tolerance": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 0.000051
+    },
+    "manual_approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "approved",
+        "decision_id",
+        "reviewer_role",
+        "approved_at"
+      ],
+      "properties": {
+        "approved": {
+          "const": true
+        },
+        "decision_id": {
+          "const": "CAL-DEC-005"
+        },
+        "reviewer_role": {
+          "type": "string",
+          "minLength": 1
+        },
+        "approved_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "tools": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "plink",
+        "king"
+      ],
+      "properties": {
+        "plink": {
+          "type": "string",
+          "minLength": 1
+        },
+        "king": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "preliminary_parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sample_missingness_max",
+        "variant_missingness_max",
+        "kinship_maf_alert_threshold",
+        "heterozygosity_z_alert",
+        "batch_missingness_delta_alert",
+        "duplicate_pi_hat_alert",
+        "duplicate_scan_min_polymorphic_variants",
+        "plink_timeout_seconds"
+      ],
+      "properties": {
+        "sample_missingness_max": {
+          "type": "number",
+          "minimum": 0
+        },
+        "variant_missingness_max": {
+          "type": "number",
+          "minimum": 0
+        },
+        "kinship_maf_alert_threshold": {
+          "type": "number",
+          "minimum": 0
+        },
+        "heterozygosity_z_alert": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "batch_missingness_delta_alert": {
+          "type": "number",
+          "minimum": 0
+        },
+        "duplicate_pi_hat_alert": {
+          "type": "number",
+          "minimum": 0
+        },
+        "duplicate_scan_min_polymorphic_variants": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "plink_timeout_seconds": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "panel_parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maf_min",
+        "ld_window_variants",
+        "ld_step_variants",
+        "ld_r2_max",
+        "required_autosomes",
+        "min_markers_per_autosome",
+        "min_total_markers",
+        "max_autosome_marker_fraction",
+        "excluded_regions",
+        "residual_ld_window_variants",
+        "residual_ld_window_kb",
+        "plink_timeout_seconds"
+      ],
+      "properties": {
+        "maf_min": {
+          "type": "number",
+          "minimum": 0
+        },
+        "ld_window_variants": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ld_step_variants": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ld_r2_max": {
+          "type": "number",
+          "minimum": 0
+        },
+        "required_autosomes": {
+          "type": "array",
+          "minItems": 22,
+          "maxItems": 22,
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "min_markers_per_autosome": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "min_total_markers": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_autosome_marker_fraction": {
+          "type": "number",
+          "minimum": 0
+        },
+        "excluded_regions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "region_id",
+              "chromosome",
+              "start_bp",
+              "end_bp"
+            ],
+            "properties": {
+              "region_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "chromosome": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "start_bp": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "end_bp": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "residual_ld_window_variants": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "residual_ld_window_kb": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "plink_timeout_seconds": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "kinship_parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "king_degree",
+        "duplicate_or_mz_min",
+        "first_degree_min",
+        "second_degree_min",
+        "third_degree_min",
+        "fourth_degree_min",
+        "parent_child_ibs0_max",
+        "relatedness_max_degree_for_independence",
+        "threads",
+        "king_timeout_seconds"
+      ],
+      "properties": {
+        "king_degree": {
+          "const": 4
+        },
+        "duplicate_or_mz_min": {
+          "type": "number",
+          "minimum": 0
+        },
+        "first_degree_min": {
+          "type": "number",
+          "minimum": 0
+        },
+        "second_degree_min": {
+          "type": "number",
+          "minimum": 0
+        },
+        "third_degree_min": {
+          "type": "number",
+          "minimum": 0
+        },
+        "fourth_degree_min": {
+          "type": "number",
+          "minimum": 0
+        },
+        "parent_child_ibs0_max": {
+          "type": "number",
+          "minimum": 0
+        },
+        "relatedness_max_degree_for_independence": {
+          "const": 4
+        },
+        "threads": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "king_timeout_seconds": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

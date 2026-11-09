@@ -338,7 +338,8 @@ def _integer_value(raw_value: str, field: str, *, minimum: int = 0) -> int:
 
 
 def _decimal(value: float) -> str:
-    if abs(value) < 5e-16:
+    # Normaliser -0.0, sans effacer les petites probabilités HWE non nulles.
+    if value == 0:
         value = 0.0
     return format(value, ".12g")
 

@@ -159,7 +159,7 @@ Représentation typique attendue dans `dapc.png` :
 *(exemple visuel à insérer ici : `dapc.png`)*
 
 #### 2. Arbre phylogénétique
-L’arbre `phylo_tree.png` représente la proximité génétique entre individus. 
+L’arbre `phylo_tree.png` représente la proximité génétique entre individus.
 Les branches plus courtes indiquent une proximité forte.
 
 - Forme : cercle (type 'fan')
@@ -231,4 +231,3 @@ Les résultats sont placés dans `output/adegenet_results/` et intégrés dans :
 - Vérifier la cohérence des identifiants dans `.raw`
 - Ne pas forcer un nombre de clusters trop élevé dans DAPC
 - Inspecter visuellement les arbres pour détecter les anomalies
-

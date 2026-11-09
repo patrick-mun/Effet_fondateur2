@@ -151,8 +151,8 @@ def generate_qc_plots(output_prefix):
             })
             summary.to_csv(f"{output_prefix}/hwe_all_summary.csv", index=False)
             logging.info("Résumé statistique HWE (ALL) sauvegardé dans hwe_all_summary.csv")
-          
-         
+
+
 
 
 def run_preprocessing(input_prefix: str, output_prefix: str, cas_file: str, temoins_file: str):

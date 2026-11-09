@@ -1,0 +1,225 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "method_id",
+    "report_id",
+    "evaluations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "method_id": {
+      "const": "independent_technical_concordance_v1"
+    },
+    "report_id": {
+      "enum": [
+        "CAL-REP-00",
+        "CAL-REP-01",
+        "CAL-REP-02",
+        "CAL-REP-03",
+        "CAL-REP-04"
+      ]
+    },
+    "evaluations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "bundle_id",
+          "report_id",
+          "stage_id",
+          "status",
+          "reasons",
+          "metrics"
+        ],
+        "properties": {
+          "bundle_id": {
+            "type": "string",
+            "pattern": "^B[0-9a-f]{16}$"
+          },
+          "report_id": {
+            "enum": [
+              "CAL-REP-00",
+              "CAL-REP-01",
+              "CAL-REP-02",
+              "CAL-REP-03",
+              "CAL-REP-04"
+            ]
+          },
+          "stage_id": {
+            "enum": [
+              "00",
+              "01",
+              "02",
+              "03",
+              "04"
+            ]
+          },
+          "status": {
+            "enum": [
+              "PASS",
+              "FAIL",
+              "NOT_EVALUABLE"
+            ]
+          },
+          "reasons": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9_]+$"
+            }
+          },
+          "metrics": {
+            "type": "object",
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "report_id": {
+            "const": "CAL-REP-00"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "evaluations": {
+            "items": {
+              "properties": {
+                "stage_id": {
+                  "const": "00"
+                },
+                "report_id": {
+                  "const": "CAL-REP-00"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "report_id": {
+            "const": "CAL-REP-01"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "evaluations": {
+            "items": {
+              "properties": {
+                "stage_id": {
+                  "const": "01"
+                },
+                "report_id": {
+                  "const": "CAL-REP-01"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "report_id": {
+            "const": "CAL-REP-02"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "evaluations": {
+            "items": {
+              "properties": {
+                "stage_id": {
+                  "const": "02"
+                },
+                "report_id": {
+                  "const": "CAL-REP-02"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "report_id": {
+            "const": "CAL-REP-03"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "evaluations": {
+            "items": {
+              "properties": {
+                "stage_id": {
+                  "const": "03"
+                },
+                "report_id": {
+                  "const": "CAL-REP-03"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "report_id": {
+            "const": "CAL-REP-04"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "evaluations": {
+            "items": {
+              "properties": {
+                "stage_id": {
+                  "const": "04"
+                },
+                "report_id": {
+                  "const": "CAL-REP-04"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "technical_evaluation"
+}

@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0.0",
+  "method_id": "iid_autosomal_qc_component_bench_v1",
+  "seed": 2026103020,
+  "sample_count": 192,
+  "markers_per_autosome": 64,
+  "allele_frequency": 0.35,
+  "target_configuration": "d19_technical_target_v1.json",
+  "target_configuration_sha256": "c316c57a432ed7ed53cfc8fe99cad9c7ec0489115e1c5ea19523c677d5857bc5",
+  "manual_approval": {
+    "approved": true,
+    "decision_id": "CAL-DEC-004",
+    "reviewer_role": "calibration_owner",
+    "approved_at": "2026-10-30T05:29:16Z"
+  },
+  "plink_executable": "plink",
+  "preliminary_parameters": {
+    "sample_missingness_max": 0.1,
+    "variant_missingness_max": 0.05,
+    "kinship_maf_alert_threshold": 0.05,
+    "heterozygosity_z_alert": 3.0,
+    "batch_missingness_delta_alert": 0.02,
+    "duplicate_pi_hat_alert": 0.98,
+    "duplicate_scan_min_polymorphic_variants": 100,
+    "plink_timeout_seconds": 300
+  },
+  "final_parameters": {
+    "sample_missingness_max": 0.1,
+    "controls_variant_missingness_max": 0.05,
+    "controls_maf_min": 0.05,
+    "controls_hwe_p_min": 0.000001,
+    "carriers_variant_missingness_max": 0.05,
+    "target_region_variant_missingness_max": 0.05,
+    "target_region_maf_min": 0.01,
+    "batch_missingness_delta_alert": 0.02,
+    "plink_timeout_seconds": 300
+  }
+}

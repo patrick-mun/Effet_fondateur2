@@ -1,0 +1,269 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/calibration/schemas/base_haplotype_manifest.schema.json",
+  "title": "Manifest privé des haplotypes de base D11",
+  "description": "Contrat D11 des haplotypes synthétiques réappariés, des génotypes non phasés dérivés et de leur carte génétique, sans identifiant donneur dans le manifest.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "base_haplotype_manifest_id",
+    "manifest_state",
+    "created_at",
+    "panel",
+    "source",
+    "partition",
+    "method",
+    "domain",
+    "confidentiality",
+    "artifacts",
+    "integrity"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "base_haplotype_manifest_id": {"$ref": "#/$defs/stableIdentifier"},
+    "manifest_state": {"const": "FINALIZED"},
+    "created_at": {"$ref": "#/$defs/dateTime"},
+    "panel": {"$ref": "#/$defs/panelRecord"},
+    "source": {"$ref": "#/$defs/sourceRecord"},
+    "partition": {"$ref": "#/$defs/partitionRecord"},
+    "method": {"$ref": "#/$defs/methodRecord"},
+    "domain": {"$ref": "#/$defs/domainRecord"},
+    "confidentiality": {"$ref": "#/$defs/confidentialityRecord"},
+    "artifacts": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/artifactRecord"},
+      "allOf": [
+        {"contains": {"properties": {"role": {"const": "PHASED_HAPLOTYPES"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "UNPHASED_GENOTYPES"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "DONOR_PROVENANCE"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "GENETIC_MAP"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1}
+      ]
+    },
+    "integrity": {"$ref": "#/$defs/integrityRecord"}
+  },
+  "$defs": {
+    "stableIdentifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "dateTime": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]+)?(?:Z|[+-](?:0[0-9]|1[0-4]):[0-5][0-9])$"
+    },
+    "privatePath": {
+      "type": "string",
+      "pattern": "^private_truth/d11/(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9][A-Za-z0-9._/-]*$"
+    },
+    "panelRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["panel_id", "role", "synthetic_identifier_prefix", "individual_count", "haplotype_count"],
+      "properties": {
+        "panel_id": {"$ref": "#/$defs/stableIdentifier"},
+        "role": {"enum": ["CALIBRATION", "VALIDATION"]},
+        "synthetic_identifier_prefix": {
+          "type": "string",
+          "pattern": "^SYN_(?:CAL|VAL)_$"
+        },
+        "individual_count": {"type": "integer", "minimum": 2},
+        "haplotype_count": {"type": "integer", "minimum": 4}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"role": {"const": "CALIBRATION"}}, "required": ["role"]},
+          "then": {"properties": {"synthetic_identifier_prefix": {"const": "SYN_CAL_"}}}
+        },
+        {
+          "if": {"properties": {"role": {"const": "VALIDATION"}}, "required": ["role"]},
+          "then": {"properties": {"synthetic_identifier_prefix": {"const": "SYN_VAL_"}}}
+        }
+      ]
+    },
+    "sourceRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "release_id",
+        "assembly",
+        "chromosome",
+        "vcf_filename",
+        "vcf_sha256",
+        "index_sha256",
+        "genetic_map_source_id",
+        "genetic_map_sha256"
+      ],
+      "properties": {
+        "source_id": {"const": "igsr_1kg_3202_phased_grch38_20220422"},
+        "release_id": {"const": "20220422_3202_phased_SNV_INDEL_SV"},
+        "assembly": {"const": "GRCh38"},
+        "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+        "vcf_filename": {
+          "type": "string",
+          "pattern": "^1kGP_high_coverage_Illumina\\.chr(?:[1-9]|1[0-9]|2[0-2])\\.filtered\\.SNV_INDEL_SV_phased_panel\\.vcf\\.gz$"
+        },
+        "vcf_sha256": {"$ref": "#/$defs/sha256"},
+        "index_sha256": {"$ref": "#/$defs/sha256"},
+        "genetic_map_source_id": {"const": "shapeit4_hapmap_grch38_git_7a0cab7"},
+        "genetic_map_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "partitionRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "partition_manifest_id",
+        "partition_manifest_sha256",
+        "partition_role",
+        "membership_sha256",
+        "donor_count"
+      ],
+      "properties": {
+        "partition_manifest_id": {"$ref": "#/$defs/stableIdentifier"},
+        "partition_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "partition_role": {"enum": ["DONOR_CALIBRATION", "DONOR_VALIDATION"]},
+        "membership_sha256": {"$ref": "#/$defs/sha256"},
+        "donor_count": {"type": "integer", "minimum": 2}
+      }
+    },
+    "methodRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method_id",
+        "method_version",
+        "random_seed",
+        "pairing_unit",
+        "haplotype_usage",
+        "same_source_pair_policy",
+        "variant_policy",
+        "genotype_derivation"
+      ],
+      "properties": {
+        "method_id": {"const": "population_stratified_whole_haplotype_repairing_v1"},
+        "method_version": {"const": "1.0.0"},
+        "random_seed": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "pairing_unit": {"const": "PUBLIC_SOURCE_POPULATION"},
+        "haplotype_usage": {"const": "EACH_DONOR_HAPLOTYPE_EXACTLY_ONCE"},
+        "same_source_pair_policy": {"const": "FORBIDDEN"},
+        "variant_policy": {"const": "BIALLELIC_SNV_COMPLETE_PHASED"},
+        "genotype_derivation": {"const": "UNORDERED_PAIR_OF_TRUE_HAPLOTYPES"}
+      }
+    },
+    "domainRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chromosome",
+        "start_bp",
+        "end_bp",
+        "base_position_unit",
+        "genetic_distance_unit",
+        "genetic_map_interpolation"
+      ],
+      "properties": {
+        "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+        "start_bp": {"type": "integer", "minimum": 1},
+        "end_bp": {"type": "integer", "minimum": 1},
+        "base_position_unit": {"const": "BP_1_BASED_CLOSED"},
+        "genetic_distance_unit": {"const": "cM"},
+        "genetic_map_interpolation": {"const": "PIECEWISE_LINEAR_NO_EXTRAPOLATION"}
+      }
+    },
+    "confidentialityRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw_donor_identifiers_in_manifest",
+        "local_source_paths_in_manifest",
+        "donor_provenance_private",
+        "artifacts_version_control_allowed",
+        "aggregate_counts_publishable"
+      ],
+      "properties": {
+        "raw_donor_identifiers_in_manifest": {"const": false},
+        "local_source_paths_in_manifest": {"const": false},
+        "donor_provenance_private": {"const": true},
+        "artifacts_version_control_allowed": {"const": false},
+        "aggregate_counts_publishable": {"const": true}
+      }
+    },
+    "artifactRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "role", "path", "sha256", "size_bytes", "record_count"],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/stableIdentifier"},
+        "role": {
+          "enum": ["PHASED_HAPLOTYPES", "UNPHASED_GENOTYPES", "DONOR_PROVENANCE", "GENETIC_MAP"]
+        },
+        "path": {"$ref": "#/$defs/privatePath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 1},
+        "record_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "integrityRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_donor_count",
+        "synthetic_individual_count",
+        "source_haplotype_count",
+        "synthetic_haplotype_count",
+        "variant_count",
+        "population_stratum_count",
+        "haplotype_copy_error_count",
+        "same_source_pair_count",
+        "allele_count_difference",
+        "genotype_haplotype_discordance_count",
+        "genetic_map_coordinate_error_count",
+        "genetic_map_domain_covered",
+        "mendelian_evaluation",
+        "checks"
+      ],
+      "properties": {
+        "source_donor_count": {"type": "integer", "minimum": 2},
+        "synthetic_individual_count": {"type": "integer", "minimum": 2},
+        "source_haplotype_count": {"type": "integer", "minimum": 4},
+        "synthetic_haplotype_count": {"type": "integer", "minimum": 4},
+        "variant_count": {"type": "integer", "minimum": 1},
+        "population_stratum_count": {"type": "integer", "minimum": 1},
+        "haplotype_copy_error_count": {"const": 0},
+        "same_source_pair_count": {"const": 0},
+        "allele_count_difference": {"const": 0},
+        "genotype_haplotype_discordance_count": {"const": 0},
+        "genetic_map_coordinate_error_count": {"const": 0},
+        "genetic_map_domain_covered": {"const": true},
+        "mendelian_evaluation": {"const": "DEFERRED_TO_D13_NO_PEDIGREE"},
+        "checks": {
+          "type": "array",
+          "minItems": 7,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "SOURCE_HASHES_MATCHED",
+              "PARTITION_BINDING_MATCHED",
+              "HAPLOTYPE_COPY_BIJECTION",
+              "SOURCE_PAIRS_DISJOINT",
+              "ALLELE_FREQUENCIES_EXACT",
+              "HAPLOTYPE_LD_EXACT_BY_PERMUTATION",
+              "GENOTYPE_HAPLOTYPE_CONCORDANCE_100_PERCENT",
+              "GENETIC_MAP_COORDINATES_VALID",
+              "RAW_DONOR_IDENTIFIERS_NOT_IN_MANIFEST"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

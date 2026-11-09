@@ -1,0 +1,260 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "method_id": {
+      "const": "paired_chip_phasing_bench_v1"
+    },
+    "closure_state": {
+      "const": "CLOSED"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "preparation_manifest_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "source_run_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "regional_source_sha256": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "configuration_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "implementation_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "oracle_implementation_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "config": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "method_id",
+        "preparation_manifest_sha256",
+        "profiles",
+        "missingness_fraction",
+        "rare_maf_upper_bound",
+        "map_absolute_tolerance_cm",
+        "missingness_seed",
+        "phasing_seed",
+        "bootstrap_seed",
+        "bootstrap_replicates",
+        "density_gap_bp",
+        "target_flank_bp",
+        "command_timeout_seconds",
+        "minimum_total_variants",
+        "minimum_variants_per_autosome"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0"
+        },
+        "method_id": {
+          "const": "paired_chip_phasing_bench_v1"
+        },
+        "preparation_manifest_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "profiles": {
+          "const": [
+            "BASELINE",
+            "DENSITY_50",
+            "MISSING_1PCT"
+          ]
+        },
+        "missingness_fraction": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 0.5
+        },
+        "rare_maf_upper_bound": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 0.5
+        },
+        "map_absolute_tolerance_cm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 0.001
+        },
+        "missingness_seed": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "phasing_seed": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "bootstrap_seed": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "bootstrap_replicates": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "density_gap_bp": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "target_flank_bp": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "command_timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "minimum_total_variants": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "minimum_variants_per_autosome": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        }
+      }
+    },
+    "stages": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "stage_id",
+          "status",
+          "performance_qualification"
+        ],
+        "properties": {
+          "stage_id": {
+            "enum": [
+              "10A",
+              "11",
+              "12",
+              "12A"
+            ]
+          },
+          "status": {
+            "enum": [
+              "PASS",
+              "FAIL",
+              "NOT_EVALUABLE"
+            ]
+          },
+          "performance_qualification": {
+            "enum": [
+              "NOT_APPLICABLE",
+              "REVIEW_REQUIRED"
+            ]
+          }
+        }
+      }
+    },
+    "independent_units": {
+      "const": 24
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "SYNTHETIC_TECHNICAL_TARGET_NOT_DOCK6",
+          "SUBSAMPLED_CHIP_NOT_FULL_DENSITY",
+          "PERFORMANCE_THRESHOLDS_NOT_SEALED",
+          "D21_SCIENTIFIC_FAIL_07_UNCHANGED",
+          "FIXTURE_CONTRACTS_NOT_UPSTREAM_QUALIFICATION"
+        ]
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "sha256"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^(10A|11|12|12A)\\.evaluation\\.json$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      }
+    },
+    "calibrated": {
+      "const": false
+    },
+    "founder_effect_proven": {
+      "const": false
+    },
+    "acceptance_criteria_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "prespecification_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "required": [
+    "schema_version",
+    "method_id",
+    "closure_state",
+    "created_at",
+    "preparation_manifest_sha256",
+    "source_run_sha256",
+    "regional_source_sha256",
+    "configuration_sha256",
+    "implementation_sha256",
+    "oracle_implementation_sha256",
+    "config",
+    "stages",
+    "independent_units",
+    "limitations",
+    "artifacts",
+    "calibrated",
+    "founder_effect_proven",
+    "acceptance_criteria_sha256",
+    "prespecification_sha256"
+  ]
+}

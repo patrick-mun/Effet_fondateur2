@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Configuration privée D18",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "configuration_id", "configuration_state", "method_id", "panel_role", "blinding_seed", "assembly", "metadata_policy", "pipeline_scope", "target"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "configuration_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "configuration_state": {"const": "FINALIZED"},
+    "method_id": {"const": "observed_only_acpa_blinding_v1"},
+    "panel_role": {"enum": ["CALIBRATION", "VALIDATION"]},
+    "blinding_seed": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+    "assembly": {"const": "GRCh38"},
+    "metadata_policy": {"const": "UNKNOWN_CLINICAL_AND_UNREPORTED_PEDIGREE"},
+    "pipeline_scope": {"const": "SOURCE_VALIDATION_ONLY"},
+    "target": {
+      "type": "object", "additionalProperties": false,
+      "required": ["chromosome", "position_bp", "ref", "alt"],
+      "properties": {
+        "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+        "position_bp": {"type": "integer", "minimum": 1},
+        "ref": {"enum": ["A", "C", "G", "T"]},
+        "alt": {"enum": ["A", "C", "G", "T"]}
+      }
+    }
+  }
+}

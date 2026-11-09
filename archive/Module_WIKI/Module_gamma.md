@@ -133,4 +133,3 @@ Les résultats sont sauvegardés dans `output/gamma_results/` et utilisés dans 
 - Vérifier que la carte génétique contient bien les positions en cM
 - Utiliser au moins 20 SNPs centrés autour de la mutation cible
 - Inspecter visuellement la forme du pic pour détecter d’éventuelles anomalies
-

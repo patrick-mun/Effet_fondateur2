@@ -1,0 +1,289 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Manifest D15 des injections IBD régionales",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "manifest_state",
+    "ibd_simulation_manifest_id",
+    "created_at",
+    "method_id",
+    "panel_role",
+    "scope",
+    "domain",
+    "inputs",
+    "seed",
+    "truth_policy",
+    "positive_pair_count",
+    "negative_pair_count",
+    "artifacts",
+    "integrity",
+    "calibrated",
+    "founder_effect_proven"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "manifest_state": {
+      "const": "FINALIZED"
+    },
+    "ibd_simulation_manifest_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "method_id": {
+      "const": "disjoint_unrelated_haplotype_copy_v1"
+    },
+    "panel_role": {
+      "enum": [
+        "CALIBRATION",
+        "VALIDATION"
+      ]
+    },
+    "scope": {
+      "const": "REGIONAL_TECHNICAL_INJECTION"
+    },
+    "domain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chromosome",
+        "start_bp",
+        "end_bp",
+        "start_cm",
+        "end_cm",
+        "target_position_bp",
+        "target_position_cm",
+        "position_unit",
+        "genetic_distance_unit"
+      ],
+      "properties": {
+        "chromosome": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 22
+        },
+        "start_bp": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "end_bp": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "start_cm": {
+          "type": "number"
+        },
+        "end_cm": {
+          "type": "number"
+        },
+        "target_position_bp": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "target_position_cm": {
+          "type": "number"
+        },
+        "position_unit": {
+          "const": "BP_1_BASED_CLOSED"
+        },
+        "genetic_distance_unit": {
+          "const": "cM"
+        }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "D14",
+        "D11A",
+        "DESIGN",
+        "REPLAY"
+      ],
+      "properties": {
+        "D14": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "D11A": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "DESIGN": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "REPLAY": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "seed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parent_recombination_seed",
+        "derived_seed",
+        "derivation"
+      ],
+      "properties": {
+        "parent_recombination_seed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "derived_seed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "derivation": {
+          "const": "SHA256(method_id:D15:parent_seed:panel_role)[0:4]_BIG_ENDIAN"
+        }
+      }
+    },
+    "truth_policy": {
+      "const": "INJECTED_ORIGIN_INTERVAL_BACKGROUND_IBD_UNKNOWN"
+    },
+    "positive_pair_count": {
+      "const": 5
+    },
+    "negative_pair_count": {
+      "const": 5
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "role",
+          "path",
+          "sha256",
+          "size_bytes",
+          "record_count"
+        ],
+        "properties": {
+          "role": {
+            "enum": [
+              "DENSE_PHASED_IBD_PANEL",
+              "OBSERVED_IBD_PANEL",
+              "IBD_INJECTION_TRUTH"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^private_truth/d15/[A-Za-z0-9_.-]+$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "record_count": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "allOf": [
+        {
+          "contains": {
+            "properties": {
+              "role": {
+                "const": "DENSE_PHASED_IBD_PANEL"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "role": {
+                "const": "OBSERVED_IBD_PANEL"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "role": {
+                "const": "IBD_INJECTION_TRUTH"
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dense_variant_count",
+        "observed_variant_count",
+        "changed_haplotype_allele_count",
+        "mendelian_error_count",
+        "positive_copy_error_count",
+        "negative_modified_count"
+      ],
+      "properties": {
+        "dense_variant_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "observed_variant_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "changed_haplotype_allele_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mendelian_error_count": {
+          "const": 0
+        },
+        "positive_copy_error_count": {
+          "const": 0
+        },
+        "negative_modified_count": {
+          "const": 0
+        }
+      }
+    },
+    "calibrated": {
+      "const": false
+    },
+    "founder_effect_proven": {
+      "const": false
+    }
+  }
+}

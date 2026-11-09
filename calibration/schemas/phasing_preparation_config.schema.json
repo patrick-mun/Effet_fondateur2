@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/calibration/schemas/phasing_preparation_config.schema.json",
+  "title": "Contrat D23a — phasing_preparation_config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "method_id",
+    "configuration_id",
+    "panel_role",
+    "founder_seed",
+    "meiosis_seed",
+    "phasing_seed",
+    "trio_count",
+    "unrelated_count",
+    "candidate_markers_per_autosome",
+    "maximum_markers_per_autosome",
+    "minimum_markers_per_autosome",
+    "minimum_total_markers",
+    "target_flank_bp",
+    "rare_maf_upper_bound",
+    "target_configuration",
+    "target_configuration_sha256",
+    "target_rule",
+    "reference_rule",
+    "source_timeout_seconds"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "method_id": {
+      "const": "chip_autosomal_phasing_preparation_v1"
+    },
+    "configuration_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "panel_role": {
+      "const": "CALIBRATION"
+    },
+    "founder_seed": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "phasing_seed": {"type": "integer", "minimum": 1},
+    "meiosis_seed": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "trio_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "unrelated_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "candidate_markers_per_autosome": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "maximum_markers_per_autosome": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "minimum_markers_per_autosome": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "minimum_total_markers": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "target_flank_bp": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "rare_maf_upper_bound": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "exclusiveMaximum": 0.5
+    },
+    "target_configuration": {
+      "type": "string",
+      "pattern": "^calibration/configurations/[A-Za-z0-9._-]+\\.json$"
+    },
+    "target_configuration_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "target_rule": {
+      "const": "EXPLICIT_FOUNDER_INDEX_MODULO_3_MENDELIAN_CHILD"
+    },
+    "reference_rule": {
+      "const": "EXACT_D10_PHASING_REFERENCE_EXCLUDE_BOTH_DONOR_PARTITIONS"
+    },
+    "source_timeout_seconds": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

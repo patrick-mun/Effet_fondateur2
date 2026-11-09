@@ -1,0 +1,224 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/calibration/schemas/pedigree_manifest.schema.json",
+  "title": "Manifest privé des pedigrees D13",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "pedigree_manifest_id", "manifest_state", "created_at",
+    "input", "configuration", "panel", "domain", "method",
+    "confidentiality", "artifacts", "integrity"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "pedigree_manifest_id": {"$ref": "#/$defs/stableIdentifier"},
+    "manifest_state": {"const": "FINALIZED"},
+    "created_at": {"$ref": "#/$defs/dateTime"},
+    "input": {"$ref": "#/$defs/input"},
+    "configuration": {"$ref": "#/$defs/configuration"},
+    "panel": {"$ref": "#/$defs/panel"},
+    "domain": {"$ref": "#/$defs/domain"},
+    "method": {"$ref": "#/$defs/method"},
+    "confidentiality": {"$ref": "#/$defs/confidentiality"},
+    "artifacts": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/artifact"},
+      "allOf": [
+        {"contains": {"properties": {"role": {"const": "DENSE_PHASED_PEDIGREE_PANEL"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "BLINDED_OBSERVED_PEDIGREE_PANEL"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "PEDIGREE_TRUTH"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "KINSHIP_TRUTH"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "MENDELIAN_TRANSMISSION_TRUTH"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "D12_HAPLOTYPE_PROVENANCE"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1},
+        {"contains": {"properties": {"role": {"const": "ANCESTRY_TRUTH"}}, "required": ["role"]}, "minContains": 1, "maxContains": 1}
+      ]
+    },
+    "integrity": {"$ref": "#/$defs/integrity"}
+  },
+  "$defs": {
+    "stableIdentifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "dateTime": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]+)?(?:Z|[+-](?:0[0-9]|1[0-4]):[0-5][0-9])$"
+    },
+    "privatePath": {"type": "string", "pattern": "^private_truth/d13/(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9][A-Za-z0-9._/-]*$"},
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest_id", "manifest_sha256", "panel_role",
+        "dense_artifact_id", "dense_artifact_sha256",
+        "observed_artifact_id", "observed_artifact_sha256",
+        "ancestry_artifact_id", "ancestry_artifact_sha256",
+        "provenance_artifact_id", "provenance_artifact_sha256"
+      ],
+      "properties": {
+        "manifest_id": {"$ref": "#/$defs/stableIdentifier"},
+        "manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "panel_role": {"enum": ["CALIBRATION", "VALIDATION"]},
+        "dense_artifact_id": {"$ref": "#/$defs/stableIdentifier"},
+        "dense_artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "observed_artifact_id": {"$ref": "#/$defs/stableIdentifier"},
+        "observed_artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "ancestry_artifact_id": {"$ref": "#/$defs/stableIdentifier"},
+        "ancestry_artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "provenance_artifact_id": {"$ref": "#/$defs/stableIdentifier"},
+        "provenance_artifact_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["configuration_id", "configuration_sha256", "random_seed"],
+      "properties": {
+        "configuration_id": {"$ref": "#/$defs/stableIdentifier"},
+        "configuration_sha256": {"$ref": "#/$defs/sha256"},
+        "random_seed": {"type": "integer", "minimum": 0, "maximum": 4294967295}
+      }
+    },
+    "panel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "panel_id", "role", "synthetic_identifier_prefix",
+        "source_individual_count", "output_individual_count", "descendant_count",
+        "family_count", "trio_count", "unrelated_pair_count"
+      ],
+      "properties": {
+        "panel_id": {"$ref": "#/$defs/stableIdentifier"},
+        "role": {"enum": ["CALIBRATION", "VALIDATION"]},
+        "synthetic_identifier_prefix": {"enum": ["SYN_CAL_D13_", "SYN_VAL_D13_"]},
+        "source_individual_count": {"type": "integer", "minimum": 1},
+        "output_individual_count": {"type": "integer", "minimum": 2},
+        "descendant_count": {"type": "integer", "minimum": 4, "multipleOf": 4},
+        "family_count": {"type": "integer", "minimum": 1},
+        "trio_count": {"type": "integer", "minimum": 4, "multipleOf": 4},
+        "unrelated_pair_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "domain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chromosome", "start_bp", "end_bp", "position_unit"],
+      "properties": {
+        "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+        "start_bp": {"type": "integer", "minimum": 1},
+        "end_bp": {"type": "integer", "minimum": 1},
+        "position_unit": {"const": "BP_1_BASED_CLOSED"}
+      }
+    },
+    "method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method_id", "method_version", "family_template", "source_selection",
+        "transmission_unit", "kinship_definition", "recombination_policy"
+      ],
+      "properties": {
+        "method_id": {"const": "first_cousin_whole_haplotype_transmission_v1"},
+        "method_version": {"const": "1.0.0"},
+        "family_template": {"const": "FIRST_COUSIN_PEDIGREE"},
+        "source_selection": {"const": "SAME_STRATUM_WITHOUT_REPLACEMENT"},
+        "transmission_unit": {"const": "WHOLE_PARENTAL_HAPLOTYPE"},
+        "kinship_definition": {"const": "PEDIGREE_COANCESTRY_COEFFICIENT"},
+        "recombination_policy": {"const": "FORBIDDEN_DEFERRED_TO_D14"}
+      }
+    },
+    "confidentiality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "real_sample_files_read", "d12_identifiers_in_blinded_panel",
+        "pedigree_labels_in_blinded_panel", "ancestry_labels_in_blinded_panel",
+        "local_source_paths_in_manifest", "artifacts_version_control_allowed"
+      ],
+      "properties": {
+        "real_sample_files_read": {"const": false},
+        "d12_identifiers_in_blinded_panel": {"const": false},
+        "pedigree_labels_in_blinded_panel": {"const": false},
+        "ancestry_labels_in_blinded_panel": {"const": false},
+        "local_source_paths_in_manifest": {"const": false},
+        "artifacts_version_control_allowed": {"const": false}
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "role", "path", "sha256", "size_bytes", "record_count"],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/stableIdentifier"},
+        "role": {"enum": [
+          "DENSE_PHASED_PEDIGREE_PANEL", "BLINDED_OBSERVED_PEDIGREE_PANEL",
+          "PEDIGREE_TRUTH", "KINSHIP_TRUTH", "MENDELIAN_TRANSMISSION_TRUTH",
+          "D12_HAPLOTYPE_PROVENANCE", "ANCESTRY_TRUTH"
+        ]},
+        "path": {"$ref": "#/$defs/privatePath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 1},
+        "record_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dense_variant_count", "observed_variant_count", "transmission_record_count",
+        "kinship_record_count", "relationship_class_counts",
+        "founder_haplotype_copy_error_count", "founder_allele_count_difference",
+        "mendelian_error_count", "family_founder_overlap_count",
+        "invalid_parent_reference_count", "checks"
+      ],
+      "properties": {
+        "dense_variant_count": {"type": "integer", "minimum": 1},
+        "observed_variant_count": {"type": "integer", "minimum": 1},
+        "transmission_record_count": {"type": "integer", "minimum": 8},
+        "kinship_record_count": {"type": "integer", "minimum": 1},
+        "relationship_class_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["UNRELATED", "FIRST_DEGREE", "SECOND_DEGREE", "THIRD_DEGREE"],
+          "properties": {
+            "UNRELATED": {"type": "integer", "minimum": 1},
+            "FIRST_DEGREE": {"type": "integer", "minimum": 1},
+            "SECOND_DEGREE": {"type": "integer", "minimum": 1},
+            "THIRD_DEGREE": {"type": "integer", "minimum": 1}
+          }
+        },
+        "founder_haplotype_copy_error_count": {"const": 0},
+        "founder_allele_count_difference": {"const": 0},
+        "mendelian_error_count": {"const": 0},
+        "family_founder_overlap_count": {"const": 0},
+        "invalid_parent_reference_count": {"const": 0},
+        "checks": {
+          "type": "array",
+          "minItems": 9,
+          "maxItems": 9,
+          "uniqueItems": true,
+          "items": {"enum": [
+            "D12_BINDING_MATCHED", "SOURCE_SAMPLE_UNIVERSE_MATCHED",
+            "FOUNDER_HAPLOTYPE_BIJECTION", "FAMILY_FOUNDERS_DISJOINT",
+            "MENDELIAN_TRANSMISSIONS_EXACT", "TRIO_COUNT_MATCHED",
+            "KINSHIP_CLASSES_COVERED", "ANCESTRY_PROPAGATED",
+            "BLINDED_PANEL_HAS_NO_TRUTH_LABEL"
+          ]},
+          "allOf": [
+            {"contains": {"const": "D12_BINDING_MATCHED"}},
+            {"contains": {"const": "SOURCE_SAMPLE_UNIVERSE_MATCHED"}},
+            {"contains": {"const": "FOUNDER_HAPLOTYPE_BIJECTION"}},
+            {"contains": {"const": "FAMILY_FOUNDERS_DISJOINT"}},
+            {"contains": {"const": "MENDELIAN_TRANSMISSIONS_EXACT"}},
+            {"contains": {"const": "TRIO_COUNT_MATCHED"}},
+            {"contains": {"const": "KINSHIP_CLASSES_COVERED"}},
+            {"contains": {"const": "ANCESTRY_PROPAGATED"}},
+            {"contains": {"const": "BLINDED_PANEL_HAS_NO_TRUTH_LABEL"}}
+          ]
+        }
+      }
+    }
+  }
+}

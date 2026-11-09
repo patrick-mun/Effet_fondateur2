@@ -1,0 +1,221 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Configuration D16 des scénarios ROH",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "configuration_id",
+    "config_state",
+    "panel_role",
+    "method_id",
+    "seed_parent",
+    "minimum_length_kb",
+    "minimum_observed_markers",
+    "maximum_density_kb_per_marker",
+    "maximum_internal_gap_kb",
+    "minimum_flank_markers_each_side",
+    "scenarios"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "configuration_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "config_state": {
+      "const": "FINALIZED"
+    },
+    "panel_role": {
+      "enum": [
+        "CALIBRATION",
+        "VALIDATION"
+      ]
+    },
+    "method_id": {
+      "const": "within_sample_h1_to_h2_roh_copy_v1"
+    },
+    "seed_parent": {
+      "const": "D15_PARENT_RECOMBINATION_SEED"
+    },
+    "minimum_length_kb": {
+      "type": "number",
+      "minimum": 1500
+    },
+    "minimum_observed_markers": {
+      "type": "integer",
+      "minimum": 50
+    },
+    "maximum_density_kb_per_marker": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 50
+    },
+    "maximum_internal_gap_kb": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 1000
+    },
+    "minimum_flank_markers_each_side": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scenario_id",
+          "relationship_to_target",
+          "source_ibd_scenario_id",
+          "start_bp",
+          "end_bp"
+        ],
+        "properties": {
+          "scenario_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          "relationship_to_target": {
+            "enum": [
+              "NO_INJECTION",
+              "TARGET_DISTINCT",
+              "TARGET_OVERLAP"
+            ]
+          },
+          "source_ibd_scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "start_bp": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "end_bp": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "relationship_to_target": {
+                  "const": "NO_INJECTION"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "source_ibd_scenario_id": {
+                  "type": "null"
+                },
+                "start_bp": {
+                  "type": "null"
+                },
+                "end_bp": {
+                  "type": "null"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "start_bp": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "end_bp": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {"relationship_to_target": {"const": "TARGET_DISTINCT"}}
+            },
+            "then": {
+              "properties": {"source_ibd_scenario_id": {"type": "null"}}
+            }
+          }
+        ]
+      },
+      "allOf": [
+        {
+          "contains": {
+            "properties": {
+              "relationship_to_target": {
+                "const": "NO_INJECTION"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "relationship_to_target": {
+                "const": "TARGET_DISTINCT"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "relationship_to_target": {
+                "const": "TARGET_OVERLAP"
+              }
+            }
+          },
+          "minContains": 2,
+          "maxContains": 2
+        },
+        {
+          "contains": {
+            "properties": {
+              "source_ibd_scenario_id": {
+                "type": "string"
+              },
+              "relationship_to_target": {
+                "const": "TARGET_OVERLAP"
+              }
+            }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    }
+  }
+}

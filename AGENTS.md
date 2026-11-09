@@ -4,7 +4,8 @@
 
 Ce dépôt contient un pipeline de recherche pour étudier un possible effet
 fondateur autour d'une mutation de `DOCK6` sur le chromosome 19. Le moteur
-combine PLINK, KING, Python, R/Adegenet et une estimation Gamma.
+combine Python, PLINK, KING, bcftools, SHAPEIT5, des appels IBD explicites et
+une estimation Gamma implémentée en Python.
 
 ## Environnement de travail
 
@@ -13,31 +14,30 @@ combine PLINK, KING, Python, R/Adegenet et une estimation Gamma.
 - Activer l'environnement avec `source .venv/bin/activate` ou appeler
   explicitement `.venv/bin/python`.
 - Installer les dépendances avec `.venv/bin/python -m pip install -r requirements.txt`.
-- Les exécutables `plink`, `king`, `bcftools` et `Rscript` doivent être dans le
-  `PATH`.
-- `Gamma` est optionnel pour le pipeline principal actuel.
+- Les exécutables `plink`, `king` et `bcftools` doivent être dans le `PATH`
+  lorsque les étapes correspondantes sont activées.
+- SHAPEIT5, Java, Hap-IBD et Refined IBD sont requis uniquement pour les étapes
+  de phasage et d'IBD explicite configurées.
+- Aucun binaire Gamma externe n'est utilisé par le pipeline actuel.
 
 ## Points d'entrée
 
 Le pipeline actif est la V2 (`src/effet_fondateur/`), pilotée par la CLI
-`effet-fondateur`. Le pipeline historique (`run_pipeline.py`, `scripts/`,
-`interface_effet_fondateur.py`, `Module_WIKI/`) est archivé dans `archive/`
+`effet-fondateur`. Le pipeline historique (`run_pipeline.py`, ses scripts,
+son interface et son wiki) est archivé dans `archive/`
 (voir `archive/README.md`) : il ne doit plus être exécuté pour produire un
 résultat scientifique et n'est plus un point d'entrée du dépôt.
 
-- Pipeline V2 : `.venv/bin/effet-fondateur run --config <config.yaml> --runs-dir <dossier>`
+- Pipeline : `.venv/bin/effet-fondateur run --config <profil.yaml>`
+- Reprise : `.venv/bin/effet-fondateur resume --run-dir <dossier_run>`
 - Validation de configuration V2 : `.venv/bin/effet-fondateur validate-config <config.yaml>`
 - Tests : `.venv/bin/python -m pytest tests/`
 - Conversion multi-échantillons ACPA vers PLINK :
   `.venv/bin/python -m simulation_genotype_famille.acpa_to_plink`
-- Conversion historique ACPA vers VCF sans génotypes individuels :
-  `.venv/bin/python simulation_genotype_famille/acpa_to_vcf2.py`
 - Simulation exploratoire de témoins indépendants :
   `.venv/bin/python -m simulation_genotype_famille.simulate_unrelated_controls`
 - Injection documentée de la mutation :
   `.venv/bin/python -m simulation_genotype_famille.inject_mutation`
-- Simulation familiale :
-  `.venv/bin/python simulation_genotype_famille/ped_generator_precod.py`
 
 ## Données et sécurité
 
@@ -48,6 +48,8 @@ résultat scientifique et n'est plus un point d'entrée du dépôt.
 - Ne pas lancer le pipeline archivé (`archive/run_pipeline.py`) : il réécrit
   des sorties, ouvre le rapport HTML dans le navigateur et ne doit plus servir
   à produire un résultat scientifique.
+- Ne pas lancer le pipeline complet sans prévenir l'utilisateur : il peut être
+  long, appeler plusieurs outils externes et créer un nouveau dossier de run.
 - Ne jamais inclure de données génétiques, jetons ou secrets dans les commits,
   les rapports de session ou les messages GitHub.
 - Ne jamais inférer automatiquement les génotypes de la mutation à partir du
@@ -109,8 +111,8 @@ résultat scientifique et n'est plus un point d'entrée du dépôt.
   nouveau comportement testable.
 - Tester le comportement observable, les cas limites et les erreurs attendues,
   sans dépendre des détails internes inutiles.
-- Simuler PLINK, KING, Gamma ou R dans les tests unitaires ; réserver leur
-  exécution réelle à des tests d'intégration identifiés.
+- Simuler PLINK, KING, bcftools, SHAPEIT5, Hap-IBD et Refined IBD dans les tests
+  unitaires ; réserver leur exécution réelle à des tests d'intégration identifiés.
 - Utiliser des dossiers temporaires et ne jamais écrire dans les données ou
   résultats réels pendant les tests.
 - Ne pas affaiblir une assertion uniquement pour faire passer un test.
@@ -136,10 +138,23 @@ résultat scientifique et n'est plus un point d'entrée du dépôt.
 - Ne pas modifier une méthode scientifique ou son interprétation sans test,
   comparaison avec un résultat de référence et signalement explicite.
 
+## Rapports de calibration — exigence permanente
+
+- Produire des graphiques de résultats qui expliquent les mesures, pas
+  seulement des cartes de chiffres ou un schéma du parcours.
+- Rappeler les équations réellement utilisées, avec variables, unités,
+  hypothèses, seuils et limites ; pour une étape logique, représenter les
+  règles de décision plutôt qu'inventer une formule statistique.
+- Montrer l'incertitude et les effectifs indépendants lorsque mesurables.
+- Conserver la provenance des graphiques, la confidentialité, les verdicts
+  et les résultats sources ; ne jamais inventer une courbe ou une précision.
+- Appliquer les détails du contrat de rapport dans
+  `calibration/CONVENTIONS_DEVELOPPEMENT.md` et le plan de calibration.
+
 ## Validation
 
 - Commencer par `git diff --check`.
-- Vérifier les imports avec `.venv/bin/python -c "import effet_fondateur"`.
+- Vérifier les imports avec `.venv/bin/python -c "import effet_fondateur; import effet_fondateur.orchestrator.pipeline"`.
 - Lancer les tests ciblés avant la suite complète.
 - Pour une modification liée à PLINK, utiliser une sortie temporaire et ne pas
   écraser les résultats existants.

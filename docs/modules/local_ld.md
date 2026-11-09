@@ -67,3 +67,33 @@ L'étape `15` ne consomme aucune sortie des étapes `13–14` et ne leur fournit
 aucune entrée. Le partage IBS centré cible reste défini à l'étape `13`; les bras
 en cM reçus par Gamma restent définis à l'étape `14`. Le LD local peut seulement
 être présenté comme contexte descriptif secondaire lors de la synthèse finale.
+
+## Extension exploratoire v2 dans `derived`
+
+Le script `scripts/analyze_phase15_ld_v2.py` évalue une évolution candidate de
+la phase 15 sans changer le contrat immuable `plink19_local_ld_secondary_v1`.
+Il utilise les BCF phasés des étapes 12 et 12A et écrit dans un nouveau dossier
+`derived/phase15_ld_v2`.
+
+L'analyse principale réunit les 62 témoins non apparentés et exactement un
+représentant de chacune des trois familles. Le r² est calculé sur les 130 copies
+haplotypiques. Les ancrages génomiques sont appariés sur le nombre de copies de
+l'allèle mineur et la densité de voisins dont le r² est effectivement évaluable
+dans les classes 0–0,1, 0,1–0,25, 0,25–0,5 et 0,5–1 cM. Cette même définition
+est appliquée à la cible et au fond. Le chromosome cible est exclu du fond
+génomique. Une classe sans paire cible reste `NOT_EVALUATED` et n'est pas
+fusionnée après observation du résultat.
+
+Avant tout calcul, le script valide le manifest du run, l'empreinte et
+l'identité des `stage_outputs.json`, puis le chemin, le type et le SHA-256 de
+chaque cohorte, BCF et carte réellement consommés. Les 21 BCF autosomiques et
+leurs 21 cartes hors chromosome cible figurent directement dans la provenance
+du résultat. L'univers et l'ordre des échantillons doivent être identiques sur
+tous les chromosomes.
+
+La courbe obtenue avec les 75 sujets est une sensibilité familiale : elle peut
+montrer l'inflation induite par les transmissions mais ne contribue pas au
+statut. Deux classes évaluables au-dessus du 95e percentile apparié sont exigées
+pour `SUPPORTIVE_EXPLORATORY_SMALL_N`; autrement le statut est
+`NEUTRAL_EXPLORATORY_SMALL_N`. Dans les deux cas, le résultat ne produit aucune
+probabilité d'effet fondateur et ne nourrit pas la datation.

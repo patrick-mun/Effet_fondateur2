@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "configuration_id": "d17_micro_chr5_calibration_v1",
+  "configuration_state": "FINALIZED",
+  "method_id": "paired_measurement_perturbations_v1",
+  "panel_role": "CALIBRATION",
+  "measurement_error_seed": 1005,
+  "target_policy": "KEEP_IF_OBSERVED_NO_GENOTYPE_PROTECTION",
+  "profiles": [
+    {"profile_id": "control", "marker_retention_fraction": 1, "missing_rate": 0, "genotyping_error_rate": 0, "phase_point_rate": 0, "phase_switch_rate": 0},
+    {"profile_id": "missing_01", "marker_retention_fraction": 1, "missing_rate": 0.01, "genotyping_error_rate": 0, "phase_point_rate": 0, "phase_switch_rate": 0},
+    {"profile_id": "missing_05", "marker_retention_fraction": 1, "missing_rate": 0.05, "genotyping_error_rate": 0, "phase_point_rate": 0, "phase_switch_rate": 0},
+    {"profile_id": "genotype_01", "marker_retention_fraction": 1, "missing_rate": 0, "genotyping_error_rate": 0.01, "phase_point_rate": 0, "phase_switch_rate": 0},
+    {"profile_id": "phase_point_02", "marker_retention_fraction": 1, "missing_rate": 0, "genotyping_error_rate": 0, "phase_point_rate": 0.02, "phase_switch_rate": 0},
+    {"profile_id": "phase_switch_02", "marker_retention_fraction": 1, "missing_rate": 0, "genotyping_error_rate": 0, "phase_point_rate": 0, "phase_switch_rate": 0.02},
+    {"profile_id": "density_50", "marker_retention_fraction": 0.5, "missing_rate": 0, "genotyping_error_rate": 0, "phase_point_rate": 0, "phase_switch_rate": 0},
+    {"profile_id": "combined", "marker_retention_fraction": 0.5, "missing_rate": 0.02, "genotyping_error_rate": 0.005, "phase_point_rate": 0.01, "phase_switch_rate": 0.01}
+  ]
+}

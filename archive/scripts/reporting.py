@@ -180,7 +180,7 @@ def plot_ld_graphics(ld_csv_path: str, output_dir: str):
 
 class CustomPDF(FPDF):
     def header(self):
-        pass  
+        pass
 
     def section_title(self, title):
         self.set_fill_color(0, 138, 160)
@@ -495,7 +495,7 @@ def generate_html_report(figures: dict, output_html: str, summary_csv: str = Non
     - Affichage des figures
     """
     sections = []
-    
+
     # 1. Description médicale
     info_med = {}
     info_med_path = os.path.join("data", "input", "complex_simulation", "info_med.json")
@@ -540,7 +540,7 @@ def generate_html_report(figures: dict, output_html: str, summary_csv: str = Non
             "</table></section>"
         )
 
-    # 4. Critères PLINK 
+    # 4. Critères PLINK
     if summary_csv and os.path.exists(summary_csv):
         try:
             df_sum = pd.read_csv(summary_csv)
@@ -556,16 +556,16 @@ def generate_html_report(figures: dict, output_html: str, summary_csv: str = Non
                 f"<section id='critere'><h2>Critères de filtrage PLINK</h2>"
                 f"<table border='1' style='width:100%;'>{crit_rows}</table></section>"
             )
-            
+
         except Exception as e:
             sections.append(f"<p>Erreur lecture summary_csv: {e}</p>")
 
 
-    # Résumé des analyses HWE 
+    # Résumé des analyses HWE
     if summary_csv and os.path.exists(summary_csv):
         try:
             df = pd.read_csv(summary_csv)
-            
+
             # Lire le commentaire général
             commentaire_path = os.path.join("data", "input", "complex_simulation", "resume_commentaire.json")
             resume_commentaire = {}
@@ -610,7 +610,7 @@ def generate_html_report(figures: dict, output_html: str, summary_csv: str = Non
             else:
                 print("[DEBUG] Colonne 'RT' absente dans ibd_plink.genome")
                 ps = pd.DataFrame(columns=['Relation', 'PLINK'])
-        
+
             # KING
             if 'Kinship' in df_kg.columns:
                 def cls(x):
@@ -802,7 +802,7 @@ def generate_html_report(figures: dict, output_html: str, summary_csv: str = Non
             plt.tight_layout()
             plt.savefig(compare_box)
             plt.close()
-            
+
            # Section HTML
             html_r2_section = (
                 "<section id='compare_r2'><h2>Analyse comparative du r² global et local chez les atteints</h2>"
@@ -845,10 +845,10 @@ def generate_html_report(figures: dict, output_html: str, summary_csv: str = Non
 
             html_r2_section += "</section>"
             sections.append(html_r2_section)
-            
+
         except Exception as e:
             print(f"[DEBUG] Erreur comparaison r² global vs atteints : {e}")
-            
+
         # 🔽 Conclusion et synthèse LD
         ld_synthese_path = os.path.join("data", "input", "complex_simulation", "resume_commentaire_ld_synthese.json")
         if os.path.exists(ld_synthese_path):
@@ -856,7 +856,7 @@ def generate_html_report(figures: dict, output_html: str, summary_csv: str = Non
                 with open(ld_synthese_path, "r", encoding="utf-8") as f:
                     ld_synthese_data = json.load(f)
                     synthese = ld_synthese_data.get("Conclusion et synthèse de la LD", {})
-                    
+
                     html_synthese_section = "<section id='conclusion_ld'><h2>Conclusion et synthèse de la LD</h2>"
                     for titre, texte in synthese.items():
                         html_synthese_section += f"<h3>{titre}</h3><p>{texte}</p>"
@@ -1075,7 +1075,7 @@ def generate_full_report(base_dir: str, output_pdf: str, output_html: str = None
     if summary_csv is None:
         summary_csv = summary_csv_default
     if not os.path.exists(summary_csv):
-       
+
 
     # Graphiques de qualité (MAF, HWE)
         maf_plot = os.path.join(base_dir, "geno", "qc_maf_distribution.png")
@@ -1102,9 +1102,9 @@ def generate_full_report(base_dir: str, output_pdf: str, output_html: str = None
         fam_file_path=os.path.join(base_dir, "geno", "filtered_data.fam"),  # ← chemin ajouté
         output_dir=os.path.join(base_dir, "ld")
     )
-    
-       
-    
+
+
+
     # Analyse LD dans la région ±1Mb autour de la mutation rsMUT (ex: position 11087401 sur chr19)
     ld_mutation_zone_analysis(
         plink_prefix=os.path.join(base_dir, "geno", "filtered_data"),

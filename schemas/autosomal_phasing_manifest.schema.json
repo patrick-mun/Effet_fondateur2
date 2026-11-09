@@ -5,6 +5,16 @@
   "additionalProperties": false,
   "required": ["schema_version", "method_id", "assembly", "sample_set_id", "variant_set_id", "sample_count", "variant_count", "chromosomes", "checks"],
   "properties": {
+    "sample_selection": {
+      "type": "object", "additionalProperties": false,
+      "required": ["selection_sha256", "membership_sha256", "partition_manifest_sha256", "sample_count"],
+      "properties": {
+        "selection_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "membership_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "partition_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "sample_count": {"type": "integer", "minimum": 1}
+      }
+    },
     "schema_version": {"const": "1.0.0"},
     "method_id": {"const": "shapeit5_reference_common_autosomes_v1"},
     "assembly": {"const": "GRCh38"},

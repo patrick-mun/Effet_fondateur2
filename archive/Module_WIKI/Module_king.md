@@ -35,7 +35,7 @@ Ce module présente **KING**, un logiciel essentiel dans le pipeline DOCK6, util
 
 ## 🔍 Présentation de KING
 
-**Nom complet** : KING (Kinship-based INference for GWAS)  
+**Nom complet** : KING (Kinship-based INference for GWAS)
 **Site officiel** : [https://www.kingrelatedness.com/](https://www.kingrelatedness.com/)
 
 ### Objectifs et utilisations principales
@@ -142,5 +142,3 @@ du dossier de sortie de l'analyse, puis intégrés aux rapports.
 - Utiliser au moins 10000 SNPs informatifs avec MAF > 0.01
 - Vérifier visuellement les matrices de parenté avec Python ou R (heatmap, dendrogramme)
 - Toujours croiser les résultats avec ceux de PLINK et Gamma
-
-

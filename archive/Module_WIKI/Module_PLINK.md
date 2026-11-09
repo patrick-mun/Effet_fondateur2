@@ -572,4 +572,3 @@ suivantes :
 ### 💡 Astuce
 
 Il est recommandé d’utiliser PLINK dans un environnement conda ou via une image Docker pour assurer la reproductibilité sur différentes machines.
-

@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "method_id",
+    "seed",
+    "sample_count",
+    "markers_per_autosome",
+    "allele_frequency",
+    "target_configuration",
+    "target_configuration_sha256",
+    "manual_approval",
+    "plink_executable",
+    "preliminary_parameters",
+    "final_parameters"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "method_id": {
+      "const": "iid_autosomal_qc_component_bench_v1"
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "sample_count": {
+      "type": "integer",
+      "minimum": 192,
+      "maximum": 192
+    },
+    "markers_per_autosome": {
+      "const": 64
+    },
+    "allele_frequency": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "exclusiveMaximum": 0.5
+    },
+    "target_configuration": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_.-]+\\.json$"
+    },
+    "target_configuration_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "manual_approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "approved",
+        "decision_id",
+        "reviewer_role",
+        "approved_at"
+      ],
+      "properties": {
+        "approved": {
+          "const": true
+        },
+        "decision_id": {
+          "const": "CAL-DEC-004"
+        },
+        "reviewer_role": {
+          "const": "calibration_owner"
+        },
+        "approved_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "plink_executable": {
+      "type": "string",
+      "minLength": 1
+    },
+    "preliminary_parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sample_missingness_max",
+        "variant_missingness_max",
+        "kinship_maf_alert_threshold",
+        "heterozygosity_z_alert",
+        "batch_missingness_delta_alert",
+        "duplicate_pi_hat_alert",
+        "duplicate_scan_min_polymorphic_variants",
+        "plink_timeout_seconds"
+      ],
+      "properties": {
+        "sample_missingness_max": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "variant_missingness_max": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "kinship_maf_alert_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "heterozygosity_z_alert": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "batch_missingness_delta_alert": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "duplicate_pi_hat_alert": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "duplicate_scan_min_polymorphic_variants": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "plink_timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "final_parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sample_missingness_max",
+        "controls_variant_missingness_max",
+        "controls_maf_min",
+        "controls_hwe_p_min",
+        "carriers_variant_missingness_max",
+        "target_region_variant_missingness_max",
+        "target_region_maf_min",
+        "batch_missingness_delta_alert",
+        "plink_timeout_seconds"
+      ],
+      "properties": {
+        "sample_missingness_max": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "controls_variant_missingness_max": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "controls_maf_min": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "controls_hwe_p_min": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "carriers_variant_missingness_max": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "target_region_variant_missingness_max": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "target_region_maf_min": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "batch_missingness_delta_alert": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "plink_timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}
