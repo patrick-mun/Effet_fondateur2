@@ -600,6 +600,8 @@ Les exécutables suivants doivent être accessibles depuis le `PATH` :
 
 L'estimation Gamma de l'étape 14 est implémentée en Python dans
 `src/effet_fondateur/dating/` et ne nécessite aucun binaire Gamma externe.
+Le pipeline V1 archivé utilisait une autre implémentation Python conservée dans
+`archive/scripts/gamma_age_estimation.py` à des fins historiques uniquement.
 
 Vérification rapide :
 
@@ -1025,7 +1027,16 @@ les artefacts publiés :
 .venv/bin/python -m pytest tests/
 ```
 
-Pour produire le rapport HTML et l'ouvrir sur macOS :
+### Pipeline V1 archivé
+
+Le pipeline historique (`archive/run_pipeline.py`, `archive/scripts/`,
+`archive/interface_effet_fondateur.py`, `archive/Module_WIKI/`) est conservé
+pour référence dans `archive/` (voir `archive/README.md`). Il lisait un
+dossier fixe `data/input/complex_simulation/` et écrivait dans
+`data/output/complex_simulation/`. Ne pas le relancer pour produire un
+résultat scientifique.
+
+Pour produire le rapport HTML :
 
 ```bash
 ./run_all_tests.sh
@@ -1040,10 +1051,14 @@ simulation_genotype_famille/    préparation ACPA, simulation et injection
 config/                         profils d'étude et catalogues de référence
 schemas/                        contrats JSON et TSV
 docs/modules/                   documentation des étapes V2
+archive/                        pipeline V1 archivé (voir archive/README.md)
 data/input/                     données sources et métadonnées non versionnées
 data/runs/                      runs immuables non versionnés
 tests/                          tests automatisés
 ```
+
+La documentation historique de PLINK, KING, Gamma et Adegenet du pipeline V1
+se trouve dans `archive/Module_WIKI/`.
 
 ## État du projet
 

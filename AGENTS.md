@@ -22,8 +22,15 @@ une estimation Gamma implémentée en Python.
 
 ## Points d'entrée
 
+Le pipeline actif est la V2 (`src/effet_fondateur/`), pilotée par la CLI
+`effet-fondateur`. Le pipeline historique (`run_pipeline.py`, ses scripts,
+son interface et son wiki) est archivé dans `archive/`
+(voir `archive/README.md`) : il ne doit plus être exécuté pour produire un
+résultat scientifique et n'est plus un point d'entrée du dépôt.
+
 - Pipeline : `.venv/bin/effet-fondateur run --config <profil.yaml>`
 - Reprise : `.venv/bin/effet-fondateur resume --run-dir <dossier_run>`
+- Validation de configuration V2 : `.venv/bin/effet-fondateur validate-config <config.yaml>`
 - Tests : `.venv/bin/python -m pytest tests/`
 - Conversion multi-échantillons ACPA vers PLINK :
   `.venv/bin/python -m simulation_genotype_famille.acpa_to_plink`
@@ -38,6 +45,9 @@ une estimation Gamma implémentée en Python.
   explicite de l'utilisateur.
 - Ne pas considérer les fichiers de `data/output/` comme des sources : ce sont
   des résultats générés, parfois historiques.
+- Ne pas lancer le pipeline archivé (`archive/run_pipeline.py`) : il réécrit
+  des sorties, ouvre le rapport HTML dans le navigateur et ne doit plus servir
+  à produire un résultat scientifique.
 - Ne pas lancer le pipeline complet sans prévenir l'utilisateur : il peut être
   long, appeler plusieurs outils externes et créer un nouveau dossier de run.
 - Ne jamais inclure de données génétiques, jetons ou secrets dans les commits,
