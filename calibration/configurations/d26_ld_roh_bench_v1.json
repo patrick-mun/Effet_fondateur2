@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0.0",
+  "configuration_id": "d26_ld_roh_bench_v1",
+  "configuration_state": "FINALIZED",
+  "authorization_id": "CAL-DEC-014",
+  "panel_role": "CALIBRATION",
+  "source_d16_manifest_sha256": "6da095542763fb517dafc23701f3607d0e3b8410f395d5f0a5138e6d09cc0d9f",
+  "source_d17_manifest_sha256": "48f9010078af21c53a4f3fb8f3b56afd5ec3264732755f342ead4de14cbedc09",
+  "profiles": ["control", "missing_01", "missing_05", "genotype_01", "density_50", "combined"],
+  "nonphased_aliases": {
+    "phase_point_02": "control",
+    "phase_switch_02": "control"
+  },
+  "target": {"chromosome": "5", "position_bp": 84991179, "variant_id": "S-3IFSF"},
+  "ld": {
+    "minimum_samples": 5,
+    "minimum_primary_samples": 20,
+    "minimum_called_samples_per_pair": 5,
+    "minimum_variant_maf": 0.05,
+    "minimum_pairs_per_bin": 10,
+    "max_pair_distance_bp": 1000000,
+    "max_pair_distance_cm": 1.0,
+    "distance_bins_cm": [0.1, 0.25, 0.5, 1.0],
+    "max_pair_count": 1000000,
+    "plink_timeout_seconds": 300
+  },
+  "roh": {
+    "minimum_roh_kb": 1500.0,
+    "minimum_roh_snps": 50,
+    "maximum_density_kb_per_snp": 50.0,
+    "maximum_gap_kb": 1000.0,
+    "window_snps": 50,
+    "window_max_heterozygotes": 1,
+    "window_max_missing": 5,
+    "window_threshold": 0.05,
+    "minimum_genomewide_variants": 10000,
+    "minimum_genomewide_autosomes": 22,
+    "minimum_target_chromosome_variants": 100,
+    "minimum_group_samples": 5,
+    "minimum_primary_samples": 20,
+    "autosomal_denominator_kb": null,
+    "autosomal_denominator_source": null,
+    "plink_timeout_seconds": 300,
+    "minimum_reference_overlap_fraction": 0.5
+  },
+  "performance_thresholds_sealed": false,
+  "production_promotion": false,
+  "calibrated": false,
+  "founder_effect_proven": false
+}

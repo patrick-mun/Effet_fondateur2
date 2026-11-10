@@ -184,3 +184,56 @@ seul la vérité. `phasing_report_graphics.py` et `report_phasing.py` publient
 quatre rapports indépendants depuis les seuls agrégats fermés. Un taux
 mesurable reste distinct d'une performance qualifiée ; aucune calibration
 scientifique ou validation externe n'est attribuée automatiquement.
+
+`run_founder_haplotype_bench.py`, `founder_haplotype_oracle.py`,
+`evaluate_founder_haplotype.py` et `report_founder_haplotype.py` exécutent et
+évaluent D24. Le runner projette la vérité phasée D14 sur quatre profils puis
+appelle le moteur de production de l'étape 13. L'oracle définit
+le consensus vrai comme l'intersection de segments familiaux indépendants et
+calcule sensibilité, spécificité, inclusion de cible, erreurs de bornes et IC
+de Wilson. L'évaluateur lit uniquement des cas confinés au workspace, contrôle
+les sorties de production de l'étape 13 et publie des agrégats sans identifiant.
+Le rapport CAL-REP-13 consomme ces seuls agrégats, avec quatre graphiques et les
+équations préspecifiées ; il ne rouvre jamais la vérité privée. Le résultat
+primaire est techniquement valide mais scientifiquement non qualifié en raison
+de quatre faux positifs sur cinq négatifs.
+
+`variant_age_bench.py` matérialise, exécute puis évalue D25 en trois commandes
+séparées. Il conserve la vérité d'âge hors des entrées aveugles, appelle les
+fonctions Gamma de production, calcule bootstrap, Wilson et stabilité
+leave-one-family-out, puis rejoue la publication de l'étape 14 sur les bornes
+positives D24. `report_variant_age.py` ne lit que l'évaluation agrégée close et
+produit CAL-REP-14 avec quatre figures et cinq équations. L'absence de sortie
+SHAPEIT5 appariée est publiée comme `NOT_EVALUABLE`, jamais imputée.
+
+`gamma_audit_bench.py` exécute D25a en quatre opérations séparées : matériau
+aveugle, estimation, parité locale avec le script R officiel, puis évaluation.
+Il oppose points de recombinaison complets et extrémités tronquées, et simule
+séparément généalogies indépendantes et chemins partagés. Les résultats V1,
+candidate V2 et oracle restent parallèles. `report_gamma_audit.py` consomme
+uniquement l'évaluation agrégée et produit CAL-REP-14A avec quatre figures et
+six équations. Un `PASS` de fidélité R reste distinct d'un échec de performance
+sur le contrat tronqué.
+
+`gamma_censoring_bench.py` matérialise, ferme puis évalue D25b. La candidate V3
+traite le maximum répété comme une exposition censurée de type II et compare
+ses résultats à V2 et à l'oracle complet. Le profil indépendant est
+qualifiable ; les chemins partagés restent des stress tests.
+`report_gamma_censoring.py` lit uniquement CAL-REP-14B agrégé et produit quatre
+graphiques quantitatifs, six équations et cinq tableaux sans recalculer les
+statistiques.
+
+`ld_roh_bench.py` exécute D26 en deux temps. `run` convertit les VCF observés
+D17 et appelle les moteurs réels `publish_local_ld`/`publish_roh`, puis scelle
+les sorties avant vérité. `evaluate` calcule le r² de référence et ouvre le VCF
+dense D16 pour une référence ROH opérationnelle, sans modifier les appels.
+`report_ld_roh.py` produit les rapports indépendants CAL-REP-15 et CAL-REP-16,
+avec graphiques, équations, effectifs et limites. Un PASS technique ne scelle
+aucun seuil scientifique.
+
+`ancestry_bench.py` exécute D27 en deux temps : il projette D12/D17 sur une
+référence D10 indépendante et scelle les coordonnées, puis ouvre les vérités
+pour la MAE de mélange et la stabilité après alignement de Procrustes fondé
+sur les seules références. Le volet diploïde reste un proxy régional et le
+volet local est conditionnel à la phase candidate. `report_ancestry.py`
+produit CAL-REP-16A sans étiquette géographique ni recalcul de résultat.

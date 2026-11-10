@@ -4,6 +4,147 @@ Ce registre conserve les décisions humaines qui modifient le périmètre, les
 critères ou l'interprétation du projet de calibration. Une décision ne vaut ni
 résultat scientifique ni qualification automatique d'une étape du pipeline.
 
+## CAL-DEC-016 — Exécution bornée de D28
+
+Le 10 novembre 2026, l'utilisateur demande explicitement de passer à D28.
+Statut : `DEMANDEE_EXPLICITEMENT`. Cette décision autorise la
+préspecification, les appels aveugles du cœur d'enrichissement 16B sur le banc
+synthétique D24, l'évaluation après ouverture de la vérité et le rapport
+CAL-REP-16B.
+
+L'autorisation reste bornée à `calibration_workspace/`, hors `dock6_real`,
+cache interne et `data/input`. Les probabilités doivent être scellées avant la
+vérité. Le seuil alpha du banc sert uniquement à mesurer faux positifs et
+puissance ; le seuil de classification de production reste nul.
+
+Les seuils d'acceptation CAL-ENRICH-002/003 restent non scellés. Le banc à
+trois familles et fond synthétique n'est pas une validation bout-en-bout de la
+référence 1000 Genomes. `calibrated=false`, `founder_effect_proven=false` et
+`production_promotion=false` restent imposés.
+
+## CAL-DEC-015 — Exécution bornée de D27
+
+Le 10 novembre 2026, l'utilisateur demande explicitement de passer à D27.
+Statut : `DEMANDEE_EXPLICITEMENT`. Cette décision autorise la
+préspecification, l'appel aveugle du cœur PCA/projection de 16A, l'évaluation
+sur les vérités D12/D14 et le rapport CAL-REP-16A.
+
+L'autorisation reste bornée à `calibration_workspace/`, hors `dock6_real`,
+cache interne et `data/input`. La référence D10 doit être disjointe des
+donneurs simulés et les coordonnées doivent être scellées avant ouverture de
+la vérité. L'alignement des profils ne peut utiliser que les références.
+
+Le banc régional ne vaut pas validation genome-wide et la phase candidate D17
+ne vaut pas exécution bout-en-bout de SHAPEIT5 puis 16A. Aucun code de strate
+ne peut être interprété comme une identité géographique ou ethnique. Les
+seuils CAL-ANC-001/002 restent non scellés ; `calibrated=false` et
+`founder_effect_proven=false` restent imposés.
+
+## CAL-DEC-014 — D25b puis D26
+
+Le 10 novembre 2026, l'utilisateur demande explicitement « faisons le D25B,
+puis le D26 ». Statut : `DEMANDEE_EXPLICITEMENT`. Cette décision autorise
+d'abord la préspecification, le développement, la simulation indépendante,
+l'évaluation close et le rapport de D25b. D26 ne commence qu'après fermeture
+et interprétation de D25b.
+
+D25b doit créer une nouvelle méthode de vraisemblance sans modifier V1/V2 et
+ne peut promouvoir automatiquement une méthode en production. L'autorisation
+reste limitée aux données synthétiques sous `calibration_workspace/`, hors
+`dock6_real`, cache interne et pipeline archivé. Le passage ultérieur à D26
+fera l'objet de son propre protocole fermé avant exécution.
+
+D26 est ensuite exécutée sous
+`D26_LD_ROH_PRESPECIFICATION.md`. Les appels observés sont scellés avant la
+référence dense. Le statut technique est `PASS`, mais les critères LD/ROH
+`pilot_then_seal` restent `REVIEW_REQUIRED` faute de seuil antérieur ; aucun
+seuil n'est ajusté sur les résultats. Les deux rapports indépendants sont
+`CAL-REP-15` et `CAL-REP-16`.
+
+`calibrated=false` et `founder_effect_proven=false` restent imposés pendant
+les deux étapes.
+
+## CAL-DEC-013 — Exécution bornée de l'audit D25a
+
+Le 10 novembre 2026, l'utilisateur demande explicitement « fais la D25a ».
+Statut : `DEMANDEE_EXPLICITEMENT`. Cette décision autorise la
+préspecification, la simulation indépendante, la vérification contre le script
+R officiel, l'évaluation close et le rapport CAL-REP-14A.
+
+L'autorisation reste bornée à `calibration_workspace/` et exclut les données
+`dock6_real`, le cache interne, le pipeline archivé et toute modification
+rétrospective des résultats D25. La méthode V1 doit rester disponible ; une
+candidate distincte ne peut la remplacer qu'après succès des critères
+préspecifiés de fidélité et de performance.
+
+Un `PASS` de parité R/Python ne vaut pas qualification de l'observation
+tronquée ni du modèle corrélé. `calibrated=false`,
+`founder_effect_proven=false`, les faux positifs D24 et la non-évaluation des
+erreurs SHAPEIT5 sont maintenus.
+
+## CAL-DEC-012 — Exécution bornée de D25
+
+Le 10 novembre 2026, l'utilisateur demande explicitement « passons à D25 ».
+Statut : `DEMANDEE_EXPLICITEMENT`. Cette décision autorise la préspecification,
+la matérialisation puis l'évaluation close de la datation Gamma sur la grille
+minimale complète, la reprise descriptive des sorties positives D24 et le
+rapport CAL-REP-14.
+
+L'autorisation reste bornée à `calibration_workspace/` et exclut
+`dock6_real`, le cache interne et le pipeline archivé. La vérité d'âge doit
+rester fermée jusqu'à la production des estimations. Les erreurs SHAPEIT5 ne
+peuvent pas être inventées : D24 utilisant le phasage-vérité, leur effet reste
+`NOT_EVALUABLE` sans sortie appariée dédiée.
+
+La conformité technique ne scelle aucun seuil `pilot_then_seal`. D25 évalue
+un estimateur conditionnel à une origine unique ; elle ne prouve ni partage
+IBD ni effet fondateur et ne corrige pas les faux positifs D24.
+`calibrated=false`, `founder_effect_proven=false` et le problème 07 différé
+sont maintenus.
+
+## CAL-DEC-011 — Exécution bornée de D24
+
+Le 10 novembre 2026, l'utilisateur demande explicitement « lance le D24 ».
+Statut : `DEMANDEE_EXPLICITEMENT`. Cette décision autorise la matérialisation
+du panel synthétique D13–D14 à trois familles, des cinq scénarios positifs et
+cinq négatifs préspecifiés, leur projection sur les quatre profils, l'appel du
+moteur réel de l'étape 13, l'évaluation close et le rapport CAL-REP-13.
+
+L'autorisation reste bornée à `calibration_workspace/`. Elle exclut toute
+donnée `dock6_real`, tout cache interne, tout panel de validation et toute
+modification rétrospective des critères. Le phasage-vérité D14 est utilisé
+pour isoler l'étape 13 ; l'exécution ne prétend donc pas mesurer la propagation
+des erreurs de phasage D23/D23b.
+
+Un `PASS` des contrats techniques ne vaut pas qualification scientifique. Les
+critères `pilot_then_seal` restent non scellés, les faux positifs sont conservés
+et aucune optimisation sur ces mêmes vérités ne pourra servir de validation.
+`calibrated=false`, `founder_effect_proven=false` et le problème 07 différé
+sont maintenus.
+
+## CAL-DEC-010 — Préparation de D24 sans exécution
+
+Le 10 novembre 2026, l'utilisateur demande explicitement de préparer D24.
+Statut : `DEMANDEE_EXPLICITEMENT`. Cette décision autorise la
+préspecification de l'évaluation de l'étape 13, ses configurations, schémas,
+oracles, évaluateur agrégé, contrat de rapport et tests. Elle n'autorise ni la
+matérialisation du nouveau panel, ni l'exécution du pipeline, ni l'ouverture
+d'un panel de validation.
+
+L'audit d'entrée conclut que D14 ne fournit que deux unités familiales
+indépendantes, que D15 décrit un partage IBD paire-à-paire dont le fond reste
+inconnu et que D23a fournit une vérité de phase, non une vérité de consensus
+fondateur. D24 requiert donc un panel propre comportant au moins trois unités
+familiales indépendantes par scénario positif, de vrais scénarios négatifs et
+des bornes fondatrices privées indépendantes des sorties de l'étape 13.
+
+Les critères `CAL-FOUND-001` à `CAL-FOUND-004` restent
+`pilot_then_seal`. Seul `CAL-FOUND-005` conserve son seuil fixe : aucune
+reclassification IBS→IBD sans preuve IBD explicite. La préparation maintient
+`calibrated=false`, `founder_effect_proven=false` et le problème scientifique
+07 différé. Aucun résultat D23/D23b ne qualifie D24, et aucune donnée
+`dock6_real` ni aucun cache interne n'est autorisé.
+
 ## CAL-DEC-009 — Investigation D23b densité × pedigree
 
 Le 9 novembre 2026, après revue des résultats D23, l'utilisateur demande

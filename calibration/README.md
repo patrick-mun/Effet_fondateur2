@@ -738,6 +738,257 @@ fortement la SER dans ce banc, mais le Hamming et l'erreur rare restent élevés
 La performance demeure `REVIEW_REQUIRED`; `calibrated=false` et
 `founder_effect_proven=false`. D24 n'est pas inclus dans D23b.
 
+## D25b — Vraisemblance censurée exécutée, succès indépendant uniquement
+
+Lire `protocoles/D25B_GAMMA_CENSORING_PRESPECIFICATION.md` et CAL-DEC-014. Le
+banc ferme un mécanisme de censure de type II : sur chaque côté, les `n−1`
+ruptures les plus proches sont exactes et le plus long bras reste exposé au
+seuil du deuxième maximum. La candidate V3 n'ajoute aucune longueur invisible.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.gamma_censoring_bench materialize \
+  --configuration-path calibration/configurations/d25b_gamma_censoring_v1.json \
+  --workspace-root calibration_workspace --run-id <grille_d25b_neuve>
+.venv/bin/python -m effet_fondateur.calibration.gamma_censoring_bench run \
+  --bench-root calibration_workspace/<grille_d25b_neuve> \
+  --configuration-path calibration/configurations/d25b_gamma_censoring_v1.json \
+  --workspace-root calibration_workspace --run-id <run_d25b_neuf>
+.venv/bin/python -m effet_fondateur.calibration.gamma_censoring_bench evaluate \
+  --bench-root calibration_workspace/<grille_d25b_neuve> \
+  --run-root calibration_workspace/<run_d25b_neuf> \
+  --configuration-path calibration/configurations/d25b_gamma_censoring_v1.json \
+  --workspace-root calibration_workspace --run-id <evaluation_d25b_neuve>
+```
+
+Sur 12 000 scénarios indépendants, le biais vaut −0,19 génération et la
+couverture 95,11 % ; B01–B06 passent. Sous dépendance, la couverture tombe à
+87,38 % puis 76,83 %. Le verdict est `PASS_INDEPENDENT_ONLY`, B07 reste
+`REVIEW_REQUIRED` et la candidate n'est pas promue. Rapport final :
+`d25b_gamma_reports_v1/CAL-REP-14B`. Les limites SHAPEIT5, marqueurs, partage
+fortuit et D24 restent explicites ; les verdicts globaux restent faux.
+
+## D26 — Évaluateurs LD et ROH exécutés, seuils non scellés
+
+Lire `protocoles/D26_LD_ROH_PRESPECIFICATION.md` et CAL-DEC-014. Le premier
+temps exécute PLINK 1.9 par les moteurs réels 15/16 sur les observations D17,
+puis scelle les sorties sans lire le VCF dense D16. Le second temps ouvre la
+référence et produit séparément CAL-REP-15 et CAL-REP-16.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.ld_roh_bench run \
+  --configuration calibration/configurations/d26_ld_roh_bench_v1.json \
+  --d16-root calibration_workspace/d16_integration_cal_chr5_v2/private_truth/d16 \
+  --d17-root calibration_workspace/d17_integration_cal_chr5_v2/private_truth/d17 \
+  --genetic-map calibration_workspace/d11_integration_cal_chr5_82789211_91015050_v1/private_truth/d11/genetic_map.tsv \
+  --workspace-root calibration_workspace --run-id <run_d26_neuf>
+.venv/bin/python -m effet_fondateur.calibration.ld_roh_bench evaluate \
+  --configuration calibration/configurations/d26_ld_roh_bench_v1.json \
+  --run-root calibration_workspace/<run_d26_neuf> \
+  --d16-root calibration_workspace/d16_integration_cal_chr5_v2/private_truth/d16 \
+  --d17-root calibration_workspace/d17_integration_cal_chr5_v2/private_truth/d17 \
+  --genetic-map calibration_workspace/d11_integration_cal_chr5_82789211_91015050_v1/private_truth/d11/genetic_map.tsv \
+  --workspace-root calibration_workspace --run-id <evaluation_d26_neuve>
+.venv/bin/python -m effet_fondateur.calibration.report_ld_roh \
+  --evaluation-root calibration_workspace/<evaluation_d26_neuve> \
+  --template-path <report_skill>/templates/recherche.html \
+  --output-root calibration_workspace/<rapports_d26_neufs>
+```
+
+Le contrôle LD donne une MAE de 3,25e-8 sur 17 451 paires ; le dosage 1 %
+atteint 0,00484. La référence ROH dense contient 22 segments : sensibilité
+77,27–90,91 %, taux de sujets faussement positifs 3,14–4,44 % et MAE de
+longueur 0,230–0,373 cM. Les trois injections sont détectées dans les six
+profils. Les rapports finaux sont sous
+`d26_ld_roh_reports_v2/CAL-REP-15` et `CAL-REP-16`. L'évaluation v1 et ses
+rapports restent des diagnostics intermédiaires : leurs dénominateurs ROH ne
+retiraient pas encore les sujets exclus pour cible manquante.
+
+Le statut technique est `PASS`, mais les seuils `pilot_then_seal` n'étaient
+pas définis avant le résultat : la performance reste
+`REVIEW_REQUIRED_UNSEALED`. La référence dense ROH réutilise PLINK et ne vaut
+pas vérité biologique indépendante. `calibrated=false` et
+`founder_effect_proven=false`.
+
+## D27 — Évaluateur d'ascendance 16A exécuté sur proxy régional
+
+Lire `protocoles/D27_ANCESTRY_PRESPECIFICATION.md` et CAL-DEC-015. La commande
+`run` ajuste les axes sur 1 403 références D10 disjointes et scelle les
+coordonnées avant vérité ; `evaluate` ouvre ensuite D12/D14. Aucun cache ni
+donnée réelle n'est lu.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.ancestry_bench run \
+  --configuration-path calibration/configurations/d27_ancestry_bench_v1.json \
+  --d12-root calibration_workspace/<d12>/private_truth/d12 \
+  --d14-root calibration_workspace/<d14>/private_truth/d14 \
+  --d17-root calibration_workspace/<d17>/private_truth/d17 \
+  --reference-root calibration_workspace/<preparation_d23b> \
+  --workspace-root calibration_workspace --run-id <appels_d27_neufs>
+.venv/bin/python -m effet_fondateur.calibration.ancestry_bench evaluate \
+  --configuration-path calibration/configurations/d27_ancestry_bench_v1.json \
+  --calls-root calibration_workspace/<appels_d27_neufs> \
+  --d12-root calibration_workspace/<d12>/private_truth/d12 \
+  --d14-root calibration_workspace/<d14>/private_truth/d14 \
+  --d17-root calibration_workspace/<d17>/private_truth/d17 \
+  --reference-root calibration_workspace/<preparation_d23b> \
+  --output-root calibration_workspace/<evaluation_d27_neuve>
+```
+
+La MAE de mélange vaut 0,1639 sur 190 sujets et l'instabilité maximale 0,621
+dans le profil combiné local. L'évaluation finale est
+`d27_ancestry_evaluation_v2`; le rapport final autonome est
+`d27_ancestry_reports_v2/CAL-REP-16A` (8 pages, 14 sections, quatre figures).
+Le statut technique concerne seulement le cœur PCA/projection :
+`PASS_CORE_EVALUATOR`. Le banc régional et la phase candidate ne qualifient ni
+la PCA génomique ni le parcours SHAPEIT5→16A. Les deux critères restent
+`REVIEW_REQUIRED`; `calibrated=false` et `founder_effect_proven=false`.
+
+## D28 — Évaluateur d'enrichissement 16B exécuté sur le banc D24
+
+Lire `protocoles/D28_ENRICHMENT_PRESPECIFICATION.md` et CAL-DEC-016. Les
+appels utilisent les sorties 13, VCF, cartes et cohortes synthétiques D24 sans
+ouvrir `founder_haplotype_case.json`; l'évaluation ouvre ensuite la vérité.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.enrichment_bench run \
+  --configuration-path calibration/configurations/d28_enrichment_bench_v1.json \
+  --d24-bench-root calibration_workspace/d24_founder_haplotype_bench_v1 \
+  --workspace-root calibration_workspace --run-id <appels_d28_neufs>
+.venv/bin/python -m effet_fondateur.calibration.enrichment_bench evaluate \
+  --configuration-path calibration/configurations/d28_enrichment_bench_v1.json \
+  --d24-bench-root calibration_workspace/d24_founder_haplotype_bench_v1 \
+  --calls-root calibration_workspace/<appels_d28_neufs> \
+  --output-root calibration_workspace/<evaluation_d28_neuve>
+```
+
+La sortie finale est `d28_enrichment_evaluation_v2`. Au profil maximal, la
+puissance descriptive vaut 5/5 et le taux de faux positifs 1/5, avec un nul
+non évaluable. Les profils de base et à demi-densité n'ont aucun cas évaluable
+sur dix. Le rapport final est
+`d28_enrichment_reports_v4/CAL-REP-16B` : HTML autonome et PDF A4 de neuf
+pages, quatorze sections et quatre figures.
+
+Le statut technique est `PASS_CORE_EVALUATOR`, mais les critères de
+performance restent `REVIEW_REQUIRED` et la qualification
+`REVIEW_REQUIRED_UNSEALED`. La sortie de production reste `NOT_CLASSIFIED`
+sans seuil ; `calibrated=false` et `founder_effect_proven=false`.
+
+## D25a — Audit Gamma exécuté, promotion refusée
+
+Lire `protocoles/D25A_GAMMA_AUDIT_PRESPECIFICATION.md` et CAL-DEC-013. Le
+nouveau banc ne réutilise pas les tirages D25 : il croise dix âges, 3/5/10
+familles, trois profils généalogiques et deux contrats d'observation sur 200
+réplications, soit 18 000 scénarios et 144 000 résultats de méthode.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.gamma_audit_bench materialize \
+  --configuration-path calibration/configurations/d25a_gamma_audit_v1.json \
+  --workspace-root calibration_workspace --run-id <grille_d25a_neuve>
+.venv/bin/python -m effet_fondateur.calibration.gamma_audit_bench run \
+  --bench-root calibration_workspace/<grille_d25a_neuve> \
+  --configuration-path calibration/configurations/d25a_gamma_audit_v1.json \
+  --workspace-root calibration_workspace --run-id <run_d25a_neuf>
+.venv/bin/python -m effet_fondateur.calibration.gamma_audit_bench verify-r \
+  --configuration-path calibration/configurations/d25a_gamma_audit_v1.json \
+  --official-r-script <Mutation_Age_estimation.R> \
+  --workspace-root calibration_workspace --run-id <parite_r_neuve>
+.venv/bin/python -m effet_fondateur.calibration.gamma_audit_bench evaluate \
+  --bench-root calibration_workspace/<grille_d25a_neuve> \
+  --run-root calibration_workspace/<run_d25a_neuf> \
+  --r-parity-root calibration_workspace/<parite_r_neuve> \
+  --configuration-path calibration/configurations/d25a_gamma_audit_v1.json \
+  --workspace-root calibration_workspace --run-id <evaluation_d25a_neuve>
+```
+
+La parité de la candidate avec R passe à 7,11e-15 génération près et l'oracle
+sur points de recombinaison complets est calibré (biais −0,11 ; couverture
+95,35 %). La correction de bord appliquée aux longueurs tronquées échoue en
+revanche : biais +5,91 et couverture 91,88 %. Le statut technique est `PASS`,
+mais la qualification de performance est `FAIL`; la candidate V2 n'est pas
+promue dans le pipeline. Le rapport final est
+`d25a_gamma_reports_v2/CAL-REP-14A` ; les rendus et évaluations v1 sont
+intermédiaires. `calibrated=false` et `founder_effect_proven=false` restent
+imposés.
+
+## D25 — Évaluation de la datation Gamma exécutée
+
+Lire `protocoles/D25_VARIANT_AGE_PRESPECIFICATION.md` et CAL-DEC-012. Le banc
+fermé couvre dix âges de 5 à 150 générations, 3/5/10 familles et 200
+réplications par cellule. Les 6 000 vérités restent sous `private_truth/`; le
+runner produit les estimations sans y accéder, puis l'évaluateur ouvre les
+deux volets et publie uniquement les agrégats de CAL-REP-14.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.variant_age_bench materialize \
+  --configuration-path calibration/configurations/d25_variant_age_bench_v1.json \
+  --workspace-root calibration_workspace --run-id <grille_d25_neuve>
+.venv/bin/python -m effet_fondateur.calibration.variant_age_bench run \
+  --bench-root calibration_workspace/<grille_d25_neuve> \
+  --workspace-root calibration_workspace --run-id <run_d25_neuf>
+.venv/bin/python -m effet_fondateur.calibration.variant_age_bench evaluate \
+  --bench-root calibration_workspace/<grille_d25_neuve> \
+  --run-root calibration_workspace/<run_d25_neuf> \
+  --d24-evaluation-root calibration_workspace/d24_founder_haplotype_evaluation_v1 \
+  --workspace-root calibration_workspace --run-id <evaluation_d25_neuve>
+```
+
+L'exécution close est techniquement `PASS`, mais scientifiquement
+`REVIEW_REQUIRED`. Le primaire corrélé donne un biais de −13,59 générations,
+une RMSE de 26,38 et une couverture de 94,12 % sur 6 000 cas ; la référence
+historique passe. Le biais croît avec l'âge, la couverture varie avec le nombre
+de familles et la stabilité leave-one-family-out est insuffisamment rassurante.
+Le phasage SHAPEIT5 est `NOT_EVALUABLE`. Le rapport final détaillé est
+`d25_variant_age_reports_v2/CAL-REP-14` ; le rendu v1 est intermédiaire.
+`calibrated=false` et `founder_effect_proven=false` restent imposés.
+
+## D24 — Évaluation de l'haplotype fondateur exécutée
+
+Lire `protocoles/D24_FOUNDER_HAPLOTYPE_PRESPECIFICATION.md` et
+`CAL-DEC-010` puis `CAL-DEC-011`. L'ancien D14 chr5 est refusé comme panel D24 principal : ses
+deux familles sont inférieures au minimum de trois unités indépendantes. D15
+est une vérité IBD paire-à-paire avec fond inconnu et D23a une vérité de phase ;
+aucun des deux ne remplace une vérité de consensus fondateur.
+
+Les configurations D24 ont matérialisé D13–D14 à trois familles. Le contrat
+`d24_founder_haplotype_bench_v1.json` exige au moins cinq scénarios positifs,
+cinq vrais négatifs et les profils de sensibilité fixés. Les cas restent dans
+`calibration_workspace/` et fournissent la vérité privée
+`private_truth/founder_haplotype_case.json` ainsi que les trois sorties réelles
+de l'étape 13 sous `stage13/`.
+Les dix scénarios sont rejoués sur quatre profils appariés. Seul `MAXIMUM`
+alimente les critères principaux ; les 30 cas de sensibilité ne gonflent pas
+les dénominateurs. Les négatifs conservent des porteurs synthétiques de la
+cible sur des lignées indépendantes sans segment commun injecté.
+
+Le panel, l'étape 13 et l'évaluation close ont été exécutés. Les commandes de
+rejeu répètent `--case-root` pour chaque cas :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.evaluate_founder_haplotype \
+  --case-root calibration_workspace/<cas_d24_1> \
+  --case-root calibration_workspace/<cas_d24_2> \
+  --configuration-path calibration/configurations/d24_founder_haplotype_bench_v1.json \
+  --workspace-root calibration_workspace \
+  --run-id <evaluation_d24_neuve>
+
+.venv/bin/python -m effet_fondateur.calibration.report_founder_haplotype \
+  --evaluation-root calibration_workspace/<evaluation_d24_close> \
+  --template-path <report_skill>/templates/recherche.html \
+  --output-root calibration_workspace/<rapport_d24_neuf>
+```
+
+L'évaluateur ne lance aucun outil génétique. Il vérifie les contrats de
+production, ouvre ensuite la vérité privée, calcule sensibilité, spécificité,
+inclusion de la cible et erreurs de bornes en bp/cM, puis publie uniquement
+des agrégats. Le CAL-REP-13 final comporte 14 sections, quatre figures, quatre
+équations, les empreintes des sources et un PDF A4 de 10 pages. L'évaluation est techniquement `PASS`, mais
+reste `REVIEW_REQUIRED` : sur `MAXIMUM`, 5/5 positifs sont détectés contre
+seulement 1/5 négatifs correctement rejetés. Le rapport final est dans
+`d24_founder_haplotype_reports_v2/CAL-REP-13`. Il précise que le banc utilise
+le phasage-vérité D14 et ne propage donc pas les erreurs D23. Les seuils
+`pilot_then_seal` restent non scellés ; `calibrated=false` et
+`founder_effect_proven=false` sont imposés.
+
 ## D23a — Préparation autosomique du phasage
 
 Lire `protocoles/D23A_PHASING_PREPARATION.md` et CAL-DEC-007. La configuration

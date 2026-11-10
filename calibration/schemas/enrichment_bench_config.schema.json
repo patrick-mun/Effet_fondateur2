@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "configuration_id", "method_id", "primary_profile", "profiles", "minimum_independent_units", "minimum_flank_markers", "null_evaluable_draws", "null_max_attempts", "random_seed", "benchmark_decision_alpha", "empirical_classification_threshold", "confidence_level", "performance_thresholds_sealed", "production_promotion", "calibrated", "founder_effect_proven", "sources"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "configuration_id": {"const": "d28_enrichment_bench_v1"},
+    "method_id": {"const": "target_centered_empirical_haplotype_sharing_v1"},
+    "primary_profile": {"const": "MAXIMUM"},
+    "profiles": {"const": ["MAXIMUM", "BASELINE", "DENSITY_50", "MISSING_1PCT"]},
+    "minimum_independent_units": {"const": 3},
+    "minimum_flank_markers": {"type": "integer", "minimum": 1},
+    "null_evaluable_draws": {"type": "integer", "minimum": 1000},
+    "null_max_attempts": {"type": "integer", "minimum": 1000},
+    "random_seed": {"type": "integer", "minimum": 0},
+    "benchmark_decision_alpha": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.05},
+    "empirical_classification_threshold": {"type": "null"},
+    "confidence_level": {"const": 0.95},
+    "performance_thresholds_sealed": {"const": false},
+    "production_promotion": {"const": false},
+    "calibrated": {"const": false},
+    "founder_effect_proven": {"const": false},
+    "sources": {
+      "type": "object", "additionalProperties": false,
+      "required": ["d24_bench_manifest_sha256", "d24_configuration_sha256"],
+      "properties": {
+        "d24_bench_manifest_sha256": {"$ref": "#/$defs/hash"},
+        "d24_configuration_sha256": {"$ref": "#/$defs/hash"}
+      }
+    }
+  },
+  "$defs": {"hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}

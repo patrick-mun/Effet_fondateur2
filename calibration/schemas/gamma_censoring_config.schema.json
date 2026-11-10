@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gamma_censoring_config.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "configuration_id", "config_state",
+    "candidate_method_id", "comparison_method_ids",
+    "scientific_reference_doi", "ages_generations", "family_counts",
+    "replications_per_cell", "genealogy_profiles", "observation_contract",
+    "simulation_seed", "bootstrap_seed", "bootstrap_draws",
+    "confidence_level", "criteria", "analytic_fixture",
+    "production_promotion", "calibrated", "founder_effect_proven"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "configuration_id": {"const": "d25b_gamma_censoring_v1"},
+    "config_state": {"const": "FINALIZED"},
+    "candidate_method_id": {"const": "gamma_pairwise_type2_censored_v3"},
+    "comparison_method_ids": {
+      "type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "scientific_reference_doi": {"const": "10.1534/genetics.114.164616"},
+    "ages_generations": {
+      "type": "array", "minItems": 10, "uniqueItems": true,
+      "items": {"type": "integer", "minimum": 1}
+    },
+    "family_counts": {
+      "type": "array", "minItems": 3, "uniqueItems": true,
+      "items": {"type": "integer", "minimum": 3}
+    },
+    "replications_per_cell": {"type": "integer", "minimum": 200},
+    "genealogy_profiles": {
+      "type": "array", "minItems": 3, "maxItems": 3,
+      "prefixItems": [
+        {"$ref": "#/$defs/independent_profile"},
+        {"$ref": "#/$defs/correlated_25_profile"},
+        {"$ref": "#/$defs/correlated_50_profile"}
+      ],
+      "items": false
+    },
+    "observation_contract": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "right_censored_largest_arms_per_side", "chance_sharing_correction_allowed"],
+      "properties": {
+        "id": {"const": "PAIRWISE_SHARED_TYPE2_CENSORED"},
+        "right_censored_largest_arms_per_side": {"const": 1},
+        "chance_sharing_correction_allowed": {"const": false}
+      }
+    },
+    "simulation_seed": {"const": 25201},
+    "bootstrap_seed": {"const": 25202},
+    "bootstrap_draws": {"type": "integer", "minimum": 1000},
+    "confidence_level": {"const": 0.95},
+    "criteria": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "maximum_analytic_fixture_error_generations",
+        "maximum_absolute_primary_bias_generations",
+        "minimum_primary_coverage", "maximum_primary_coverage",
+        "maximum_absolute_family_bias_generations",
+        "minimum_family_coverage", "maximum_family_coverage",
+        "maximum_primary_not_estimated_count"
+      ],
+      "properties": {
+        "maximum_analytic_fixture_error_generations": {"type": "number", "minimum": 0},
+        "maximum_absolute_primary_bias_generations": {"type": "number", "minimum": 0},
+        "minimum_primary_coverage": {"type": "number", "minimum": 0, "maximum": 1},
+        "maximum_primary_coverage": {"type": "number", "minimum": 0, "maximum": 1},
+        "maximum_absolute_family_bias_generations": {"type": "number", "minimum": 0},
+        "minimum_family_coverage": {"type": "number", "minimum": 0, "maximum": 1},
+        "maximum_family_coverage": {"type": "number", "minimum": 0, "maximum": 1},
+        "maximum_primary_not_estimated_count": {"const": 0}
+      }
+    },
+    "analytic_fixture": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "left_lengths_cm", "right_lengths_cm", "expected_event_count",
+        "expected_total_exposure_morgans",
+        "expected_unbiased_estimate_generations"
+      ],
+      "properties": {
+        "left_lengths_cm": {"type": "array", "minItems": 3, "items": {"type": "number", "exclusiveMinimum": 0}},
+        "right_lengths_cm": {"type": "array", "minItems": 3, "items": {"type": "number", "exclusiveMinimum": 0}},
+        "expected_event_count": {"type": "integer", "minimum": 2},
+        "expected_total_exposure_morgans": {"type": "number", "exclusiveMinimum": 0},
+        "expected_unbiased_estimate_generations": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "production_promotion": {"const": false},
+    "calibrated": {"const": false},
+    "founder_effect_proven": {"const": false}
+  },
+  "$defs": {
+    "profile_base": {
+      "type": "object", "additionalProperties": false,
+      "required": ["profile", "shared_path_fraction", "role"],
+      "properties": {
+        "profile": {"type": "string"},
+        "shared_path_fraction": {"type": "number", "minimum": 0, "exclusiveMaximum": 1},
+        "role": {"enum": ["PRIMARY", "STRESS_TEST"]}
+      }
+    },
+    "independent_profile": {
+      "allOf": [
+        {"$ref": "#/$defs/profile_base"},
+        {"properties": {"profile": {"const": "INDEPENDENT"}, "shared_path_fraction": {"const": 0.0}, "role": {"const": "PRIMARY"}}}
+      ]
+    },
+    "correlated_25_profile": {
+      "allOf": [
+        {"$ref": "#/$defs/profile_base"},
+        {"properties": {"profile": {"const": "CORRELATED_25"}, "shared_path_fraction": {"const": 0.25}, "role": {"const": "STRESS_TEST"}}}
+      ]
+    },
+    "correlated_50_profile": {
+      "allOf": [
+        {"$ref": "#/$defs/profile_base"},
+        {"properties": {"profile": {"const": "CORRELATED_50"}, "shared_path_fraction": {"const": 0.5}, "role": {"const": "STRESS_TEST"}}}
+      ]
+    }
+  }
+}

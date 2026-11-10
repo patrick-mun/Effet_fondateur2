@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://effet-fondateur.local/calibration/schemas/founder_haplotype_case.schema.json",
+  "title": "Vérité privée d’un scénario D24",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "scenario_id", "profile", "truth_role", "detectable",
+    "age_generations", "independent_unit_count", "target",
+    "source_manifest_sha256", "segments"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "scenario_id": {"$ref": "#/$defs/id"},
+    "profile": {"enum": ["MAXIMUM", "BASELINE", "DENSITY_50", "MISSING_1PCT"]},
+    "truth_role": {"enum": ["POSITIVE", "NEGATIVE"]},
+    "detectable": {"type": "boolean"},
+    "age_generations": {
+      "oneOf": [
+        {"type": "integer", "minimum": 1},
+        {"type": "null"}
+      ]
+    },
+    "independent_unit_count": {"type": "integer", "minimum": 3},
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["variant_id", "chromosome", "position_bp", "position_cm"],
+      "properties": {
+        "variant_id": {"$ref": "#/$defs/id"},
+        "chromosome": {"type": "integer", "minimum": 1, "maximum": 22},
+        "position_bp": {"type": "integer", "minimum": 1},
+        "position_cm": {"type": "number"}
+      }
+    },
+    "source_manifest_sha256": {"$ref": "#/$defs/sha"},
+    "segments": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/segment"}
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"truth_role": {"const": "POSITIVE"}}},
+      "then": {
+        "properties": {
+          "segments": {"minItems": 3},
+          "age_generations": {"type": "integer"}
+        }
+      },
+      "else": {
+        "properties": {
+          "detectable": {"const": false},
+          "segments": {"maxItems": 0},
+          "age_generations": {"type": "null"}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "segment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "family_id", "left_boundary_bp", "right_boundary_bp",
+        "left_boundary_cm", "right_boundary_cm", "left_censored",
+        "right_censored"
+      ],
+      "properties": {
+        "family_id": {"$ref": "#/$defs/id"},
+        "left_boundary_bp": {"type": "integer", "minimum": 1},
+        "right_boundary_bp": {"type": "integer", "minimum": 1},
+        "left_boundary_cm": {"type": "number"},
+        "right_boundary_cm": {"type": "number"},
+        "left_censored": {"type": "boolean"},
+        "right_censored": {"type": "boolean"}
+      }
+    }
+  }
+}

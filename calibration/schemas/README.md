@@ -182,3 +182,61 @@ critères D04 ; aucun champ individuel libre n'est accepté.
 `phasing_evaluation_manifest` lie les quatre résultats clos aux sources,
 configurations, critères, protocole et implémentations par SHA-256.
 Les `$ref` partagés sont internes à chaque schéma, sans résolution réseau.
+
+`founder_haplotype_bench_config` ferme la méthode D24, les profils, les
+effectifs indépendants minimaux, l'intervalle de Wilson et les politiques de
+comparaison. `founder_haplotype_case` décrit la vérité privée d'un scénario :
+positif/négatif, détectabilité, cible et segments fondateurs d'au moins trois
+familles pour un positif. Les négatifs ne peuvent contenir aucun segment vrai.
+L'évaluateur exige exactement la matrice des dix scénarios préspecifiés sur
+les quatre profils et vérifie l'identité de la vérité entre profils.
+
+`founder_haplotype_evaluation` ferme le seul document publiable de
+CAL-REP-13 : matrice de confusion, sensibilité, spécificité, inclusion de la
+cible, erreurs de bornes en bp/cM, résultats par profil, anomalies et critères.
+Il interdit les champs individuels libres et impose
+`calibrated=false` ainsi que `founder_effect_proven=false`. La vérité privée
+n'est jamais transmise au moteur de rapport.
+
+`variant_age_bench_config` ferme la grille, les modèles, profils, graines,
+réplications, bootstrap et scénarios D24 de D25. `variant_age_evaluation`
+décrit le document agrégé CAL-REP-14 : métriques primaires avec intervalles,
+résultats par âge/famille/profil, stabilité leave-one-family-out, référence
+historique, propagation D24, critères et non-évaluations. Il impose les deux
+verdicts globaux à `false` et ne contient aucune ligne individuelle.
+
+`gamma_audit_config` ferme D25a : source R épinglée, fixtures couvrant les
+branches de corrélation, profils généalogiques, contrats d'observation,
+graines et seuils fixes. `gamma_audit_evaluation` décrit CAL-REP-14A avec la
+parité R/Python, les résultats par contrat, les contrastes de méthode, les
+sensibilités par âge et effectif, la stabilité leave-one-family-out et les six
+critères. Il distingue explicitement `technical_status` de
+`performance_qualification` et maintient les deux verdicts scientifiques à
+`false`.
+
+`gamma_censoring_config` ferme D25b et refuse les variantes de censure ou les
+corrections non modélisées. `gamma_censoring_evaluation` décrit CAL-REP-14B :
+fixture analytique, résultat primaire, comparateurs, résultats par âge et
+effectif, sept critères et limites. Il distingue la qualification indépendante
+de la revue corrélée et interdit toute promotion de production.
+
+`ld_roh_bench_config` ferme D26 : profils appariés, alias non phasés, cible,
+empreintes sources et paramètres PLINK sont stricts. `ld_roh_evaluation`
+encadre séparément CAL-REP-15 et CAL-REP-16, impose le statut scientifique
+`REVIEW_REQUIRED_UNSEALED`, les six profils et les verdicts globaux faux. Les
+tables détaillées sensibles restent dans `calibration_workspace/`.
+
+`ancestry_bench_config` ferme D27 : partition de référence indépendante,
+profils appariés, composantes, contraste simulé et empreintes. Le chargeur
+Python vérifie en plus la disjonction D10 et les artefacts D17.
+`ancestry_evaluation` décrit CAL-REP-16A agrégé : mélange, stabilité globale et
+locale, contrôle fondateur descriptif, critères non scellés et portée régionale.
+Il impose `REVIEW_REQUIRED_UNSEALED`, `calibrated=false` et
+`founder_effect_proven=false`.
+
+`enrichment_bench_config` ferme D28 : profils D24 appariés, nombres de tirages,
+graine, alpha descriptif, empreintes sources et seuil de production nul.
+`enrichment_evaluation` décrit CAL-REP-16B : métriques primaires, résultats par
+profil et par scénario anonymisé, non-évaluations, critères et limites. Il
+impose `REVIEW_REQUIRED_UNSEALED`, `production_promotion=false`,
+`calibrated=false` et `founder_effect_proven=false`.

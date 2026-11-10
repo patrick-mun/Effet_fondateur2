@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "variant_age_bench_config.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "configuration_id", "config_state", "method_id", "primary_model", "reference_model", "ages_generations", "family_counts", "replications_per_cell", "simulation_seed", "bootstrap_seed", "bootstrap_draws", "confidence_level", "generation_years", "minimum_units_for_estimate", "minimum_units_for_primary", "profiles", "d24_profiles", "d24_positive_scenarios", "phase_error_policy", "calibrated", "founder_effect_proven"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "configuration_id": {"const": "d25_variant_age_bench_v1"},
+    "config_state": {"const": "FINALIZED"},
+    "method_id": {"const": "gamma_gandolfo_2014_v1"},
+    "primary_model": {"const": "CORRELATED"},
+    "reference_model": {"const": "INDEPENDENT"},
+    "ages_generations": {"const": [5, 10, 15, 20, 30, 40, 50, 75, 100, 150]},
+    "family_counts": {"const": [3, 5, 10]},
+    "replications_per_cell": {"type": "integer", "minimum": 1},
+    "simulation_seed": {"type": "integer", "minimum": 1},
+    "bootstrap_seed": {"type": "integer", "minimum": 1},
+    "bootstrap_draws": {"type": "integer", "minimum": 100},
+    "confidence_level": {"type": "number", "exclusiveMinimum": 0.5, "exclusiveMaximum": 1},
+    "generation_years": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "number", "exclusiveMinimum": 0}},
+    "minimum_units_for_estimate": {"const": 3},
+    "minimum_units_for_primary": {"const": 5},
+    "profiles": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "object", "additionalProperties": false, "required": ["profile", "kind", "value"], "properties": {"profile": {"enum": ["ORACLE_EXACT", "WINDOW_3CM_CAP", "MAP_SCALE_0P95", "MAP_SCALE_1P05"]}, "kind": {"enum": ["EXACT", "ARM_CAP_CM", "MAP_SCALE"]}, "value": {"type": "number", "exclusiveMinimum": 0}}}},
+    "d24_profiles": {"const": ["MAXIMUM", "BASELINE", "DENSITY_50", "MISSING_1PCT"]},
+    "d24_positive_scenarios": {"type": "array", "minItems": 5, "maxItems": 5, "items": {"type": "object", "additionalProperties": false, "required": ["scenario_id", "age_generations"], "properties": {"scenario_id": {"type": "string", "pattern": "^D24_POS_"}, "age_generations": {"type": "integer", "minimum": 1}}}},
+    "phase_error_policy": {"const": "NOT_EVALUABLE_WITHOUT_MATCHED_SHAPEIT5_OUTPUT"},
+    "calibrated": {"const": false},
+    "founder_effect_proven": {"const": false}
+  }
+}

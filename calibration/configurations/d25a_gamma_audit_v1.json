@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0.0",
+  "configuration_id": "d25a_gamma_audit_v1",
+  "config_state": "FINALIZED",
+  "legacy_method_id": "gamma_gandolfo_2014_v1",
+  "candidate_method_id": "gamma_gandolfo_2014_r_faithful_v2",
+  "oracle_method_id": "gamma_complete_breakpoint_independent_oracle_v1",
+  "official_r_script_url": "https://bioinf.wehi.edu.au/software/ageofmutation/Mutation_Age_estimation.R",
+  "official_r_script_sha256": "9cdf7008aae60128005948299a87175ab23f54f93ddd1351d4d374359d20009e",
+  "ages_generations": [5, 10, 15, 20, 30, 40, 50, 75, 100, 150],
+  "family_counts": [3, 5, 10],
+  "replications_per_cell": 200,
+  "genealogy_profiles": [
+    {"profile": "INDEPENDENT", "shared_path_fraction": 0.0},
+    {"profile": "CORRELATED_25", "shared_path_fraction": 0.25},
+    {"profile": "CORRELATED_50", "shared_path_fraction": 0.5}
+  ],
+  "observation_profiles": ["FULL_BREAKPOINTS", "PAIRWISE_SHARED_TRUNCATED"],
+  "simulation_seed": 25101,
+  "bootstrap_seed": 25102,
+  "bootstrap_draws": 1000,
+  "confidence_level": 0.95,
+  "criteria": {
+    "maximum_r_parity_error_generations": 1e-10,
+    "maximum_absolute_oracle_bias_generations": 0.75,
+    "minimum_oracle_coverage": 0.94,
+    "maximum_oracle_coverage": 0.96,
+    "maximum_absolute_truncated_independent_bias_generations": 0.75,
+    "minimum_truncated_independent_coverage": 0.94,
+    "maximum_truncated_independent_coverage": 0.96
+  },
+  "r_reference_fixtures": [
+    {
+      "fixture_id": "OFFICIAL_SIX",
+      "expected_rho_region": "NONNEGATIVE",
+      "left_lengths_cm": [1.2, 3.4, 1.6, 4.8, 4.8, 2.3],
+      "right_lengths_cm": [2.0, 3.8, 2.7, 2.1, 3.8, 1.8],
+      "chance_sharing": {"enabled": true, "median_allele_frequency": 0.7, "markers_on_chromosome": 68378, "chromosome_length_cm": 290.0}
+    },
+    {
+      "fixture_id": "NEGATIVE_RHO_I1",
+      "expected_rho_region": "I1",
+      "left_lengths_cm": [7.91375903, 3.01864831, 2.19277389, 1.11229976, 0.22605547],
+      "right_lengths_cm": [4.00602268, 2.27065984, 0.76940051, 0.96899146, 3.25233799],
+      "chance_sharing": {"enabled": false, "median_allele_frequency": 0.7, "markers_on_chromosome": 68378, "chromosome_length_cm": 290.0}
+    },
+    {
+      "fixture_id": "NEGATIVE_RHO_I2",
+      "expected_rho_region": "I2",
+      "left_lengths_cm": [0.42485879, 1.49647178, 7.81462983, 3.42229394, 6.23400180],
+      "right_lengths_cm": [2.22858829, 3.18146639, 4.10527664, 1.98409237, 0.46077795],
+      "chance_sharing": {"enabled": false, "median_allele_frequency": 0.7, "markers_on_chromosome": 68378, "chromosome_length_cm": 290.0}
+    },
+    {
+      "fixture_id": "NEGATIVE_RHO_I3",
+      "expected_rho_region": "I3",
+      "left_lengths_cm": [5.38210727, 2.23171941, 1.66177300, 1.47289009, 4.87778460],
+      "right_lengths_cm": [1.68735975, 2.40622883, 2.02147214, 0.68955239, 6.24584003],
+      "chance_sharing": {"enabled": false, "median_allele_frequency": 0.7, "markers_on_chromosome": 68378, "chromosome_length_cm": 290.0}
+    },
+    {
+      "fixture_id": "NONNEGATIVE_RHO",
+      "expected_rho_region": "NONNEGATIVE",
+      "left_lengths_cm": [4.30333537, 5.06523701, 4.49760759, 6.69843598, 1.63501183],
+      "right_lengths_cm": [5.43071218, 3.88288183, 2.71415982, 1.91993219, 0.99814367],
+      "chance_sharing": {"enabled": false, "median_allele_frequency": 0.7, "markers_on_chromosome": 68378, "chromosome_length_cm": 290.0}
+    }
+  ],
+  "calibrated": false,
+  "founder_effect_proven": false
+}

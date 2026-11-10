@@ -107,3 +107,67 @@ les strates MAF/écart physique, l'interpolation, les seuils de densité et les
 timeouts. Il ne contient ni chemin local codé en dur, ni seuil scientifique
 de commutation, ni approbation du point 07. Le protocole est sous
 `protocoles/D23_PHASING_PRESPECIFICATION.md`.
+
+`d24_founder_chr5_pedigree_v1.json` prépare trois unités familiales
+indépendantes sur le domaine chr5 existant : deux CEU et une
+`ADMIX_CEU_YRI`. Les cinq configurations positives fixent les âges 50, 100,
+150 et 200 générations, dont deux graines indépendantes à 100. Elles ont été
+matérialisées sous CAL-DEC-011 et ne doivent pas être remplacées par le panel
+D14 historique à deux familles.
+
+`d24_founder_haplotype_bench_v1.json` ferme le contrat d'évaluation de
+l'étape 13 : profil primaire `MAXIMUM`, sensibilités `BASELINE`,
+`DENSITY_50` et `MISSING_1PCT`, au moins trois familles par positif, cinq
+positifs et cinq négatifs, IC de Wilson à 95 % et absence de reclassement
+IBS→IBD. Les seuils de performance restent non scellés. CAL-DEC-011 autorise
+l'exécution bornée du banc, sans qualification automatique.
+La matrice ferme cinq positifs d'âges 50/100/150/200 générations (avec deux
+réplications à 100) et cinq négatifs dont les porteurs de cible indépendants
+ne partagent aucun segment injecté. Chaque scénario est apparié sur les quatre
+profils ; seul `MAXIMUM` alimente les critères principaux.
+La construction exécutée utilise 487 marqueurs régionaux pour `MAXIMUM`, le
+sous-ensemble D23a plus la cible protégée pour `BASELINE`, une rétention
+déterministe de 50 % et un manque de 1 % hors cible. Les haplotypes restent le
+phasage-vérité D14 : les erreurs de phasage D23 ne sont pas injectées ici.
+
+`d25_variant_age_bench_v1.json` ferme l'évaluation D25 : modèle primaire
+`CORRELATED`, référence `INDEPENDENT`, dix âges, 3/5/10 familles, 200
+réplications par cellule et graines distinctes pour simulation et bootstrap.
+Il fixe le profil exact, la censure des bras à 3 cM, les échelles de carte 0,95
+et 1,05, les cinq positifs D24 et la politique de phase
+`NOT_EVALUABLE_WITHOUT_MATCHED_SHAPEIT5_OUTPUT`. Il interdit toute promotion
+automatique de `calibrated` ou `founder_effect_proven`.
+
+`d25a_gamma_audit_v1.json` ferme l'audit correctif D25a sur de nouvelles
+graines. Il croise dix âges, 3/5/10 familles, trois fractions de chemin partagé
+et les contrats `FULL_BREAKPOINTS`/`PAIRWISE_SHARED_TRUNCATED`. Il épingle le
+script R officiel par URL et SHA-256, couvre ses quatre régions de corrélation
+avec cinq fixtures et fixe les critères de parité, biais et couverture. La
+méthode historique, la candidate fidèle à R et l'oracle complet ont des
+identifiants distincts ; aucun résultat ne permet une promotion automatique.
+
+`d25b_gamma_censoring_v1.json` ferme la nouvelle vraisemblance de censure sur
+les graines 25201/25202 : dix âges, 3/5/10 familles, 400 réplications et trois
+profils généalogiques. Il impose exactement un plus long bras censuré par côté,
+interdit la correction de partage fortuit et fixe une fixture analytique ainsi
+que B01–B07. La promotion de production et les deux verdicts globaux sont
+forcés à `false`.
+
+`d26_ld_roh_bench_v1.json` ferme les six observations non phasées distinctes,
+les alias de phase, la cible chr5 et les paramètres réels PLINK des étapes 15
+et 16. Les manifests D16/D17 sont épinglés par SHA-256. Le seuil d'appariement
+ROH vaut 50 %, mais les seuils de performance LD/ROH restent explicitement
+non scellés ; aucune promotion scientifique ou de production n'est possible.
+
+`d27_ancestry_bench_v1.json` ferme le banc du cœur 16A : dix composantes,
+référence D10 de 1 403 sujets disjointe des donneurs, contraste de mélange à
+deux strates sous alias, huit profils appariés D17 et bootstrap de 2 000
+réplications. Les six sources sont épinglées par SHA-256. Les seuils
+CAL-ANC-001/002, la promotion de production et les verdicts globaux restent
+explicitement non scellés ou faux.
+
+`d28_enrichment_bench_v1.json` ferme le banc du cœur 16B sur les quarante cas
+D24. Il fixe trois unités familiales, deux marqueurs par flanc, 10 000 tirages
+nuls évaluables, la graine 2801 et alpha=0,05 pour les seules métriques du
+banc. Le seuil de classification de production et les seuils d'acceptation de
+performance restent nuls ; toute promotion globale est interdite.

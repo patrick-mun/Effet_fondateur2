@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0.0",
+  "configuration_id": "d27_ancestry_bench_v1",
+  "method_id": "reference_only_global_local_pca_v1",
+  "reference_partition_role": "PHASING_REFERENCE_SHARED",
+  "reference_entity_count": 1403,
+  "requested_components": 10,
+  "minimum_variants": 100,
+  "minimum_reference_call_rate": 0.95,
+  "mixture_strata": {
+    "REFERENCE_STRATUM_A": "CEU",
+    "REFERENCE_STRATUM_B": "YRI"
+  },
+  "local_founder_stratum": "PEL",
+  "profiles": [
+    "control",
+    "missing_01",
+    "missing_05",
+    "genotype_01",
+    "phase_point_02",
+    "phase_switch_02",
+    "density_50",
+    "combined"
+  ],
+  "bootstrap_replicates": 2000,
+  "bootstrap_seed": 2701,
+  "performance_thresholds_sealed": false,
+  "production_promotion": false,
+  "calibrated": false,
+  "founder_effect_proven": false,
+  "sources": {
+    "d12_manifest_sha256": "062764cdf4bd3cf1ec2578fde2f12d4c3da1ab5132bac584b0dd65f78e8b9f1c",
+    "d14_manifest_sha256": "3489ca6330e100d9977e13d2d5884a8f81f8b11f2ae4f620a18192ba1a58322a",
+    "d17_manifest_sha256": "48f9010078af21c53a4f3fb8f3b56afd5ec3264732755f342ead4de14cbedc09",
+    "reference_preparation_manifest_sha256": "fca3001c45d2dfb474a55df72998cf2d5d49033925b858bad4ce8c75399fc65f",
+    "reference_vcf_sha256": "1b50f6bb8ddc9c4b40cfa58cda7adb7761a8d12f0a961e723ddfbdc13aef9d04",
+    "reference_metadata_sha256": "4e164b717433fc9bfc16e29b20e5b4659b4216185b3275322d421fe3d323c132"
+  }
+}

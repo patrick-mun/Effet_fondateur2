@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0.0",
+  "method_id": "founder_haplotype_truth_bench_v1",
+  "protocol_version": "1.0.0",
+  "primary_profile": "MAXIMUM",
+  "sensitivity_profiles": ["BASELINE", "DENSITY_50", "MISSING_1PCT"],
+  "minimum_independent_units_per_scenario": 3,
+  "minimum_positive_scenarios": 5,
+  "minimum_negative_scenarios": 5,
+  "minimum_flank_markers": 2,
+  "confidence_level": 0.95,
+  "true_consensus_policy": "INTERSECTION_OF_FAMILY_SEGMENTS",
+  "detection_status": "SUPPORTED_IBS_CANDIDATE",
+  "target_containment_policy": "CLOSED_INTERVAL",
+  "boundary_units": ["bp", "cM"],
+  "qualification_lifecycle": "pilot_then_seal",
+  "profile_construction": {
+    "MAXIMUM": {"marker_source": "D23B_MAXIMUM_CHIP_UNIVERSE", "marker_fraction": 1.0, "missing_rate": 0.0},
+    "BASELINE": {"marker_source": "D23A_BASELINE_CHIP_UNIVERSE", "marker_fraction": null, "missing_rate": 0.0},
+    "DENSITY_50": {"marker_source": "D23B_MAXIMUM_CHIP_UNIVERSE", "marker_fraction": 0.5, "missing_rate": 0.0},
+    "MISSING_1PCT": {"marker_source": "D23B_MAXIMUM_CHIP_UNIVERSE", "marker_fraction": 1.0, "missing_rate": 0.01}
+  },
+  "profile_seed": 2420,
+  "missing_seed": 2421,
+  "target_missing_policy": "PROTECTED",
+  "scenarios": [
+    {"scenario_id": "D24_POS_AGE100_R001", "truth_role": "POSITIVE", "age_generations": 100, "random_seed": 2402, "construction": "FOUNDER_RECOMBINATION"},
+    {"scenario_id": "D24_POS_AGE050_R001", "truth_role": "POSITIVE", "age_generations": 50, "random_seed": 2403, "construction": "FOUNDER_RECOMBINATION"},
+    {"scenario_id": "D24_POS_AGE150_R001", "truth_role": "POSITIVE", "age_generations": 150, "random_seed": 2404, "construction": "FOUNDER_RECOMBINATION"},
+    {"scenario_id": "D24_POS_AGE200_R001", "truth_role": "POSITIVE", "age_generations": 200, "random_seed": 2405, "construction": "FOUNDER_RECOMBINATION"},
+    {"scenario_id": "D24_POS_AGE100_R002", "truth_role": "POSITIVE", "age_generations": 100, "random_seed": 2406, "construction": "FOUNDER_RECOMBINATION"},
+    {"scenario_id": "D24_NEG_INDEPENDENT_R001", "truth_role": "NEGATIVE", "age_generations": null, "random_seed": 2411, "construction": "INDEPENDENT_TARGET_CARRIERS_NO_SHARED_SEGMENT"},
+    {"scenario_id": "D24_NEG_INDEPENDENT_R002", "truth_role": "NEGATIVE", "age_generations": null, "random_seed": 2412, "construction": "INDEPENDENT_TARGET_CARRIERS_NO_SHARED_SEGMENT"},
+    {"scenario_id": "D24_NEG_INDEPENDENT_R003", "truth_role": "NEGATIVE", "age_generations": null, "random_seed": 2413, "construction": "INDEPENDENT_TARGET_CARRIERS_NO_SHARED_SEGMENT"},
+    {"scenario_id": "D24_NEG_INDEPENDENT_R004", "truth_role": "NEGATIVE", "age_generations": null, "random_seed": 2414, "construction": "INDEPENDENT_TARGET_CARRIERS_NO_SHARED_SEGMENT"},
+    {"scenario_id": "D24_NEG_INDEPENDENT_R005", "truth_role": "NEGATIVE", "age_generations": null, "random_seed": 2415, "construction": "INDEPENDENT_TARGET_CARRIERS_NO_SHARED_SEGMENT"}
+  ]
+}

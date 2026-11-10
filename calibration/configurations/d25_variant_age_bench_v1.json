@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "configuration_id": "d25_variant_age_bench_v1",
+  "config_state": "FINALIZED",
+  "method_id": "gamma_gandolfo_2014_v1",
+  "primary_model": "CORRELATED",
+  "reference_model": "INDEPENDENT",
+  "ages_generations": [5, 10, 15, 20, 30, 40, 50, 75, 100, 150],
+  "family_counts": [3, 5, 10],
+  "replications_per_cell": 200,
+  "simulation_seed": 2501,
+  "bootstrap_seed": 2502,
+  "bootstrap_draws": 1000,
+  "confidence_level": 0.95,
+  "generation_years": [25, 28, 30],
+  "minimum_units_for_estimate": 3,
+  "minimum_units_for_primary": 5,
+  "profiles": [
+    {"profile": "ORACLE_EXACT", "kind": "EXACT", "value": 1.0},
+    {"profile": "WINDOW_3CM_CAP", "kind": "ARM_CAP_CM", "value": 3.0},
+    {"profile": "MAP_SCALE_0P95", "kind": "MAP_SCALE", "value": 0.95},
+    {"profile": "MAP_SCALE_1P05", "kind": "MAP_SCALE", "value": 1.05}
+  ],
+  "d24_profiles": ["MAXIMUM", "BASELINE", "DENSITY_50", "MISSING_1PCT"],
+  "d24_positive_scenarios": [
+    {"scenario_id": "D24_POS_AGE050_R001", "age_generations": 50},
+    {"scenario_id": "D24_POS_AGE100_R001", "age_generations": 100},
+    {"scenario_id": "D24_POS_AGE100_R002", "age_generations": 100},
+    {"scenario_id": "D24_POS_AGE150_R001", "age_generations": 150},
+    {"scenario_id": "D24_POS_AGE200_R001", "age_generations": 200}
+  ],
+  "phase_error_policy": "NOT_EVALUABLE_WITHOUT_MATCHED_SHAPEIT5_OUTPUT",
+  "calibrated": false,
+  "founder_effect_proven": false
+}

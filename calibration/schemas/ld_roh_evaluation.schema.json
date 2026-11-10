@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ld_roh_evaluation.schema.json",
+  "type": "object",
+  "required": ["schema_version", "evaluation_state", "configuration_sha256", "protocol_sha256", "run_manifest_sha256", "source_d16_manifest_sha256", "source_d17_manifest_sha256", "profiles", "paired_profiles", "performance_thresholds_sealed", "technical_status", "performance_qualification", "production_promotion", "calibrated", "founder_effect_proven", "report_id", "method_id", "results_by_profile", "criteria", "limits"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "evaluation_state": {"const": "CLOSED"},
+    "configuration_sha256": {"$ref": "#/$defs/sha256"},
+    "protocol_sha256": {"$ref": "#/$defs/sha256"},
+    "run_manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "source_d16_manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "source_d17_manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "profiles": {"type": "array", "minItems": 6, "maxItems": 6, "uniqueItems": true, "items": {"type": "string"}},
+    "paired_profiles": {"const": true},
+    "performance_thresholds_sealed": {"const": false},
+    "technical_status": {"const": "PASS"},
+    "performance_qualification": {"const": "REVIEW_REQUIRED_UNSEALED"},
+    "production_promotion": {"const": false},
+    "calibrated": {"const": false},
+    "founder_effect_proven": {"const": false},
+    "report_id": {"enum": ["CAL-REP-15", "CAL-REP-16"]},
+    "method_id": {"enum": ["d26_local_ld_evaluation_v1", "d26_roh_evaluation_v1"]},
+    "r_squared_definition": {"type": "string"},
+    "reference_role": {"type": "string"},
+    "dense_reference_segment_count": {"type": "integer", "minimum": 0},
+    "results_by_profile": {"type": "array", "minItems": 6, "maxItems": 6, "items": {"type": "object", "required": ["profile_id"], "properties": {"profile_id": {"type": "string"}}, "additionalProperties": {"type": ["number", "integer", "string", "null"]}}},
+    "criteria": {"type": "array", "minItems": 2, "items": {"type": "object", "additionalProperties": false, "required": ["criterion_id", "metric", "value", "threshold", "status"], "properties": {"criterion_id": {"type": "string", "pattern": "^CAL-(LD|ROH)-"}, "metric": {"type": "string"}, "value": {"type": ["number", "integer", "null"]}, "threshold": {"type": ["number", "integer", "null"]}, "status": {"enum": ["PASS", "REVIEW_REQUIRED"]}}}},
+    "limits": {"type": "array", "minItems": 3, "items": {"type": "string", "minLength": 10}}
+  },
+  "allOf": [
+    {"if": {"properties": {"report_id": {"const": "CAL-REP-15"}}}, "then": {"required": ["r_squared_definition"], "properties": {"method_id": {"const": "d26_local_ld_evaluation_v1"}}}},
+    {"if": {"properties": {"report_id": {"const": "CAL-REP-16"}}}, "then": {"required": ["reference_role", "dense_reference_segment_count"], "properties": {"method_id": {"const": "d26_roh_evaluation_v1"}}}}
+  ],
+  "additionalProperties": false,
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}

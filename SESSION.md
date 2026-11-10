@@ -1,6 +1,254 @@
 # Suivi de session
 
-Dernière mise à jour : 9 novembre 2026
+Dernière mise à jour : 10 novembre 2026
+
+## D28 — exécutée, enrichissement 16B non qualifié
+
+- CAL-DEC-016 et le protocole D28 ont été fermés avant calcul. Les 40 appels
+  D24 ont utilisé le cœur réel de 16B avec 10 000 tirages nuls évaluables par
+  cas, sans lire la vérité ; `d28_enrichment_calls_v1` a été scellé avant
+  l'ouverture des rôles positif/nul.
+- Au profil primaire `MAXIMUM`, les cinq scénarios positifs sont appelés par la
+  règle descriptive alpha=0,05 : puissance 100 % (IC95 Wilson 56,6–100 %).
+  Un nul sur cinq est appelé à tort et un autre n'est pas évaluable : FPR 20 %
+  (IC95 3,6–62,4 %).
+- `BASELINE` et `DENSITY_50` ont 0/10 cas évaluables, principalement parce que
+  10 000 tirages nuls ne satisfont pas les deux marqueurs requis sur chaque
+  flanc. Ces zéros d'appel ne sont pas des preuves de spécificité. Le profil
+  manque 1 % conserve 8/10 cas évaluables, cinq positifs appelés et un faux
+  positif.
+- Le seuil de production reste nul : aucune classification positive ou
+  négative n'est émise, CAL-ENRICH-001 passe avec 0/40 émission indue.
+  CAL-ENRICH-002/003 restent `REVIEW_REQUIRED` sans seuils d'acceptation
+  scellés. Statuts : `PASS_CORE_EVALUATOR` et
+  `REVIEW_REQUIRED_UNSEALED`.
+- Évaluation finale : `d28_enrichment_evaluation_v2`. Rapport final réalisé
+  avec `report-formater` : `d28_enrichment_reports_v4/CAL-REP-16B`, HTML
+  autonome et PDF A4 de 9 pages, 14 sections, quatre graphiques et équations.
+  Sommaire, pieds de page, six pages échantillonnées et absence de débordement
+  ont été contrôlés. Les versions de rapport v1–v3 sont des diagnostics de
+  pagination conservés.
+- Validation : 40 tests ciblés D28/16B/protocoles, puis suite complète du dépôt
+  avec 1 291 tests réussis en 17 min 00 s. Imports, JSON, schémas et
+  `git diff --check` sont valides.
+- Maintenir `calibrated=false`, `founder_effect_proven=false` et
+  `production_promotion=false`. Prochaine étape du plan : D29, sans
+  autorisation implicite de la lancer. Aucun commit, push ou merge.
+
+## D27 — exécutée, cœur 16A évalué régionalement sans qualification
+
+- CAL-DEC-015 ferme D27 avant calcul. Le banc appelle directement le cœur réel
+  de 16A (`harmonize_alt_dosages`, PCA de référence, projection), sans exécuter
+  SHAPEIT5 ni l'orchestration complète. Les sorties aveugles sont scellées dans
+  `d27_ancestry_calls_v1` avant ouverture des vérités D12/D14.
+- La référence contient 1 403 sujets de la partition D10
+  `PHASING_REFERENCE_SHARED`, explicitement disjointe des 900 donneurs D12.
+  Les actifs sont lus dans le workspace D23b, jamais dans le cache ; aucune
+  donnée réelle ou `data/input` n'est utilisée.
+- Le contraste à deux strates compte 190 sujets : MAE de proportion 0,1639,
+  IC95 bootstrap 0,1459–0,1835. Le mélange vrai 50/50 est centré à 0,4909 en
+  moyenne, mais les groupes purs sont ramenés vers le centre ; cette mesure
+  régionale ne qualifie pas un estimateur d'ascendance génomique.
+- Sur les huit profils appariés D17, l'instabilité diploïde moyenne vaut 0,029
+  au manque 1 %, 0,080 au manque 5 %, 0,083 au dosage 1 %, 0,439 à
+  demi-densité et 0,484 dans le combiné. Les erreurs de phase seules ne changent
+  pas le dosage diploïde.
+- Localement, la phase ponctuelle vaut 0,056 distance standardisée, les
+  commutations 0,459, la demi-densité 0,471 et le combiné 0,621. Les six copies
+  D14 sont plus proches du repère fondateur, mais proviennent d'un seul
+  haplotype indépendant : ce contrôle reste descriptif.
+- `CAL-ANC-001` et `CAL-ANC-002` restent `REVIEW_REQUIRED` parce que leurs
+  seuils `pilot_then_seal` sont absents. Statut technique limité au cœur :
+  `PASS_CORE_EVALUATOR`; performance `REVIEW_REQUIRED_UNSEALED`.
+- Évaluation finale : `d27_ancestry_evaluation_v2`. La v1 précède le contrôle
+  renforcé des empreintes internes D12/D14 mais donne les mêmes agrégats.
+  Rapport final `d27_ancestry_reports_v2/CAL-REP-16A` : HTML autonome et PDF A4 de 8 pages,
+  14 sections, quatre graphiques, équations, tableaux et empreintes. Le skill
+  `report-formater` a guidé le rendu ; pagination et six pages échantillonnées
+  ont été contrôlées.
+- Validation ciblée : 26 tests ancestry/16A, puis 53 tests D27, protocoles et
+  composants ancestry après le contrôle d'intégrité renforcé. La suite
+  complète du dépôt réussit : 1 284 tests en 16 min 38 s. Imports et
+  `git diff --check` sont valides. Maintenir
+  `calibrated=false`, `founder_effect_proven=false`. Prochaine étape : D28,
+  sans autorisation implicite de la lancer. Aucun commit, push ou merge.
+
+## D26 — exécutée, LD/ROH mesurés sans seuil scientifique scellé
+
+- CAL-DEC-014 est achevée : après D25b, le protocole D26 a été finalisé avant
+  appel. Les six observations non phasées distinctes de D17 sont appariées ;
+  `phase_point_02` et `phase_switch_02`, octet pour octet identiques au
+  contrôle, sont auditées mais ne sont pas de fausses réplications.
+- Le run clos `d26_ld_roh_run_v1` appelle PLINK 1.9 réel par les moteurs de
+  production `publish_local_ld` et `publish_roh`. Il lit seulement les VCF
+  observés D17 et ferme leurs sorties avant ouverture de la vérité dense.
+  Aucun fond génomique, donnée réelle, cache interne ou entrée Gamma n'est
+  utilisé.
+- CAL-REP-15 compare r² PLINK à une corrélation de dosage indépendante. Le
+  contrôle donne une MAE de 3,25e-8 sur 17 451 paires. Le manque 1 %/5 % la
+  porte à 0,00087/0,00202 ; le dosage 1 % à 0,00484 ; le profil combiné à
+  0,00309. La demi-densité conserve le plancher numérique, mais seulement
+  4 576 paires : elle perd de la résolution sans déformer les paires gardées.
+- CAL-REP-16 utilise, après scellement, une référence opérationnelle de 22
+  appels PLINK sur le VCF dense D16. La sensibilité globale varie de 77,27 % à
+  90,91 %, le taux de sujets faussement positifs de 3,14 % à 4,44 % et la MAE
+  de longueur de 0,230 à 0,373 cM. Les trois injections de 2 Mb sont détectées
+  dans les six profils, soit 18/18, mais cela ne qualifie pas les autres ROH.
+- `CAL-LD-002` et `CAL-ROH-004` passent leurs contrats fixes. Les seuils
+  `pilot_then_seal` de `CAL-LD-001` et `CAL-ROH-001` à `003` étaient absents ;
+  ils restent `REVIEW_REQUIRED` et ne sont pas ajustés après résultat. Statut
+  technique `PASS`, performance `REVIEW_REQUIRED_UNSEALED`.
+- L'évaluation finale est sous `d26_ld_roh_evaluation_v2`. La v1, qui gardait
+  dans certains dénominateurs ROH les sujets exclus pour cible manquante, est
+  conservée comme diagnostic intermédiaire. Les rapports finaux
+  `d26_ld_roh_reports_v2/CAL-REP-15` et `CAL-REP-16` comportent respectivement
+  8 et 9 pages, 14 sections chacun, 3 et 4 graphiques, équations, tableaux et
+  empreintes. Pagination complète et pages échantillonnées contrôlées.
+- Validation : 112 tests ciblés réussis, puis suite complète du dépôt avec
+  1 276 tests réussis en 15 min 59 s. Après la correction localisée des
+  dénominateurs v2, 16 tests LD/ROH ciblés réussissent ; imports et
+  `git diff --check` sont valides. `calibrated=false`,
+  `founder_effect_proven=false`. Prochaine étape du plan : D27, sans
+  autorisation implicite de la lancer. Aucun commit, push ou merge.
+
+## D25b — exécutée, censure indépendante qualifiée seulement
+
+- CAL-DEC-014 autorise D25b puis D26. Le protocole fermé modélise exactement
+  le plus long bras non observable comme une censure de type II : `n−1`
+  ruptures et une exposition censurée par côté. V1/V2 restent inchangées ; la
+  candidate distincte est `gamma_pairwise_type2_censored_v3`.
+- Les nouvelles graines 25201/25202 produisent 36 000 scénarios indépendants
+  des panels antérieurs et 144 000 estimations fermées avant ouverture de la
+  vérité. La grille croise dix âges, 3/5/10 familles, 400 réplications et trois
+  profils généalogiques, sans donnée réelle ni cache interne.
+- La fixture analytique passe à 3,55e-15 génération près. Sur 12 000 scénarios
+  iid censurés, la V3 donne un biais −0,19 génération (IC95 bootstrap −0,75 à
+  0,37), une RMSE 31,79 et une couverture 95,11 % (IC95 Wilson
+  94,71–95,48 %). Les critères B01–B06 passent.
+- Les trois effectifs indépendants restent dans les bornes : biais +0,42,
+  −0,70 et −0,30 génération ; couverture 95,15 %, 95,58 % et 94,60 % pour
+  3, 5 et 10 familles. La précision reste limitée : RMSE 46,18 à trois
+  familles et P95 leave-one-family-out 44,82 générations.
+- La robustesse corrélée échoue : couverture V3 87,38 % avec 25 % de chemin
+  partagé et 76,83 % avec 50 %. À dix familles et 50 %, elle tombe à 65,53 %
+  avec biais +13,34 et RMSE 154,23. B07 reste `REVIEW_REQUIRED`.
+- L'évaluation `d25b_gamma_evaluation_v1` est techniquement `PASS` et
+  scientifiquement `PASS_INDEPENDENT_ONLY`; `production_promotion=false`. La
+  V3 peut servir de référence indépendante, pas d'estimation principale pour
+  une généalogie corrélée.
+- Rapport final `d25b_gamma_reports_v1/CAL-REP-14B/` : HTML autonome, PDF A4
+  de 10 pages, 14 sections, quatre graphiques, six équations et cinq tableaux.
+  Maintenir `calibrated=false` et `founder_effect_proven=false`; SHAPEIT5, la
+  résolution des marqueurs, le partage fortuit et les faux positifs D24 restent
+  hors domaine. D26 a ensuite été exécutée sous le même CAL-DEC-014. Aucun
+  commit, push ou merge.
+
+## D25a — exécutée, fidélité R établie mais correction de troncature refusée
+
+- CAL-DEC-013 enregistre la demande explicite « fais la D25a ». Le protocole
+  clos sépare longueurs biologiques complètes, longueurs tronquées par partage
+  paire-à-paire et généalogies indépendantes ou corrélées. Les nouvelles
+  graines 25101/25102 produisent 18 000 scénarios indépendants et 144 000
+  estimations, sans donnée réelle, cache interne ni réemploi des tirages D25.
+- La candidate `gamma_gandolfo_2014_r_faithful_v2` reproduit le script R
+  officiel sur cinq fixtures, y compris les trois branches de corrélation
+  négative : erreur absolue maximale 7,11e-15 génération. Elle sépare aussi
+  les effectifs effectifs du point et de l'intervalle, confondus dans V1.
+- Sur les vrais points de recombinaison indépendants, l'oracle sans correction
+  de bord est correctement calibré : biais −0,11 génération (IC95 bootstrap
+  −0,76 à 0,52), RMSE 25,62 et couverture 95,35 % (IC95 Wilson
+  94,79–95,85 %). Le biais D25 venait donc surtout d'un contrat d'observation
+  et d'un choix de modèle incompatibles, pas d'un échec intrinsèque de Gamma.
+- Sur les longueurs tronquées indépendantes, la correction publiée reste
+  insuffisante : biais +5,91 générations (IC95 4,85–7,08), RMSE 43,96 et
+  couverture 91,88 % (IC95 Wilson 91,17–92,55 %). Le biais atteint +13,17 à
+  trois familles. `CAL-AGE-A04` et `A05` échouent.
+- Les scénarios corrélés restent exploratoires : les longueurs complètes sont
+  approximativement centrées mais très dispersées ; à 50 % de chemin partagé,
+  la version tronquée donne un biais −2,42 et une couverture 90,75 %. Aucune
+  qualification du modèle corrélé n'est accordée.
+- L'évaluation finale est `d25a_gamma_evaluation_v2` : statut technique
+  `PASS`, qualification de performance `FAIL`. La candidate ne remplace pas
+  V1 en production. La prochaine méthode devra intégrer explicitement la
+  censure des extrémités dans la vraisemblance et être testée sur un nouveau
+  panel préspecifié.
+- Rapport final : `d25a_gamma_reports_v2/CAL-REP-14A/` (HTML autonome, PDF A4
+  de 11 pages, 14 sections, quatre graphiques, six équations et cinq tableaux).
+  Les répertoires v1 sont intermédiaires. Maintenir `calibrated=false` et
+  `founder_effect_proven=false`; D25a ne répare pas les faux positifs D24 et
+  n'évalue pas SHAPEIT5.
+- Validation finale : 19 tests ciblés, 929 tests de calibration puis les 1 263
+  tests du dépôt réussis. Imports, compilation, schémas JSON, empreintes du
+  rapport, contrôle visuel du PDF et `git diff --check` sont valides. Aucun
+  commit, push ou merge.
+
+## D25 — exécutée, datation Gamma non qualifiée
+
+- CAL-DEC-012 enregistre la demande explicite de passer à D25. La grille close
+  comporte les dix âges 5–150 générations, trois effectifs familiaux (3, 5,
+  10) et 200 réplications par cellule : 6 000 scénarios indépendants, sans
+  donnée `dock6_real` ni cache interne. La vérité d'âge est séparée des entrées
+  aveugles et des estimations avant ouverture.
+- Le primaire `ORACLE_EXACT` avec modèle `CORRELATED` estime les 6 000 cas :
+  biais −13,59 générations (IC95 bootstrap −14,16 à −13,04), MAE 16,85,
+  RMSE 26,38 et couverture 5 647/6 000 = 94,12 % (IC95 Wilson
+  93,49–94,68 %). Le biais négatif augmente avec l'âge vrai.
+- La couverture dépend de l'effectif familial : 91,15 % à trois familles,
+  93,50 % à cinq et 97,70 % à dix. Sur 4 000 scénarios évaluables, le maximum
+  leave-one-family-out varie en moyenne de 11,91 générations (P95 41,17) ;
+  trois familles restent non évaluables après omission.
+- La référence historique est reproduite (22,34 contre 22,3 et 27,49 contre
+  27,5 ; erreur maximale 0,040). Les sensibilités de fenêtre et de carte sont
+  descriptives. La propagation des cinq positifs D24 montre des erreurs fortes
+  et instables ; l'effet des erreurs SHAPEIT5 reste `NOT_EVALUABLE`, car D24
+  utilisait le phasage-vérité.
+- L'évaluation `d25_variant_age_evaluation_v1` est techniquement `PASS`, mais
+  `CAL-AGE-001` à `005` restent `REVIEW_REQUIRED`; seul `CAL-AGE-006` passe.
+  Rapport final : `d25_variant_age_reports_v2/CAL-REP-14/` (HTML autonome,
+  PDF A4 de 10 pages, 14 sections, quatre figures, cinq équations et cinq
+  tableaux). Le rendu v1 est intermédiaire.
+- Validation : 9 tests ciblés D25 puis les 919 tests de `tests/calibration/`
+  réussis. Maintenir `calibrated=false`, `founder_effect_proven=false`; D25 ne
+  répare pas la spécificité D24 et ne prouve pas une origine fondatrice unique.
+  Aucun commit, push ou merge.
+
+## D24 — exécutée, performance scientifique non qualifiée
+
+- CAL-DEC-011 enregistre la demande explicite d'exécuter D24. Le nouveau panel
+  D13 comporte trois familles, 24 transmissions, 87 relations attendues et
+  487 marqueurs observés dans la région chr5 ; les contrôles mendéliens et de
+  chevauchement des fondateurs passent. Cinq positifs D14 (âges 50, 100, 150,
+  200 et une seconde réplication à 100) et cinq négatifs indépendants ont été
+  construits sans donnée `dock6_real` ni cache interne.
+- Le banc clos `d24_founder_haplotype_bench_v1` contient les dix mêmes vérités
+  sur `MAXIMUM`, `BASELINE`, `DENSITY_50` et `MISSING_1PCT`, soit 40 cas
+  appariés. Le moteur de production `target_centered_exact_ibs_v1` est appelé
+  réellement. Les haplotypes d'entrée sont toutefois le phasage-vérité D14 :
+  D24 isole l'étape 13 et ne propage pas les erreurs SHAPEIT5 de D23/D23b.
+- L'évaluation close `d24_founder_haplotype_evaluation_v1` est techniquement
+  `PASS`, mais la performance reste `REVIEW_REQUIRED`. Sur le primaire
+  `MAXIMUM` : sensibilité 5/5 = 100 % (IC95 Wilson 56,55–100 %), spécificité
+  1/5 = 20 % (3,62–62,45 %), inclusion de cible 5/5 = 100 % et MAE des dix
+  bornes exactes = 0,09450 cM. Quatre négatifs sur cinq sont donc appelés à
+  tort ; aucune qualification favorable n'est possible.
+- Résultats descriptifs appariés : `BASELINE` sensibilité 80 %, spécificité
+  100 %, MAE 0,40144 cM ; `DENSITY_50` 100 %, 60 %, 0,17201 cM ;
+  `MISSING_1PCT` 100 %, 40 %, 0,13864 cM. Un positif `BASELINE` laisse ses
+  trois familles `INSUFFICIENT`. Ces profils ne sont ni des réplications
+  biologiques supplémentaires ni une preuve causale de l'effet de densité.
+- Rapport final détaillé :
+  `calibration_workspace/d24_founder_haplotype_reports_v2/CAL-REP-13/`
+  (HTML autonome, PDF A4 de 10 pages, 14 sections, quatre graphiques, quatre
+  équations, trois tableaux et empreintes). Le rendu v1 est intermédiaire et
+  son PDF incomplet ne doit pas être utilisé.
+- Validation finale : 70 tests ciblés D24 puis les 914 tests de
+  `tests/calibration/` réussis ; imports V2 et `git diff --check` valides. La
+  suite complète du dépôt n'a pas été relancée.
+- Prochaine action : analyser la cause des faux positifs IBS et préspecifier
+  un contrôle discriminant sur des scénarios distincts avant D33–D35. Un banc
+  séparé de bout en bout devra propager les erreurs de phasage. Maintenir
+  `calibrated=false`, `founder_effect_proven=false`; le problème 07 reste
+  différé. Aucun commit, push ou merge n'a été effectué.
 
 ## D23b — parties 1 à 3 réalisées, performance toujours non qualifiée
 

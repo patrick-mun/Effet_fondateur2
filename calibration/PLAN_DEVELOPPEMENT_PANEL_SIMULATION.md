@@ -1613,11 +1613,148 @@ de segments fondateurs, des contrôles négatifs et des unités indépendantes.
 **Livrable :** évaluateur `13`.
 **Réussite :** sensibilité, spécificité et erreurs de bornes publiées.
 
+**Préparation puis exécution réalisées le 10 novembre 2026 (CAL-DEC-010 et
+CAL-DEC-011).**
+Le protocole `protocoles/D24_FOUNDER_HAPLOTYPE_PRESPECIFICATION.md` fixe avant
+résultats les unités, dénominateurs, formules, contrôles d'isolation et contrat
+CAL-REP-13. L'audit refuse D14 comme panel primaire parce qu'il ne comporte que
+deux familles indépendantes. D15 reste une vérité IBD paire-à-paire dont le
+fond négatif est inconnu ; D23a est une vérité de phase. Aucun des trois ne
+constitue donc la vérité de consensus fondateur exigée.
+
+Les configurations D24 préparent une nouvelle matérialisation chr5 avec trois
+familles et un banc d'au moins cinq scénarios positifs et cinq négatifs. Pour
+chaque positif, la vérité privée contient au moins trois segments familiaux et
+le consensus vrai est leur intersection :
+
+\[
+L^*=\max_f(L_f),\qquad R^*=\min_f(R_f).
+\]
+
+L'évaluateur `evaluate_founder_haplotype.py` lit les vraies sorties de l'étape
+13, compare détection, inclusion de la cible et erreurs signées/absolues de
+bornes en bp et cM, puis ne publie que des agrégats avec IC de Wilson. Le
+rapport `report_founder_haplotype.py` est préspecifié en 14 sections avec au
+moins trois graphiques explicatifs et les équations réellement utilisées.
+La matrice fixe cinq positifs et cinq négatifs sur quatre profils appariés ;
+seul `MAXIMUM` alimente les critères principaux. Les 40 cas profilés ne sont
+jamais présentés comme 40 réplications biologiques. Les bornes censurées
+restent comptées mais sont exclues du calcul qui exigerait une borne exacte.
+Les critères `CAL-FOUND-001` à `004` restent `pilot_then_seal` ; `005` exige
+zéro reclassement IBS→IBD sans preuve explicite.
+
+Le panel D13–D14 à trois familles, les cinq positifs et les cinq négatifs ont
+été matérialisés dans `calibration_workspace/`. L'étape 13 réelle est rejouée
+sur les quatre profils, soit 40 cas clos. Les haplotypes sont issus de la
+vérité phasée D14 puis projetés sur les profils : le banc isole la récupération
+du segment par l'étape 13 et ne propage pas les erreurs SHAPEIT5 de D23/D23b.
+
+L'évaluation `d24_founder_haplotype_evaluation_v1` passe techniquement. Sur le
+primaire `MAXIMUM`, elle mesure 5/5 positifs détectés, mais seulement 1/5
+négatifs correctement rejetés : sensibilité 100 %, spécificité 20 %, inclusion
+de cible 100 % et MAE de borne 0,09450 cM. Les IC95 de Wilson sont larges
+(56,55–100 % pour la sensibilité ; 3,62–62,45 % pour la spécificité), mais les
+quatre faux positifs suffisent à refuser une qualification favorable.
+
+Le rapport final `d24_founder_haplotype_reports_v2/CAL-REP-13` comporte 14
+sections, quatre graphiques, quatre équations, trois tableaux et un PDF A4 de
+10 pages. La prochaine action est l'analyse préspecifiée des faux positifs et
+un contrôle sur des scénarios distincts ; un second banc de bout en bout devra
+mesurer la propagation des erreurs de phasage. `calibrated=false`,
+`founder_effect_proven=false` et le point 07 reste différé.
+
 ### D25 — Implémenter l'évaluateur de datation
 
 **Action :** comparer âge Gamma et âge vrai sur toute la grille.
 **Livrable :** évaluateur `14` et courbes de calibration.
 **Réussite :** biais, RMSE, couverture et sensibilités familiales publiés.
+
+**Exécution réalisée le 10 novembre 2026 (CAL-DEC-012).** Le protocole
+`protocoles/D25_VARIANT_AGE_PRESPECIFICATION.md` ferme une grille de dix âges,
+trois effectifs familiaux et 200 réplications par cellule, soit 6 000 scénarios
+indépendants. La vérité privée est séparée des longueurs aveugles et des
+estimations. Le primaire utilise les longueurs exponentielles exactes avec le
+modèle de production `CORRELATED`; le modèle `INDEPENDENT`, une censure à
+3 cM et deux erreurs d'échelle de carte sont des références descriptives.
+
+Le primaire estime 6 000/6 000 cas : biais −13,59 générations (IC95 bootstrap
+−14,16 à −13,04), MAE 16,85, RMSE 26,38 et couverture 94,12 % (IC95 Wilson
+93,49–94,68 %). Le biais négatif croît avec l'âge et la couverture varie de
+91,15 % à trois familles à 97,70 % à dix. La stabilité leave-one-family-out
+est évaluée sur 4 000 cas : variation maximale moyenne 11,91 générations et
+P95 41,17. La référence historique 22,3/27,5 est reproduite à 0,040 génération
+près. La reprise des bornes D24 reste descriptive et l'erreur de phase
+SHAPEIT5 est `NOT_EVALUABLE`.
+
+Le statut technique est `PASS`, mais la performance reste
+`REVIEW_REQUIRED` : `CAL-AGE-001` à `005` ne sont pas scellés et seul
+`CAL-AGE-006` passe. Le rapport final
+`d25_variant_age_reports_v2/CAL-REP-14` contient 14 sections, quatre figures,
+cinq équations, cinq tableaux et un PDF A4 de 10 pages. D25 ne qualifie ni
+D24 ni l'hypothèse d'une origine fondatrice unique ; `calibrated=false` et
+`founder_effect_proven=false` sont maintenus.
+
+### D25a — Auditer l'implémentation et le contrat d'observation Gamma
+
+**Action :** distinguer fidélité au script R, modèle généalogique et censure
+des extrémités observées.
+
+**Livrable :** CAL-REP-14A et décision explicite de promotion ou de refus.
+
+**Réussite :** parité R/Python, oracle complet calibré et correction de
+troncature qualifiée sur un panel indépendant.
+
+**Exécution réalisée le 10 novembre 2026 (CAL-DEC-013).** Le protocole
+`protocoles/D25A_GAMMA_AUDIT_PRESPECIFICATION.md` ferme 18 000 scénarios : dix
+âges, trois effectifs, trois profils généalogiques et 200 réplications. Les
+deux contrats `FULL_BREAKPOINTS` et `PAIRWISE_SHARED_TRUNCATED` empêchent
+d'appliquer deux fois une correction de bord. Cinq fixtures locales couvrent
+l'exemple officiel et toutes les branches de corrélation du script R.
+
+La candidate Python reproduit R à 7,11e-15 génération près. L'oracle
+indépendant sur longueurs complètes donne un biais de −0,11 génération et une
+couverture de 95,35 %, ce qui restaure la calibration attendue. En revanche,
+sur longueurs tronquées, la correction publiée donne un biais de +5,91 et une
+couverture de 91,88 % ; les critères `CAL-AGE-A04` et `A05` échouent. Les
+profils corrélés ont des intervalles très larges et restent exploratoires.
+
+Le statut technique est `PASS`, mais la qualification de performance est
+`FAIL`. `gamma_gandolfo_2014_r_faithful_v2` reste une candidate et ne remplace
+pas V1 dans le pipeline. Le rapport final
+`d25a_gamma_reports_v2/CAL-REP-14A` contient 14 sections, quatre figures, six
+équations, cinq tableaux et un PDF A4 de 11 pages. La suite doit modéliser la
+censure dans la vraisemblance sur un nouveau panel ; `calibrated=false` et
+`founder_effect_proven=false` sont maintenus.
+
+### D25b — Modéliser exactement la censure paire-à-paire
+
+**Action :** remplacer l'extension moyenne par la vraisemblance exponentielle
+de type II pour le plus long bras censuré de chaque côté.
+
+**Livrable :** candidate V3, évaluateur fermé et CAL-REP-14B.
+
+**Réussite :** biais et couverture indépendants restaurés, domaine corrélé
+publié sans promotion implicite.
+
+**Exécution réalisée le 10 novembre 2026 (CAL-DEC-014).** Le protocole
+`protocoles/D25B_GAMMA_CENSORING_PRESPECIFICATION.md` ferme 36 000 scénarios
+sur de nouvelles graines et 144 000 estimations avant vérité. Pour `n`
+familles, la candidate utilise `k=2(n−1)` événements, le temps total sous
+risque observé et l'estimateur sans biais `(k−1)/T` avec intervalle Gamma
+exact.
+
+Sur 12 000 scénarios indépendants censurés, le biais vaut −0,19 génération
+(IC95 −0,75 à 0,37), la RMSE 31,79 et la couverture 95,11 % (IC95 Wilson
+94,71–95,48 %). Les critères B01–B06 passent pour l'ensemble et pour 3/5/10
+familles. La précision reste toutefois faible aux petits effectifs.
+
+Sous dépendance, la couverture tombe à 87,38 % pour 25 % de chemin partagé et
+76,83 % pour 50 % ; elle n'est que de 65,53 % à dix familles dans ce dernier
+profil. La qualification est donc `PASS_INDEPENDENT_ONLY`, B07 reste
+`REVIEW_REQUIRED` et `production_promotion=false`. Le rapport final
+`d25b_gamma_reports_v1/CAL-REP-14B` contient 14 sections, quatre figures, six
+équations, cinq tableaux et un PDF A4 de 10 pages. `calibrated=false` et
+`founder_effect_proven=false` restent maintenus.
 
 ### D26 — Implémenter les évaluateurs LD et ROH
 
@@ -1625,17 +1762,78 @@ de segments fondateurs, des contrôles négatifs et des unités indépendantes.
 **Livrable :** évaluateurs `15` et `16`.
 **Réussite :** erreurs de détection et de longueur quantifiées.
 
+**Exécution réalisée le 10 novembre 2026 (CAL-DEC-014).** Le protocole
+`protocoles/D26_LD_ROH_PRESPECIFICATION.md` ferme six observations appariées
+D17 et confirme que les deux profils de phase ont un VCF non phasé identique
+au contrôle. Les appels observés des moteurs réels 15/16 sont scellés avant
+l'ouverture de la référence. CAL-REP-15 calcule indépendamment le r² de dosage
+du contrôle ; CAL-REP-16 compare les appels clairsemés à une référence
+opérationnelle PLINK sur le VCF dense D16. Cette dernière isole l'effet de
+l'observation, mais n'est pas une vérité biologique indépendante du moteur.
+
+Le contrôle LD reproduit 17 451 paires avec une MAE de 3,25e-8. Le manque
+1 %/5 %, le dosage 1 % et le profil combiné donnent des MAE de 0,00087,
+0,00202, 0,00484 et 0,00309. La demi-densité ne déforme pas les paires
+conservées, mais réduit leur nombre à 4 576.
+
+La référence dense comporte 22 ROH. Selon le profil, la sensibilité vaut
+77,27–90,91 %, le taux de sujets faussement positifs 3,14–4,44 % et la MAE de
+longueur 0,230–0,373 cM. Les trois injections de 2 Mb sont toutes détectées
+dans les six profils. Les contrats fixes d'isolation et de non-usage Gamma
+passent ; les seuils de performance `pilot_then_seal` restent absents et ne
+sont pas inventés après résultat. Statut : technique `PASS`, performance
+`REVIEW_REQUIRED_UNSEALED`; `calibrated=false` et
+`founder_effect_proven=false`.
+
 ### D27 — Implémenter l'évaluateur d'ascendance
 
 **Action :** comparer les positions globales/locales aux mélanges simulés.
 **Livrable :** évaluateur `16A`.
 **Réussite :** stabilité et limites publiées sans attribution géographique.
 
+**Exécution réalisée le 10 novembre 2026 (CAL-DEC-015).** Le protocole
+`protocoles/D27_ANCESTRY_PRESPECIFICATION.md` ferme les appels avant vérité et
+utilise 1 403 références D10 disjointes des 900 donneurs D12. Le banc appelle
+le cœur PCA/harmonisation/projection de 16A sur 487 marqueurs régionaux chr5 ;
+ce calcul diploïde est un proxy régional, pas une PCA genome-wide. Les axes
+des huit profils D17 sont alignés par les seules références communes.
+
+Sur 190 sujets du contraste simulé à deux strates, la MAE de proportion vaut
+0,1639 (IC95 bootstrap 0,1459–0,1835). L'instabilité moyenne maximale vaut
+0,621 distance standardisée pour le profil combiné local ; demi-densité et
+commutations déplacent également les positions locales. Les six copies D14
+sont du côté du repère fondateur, mais ne représentent qu'un haplotype
+indépendant. Statut du cœur technique `PASS_CORE_EVALUATOR`, performance
+`REVIEW_REQUIRED_UNSEALED` faute de seuils antérieurs. CAL-REP-16A publie les
+équations, effectifs, graphiques et limites sans attribution géographique ;
+`calibrated=false` et `founder_effect_proven=false`.
+
 ### D28 — Implémenter l'évaluateur d'enrichissement
 
 **Action :** mesurer calibration sous le nul et puissance sous alternatives.
 **Livrable :** évaluateur `16B`.
 **Réussite :** probabilités, puissance et non-évaluations vérifiées.
+
+**Exécution réalisée le 10 novembre 2026 (CAL-DEC-016).** Le protocole
+`protocoles/D28_ENRICHMENT_PRESPECIFICATION.md` ferme le seuil descriptif du
+banc à 0,05 tout en maintenant le seuil de classification de production à
+`null`. Les 40 appels (dix scénarios D24 × quatre profils) ont été scellés
+avant ouverture des rôles positif/nul. Chaque cas demande 10 000 tirages nuls
+évaluables et appelle les primitives réelles de 16B.
+
+Au profil primaire `MAXIMUM`, les cinq positifs sont appelés par la règle du
+banc, soit une puissance de 100 % (IC95 Wilson 56,6–100 %). Un des cinq nuls
+est appelé à tort et un autre n'est pas évaluable : FPR primaire 20 % (IC95
+3,6–62,4 %). `BASELINE` et `DENSITY_50` ont 0/10 cas évaluables ; leurs taux
+d'appel nuls ne sont donc pas une preuve de spécificité. Le profil manque 1 %
+conserve 8/10 cas évaluables, cinq appels positifs et un faux positif.
+
+CAL-ENRICH-001 passe avec zéro classification de production émise sans seuil.
+CAL-ENRICH-002/003 restent `REVIEW_REQUIRED`, faute de seuils d'acceptation
+scellés et avec seulement cinq scénarios par rôle. Statut du cœur technique
+`PASS_CORE_EVALUATOR`, performance `REVIEW_REQUIRED_UNSEALED` ;
+`calibrated=false`, `founder_effect_proven=false` et
+`production_promotion=false`.
 
 ### D29 — Implémenter l'évaluateur IBD explicite
 
