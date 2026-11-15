@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:effet-fondateur:calibration:readiness-receipt:1.0.0",
+  "title": "R09 static readiness receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "receipt_id", "release_design", "scope", "ready_to_run", "terms", "checks", "evidence_sha256", "qualification_flags", "restrictions"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "receipt_id": {"type": "string", "minLength": 1},
+    "release_design": {"const": "panel_master_generic_v1"},
+    "scope": {"const": "R10_MICRO_PANEL_CONSTRUCTION"},
+    "ready_to_run": {"const": true},
+    "terms": {"type": "array", "minItems": 8, "maxItems": 8, "uniqueItems": true, "items": {"type": "string"}},
+    "checks": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+    "evidence_sha256": {"type": "object", "minProperties": 15, "additionalProperties": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+    "qualification_flags": {
+      "type": "object", "additionalProperties": false,
+      "required": ["calibrated", "founder_effect_proven", "production_promotion"],
+      "properties": {
+        "calibrated": {"const": false},
+        "founder_effect_proven": {"const": false},
+        "production_promotion": {"const": false}
+      }
+    },
+    "restrictions": {"type": "array", "minItems": 4, "uniqueItems": true, "items": {"type": "string"}}
+  }
+}

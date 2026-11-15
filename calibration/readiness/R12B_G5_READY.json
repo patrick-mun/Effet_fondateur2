@@ -1,0 +1,49 @@
+{
+  "candidate_state": "READY_TECHNICAL_VALIDATION",
+  "checks": [
+    "VALIDATION_BLIND_MATERIALIZED",
+    "VALIDATION_IDENTITIES_USE_INDEPENDENT_NAMESPACE",
+    "FOURTEEN_TRUTH_FAMILIES_SEALED",
+    "ELEVEN_BLINDED_VIEWS_CLOSED",
+    "BLINDED_INPUT_HASHES_VERIFIED",
+    "R13_RUNNER_FROZEN",
+    "R13_EVALUATOR_FROZEN",
+    "TRUTH_ROUTING_AFTER_RUN_CLOSURE_ONLY",
+    "NO_R13_RESULT_PRESENT",
+    "NO_REAL_DATA",
+    "R07_REVISION_RECORDED"
+  ],
+  "evidence_sha256": {
+    "r12b_frozen_manifest": "7ba705698a9b81318152029fb30e53d46a4f04f924fcc0069b77533ff8986ea7",
+    "r13_evaluator": "b99f96beed8a4cd3b066ea1e0b0f91bb4d7ac4da2812fc71c2af7b27f42f39c0",
+    "r13_runner": "4ab0ac0d89515f7f70c90523282fde2963574a361bd57961e1080e7e10e95c1d",
+    "release_checksums": "a3d2ab71241b7f0767503f858e5f895a21f6c60009e50d0703a3a6b1478b9a10",
+    "validation_configuration": "304cc1b11512271c4a1400154924b995a3ab4fdc4d4e061905492a63886f9b19"
+  },
+  "frozen": true,
+  "gate_g5_passed": true,
+  "issued_on": "2026-11-13",
+  "partition_id": "VALIDATION_BLIND",
+  "qualification_flags": {
+    "calibrated": false,
+    "founder_effect_proven": false,
+    "production_promotion": false
+  },
+  "r07_status": "REVISION_REQUIRED",
+  "ready_to_run": true,
+  "receipt_id": "R12B-G5-READY-panel_master_generic_v1",
+  "release_design": "panel_master_generic_v1",
+  "release_id": "panel-master-generic-v1-r12b-validation-blind",
+  "restrictions": [
+    "R13_TECHNICAL_BLIND_VALIDATION_ONLY",
+    "NO_SCIENTIFIC_QUALIFICATION_CLAIM",
+    "NO_PRODUCTION_PROMOTION",
+    "R07_MUST_BE_REVISED_BEFORE_FULL_QUALIFICATION",
+    "VALIDATION_TRUTH_MUST_REMAIN_SEALED_UNTIL_RUN_CLOSURE",
+    "NO_REAL_DATA",
+    "NO_HTML_OR_PDF_BEFORE_R14"
+  ],
+  "schema_version": "1.0.0",
+  "scientific_validation_authorized": false,
+  "scope": "R13_TECHNICAL_BLIND_VALIDATION"
+}

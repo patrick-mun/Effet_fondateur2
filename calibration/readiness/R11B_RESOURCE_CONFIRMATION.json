@@ -1,0 +1,65 @@
+{
+  "checks": [
+    {
+      "ceiling": 75000,
+      "check": "SHAPEIT_CORE_HOURS",
+      "projected": 17291.870905210348,
+      "status": "PASS"
+    },
+    {
+      "ceiling": 30000,
+      "check": "IBD_CORE_HOURS",
+      "projected": 1.6043923315326958,
+      "status": "PASS"
+    },
+    {
+      "ceiling": 192,
+      "check": "R2_AGGREGATE_RSS_GIB_AT_24_WORKERS",
+      "projected": 122.40222279371676,
+      "status": "PASS"
+    },
+    {
+      "ceiling": 120,
+      "check": "QUALIFICATION_SCHEDULE_DAYS_AT_24_WORKERS",
+      "projected": 30.267173166149046,
+      "status": "PASS"
+    },
+    {
+      "ceiling": 8192,
+      "check": "FULL_RELEASE_STORAGE_GIB",
+      "projected": 29.632587576285005,
+      "status": "PASS"
+    }
+  ],
+  "decision_id": "R11B-SCIENTIFIC-RESOURCE-CONFIRMATION-V1",
+  "evidence_sha256": {
+    "calibration/configurations/scientific_dimensioning_v2.yaml": "f1ef08a22ed1a799156d989a1257949b4982154333c116ff65a3251bb46e9e36",
+    "calibration/readiness/R07_SCIENTIFIC_DIMENSIONING_V2.json": "1ba465ab2c4f77cd1dbac75d440e3d95e230276dd25bcfdd9f89f87886e6384b",
+    "calibration_workspace/resource_probes/r11b_scientific_resources_v1/evaluations/R11B_RESOURCE_DECISION.json": "7f0575a5a0f67c77c8f0306aeee1e59c55f207adb9f0dc574bb4c5c13b4c742b"
+  },
+  "ibd_probe_count": 18,
+  "issued_on": "2026-11-14",
+  "measurement_binding_sha256": "ae4f5c2b26ed657b8253493227039022eae93cb36c3c619eea563141482cde9e",
+  "new_scientific_release_construction_authorized": true,
+  "next_phase": "R12C_BUILD_AND_FREEZE_NEW_SCIENTIFIC_RELEASE",
+  "qualification_flags": {
+    "calibrated": false,
+    "founder_effect_proven": false,
+    "production_promotion": false
+  },
+  "r07_revision_id": "r07_scientific_dimensioning_v2",
+  "r07_status": "REVISED_READY_FOR_R11B_RESOURCE_CONFIRMATION",
+  "receipt_id": "R11B-RESOURCE-CONFIRMATION-READY",
+  "restrictions": [
+    "NEW_INDEPENDENT_RELEASE_REQUIRED",
+    "VALIDATION_BLIND_MUST_BE_MATERIALIZED_AND_SEALED",
+    "SCIENTIFIC_RUNNER_AND_EVALUATOR_MUST_BE_FROZEN_BEFORE_G5",
+    "NO_REAL_DATA_AUTHORIZED",
+    "NO_SCIENTIFIC_QUALIFICATION_CLAIM"
+  ],
+  "schema_version": "1.0.0",
+  "scientific_g5_passed": false,
+  "scientific_validation_executed": false,
+  "shapeit_probe_count": 3,
+  "status": "RESOURCE_READY_FOR_NEW_SCIENTIFIC_RELEASE"
+}

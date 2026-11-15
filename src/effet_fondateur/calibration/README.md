@@ -1,239 +1,281 @@
-# Sous-système de calibration
+# Calibration synthétique unifiée
 
-Ce dossier contient le code de configuration, d'isolation, de simulation, de
-vérité, d'évaluation et de production des rapports de calibration.
+Les producteurs autorisés de `panel_master_generic_v1` sont définis par les
+contrats de `calibration/configurations/contract_bundle_v1.yaml`.
 
-`isolation.py`, introduit à l'étape D08, contrôle les chemins physiques, liens
-symboliques, références de manifeste et collisions entre panels avant toute
-lecture d'un artefact. `partitioning.py`, introduit à l'étape D10, répartit de
-façon déterministe les groupes indépendants entre donneurs de calibration,
-donneurs de validation et référence de phasage commune. Il contrôle la
-couverture de la source, les intersections, les empreintes et la confidentialité
-du manifest sans écrire d'identifiant.
+Le noyau contractuel R09 comprend :
 
-`materialize_partitions.py` vérifie les empreintes des métadonnées D09, refuse
-l'écrasement d'un run et écrit atomiquement les trois listes privées ainsi que
-leur manifest agrégé dans `calibration_workspace/`. Sa sortie standard ne
-contient que des effectifs et statuts de contrôle.
+- `contracts.py` : schémas, index fermé des étapes, vérités et vues ;
+- `release_guard.py` : chemins, inventaires aveugles, disjonctions,
+  pseudonymes et paires à facteur unique ;
+- `truth_router.py` : accès minimal à la vérité après clôture ;
+- `evaluation.py` : ordre de décision R08 ;
+- `readiness.py` : reçu statique ouvrant seulement la construction R10.
 
-`simulation/base_haplotypes.py`, introduit en D11, réapparie les copies
-haplotypiques de donneurs distincts au sein de chaque strate publique. La
-bijection conserve exactement fréquences alléliques et LD haplotypique ; les
-génotypes non phasés sont ensuite dérivés des deux copies sans approximation.
-`materialize_base_haplotypes.py` vérifie les MD5 fournisseur, les SHA-256
-locaux et les liaisons aux catalogues D09, extrait les SNV bialléliques
-complètement phasés avec `bcftools`, interpole la carte sans extrapolation et
-écrit atomiquement les quatre artefacts privés D11.
+R10 ajoute :
 
-`simulation/chip_markers.py` et `materialize_chip_observation.py` constituent
-la couche D11b. Ils vérifient le paquet officiel CytoScan 750K Accel
-`NA36.r1` et le manifest dense D11a. `simulation/chip_package.py` ouvre en
-lecture seule sa base d'annotations SQLite, valide son identité et produit la
-table SNP autosomique normalisée dans le workspace privé. D11b construit ensuite
-l'intersection chromosome–position–allèles, un VCF observable et l'audit des
-exclusions. Les dossiers connus d'exports d'échantillons sont refusés avant
-lecture ; la vérité dense reste inchangée et le cache du pipeline n'est pas lu.
+- `micro_contract.py` : topologie fermée des 25 étapes et de leurs sorties ;
+- `micro_panel.py` : construction et validation de la release synthétique ;
+- `micro_stage_worker.py` : travailleur technique aveugle et isolé.
 
-`simulation/population_structure.py` et
-`materialize_population_structure.py` implémentent D12. Ils exigent des
-manifests D11a/D11b finalisés, liés au même panel et au même domaine. Des paires
-de diploïdes D11 provenant de deux strates donnent deux mélanges réciproques
-`A1|B2` et `B1|A2`, ce qui conserve chaque haplotype exactement une fois. Sans
-recombinaison, seules les proportions pures ou 50/50 sont exactes ; les
-proportions inégales sont différées à D14. La vérité et la provenance restent
-privées, tandis que le VCF observable ne contient aucune étiquette d'ascendance.
+R11 ajoute `pilot_panel.py`, le harnais générique qui matérialise les tailles
+pilotes fermées, résout les exécutables épinglés, mesure chaque appel réel et
+produit les 25 Markdown. Il ne lit aucune donnée d'étude réelle et ne modifie
+pas le pipeline de production.
 
-`simulation/pedigrees.py` et `materialize_pedigrees.py` implémentent D13. Ils
-sélectionnent sans remplacement quatre fondateurs D12 par unité familiale,
-construisent quatre trios jusqu'aux cousins germains et calculent la parenté
-théorique depuis le pedigree. Chaque enfant reçoit une copie entière de chaque
-parent ; l'ascendance est dérivée des copies D12 effectivement transmises et
-contrôlée contre la provenance haplotypique. Les vérités restent privées et le
-VCF observable ne contient aucun libellé familial ou d'ascendance.
+R12 ajoute `r12_freeze.py`. Ce harnais dérive sans écrasement la release R11,
+ajoute les tags `AC/AN` aux deux VCF régionaux avec `bcftools +fill-tags`,
+reprend uniquement 12, 12A et 16C, puis scelle configuration, critères,
+compatibilités, modules et outils avant toute validation aveugle.
 
-`simulation/founder_recombination.py` et
-`materialize_founder_recombination.py` implémentent D14. Ils vérifient la chaîne
-empreintée D11a–D13, utilisent la carte génétique réelle du run D11a et tirent
-indépendamment le premier breakpoint de chaque bras. La mosaïque fondatrice est
-propagée par origine haplotypique afin de préserver Mendel. Les limites hors
-domaine sont censurées, la mutation synthétique est injectée sur un SNV
-existant et les vérités ne sont jamais écrites dans le VCF observable.
+R12b ajoute `r12b_validation.py`, `r13_runner.py` et `r13_evaluator.py`. La
+nouvelle release matérialise une partition `VALIDATION_BLIND` indépendante,
+scelle sa vérité privée et fige les deux composants R13 avant exécution. Son
+reçu G5 autorise uniquement une validation d'intégrité technique ; R07 reste à
+réviser avant toute qualification scientifique.
 
-`simulation/windows.py` et `materialize_simulation_windows.py` implémentent
-D14b. Ils calculent le quantile de censure par âge, inversent la carte en
-arrondissant les bornes vers l'extérieur, refusent toute extrapolation et
-harmonisent l'univers CytoScan avec le VCF public avant d'accepter les seuils
-IBD. `materialize_window_replay_receipt.py` vérifie ensuite les liaisons
-SHA-256 D14b→D11a→D11b→D12→D13→D14 et écrit un reçu privé atomique.
+La release R10 se construit et se valide sans donnée réelle ni outil
+scientifique externe :
 
-`simulation/ibd.py` et `materialize_ibd.py` implémentent D15 : dix paires
-positives/négatives disjointes sur les cinq longueurs D14b, sélection hors
-pedigree, copie H1 commune, invariance des négatifs, contrôle Mendel, empreintes
-et schémas avant publication. Les matrices sont distinctes des sujets ; le
-fond public peut conserver du partage inconnu. `report_ibd_injection.py`
-produit un rapport technique français indépendant à partir d'un modèle
-report-formater fourni explicitement, sans estimer de sensibilité IBD.
+```bash
+.venv/bin/python -m effet_fondateur.calibration.micro_panel build \
+  --repository-root . \
+  --release-root calibration_workspace/releases/micro_panel_generic_v1_r10
 
-`simulation/roh.py` et `materialize_roh.py` implémentent D16. Ils copient H1
-sur H2 pour réaliser trois origines autozygotes, dont une sur un sujet IBD
-positif. H1 et les copies IBD sont contrôlées, les sujets de transmission et
-les négatifs/matrices IBD sont protégés. Les seuils observables sont vérifiés
-avant écriture. Les huit artefacts conservent séparément ROH, IBD original,
-IBD induit H2–H1, pedigree, transmissions, audit de densité et VCF.
-`report_roh_injection.py` publie le
-rapport de développement à partir d'un modèle report-formater explicite.
+.venv/bin/python -m effet_fondateur.calibration.micro_panel validate \
+  --repository-root . \
+  --release-root calibration_workspace/releases/micro_panel_generic_v1_r10
+```
 
-`simulation/measurement_errors.py` et `materialize_measurement_errors.py`
-implémentent D17 : vérité phasée projetée sur sondes, profils appariés,
-retrait de marqueurs, dosage erroné, points et blocs de phase, puis manque.
-Un registre chronologique privé permet un rejeu sans rappel de l'injecteur ;
-les deux VCF sont relus et comparés intégralement avant publication atomique.
-La densité peut être réduite sans changer les seuils scientifiques ; les
-sources biologiques D16 sont vérifiées avant/après. Les candidats phasés ne
-sont jamais présentés comme des sorties de phasage du pipeline.
-`report_measurement_errors.py` produit le rapport autonome CAL-DEV-D17 depuis
-les seuls agrégats du manifest et un modèle report-formater fourni en argument.
+Le constructeur refuse l'écrasement. Les vérités privées restent séparées des
+onze vues aveugles ; les travailleurs ne peuvent pas les lire et l'évaluateur
+n'ouvre que les familles autorisées après clôture. Les décisions R10 portent
+uniquement sur l'intégrité technique, jamais sur une performance scientifique.
 
-`export_blinded_inputs.py` implémente D18 à partir des seuls VCF observés D17.
-Les colonnes sont pseudonymisées/permutées ; les champs autorisés sont
-reconstruits dans des VCF et ACPA, un registre neutre et un profil pipeline
-00–02. La correspondance, les profils et graines ne quittent pas le contrôle
-privé. Relecture exhaustive, vrais lecteurs 01/02, inventaire fermé, schémas
-et empreintes précèdent la publication atomique. Les entrées moléculaires et
-familiales non disponibles restent explicitement manquantes.
-`report_blinded_export.py` rend CAL-DEV-D18 sans exposer de sujet individuel.
+Le pilote R11 se construit dans une release neuve et non écrasable :
 
-`technical_evaluation.py` fournit les comparateurs purs et le lecteur BED
-indépendant D19. `evaluate_technical.py` lie les sorties 00–04 aux références
-D18, vérifie les empreintes/contrats, les six champs FAM, les axes et appels,
-et distingue FAIL de NOT_EVALUABLE. Une attente cible 04 doit être explicite,
-privée, liée au lot et à la définition configurée. `run_technical_inputs.py`
-est un runner diagnostique séparé limité à 00–02, sans outils génétiques ni
-approbation automatique ; l'évaluateur lui-même reste en lecture seule.
-`report_technical_evaluation.py` produit CAL-DEV-D19 et cinq CAL-REP autonomes.
-Le rejeu régional ne valide pas les étapes 03–04 non exécutées et ne change
-aucun calcul scientifique.
+```bash
+.venv/bin/python -m effet_fondateur.calibration.pilot_panel build
+.venv/bin/python -m effet_fondateur.calibration.pilot_panel validate
+```
 
-`technical_scenarios.py` prépare des copies fermées pour 00–04 avec annotation
-publique, génotypes synthétiques explicites et approbation technique fournie.
-`run_technical_scenarios.py` exécute seulement 00–04 avec PLINK, distinctement
-du runner historique 00–02. Le positif conserve D18 intact ; le négatif ajoute
-une cible à une copie pour vérifier le refus de doublon.
-`technical_rejection.py` exige code métier, motif exact, identité de tentative,
-absence de publication et base inchangée. `evaluate_technical` accepte
-`--technical-panel-root` uniquement si le reçu est lié par empreinte ; les
-anciens formats D19 restent lisibles.
+Le run R11 du 12 novembre 2026 a validé PLINK, KING et bcftools sur 500 sujets
+et les densités 600 000/300 000/100 000. SHAPEIT5 a correctement refusé les
+dix graines parce que l'entrée synthétique R11 omettait le champ INFO `AC`
+requis. Cette défaillance du harnais ne constituait ni une qualification ni un
+défaut démontré du pipeline de production.
 
-`qc_bench.py` prépare D20 : quatorze stress IID appariés autosomiques,
-registres neutres et cohortes de fixture publiques, distincts des vérités
-privées. `qc_oracle.py` calcule indépendamment manques, MAF, hétérozygotie,
-F avec correction small-sample, HWE exact et décisions séquentielles.
-`run_qc_bench.py` borne l'exécution à 00–05 puis au composant 10 isolé ; aucun
-faux succès 09/10 n'est ajouté au manifest d'orchestration.
-`evaluate_qc.py` contrôle clôture, contrats, motifs, métriques, matrices de
-confusion et triplets retenus. `report_qc.py` publie les trois rapports
-autonomes sans recalcul statistique. Les critères du pilote restent non
-scellés : les PASS de conformité ne qualifient pas la performance biologique.
+La correction et le gel R12 s'exécutent et se revérifient ainsi :
 
-`simulation/kinship_bench.py` génère D21 par gene-drop mendélien IID, avec
-coefficients de pedigree exacts et origines des copies. `kinship_bench.py`
-sépare les observations neutres et la vérité privée ; `run_kinship_bench.py`
-borne le vrai pipeline à 00–03/05–07, sans approbation des exclusions.
-`kinship_oracle.py`, `kinship_panel_oracle.py` et `kinship_stage_oracle.py`
-contrôlent indépendamment les génotypes, MAF/LD, équations KING, degrés,
-proposition et vérité. `evaluate_kinship.py` exige clôture, empreintes et
-rejeu exact. `report_kinship.py` publie les trois rapports indépendants,
-sans calcul statistique. La conformité du code et l'exactitude de détection
-restent deux verdicts distincts ; les profils appariés ne sont pas cumulés.
+```bash
+.venv/bin/python -m effet_fondateur.calibration.r12_freeze build
+.venv/bin/python -m effet_fondateur.calibration.r12_freeze validate
+```
 
-`structure_bench.py` prépare D22 et ses fixtures amont explicites, distinctes
-de D21. `run_structure_bench.py` appelle 00–03 puis 08/09 isolées, avec revues
-de test déclarées et gels répétés. `structure_oracle.py` reconstruit la PCA
-par Gram/eigh et la queue chi-deux indépendante à deux axes ;
-`cohort_oracle.py` reconstitue les sept cohortes sans helper de 09.
-`evaluate_structure.py` exige clôture, rejeu, sources, signatures et entrées
-cohérentes ; il vérifie les tableaux, invariances, keep et répétitions.
-`report_structure.py` publie trois rapports agrégés, sans recalcul statistique.
-Le FAIL 07 est conservé pour la revue globale, pas résolu par ce gel isolé.
+La release `panel_master_generic_v1_r12_frozen_candidate` a terminé les dix
+graines SHAPEIT5 ainsi que Hap-IBD et Refined IBD, sans commande en échec.
+Les grilles pilotes restent incomplètes : les étapes 12, 12A et 16C sont donc
+`NOT_EVALUABLE`, et les trois drapeaux de qualification restent faux. La
+partition `VALIDATION_BLIND` n'a pas été ouverte.
 
-Le rendu D22 v2 utilise `structure_report_evidence.py` pour extraire des
-descriptions agrégées des sorties closes, liées à l'évaluation par empreintes.
-`structure_report_graphics.py` les met en SVG ; `structure_report_math.py`
-explique les équations réellement utilisées. Le moteur de rendu ne recalcule
-aucune PCA ni décision. Les arguments `--panel-root` et `--pipeline-root`
-désignent les sources closes des nouveaux graphiques, en plus du `--run-root`
-d'évaluation. Les données visuelles ne contiennent aucun identifiant individuel.
+Le candidat R12 initial est conservé mais rejeté. La release R12b se construit
+et se revérifie sans lancer R13 :
 
-`phasing_preparation.py` et `materialize_phasing_panel.py` préparent D23a
-sur les 22 autosomes, sans lancer SHAPEIT5 : empreintes publiques, liaison
-puce, copies fondatrices D10, transmissions Haldane, génotypes moléculaires
-explicites, référence disjointe et relecture complète. La clôture v2 change
-seulement les paramètres de phasage/chemins, jamais les génotypes du brouillon
-v1 ; les graines de simulation restent privées. `report_phasing_preparation.py`
-produit CAL-DEV-D23A avec deux graphiques et deux rappels mathématiques,
-sans recalcul ni prétention de qualification du phasage.
+```bash
+.venv/bin/python -m effet_fondateur.calibration.r12b_validation \
+  --release-root calibration_workspace/releases/panel_master_generic_v1_r12b_validation_blind
 
-`phasing_bench.py` exécute D23 : conversion VCF–PLINK et composants réels
-10A/11/12/12A, avec fixtures QC/cohorte déclarées. `run_phasing_regional.py`
-assure une reprise indépendante des anciens contrats mal enveloppés sans
-changer les génotypes. `phasing_oracle.py` aligne la phase modulo H1/H2,
-compte transitions, motifs isolés, erreurs rares et orientation hors cible ;
-le bootstrap conserve les familles. `evaluate_phasing.py` contrôle clôture,
-inventaires, signatures, dosages, cartes, univers et critères D04, puis ouvre
-seul la vérité. `phasing_report_graphics.py` et `report_phasing.py` publient
-quatre rapports indépendants depuis les seuls agrégats fermés. Un taux
-mesurable reste distinct d'une performance qualifiée ; aucune calibration
-scientifique ou validation externe n'est attribuée automatiquement.
+.venv/bin/python -m effet_fondateur.calibration.r12b_validation \
+  --release-root calibration_workspace/releases/panel_master_generic_v1_r12b_validation_blind \
+  --validate-only --print-g5-receipt
+```
 
-`run_founder_haplotype_bench.py`, `founder_haplotype_oracle.py`,
-`evaluate_founder_haplotype.py` et `report_founder_haplotype.py` exécutent et
-évaluent D24. Le runner projette la vérité phasée D14 sur quatre profils puis
-appelle le moteur de production de l'étape 13. L'oracle définit
-le consensus vrai comme l'intersection de segments familiaux indépendants et
-calcule sensibilité, spécificité, inclusion de cible, erreurs de bornes et IC
-de Wilson. L'évaluateur lit uniquement des cas confinés au workspace, contrôle
-les sorties de production de l'étape 13 et publie des agrégats sans identifiant.
-Le rapport CAL-REP-13 consomme ces seuls agrégats, avec quatre graphiques et les
-équations préspecifiées ; il ne rouvre jamais la vérité privée. Le résultat
-primaire est techniquement valide mais scientifiquement non qualifié en raison
-de quatre faux positifs sur cinq négatifs.
+Après décision explicite de lancer R13, le runner aveugle puis l'évaluateur
+post-clôture utilisent des commandes distinctes :
 
-`variant_age_bench.py` matérialise, exécute puis évalue D25 en trois commandes
-séparées. Il conserve la vérité d'âge hors des entrées aveugles, appelle les
-fonctions Gamma de production, calcule bootstrap, Wilson et stabilité
-leave-one-family-out, puis rejoue la publication de l'étape 14 sur les bornes
-positives D24. `report_variant_age.py` ne lit que l'évaluation agrégée close et
-produit CAL-REP-14 avec quatre figures et cinq équations. L'absence de sortie
-SHAPEIT5 appariée est publiée comme `NOT_EVALUABLE`, jamais imputée.
+```bash
+.venv/bin/python -m effet_fondateur.calibration.r13_runner \
+  --candidate-root calibration_workspace/releases/panel_master_generic_v1_r12b_validation_blind \
+  --workspace calibration_workspace/r13_validation_blind
 
-`gamma_audit_bench.py` exécute D25a en quatre opérations séparées : matériau
-aveugle, estimation, parité locale avec le script R officiel, puis évaluation.
-Il oppose points de recombinaison complets et extrémités tronquées, et simule
-séparément généalogies indépendantes et chemins partagés. Les résultats V1,
-candidate V2 et oracle restent parallèles. `report_gamma_audit.py` consomme
-uniquement l'évaluation agrégée et produit CAL-REP-14A avec quatre figures et
-six équations. Un `PASS` de fidélité R reste distinct d'un échec de performance
-sur le contrat tronqué.
+.venv/bin/python -m effet_fondateur.calibration.r13_evaluator \
+  --candidate-root calibration_workspace/releases/panel_master_generic_v1_r12b_validation_blind \
+  --workspace calibration_workspace/r13_validation_blind
+```
 
-`gamma_censoring_bench.py` matérialise, ferme puis évalue D25b. La candidate V3
-traite le maximum répété comme une exposition censurée de type II et compare
-ses résultats à V2 et à l'oracle complet. Le profil indépendant est
-qualifiable ; les chemins partagés restent des stress tests.
-`report_gamma_censoring.py` lit uniquement CAL-REP-14B agrégé et produit quatre
-graphiques quantitatifs, six équations et cinq tableaux sans recalculer les
-statistiques.
+Ces commandes ne qualifient ni une performance scientifique ni un effet
+fondateur. Elles maintiennent `calibrated=false`,
+`founder_effect_proven=false` et `production_promotion=false`.
 
-`ld_roh_bench.py` exécute D26 en deux temps. `run` convertit les VCF observés
-D17 et appelle les moteurs réels `publish_local_ld`/`publish_roh`, puis scelle
-les sorties avant vérité. `evaluate` calcule le r² de référence et ouvre le VCF
-dense D16 pour une référence ROH opérationnelle, sans modifier les appels.
-`report_ld_roh.py` produit les rapports indépendants CAL-REP-15 et CAL-REP-16,
-avec graphiques, équations, effectifs et limites. Un PASS technique ne scelle
-aucun seuil scientifique.
+Le run officiel `RUN-R13-VALIDATION-BLIND-001` est clos : 25/25 étapes et 25/25
+évaluations ont le statut technique `PASS`. Le reçu
+`calibration/readiness/R13_TECHNICAL_VALIDATION.json` conserve néanmoins
+`scientific_performance_evaluated=false`, R07 à `REVISION_REQUIRED` et la porte
+G6 scientifique fermée.
 
-`ancestry_bench.py` exécute D27 en deux temps : il projette D12/D17 sur une
-référence D10 indépendante et scelle les coordonnées, puis ouvre les vérités
-pour la MAE de mélange et la stabilité après alignement de Procrustes fondé
-sur les seules références. Le volet diploïde reste un proxy régional et le
-volet local est conditionnel à la phase candidate. `report_ancestry.py`
-produit CAL-REP-16A sans étiquette géographique ni recalcul de résultat.
+R14 produit ensuite le rapport de clôture technique, sans recalcul scientifique :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.r14_report \
+  --repository-root . \
+  --candidate-root calibration_workspace/releases/panel_master_generic_v1_r12b_validation_blind \
+  --r13-workspace calibration_workspace/r13_validation_blind \
+  --output-root calibration_workspace/r14_technical_closure_attempt02 \
+  --template /Users/utilisateur/.codex/skills/report_skill/templates/recherche.html \
+  --chrome "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+```
+
+La version acceptée comporte 13 pages A4, quatre figures et huit tables. Le reçu
+`calibration/readiness/R14_TECHNICAL_CLOSURE.json` fixe ses empreintes et sa
+décision : intégrité technique `PASS`, qualification scientifique non accordée,
+effet fondateur non démontré et promotion non autorisée.
+
+La révision post-R14 de R07 est décrite par
+`calibration/configurations/scientific_dimensioning_v2.yaml`. Elle conserve les
+minima scientifiques, remplace la multiplication grossière `22 × 50` par un
+calendrier explicite de 640 appels SHAPEIT5 et ferme 90 mondes IBD. Son reçu se
+vérifie sans lancer de calcul scientifique :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.r07_revision \
+  --repository-root . --validate-receipt
+```
+
+Le statut `REVISED_READY_FOR_R11B_RESOURCE_CONFIRMATION` autorise seulement les
+sondes synthétiques R11b. Il ne vaut ni G5 scientifique, ni qualification, ni
+accès à des données réelles.
+
+R11b utilise un workspace non écrasable et des sous-commandes reprenables :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.r11b_resources \
+  --repository-root . prepare
+.venv/bin/python -m effet_fondateur.calibration.r11b_resources \
+  --repository-root . run-ibd
+.venv/bin/python -m effet_fondateur.calibration.r11b_resources \
+  --repository-root . run-shapeit --probe dlow
+.venv/bin/python -m effet_fondateur.calibration.r11b_resources \
+  --repository-root . status
+```
+
+Les sondes `bridge` puis `target` sont longues et doivent rester séquentielles.
+La commande `project` n'est valide qu'après leurs reçus et les 18 mesures IBD.
+Après leur clôture, le reçu suivi se reconstruit et se vérifie avec :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.r11b_closure \
+  --repository-root .
+```
+
+Ce reçu lie R07 v2, les trois mesures SHAPEIT5, les 18 mesures IBD et la
+décision finale par SHA-256. Son statut autorise la construction de R12c, mais
+maintient G5 scientifique et les trois drapeaux de qualification à `false`.
+
+Le contrat R12c et sa release gelée se contrôlent sans lancer R13 :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.r12c_scientific \
+  --repository-root .
+```
+
+Le préflight est désormais `READY_FOR_G5_AUDIT`. Le reçu séparé
+`R12C_G5_READY.json` ouvre R13 scientifique sans déclarer de résultat.
+
+Les critères exécutables sont figés dans
+`calibration/configurations/scientific_metric_rules_v1.yaml`. Le manifeste lie
+deux fragments par SHA-256 et le validateur contrôle 135 règles sur les 25
+étapes, les unités indépendantes et la statistique décisionnelle (`LCB95`,
+`UCB95`, `CI95` ou valeur déterministe). Cette validation de contrat ne produit
+aucun résultat scientifique et ne rend pas l'évaluateur prêt.
+
+Les modules `r13_scientific_runner.py` et `r13_scientific_evaluator.py` sont
+gelés. Le runner conserve les 1 180 appels, les exécute par lots de huit avec
+checkpoints et refuse toute vérité ; l'évaluateur est post-clôture uniquement.
+
+Le fractionnement fin est géré par un registre séparé, à raison d'un
+checkpoint par appel externe. Son initialisation ne lance ni SHAPEIT5, ni
+Hap-IBD, ni Refined IBD :
+
+```bash
+R13_RUN_ROOT=calibration_workspace/r13_scientific/RUN-R13-SCIENTIFIC-001
+.venv/bin/python -m effet_fondateur.calibration.r13_checkpoint_ledger init \
+  --run-root "$R13_RUN_ROOT"
+.venv/bin/python -m effet_fondateur.calibration.r13_checkpoint_ledger status \
+  --run-root "$R13_RUN_ROOT"
+```
+
+Le JSON est le registre autoritatif. Les vues
+`governance/external_call_checkpoints.tsv` et
+`governance/external_call_checkpoints.md` donnent pour chacun des 1 180 appels
+un état et une colonne explicite `done`/`Fait` (`OUI` ou `NON`). Un lot peut
+contenir de un à huit appels.
+
+La révision `R12C-EXECUTABLE-REFREEZE-002` ajoute le matérialiseur scientifique
+et le worker unitaire qui manquaient au premier gel. Le matérialiseur construit
+les entrées avant réservation du checkpoint et garde la vérité dans une racine
+privée distincte. Le worker reçoit uniquement la vue aveugle :
+
+```bash
+R13_RELEASE_ROOT=calibration_workspace/releases/panel_master_generic_v1_r12c_scientific_validation
+R13_TRUTH_ROOT=calibration_workspace/private_truth/RUN-R13-SCIENTIFIC-001
+.venv/bin/python -m effet_fondateur.calibration.r13_scientific_materializer \
+  materialize --repository-root . --release-root "$R13_RELEASE_ROOT" \
+  --run-root "$R13_RUN_ROOT" --truth-root "$R13_TRUTH_ROOT" \
+  --call-id SHAPEIT-DMAX-CHR01-SEED01
+.venv/bin/python -m effet_fondateur.calibration.r13_scientific_call_worker \
+  preflight --repository-root . --release-root "$R13_RELEASE_ROOT" \
+  --run-root "$R13_RUN_ROOT" --call-id SHAPEIT-DMAX-CHR01-SEED01
+```
+
+Le fond privé contient 1 200 000 rangs autosomaux. Les vues strictement
+emboîtées sélectionnent respectivement un rang sur 2, 4 et 12, soit exactement
+600 000, 300 000 et 100 000 variants. Les haplotypes suivent un modèle de
+Markov à trois populations avec
+`p_refresh = 1 - exp(-delta_cM / 0,05)` ; 200 trios sont transmis selon
+`p_recomb = 1 - exp(-delta_cM / 100)`. Les cartes sont des cartes synthétiques
+linéaires figées dans le cadre de coordonnées GRCh38 : elles ne doivent pas
+être décrites comme des cartes de recombinaison humaines empiriques.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.r13_checkpoint_ledger claim \
+  --run-root "$R13_RUN_ROOT" --batch-size 1 --worker-id LOCAL-8CPU
+.venv/bin/python -m effet_fondateur.calibration.r13_scientific_call_worker \
+  execute --repository-root . --release-root "$R13_RELEASE_ROOT" \
+  --run-root "$R13_RUN_ROOT" --call-id SHAPEIT-DMAX-CHR01-SEED01
+```
+
+Le worker `execute` clôt lui-même le checkpoint ; les commandes manuelles
+`complete` et `fail` restent réservées à une reprise ou un diagnostic contrôlé.
+
+Avant d'éteindre la machine, l'action `interrupt` transforme les appels encore
+`RUNNING` en échecs reprenables sans toucher aux appels `COMPLETED`. Après un
+transport ou avant la clôture, `status --verify-output-hashes` vérifie les
+empreintes de toutes les sorties terminées. Un appel déclaré terminé dont la
+sortie manque est automatiquement repris au prochain `claim`.
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.r13_checkpoint_ledger interrupt \
+  --run-root "$R13_RUN_ROOT"
+.venv/bin/python -m effet_fondateur.calibration.r13_checkpoint_ledger status \
+  --run-root "$R13_RUN_ROOT" --verify-output-hashes
+```
+
+Le runner développe le calendrier en 640 appels SHAPEIT5 et 540 appels IBD.
+L'évaluateur applique les bornes non arrondies, les contextes, les effectifs
+indépendants et l'ordre des statuts R08 à un document post-clôture.
+
+`scientific_statistics.py` et `scientific_metric_producers.py` fournissent le
+socle commun : Wilson unilatéral, Clopper–Pearson exact, bootstrap déterministe
+de 10 000 grappes, Holm, Monte-Carlo plus-un, contrôles exacts et provenance
+des graines. Le préflight vérifie que ces méthodes couvrent les 135 règles,
+et confirme `stage_producers_complete=true`.
+
+`scientific_stage_producers.py` raccorde les 25 étapes `00` à `19`. Les
+proportions utilisent leurs unités indépendantes, les erreurs continues sont
+bootstrapées par grappe et aucune valeur déclarative `PASS` ne remplace les
+preuves élémentaires.
+
+Les autres modules de ce répertoire proviennent des bancs exploratoires de la
+campagne abandonnée. Ils restent consultables pour audit, mais ne sont ni
+exportés par le paquet ni autorisés à générer, évaluer ou publier un artefact
+de la nouvelle release sans preuve d'adéquation et tests distincts.

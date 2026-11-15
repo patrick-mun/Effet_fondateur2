@@ -1,0 +1,53 @@
+configuration_version: 1.0.0
+release_design: panel_master_generic_v1
+scale: RESOURCE_ONLY
+generation_phase: R10
+generated: false
+assembly: GRCh38
+autosomes: 22
+target:
+  selection: PROFILE_CONFIGURED_AUTOSOMAL
+  hard_coded: false
+  resolved_at_generation: true
+  selected_role: STANDARD
+  catalog:
+    - {role: STANDARD, chromosome: 7, position_bp: 15000000, ref: A, alt: G, variant_id: SYN-TARGET-STANDARD}
+    - {role: LOW-RECOMB, chromosome: 3, position_bp: 12000000, ref: C, alt: T, variant_id: SYN-TARGET-LOW-RECOMB}
+    - {role: HIGH-RECOMB, chromosome: 11, position_bp: 18000000, ref: G, alt: A, variant_id: SYN-TARGET-HIGH-RECOMB}
+    - {role: LEFT-EDGE, chromosome: 15, position_bp: 2000000, ref: T, alt: C, variant_id: SYN-TARGET-LEFT-EDGE}
+    - {role: RIGHT-EDGE, chromosome: 21, position_bp: 42000000, ref: A, alt: C, variant_id: SYN-TARGET-RIGHT-EDGE}
+variant_design:
+  technical_sentinels_per_autosome: 3
+  regional_chromosome: 7
+  regional_start_bp: 10000000
+  regional_end_bp: 20000000
+  regional_step_bp: 100000
+  map_model: SYNTHETIC_CHROMOSOME_SPECIFIC_LINEAR_V1
+counts:
+  study_identities: 60
+  phasing_reference: 90
+  ancestry_reference: 90
+  ancestry_reference_per_population: 30
+  null_reference: 60
+  trios: 4
+  sibships_of_four: 4
+  multigenerational_components_of_five: 4
+  unrelated: 12
+partition: RESOURCE_ONLY
+truth_families: 14
+blinded_views: 11
+stage_count: 25
+null_draws_16B: 99
+resources:
+  threads_max: 8
+  rss_gib_max: 16
+  java_heap_gib_max: 12
+  storage_gib_max: 100
+  wall_hours_max: 12
+  core_hours_max: 100
+scientific_performance_decision_allowed: false
+allowed_verdict_scope: TECHNICAL_INTEGRITY_ONLY
+qualification_flags:
+  calibrated: false
+  founder_effect_proven: false
+  production_promotion: false

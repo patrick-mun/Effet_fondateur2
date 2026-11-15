@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:effet-fondateur:calibration:master-truth-manifest:1.0.0",
+  "title": "Private master truth manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "release_id", "disclosure_state", "truth_artifacts"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "release_id": {"type": "string", "minLength": 1},
+    "disclosure_state": {"const": "SEALED_PRIVATE"},
+    "truth_artifacts": {
+      "type": "array", "minItems": 14, "maxItems": 14,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["truth_id", "relative_path", "sha256", "authorized_evaluators"],
+        "properties": {
+          "truth_id": {"enum": ["T-SOURCE", "T-SUBJECT", "T-GENOTYPE", "T-TARGET", "T-MEASURE", "T-KINSHIP", "T-POPULATION", "T-PHASE", "T-FOUNDER", "T-LD", "T-ROH", "T-IBD", "T-SCENARIO", "T-RENDER"]},
+          "relative_path": {"type": "string", "pattern": "^private_truth/"},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "authorized_evaluators": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^EVAL-(00|01|02|03|04|05|06|07|08|09|10|10A|11|12|12A|13|14|15|16|16A|16B|16C|17|18|19)$"}}
+        }
+      }
+    }
+  }
+}

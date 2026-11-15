@@ -1,0 +1,62 @@
+configuration_version: 1.0.0
+release_design: panel_master_generic_v1
+release_id: panel-master-generic-v1-r12c-scientific-validation
+generation_phase: R12c
+partition: VALIDATION_BLIND
+scope: R13_SCIENTIFIC_BLIND_VALIDATION
+target:
+  selection: PROFILE_CONFIGURED_AUTOSOMAL
+  hard_coded: false
+  resolved_at_generation: true
+scientific_minima:
+  study_identities: 4000
+  phasing_reference: 3000
+  ancestry_reference: 1800
+  null_reference: 3000
+  primary_independent_units: 500
+  primary_negative_units: 3000
+  founder_events_per_age: 500
+  external_tool_seeds: 50
+  autosomes: 22
+observed_densities:
+  D_MAX: 600000
+  D_MID: 300000
+  D_LOW: 100000
+phasing_schedule:
+  D_MAX: 340
+  D_MID: 150
+  D_LOW: 150
+  total: 640
+ibd_schedule:
+  independent_worlds: 90
+  tool_density_calls: 540
+  tools: [HAP_IBD, REFINED_IBD]
+  densities: [D_MAX, D_MID, D_LOW]
+execution_contract:
+  required_workers: 8
+  per_call_timeout_hours: 168
+  projected_calendar_days: 90.80151949844714
+  local_eight_cpu_host_authorized_for_full_campaign: true
+  scheduling: BATCHED_RESUMABLE_NO_REDUCED_SCIENTIFIC_VOLUME
+independence:
+  namespace: VALIDATION_BLIND_R12C_V1
+  identity_prefix: VAL-R12C
+  reuses_r10_subjects: false
+  reuses_r11_subjects: false
+  reuses_r12_inputs: false
+  reuses_r12b_inputs: false
+g5_requirements:
+  validation_blind_materialized: true
+  private_truth_sealed: true
+  scientific_runner_frozen: true
+  scientific_evaluator_frozen: true
+  scientific_materializer_frozen: true
+  single_call_worker_frozen: true
+  full_call_schedule_materializable: true
+  r07_r08_r11b_bound: true
+  no_r13_result_present: true
+  full_suite_passed_before_freeze: true
+qualification_flags:
+  calibrated: false
+  founder_effect_proven: false
+  production_promotion: false

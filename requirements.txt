@@ -8,6 +8,7 @@ PyYAML>=6.0,<7
 # Graphiques et rapports
 matplotlib>=3.7
 fpdf2>=2.7
+websockets>=16,<17
 
 # Tests et rapport HTML des tests
 pytest>=8.0

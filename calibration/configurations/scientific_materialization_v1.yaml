@@ -1,0 +1,70 @@
+schema_version: 1.0.0
+materializer_id: r13_scientific_materializer_v1
+release_id: panel-master-generic-v1-r12c-scientific-validation
+partition_id: VALIDATION_BLIND
+synthetic_only: true
+assembly_label: GRCh38_SYNTHETIC_COORDINATE_FRAME
+model:
+  method: THREE_POPULATION_MARKOV_HAPLOTYPES_WITH_MENDELIAN_TRIOS
+  method_version: 1.0.0
+  dense_autosomal_variants: 1200000
+  ld_refresh_scale_cm: 0.05
+  study_identities: 4000
+  phase_reference_identities: 3000
+  complete_trios: 200
+  population_states: 9
+  populations: [POP-A, POP-B, POP-C]
+densities:
+  D_MAX: {selection_step: 2, expected_autosomal_variants: 600000, minimum_per_autosome: 5000}
+  D_MID: {selection_step: 4, expected_autosomal_variants: 300000, minimum_per_autosome: 3000}
+  D_LOW: {selection_step: 12, expected_autosomal_variants: 100000, minimum_per_autosome: 1000}
+shapeit:
+  threads_per_call: 1
+  timeout_seconds: 604800
+  seed_base: 15052000
+  output_format: bcf
+  phase_common_only: true
+  pedigree_mode: COMPLETE_200_TRIOS
+ibd:
+  samples_per_world: 200
+  pairs_per_world: 100
+  default_autosome: 7
+  other_autosome: 8
+  threads_per_call: 4
+  timeout_seconds: 604800
+  heap_mib: 4096
+  minimum_segment_cm: 1.0
+chromosomes:
+  # Coordonnées physiques GRCh38 utilisées uniquement comme cadre synthétique.
+  # Les longueurs génétiques sont un contrat synthétique figé, pas une carte
+  # empirique humaine ; les cartes appel sont linéaires dans ce cadre.
+  - {chromosome: 1, length_bp: 248956422, length_cm: 286.0}
+  - {chromosome: 2, length_bp: 242193529, length_cm: 268.0}
+  - {chromosome: 3, length_bp: 198295559, length_cm: 223.0}
+  - {chromosome: 4, length_bp: 190214555, length_cm: 214.0}
+  - {chromosome: 5, length_bp: 181538259, length_cm: 204.0}
+  - {chromosome: 6, length_bp: 170805979, length_cm: 192.0}
+  - {chromosome: 7, length_bp: 159345973, length_cm: 187.0}
+  - {chromosome: 8, length_bp: 145138636, length_cm: 168.0}
+  - {chromosome: 9, length_bp: 138394717, length_cm: 166.0}
+  - {chromosome: 10, length_bp: 133797422, length_cm: 181.0}
+  - {chromosome: 11, length_bp: 135086622, length_cm: 158.0}
+  - {chromosome: 12, length_bp: 133275309, length_cm: 175.0}
+  - {chromosome: 13, length_bp: 114364328, length_cm: 126.0}
+  - {chromosome: 14, length_bp: 107043718, length_cm: 120.0}
+  - {chromosome: 15, length_bp: 101991189, length_cm: 141.0}
+  - {chromosome: 16, length_bp: 90338345, length_cm: 134.0}
+  - {chromosome: 17, length_bp: 83257441, length_cm: 128.0}
+  - {chromosome: 18, length_bp: 80373285, length_cm: 118.0}
+  - {chromosome: 19, length_bp: 58617616, length_cm: 108.0}
+  - {chromosome: 20, length_bp: 64444167, length_cm: 108.0}
+  - {chromosome: 21, length_bp: 46709983, length_cm: 63.0}
+  - {chromosome: 22, length_bp: 50818468, length_cm: 75.0}
+sentinels:
+  SENTINEL_SHORTEST: 21
+  SENTINEL_MEDIAN_LOWER: 11
+  SENTINEL_LONGEST: 1
+qualification_flags:
+  calibrated: false
+  founder_effect_proven: false
+  production_promotion: false

@@ -4,9 +4,8 @@
 
 L'étape `16A_analyze_reference_ancestry`, méthode
 `reference_only_global_local_pca_v1`, est générique pour toute
-variation cible autosomique décrite par la configuration du run. `DOCK6` et la
-coordonnée du chromosome 19 constituent un cas d'étude, pas une dépendance de
-la méthode.
+variation cible autosomique décrite par la configuration du run. Un profil
+d'étude particulier ne constitue jamais une dépendance de la méthode.
 
 L'analyse ne doit contenir aucun chromosome, gène, identifiant de variant,
 position ou allèle codé en dur. Elle résout systématiquement la cible depuis

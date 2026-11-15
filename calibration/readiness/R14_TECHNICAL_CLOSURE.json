@@ -1,0 +1,66 @@
+{
+  "accepted_output": "calibration_workspace/r14_technical_closure_attempt02",
+  "artifacts": [
+    {
+      "relative_path": "R14_DECISION.json",
+      "sha256": "1bc93a1802a6b618b56c019be6b554576a18f512ae4762c51c537c495e54183d",
+      "size_bytes": 859
+    },
+    {
+      "relative_path": "R14_SOURCE_INVENTORY.json",
+      "sha256": "f36fa29f0b624f5ea211988307db0524667fcfa03ad3e6438665cdc819e72b32",
+      "size_bytes": 2794
+    },
+    {
+      "relative_path": "rapport_final_r14.html",
+      "sha256": "3b9d816ec70bc0c8ebe93809180008147a160935716f8eb9ac9847ffc61ac80b",
+      "size_bytes": 556334
+    },
+    {
+      "relative_path": "rapport_final_r14.pdf",
+      "sha256": "b7401d9898b930d3111d6bae06494288760cf68f46df7ef5aef52dc9bd428a9a",
+      "size_bytes": 546681
+    }
+  ],
+  "attempts": [
+    {
+      "output": "calibration_workspace/r14_technical_closure",
+      "status": "REJECTED_RENDER_EARLY_PRINT_TWO_PAGES"
+    },
+    {
+      "output": "calibration_workspace/r14_technical_closure_attempt02",
+      "status": "ACCEPTED"
+    }
+  ],
+  "closed_run_id": "RUN-R13-VALIDATION-BLIND-001",
+  "decision_id": "R14-TECHNICAL-CLOSURE-001",
+  "founder_effect": "NOT_PROVEN",
+  "gate_g6_scientific_passed": false,
+  "gate_g7_promotion_passed": false,
+  "next_required_action": "FORMAL_R07_REVISION_BEFORE_SCIENTIFIC_QUALIFICATION",
+  "production_promotion": "NOT_AUTHORIZED",
+  "qualification_flags": {
+    "calibrated": false,
+    "founder_effect_proven": false,
+    "production_promotion": false
+  },
+  "quality_control": {
+    "duplicate_html_ids": 0,
+    "external_resources": 0,
+    "figure_count": 4,
+    "missing_internal_links": 0,
+    "page_count": 13,
+    "placeholder_count_in_report_content": 0,
+    "table_count": 8,
+    "visual_review": "PASS"
+  },
+  "r07_status": "REVISION_REQUIRED",
+  "r11_status": "RESOURCE_BLOCKED",
+  "release_id": "panel-master-generic-v1-r12b-validation-blind",
+  "report_scope": "R14_TECHNICAL_CLOSURE_ONLY",
+  "schema_version": "1.0.0",
+  "scientific_performance_evaluated": false,
+  "scientific_qualification": "NOT_GRANTED",
+  "status": "COMPLETED_WITH_SCIENTIFIC_QUALIFICATION_NOT_GRANTED",
+  "technical_integrity": "PASS"
+}

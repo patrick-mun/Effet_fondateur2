@@ -11,9 +11,10 @@ strict de 13, ni la datation de 14, ni l'enrichissement empirique de 16B. Un
 appel primaire concordant apporte un support IBD explicite ; il ne prouve pas à
 lui seul un effet fondateur, un ancêtre unique ou une origine géographique.
 
-Une absence d'appel n'est jamais une réfutation. Sur le run DOCK6 de référence,
-l'intersection IBS mesure environ 1,436 cM et 18 marqueurs, sous le scénario
-primaire à haute spécificité de 2 cM et 100 marqueurs.
+Une absence d'appel n'est jamais une réfutation. La faisabilité dépend de la
+longueur du segment autour de la cible configurée, de la densité en marqueurs
+et des seuils préspécifiés ; aucune valeur issue d'un profil d'étude particulier
+ne constitue une constante de la méthode.
 
 ## Préparation commune
 
@@ -26,8 +27,9 @@ l'univers autosomique publié ; aucun génotype n'est complété ou requalifié 
 observation.
 
 Le BCF régional produit par 12 reste la source de l'attribution H1/H2 de la
-mutation. Un contrôle d'alignement confronte cette orientation au chromosome 19
-de 12A ; les homozygotes alternatifs sont explicitement `BOTH`. Le rapport de
+variation cible. Un contrôle d'alignement confronte cette orientation au
+chromosome cible de 12A ; les homozygotes alternatifs sont explicitement
+`BOTH`. Le rapport de
 faisabilité 16C exige `AUTOSOMAL_GENOMEWIDE`, les 22 autosomes et un chromosome
 cible complet. Un panel régional peut servir aux tests techniques, mais ne doit
 pas être interprété comme une analyse IBD genome-wide.
@@ -54,8 +56,8 @@ interdit un support IBD positif.
 La configuration d'exemple garde toutes les calibrations à `false`. Leur
 passage à `true` exige une simulation séparée reproduisant la densité réelle,
 les positions cM, les taux de données manquantes et les incertitudes de phase,
-avec graines et résultats audités. Il est interdit de modifier ces seuils parce
-qu'ils rendent DOCK6 positif.
+avec graines et résultats audités. Il est interdit de modifier ces seuils pour
+favoriser le résultat d'une étude particulière.
 
 ## Attribution mutante et consensus
 

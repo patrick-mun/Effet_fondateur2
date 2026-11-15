@@ -1,0 +1,108 @@
+contract_version: 1.0.0
+release_design: panel_master_generic_v1
+plan_version: unified-1.0-2026-11-12
+r08_prespecification_sha256: f7e30522bc84b747aa8c09c6d489ed71bcfb5b58c9455a6095952c2aff72f58e
+stage_ids:
+  - '00'
+  - '01'
+  - '02'
+  - '03'
+  - '04'
+  - '05'
+  - '06'
+  - '07'
+  - '08'
+  - '09'
+  - '10'
+  - 10A
+  - '11'
+  - '12'
+  - 12A
+  - '13'
+  - '14'
+  - '15'
+  - '16'
+  - 16A
+  - 16B
+  - 16C
+  - '17'
+  - '18'
+  - '19'
+schema_files:
+  - panel_release_manifest.schema.json
+  - subject_registry.schema.json
+  - master_truth_manifest.schema.json
+  - panel_view_manifest.schema.json
+  - blinded_input_inventory.schema.json
+  - pipeline_run_manifest.schema.json
+  - stage_evaluation_manifest.schema.json
+  - readiness_receipt.schema.json
+  - calibration_decision.schema.json
+governance_roots:
+  - governance/panel_release_manifest.json
+  - governance/source_catalog.json
+  - governance/seed_ledger.tsv
+  - governance/subject_registry.tsv
+  - private_truth/master_truth_manifest.json
+  - views/panel_view_manifest.json
+  - blinded_inputs/blinded_input_inventory.json
+  - governance/readiness_receipt.json
+truth_consumers:
+  T-SOURCE: ['01']
+  T-SUBJECT: ['02', '07', '09']
+  T-GENOTYPE: ['03', '05', '10', 10A]
+  T-TARGET: ['04', '09', '10', '12']
+  T-MEASURE: ['03', '05', '10', '17']
+  T-KINSHIP: ['06', '07', '08', '09']
+  T-POPULATION: ['08', 16A]
+  T-PHASE: ['11', '12', 12A, '13']
+  T-FOUNDER: ['13', '14', 16B]
+  T-LD: ['15']
+  T-ROH: ['16']
+  T-IBD: [16C]
+  T-SCENARIO: ['17']
+  T-RENDER: ['18', '19']
+view_consumers:
+  V-SOURCE: ['01', '02', '03']
+  V-TARGET: ['04', '09', '10']
+  V-DENSITY: ['03', '05', '06', '08', '10', '15', '16', '17']
+  V-MEASUREMENT: ['03', '05', '10', '17']
+  V-PEDIGREE: ['02', '07', '09', '12', '17']
+  V-REGIONAL: ['11', '12', '13', '14', '15', '16', 16A, 16B, 16C]
+  V-AUTOSOMAL: ['05', '06', '07', '08', 10A, 12A, 16C]
+  V-PHASING-REFERENCE: ['12', 12A, 16A, 16B]
+  V-FOUNDER-NULL: ['13', 16B]
+  V-ROH-IBD: ['16', 16C]
+  V-SENSITIVITY: ['17']
+stage_envelope:
+  - stage_inputs.json
+  - command.json
+  - stdout.log
+  - stderr.log
+  - stage_outputs.json
+  - audit.json
+  - checksums.sha256
+dynamic_outputs:
+  discovery_by_glob: forbidden
+  producer_manifest: exhaustive
+  sha256_required: true
+special_dependencies:
+  16C: reference_ancestry_summary.json_or_16A_control_receipt
+  '17': signed_sensitivity_run_registry_covering_16_domains
+  '18': closed_evaluation_tables_only_no_html_pdf
+  '19': 24_markdown_plus_traceability_no_html_pdf
+resolved_gaps:
+  GAP-R04-01: nine schemas and eight governance roots are indexed in this bundle
+  GAP-R04-02: truth_router grants only stage-specific truth after run closure
+  GAP-R04-03: stage 09 requires a signed and hashed human decision artifact
+  GAP-R04-04: stage 16C declares the 16A summary or control receipt as mandatory
+  GAP-R04-05: stage 17 uses a signed closed-run registry for all sixteen domains
+  GAP-R04-06: every dynamic output is exhaustively named and hashed by its producer
+  GAP-R04-07: stage 18 is limited to SVG and provenance before R14
+  GAP-R04-08: stage 19 assembles Markdown and traceability; HTML/PDF remain R14-only
+  GAP-R06-01: release_guard enforces resolved paths, process isolation policy and private-root refusal
+  GAP-R06-02: partition-specific HMAC pseudonyms and six disjoint reference pools are required
+  GAP-R06-03: canonical single-factor diffs and a signed registry cover stages 16B and 16C
+legacy_calibration_modules:
+  authorization: excluded
+  reuse_condition: explicit adequacy proof against this bundle and a new targeted test

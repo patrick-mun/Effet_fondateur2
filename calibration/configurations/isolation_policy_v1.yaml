@@ -1,0 +1,65 @@
+policy_version: 1.0.0
+pipeline_forbidden_roots:
+  - private_truth
+  - governance
+pipeline_allowed_roots:
+  - blinded_inputs
+  - runs
+pipeline_process_identity_required: true
+physical_path_verification_required_from: R10
+symlinks_and_hardlinks_forbidden: true
+environment_allowlist:
+  - PATH
+  - LANG
+  - LC_ALL
+  - TZ
+  - TMPDIR
+pseudonymization:
+  algorithm: HMAC-SHA256
+  secret_per_partition: true
+  stable_inside_partition: true
+  linkable_across_partitions: false
+partition_fields_required:
+  - isolation_unit_ids
+  - master_identity_ids
+  - pedigree_component_ids
+  - event_ids
+  - segment_ids
+  - duplicate_group_ids
+  - seed_prefixes
+  - negative_control_ids
+reference_subpools_required: 6
+truth_opening:
+  run_state_required: CLOSED
+  manifest_sha256_required: true
+  stage_least_privilege: true
+stage_truth_access:
+  '00': []
+  '01': [T-SOURCE]
+  '02': [T-SUBJECT]
+  '03': [T-GENOTYPE, T-MEASURE]
+  '04': [T-TARGET]
+  '05': [T-GENOTYPE, T-MEASURE]
+  '06': [T-KINSHIP]
+  '07': [T-KINSHIP, T-SUBJECT]
+  '08': [T-KINSHIP, T-POPULATION]
+  '09': [T-KINSHIP, T-SUBJECT, T-TARGET]
+  '10': [T-GENOTYPE, T-MEASURE, T-TARGET]
+  10A: [T-GENOTYPE]
+  '11': [T-PHASE]
+  '12': [T-PHASE, T-TARGET]
+  12A: [T-PHASE]
+  '13': [T-FOUNDER, T-PHASE]
+  '14': [T-FOUNDER]
+  '15': [T-LD]
+  '16': [T-ROH]
+  16A: [T-POPULATION]
+  16B: [T-FOUNDER]
+  16C: [T-IBD]
+  '17': [T-MEASURE, T-SCENARIO]
+  '18': [T-RENDER]
+  '19': [T-RENDER]
+single_factor_registry:
+  signed: true
+  closed_runs_only: true
+  domains: ['03', '05', '07', '08', '10', 10A, '11', '12', 12A, '13', '14', '15', '16', 16A, 16B, 16C]

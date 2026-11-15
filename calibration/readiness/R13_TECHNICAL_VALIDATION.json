@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0.0",
+  "receipt_id": "R13-TECHNICAL-VALIDATION-PASS-panel_master_generic_v1",
+  "release_design": "panel_master_generic_v1",
+  "release_id": "panel-master-generic-v1-r12b-validation-blind",
+  "run_id": "RUN-R13-VALIDATION-BLIND-001",
+  "decision_id": "R13-TECHNICAL-VALIDATION-001",
+  "partition_id": "VALIDATION_BLIND",
+  "scope": "TECHNICAL_INTEGRITY_ONLY",
+  "status": "PASS",
+  "run_state": "CLOSED",
+  "closed_at": "2026-11-13T08:02:07.384371Z",
+  "stage_count": 25,
+  "stage_pass_count": 25,
+  "evaluation_count": 25,
+  "metrics_count": 25,
+  "truth_opened_by_runner": false,
+  "truth_opened_after_closure_by_evaluator": true,
+  "scientific_tools_executed": false,
+  "real_data_accessed": false,
+  "scientific_performance_evaluated": false,
+  "html_pdf_count": 0,
+  "manifest_sha256": "f04ba79119ead5078764a27586903fe28a9c0cac757de319ac08e6cb22ac3a6b",
+  "evidence_sha256": {
+    "pipeline_run_manifest_file": "ea0f8479cd0922e85aaebcf2f5b8c9694b6e6671d3b15d14fd97fb4372722505",
+    "run_closure_receipt": "076da4f00f0695ed94d566fd30257213a77154169db85b3cfcce18f3f6e9f170",
+    "technical_decision": "1b19b58e26a6fd54ee9d82dfe0b9584dd2c6e0cd7e61fe32f69d20fa3e11ac48",
+    "evaluation_bundle": "2ece86d4523672057cf1aa7bcd4a71b6545f4ab7731a3d74fd74f1b1252999bf",
+    "r12b_frozen_manifest": "7ba705698a9b81318152029fb30e53d46a4f04f924fcc0069b77533ff8986ea7",
+    "consumed_blind_inventory": "78982b058bec5776854247e5f2dda044f79b55927f572d86d2956e1f98fbec43"
+  },
+  "r07_status": "REVISION_REQUIRED",
+  "gate_g6_scientific_passed": false,
+  "qualification_flags": {
+    "calibrated": false,
+    "founder_effect_proven": false,
+    "production_promotion": false
+  },
+  "restrictions": [
+    "NO_SCIENTIFIC_QUALIFICATION_CLAIM",
+    "NO_FOUNDER_EFFECT_CLAIM",
+    "NO_PRODUCTION_PROMOTION",
+    "R07_REVISION_REQUIRED_BEFORE_FULL_QUALIFICATION",
+    "R11_RESOURCE_BLOCKED_REMAINS_ACTIVE",
+    "NO_HTML_OR_PDF_BEFORE_R14"
+  ]
+}

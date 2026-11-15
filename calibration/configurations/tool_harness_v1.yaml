@@ -1,0 +1,30 @@
+harness_version: 1.0.0
+r09_external_execution_allowed: false
+external_tools:
+  plink:
+    r09_mode: SIMULATED_CONTRACT_ONLY
+    failure_cases: [missing_executable, timeout, nonzero_exit, malformed_output, undeclared_output]
+  king:
+    r09_mode: SIMULATED_CONTRACT_ONLY
+    failure_cases: [missing_executable, timeout, nonzero_exit, malformed_output, undeclared_output]
+  bcftools:
+    r09_mode: SIMULATED_CONTRACT_ONLY
+    failure_cases: [missing_executable, timeout, nonzero_exit, malformed_output, undeclared_output]
+  shapeit5:
+    r09_mode: SIMULATED_CONTRACT_ONLY
+    failure_cases: [missing_executable, timeout, nonzero_exit, malformed_output, undeclared_output]
+  hap_ibd:
+    r09_mode: SIMULATED_CONTRACT_ONLY
+    failure_cases: [missing_executable, timeout, nonzero_exit, malformed_output, undeclared_output]
+  refined_ibd:
+    r09_mode: SIMULATED_CONTRACT_ONLY
+    failure_cases: [missing_executable, timeout, nonzero_exit, malformed_output, undeclared_output]
+  java:
+    r09_mode: SIMULATED_CONTRACT_ONLY
+    failure_cases: [missing_executable, timeout, nonzero_exit, malformed_output, undeclared_output]
+post_readiness_failures:
+  missing_tool: FAIL
+  timeout: FAIL
+  parse_error: FAIL
+  empty_required_output: FAIL
+  undeclared_dynamic_output: FAIL

@@ -1,0 +1,95 @@
+configuration_version: 2.0.0
+revision_id: r07_scientific_dimensioning_v2
+release_design: panel_master_generic_v1
+status: REVISED_PROSPECTIVE_DIMENSIONING_COMPLETE
+scope: SCIENTIFIC_QUALIFICATION_DESIGN
+evidence:
+  shapeit_projection: calibration_workspace/resource_probes/r11_shapeit_sample_scaling_v1/projection.json
+  source_decision: RESOURCE_BLOCKED
+  performance_observed: false
+scientific_minima:
+  study_identities_per_partition: 4000
+  phasing_reference_per_partition: 3000
+  ancestry_reference_per_partition: 1800
+  null_reference_per_partition: 3000
+  primary_independent_units: 500
+  primary_negative_units: 3000
+  founder_events_per_age: 500
+  external_tool_seed_minimum: 50
+  autosomes: 22
+  observed_densities:
+    D_MAX: 600000
+    D_MID: 300000
+    D_LOW: 100000
+precision:
+  confidence_level: 0.95
+  wilson_half_width_at_primary_minimum: 0.0437
+  zero_event_upper_bound_at_negative_minimum: 0.000998
+  standardized_paired_delta: 0.20
+  design_power: 0.90
+phasing_schedule:
+  measured_threads_per_call: 1
+  all_autosome_density: D_MAX
+  all_autosome_seed_count: 10
+  sentinel_autosomes:
+    count: 3
+    selection: SHORTEST_MEDIAN_LOWER_LONGEST_BY_GENETIC_LENGTH_THEN_CHROMOSOME
+    total_seed_count: 50
+    densities: [D_MAX, D_MID, D_LOW]
+  expected_calls:
+    D_MAX: 340
+    D_MID: 150
+    D_LOW: 150
+    total: 640
+  qualification_scope:
+    all_autosomes: D_MAX_WITH_10_SEEDS
+    density_sensitivity: THREE_PRESPECIFIED_SENTINELS_WITH_50_SEEDS
+ibd_worlds:
+  positive_lengths_cm: [1.0, 1.5, 2.0, 3.0, 5.0]
+  positive_pairs_per_length: 500
+  negative_pairs: 3000
+  secondary_pairs_per_length_and_location: 200
+  secondary_locations: [TARGET, OFF_TARGET_SAME_AUTOSOME, OTHER_AUTOSOME]
+  compound_pairs_per_length: 100
+  maximum_pairs_per_world: 100
+  expected_independent_worlds:
+    primary_positive: 25
+    primary_negative: 30
+    secondary_location: 30
+    compound: 5
+    total: 90
+  tools: [HAP_IBD, REFINED_IBD]
+  densities: [D_MAX, D_MID, D_LOW]
+  expected_tool_density_calls: 540
+resources:
+  qualification_calendar_days_max: 120
+  aggregate_core_hours_max: 120000
+  aggregate_rss_gib_max: 192
+  storage_gib_max: 8192
+  r2_workers_simultaneous_max: 24
+  r2_autosomal_call_timeout_hours: 168
+  core_hour_allocations:
+    phasing: 75000
+    explicit_ibd: 30000
+    remaining_pipeline: 15000
+  phasing_projection:
+    safety_reserve_fraction: 0.25
+    projected_core_hours_max: 67000
+    projected_serial_wall_hours_max: 70000
+required_resource_evidence_before_g5_scientific:
+  - SHAPEIT_SCALE_BRIDGE_2000_PLUS_1500
+  - SHAPEIT_TARGET_SCALE_SENTINEL_4000_PLUS_3000
+  - SHAPEIT_D_LOW_PAIRED_DENSITY_PROBE
+  - IBD_BATCH_100_PROBES_BOTH_TOOLS_THREE_DENSITIES
+  - IBD_90_WORLD_PROJECTION_WITH_95_PERCENT_BOUND_AND_FACTOR_2
+  - FULL_RELEASE_STORAGE_PROJECTION_WITH_FACTOR_2
+  - SCHEDULE_FEASIBILITY_AT_24_R2_WORKERS
+gate:
+  r07_revision_complete: true
+  resource_confirmation_complete: false
+  scientific_g5_authorized: false
+  next_phase: R11B_RESOURCE_CONFIRMATION
+qualification_flags:
+  calibrated: false
+  founder_effect_proven: false
+  production_promotion: false

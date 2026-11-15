@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:effet-fondateur:calibration:panel-release-manifest:1.0.0",
+  "title": "Panel release manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "release_id", "release_design", "assembly", "stage_ids", "partitions", "scenario_design", "target", "qualification_flags"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "release_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]+$"},
+    "release_design": {"const": "panel_master_generic_v1"},
+    "assembly": {"const": "GRCh38"},
+    "stage_ids": {"type": "array", "minItems": 25, "maxItems": 25, "uniqueItems": true, "items": {"type": "string"}},
+    "partitions": {"type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true, "items": {"enum": ["CALIBRATION", "VALIDATION_BLIND", "RESOURCE_ONLY"]}},
+    "scenario_design": {"type": "object", "minProperties": 1},
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selection", "hard_coded"],
+      "properties": {
+        "selection": {"const": "PROFILE_CONFIGURED_AUTOSOMAL"},
+        "hard_coded": {"const": false}
+      }
+    },
+    "qualification_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["calibrated", "founder_effect_proven", "production_promotion"],
+      "properties": {
+        "calibrated": {"const": false},
+        "founder_effect_proven": {"const": false},
+        "production_promotion": {"const": false}
+      }
+    }
+  }
+}

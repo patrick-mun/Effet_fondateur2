@@ -1,0 +1,261 @@
+schema_version: 1.0.0
+release_id: panel-master-generic-v1-r12c-scientific-validation
+scope: R13_SCIENTIFIC_BLIND_VALIDATION
+criteria_version: 1.0.0
+draft_state: DRAFT_SUBSET_ONLY
+stages:
+  '12':
+    rules:
+      - {metric_id: gt_concordance, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: subject, minimum_independent_n: 4000}
+      - metric_id: common_ser
+        operator: contextual
+        unit: proportion
+        independent_unit: informative_transition
+        minimum_independent_n: 100
+        contexts:
+          - {context_id: common_ser_dense_pedigree, when: {density: [D_MAX, D_MID], pedigree: COMPLETE}, operator: max, value: 0.01, decision_value: ucb95}
+          - context_id: common_ser_low_or_no_pedigree
+            when:
+              any_of:
+                - {density: D_LOW}
+                - {pedigree: [PARENT_MISSING, NO_PEDIGREE]}
+            operator: max
+            value: 0.03
+            decision_value: ucb95
+      - metric_id: rare_ser
+        operator: contextual
+        unit: proportion
+        independent_unit: informative_transition_maf_0.01_0.05
+        minimum_independent_n: 100
+        contexts:
+          - {context_id: rare_ser_dense_pedigree, when: {density: [D_MAX, D_MID], pedigree: COMPLETE}, operator: max, value: 0.03, decision_value: ucb95}
+          - context_id: rare_ser_low_or_no_pedigree
+            when:
+              any_of:
+                - {density: D_LOW}
+                - {pedigree: [PARENT_MISSING, NO_PEDIGREE]}
+            operator: max
+            value: 0.05
+            decision_value: ucb95
+      - metric_id: point_phase_error
+        operator: contextual
+        unit: proportion
+        independent_unit: target_heterozygous_copy
+        minimum_independent_n: 500
+        contexts:
+          - {context_id: point_phase_dense_pedigree, when: {density: [D_MAX, D_MID], pedigree: COMPLETE}, operator: max, value: 0.02, decision_value: ucb95}
+          - context_id: point_phase_low_or_no_pedigree
+            when:
+              any_of:
+                - {density: D_LOW}
+                - {pedigree: [PARENT_MISSING, NO_PEDIGREE]}
+            operator: max
+            value: 0.05
+            decision_value: ucb95
+      - metric_id: carrier_copy_accuracy
+        operator: contextual
+        unit: proportion
+        independent_unit: carrier
+        minimum_independent_n: 500
+        contexts:
+          - {context_id: carrier_copy_control, when: {scenario: CONTROL}, operator: min, value: 0.95, decision_value: lcb95}
+          - {context_id: carrier_copy_stress, when: {scenario: STRESS}, operator: min, value: 0.90, decision_value: lcb95}
+      - {metric_id: evaluability, operator: min, value: 0.95, decision_value: lcb95, unit: proportion, independent_unit: scenario_unit, minimum_independent_n: 500}
+  12A:
+    rules:
+      - {metric_id: chromosome_completeness, operator: exact, value: 22, decision_value: estimate, unit: chromosome_count, independent_unit: release, minimum_independent_n: 1}
+      - {metric_id: subject_completeness, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: subject, minimum_independent_n: 4000}
+      - {metric_id: allele_concordance, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: allele_call, minimum_independent_n: 4000}
+      - metric_id: common_ser
+        operator: contextual
+        unit: proportion
+        independent_unit: informative_transition
+        minimum_independent_n: 100
+        contexts:
+          - {context_id: autosomal_ser_dense, when: {density: [D_MAX, D_MID]}, operator: max, value: 0.02, decision_value: ucb95}
+          - {context_id: autosomal_ser_low, when: {density: D_LOW}, operator: max, value: 0.05, decision_value: ucb95}
+      - metric_id: point_phase_error
+        operator: contextual
+        unit: proportion
+        independent_unit: target_heterozygous_copy
+        minimum_independent_n: 500
+        contexts:
+          - {context_id: autosomal_point_dense, when: {density: [D_MAX, D_MID]}, operator: max, value: 0.03, decision_value: ucb95}
+          - {context_id: autosomal_point_low, when: {density: D_LOW}, operator: max, value: 0.07, decision_value: ucb95}
+  '13':
+    rules:
+      - metric_id: segment_sensitivity
+        operator: contextual
+        unit: proportion
+        independent_unit: founder_event
+        minimum_independent_n: 500
+        contexts:
+          - {context_id: segment_young_nf5plus, when: {age_generations_max: 50, founder_families_min: 5}, operator: min, value: 0.90, decision_value: lcb95}
+          - {context_id: segment_old_nf5plus, when: {age_generations_min: 75, founder_families_min: 5}, operator: min, value: 0.80, decision_value: lcb95}
+          - {context_id: segment_young_nf3, when: {age_generations_max: 50, founder_families: 3}, operator: min, value: 0.80, decision_value: lcb95}
+          - {context_id: segment_old_nf3, when: {age_generations_min: 75, founder_families: 3}, operator: min, value: 0.70, decision_value: lcb95}
+      - metric_id: median_jaccard
+        operator: contextual
+        unit: ratio
+        independent_unit: founder_event
+        minimum_independent_n: 500
+        contexts:
+          - {context_id: jaccard_young_nf5plus, when: {age_generations_max: 50, founder_families_min: 5}, operator: min, value: 0.80, decision_value: lcb95}
+          - {context_id: jaccard_old_nf5plus, when: {age_generations_min: 75, founder_families_min: 5}, operator: min, value: 0.65, decision_value: lcb95}
+          - {context_id: jaccard_young_nf3, when: {age_generations_max: 50, founder_families: 3}, operator: min, value: 0.70, decision_value: lcb95}
+          - {context_id: jaccard_old_nf3, when: {age_generations_min: 75, founder_families: 3}, operator: min, value: 0.55, decision_value: lcb95}
+      - {metric_id: null_fpr, operator: max, value: 0.01, decision_value: ucb95, unit: proportion, independent_unit: negative_unit_by_null_class, minimum_independent_n: 3000}
+      - {metric_id: normalized_boundary_error, operator: max, value: 1.0, decision_value: ucb95, unit: ratio_to_max_0.5cm_or_quarter_true_length, independent_unit: called_positive_segment, minimum_independent_n: 500}
+      - {metric_id: target_containment, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: called_positive_segment, minimum_independent_n: 500}
+  '14':
+    rules:
+      - metric_id: relative_median_bias
+        operator: contextual
+        unit: absolute_relative_error
+        independent_unit: founder_event
+        minimum_independent_n: 500
+        contexts:
+          - {context_id: bias_nf10, when: {founder_families: 10}, operator: max, value: 0.10, decision_value: ucb95}
+          - {context_id: bias_nf5, when: {founder_families: 5}, operator: max, value: 0.15, decision_value: ucb95}
+          - {context_id: bias_nf3, when: {founder_families: 3}, operator: max, value: 0.25, decision_value: ucb95}
+      - metric_id: mdape
+        operator: contextual
+        unit: proportion
+        independent_unit: founder_event
+        minimum_independent_n: 500
+        contexts:
+          - {context_id: mdape_nf10, when: {founder_families: 10}, operator: max, value: 0.25, decision_value: ucb95}
+          - {context_id: mdape_nf5, when: {founder_families: 5}, operator: max, value: 0.35, decision_value: ucb95}
+          - {context_id: mdape_nf3, when: {founder_families: 3}, operator: max, value: 0.50, decision_value: ucb95}
+      - metric_id: interval_width_ratio
+        operator: contextual
+        unit: ratio
+        independent_unit: founder_event
+        minimum_independent_n: 500
+        contexts:
+          - {context_id: width_nf10, when: {founder_families: 10}, operator: max, value: 4, decision_value: ucb95}
+          - {context_id: width_nf5, when: {founder_families: 5}, operator: max, value: 6, decision_value: ucb95}
+          - {context_id: width_nf3, when: {founder_families: 3}, operator: max, value: 10, decision_value: ucb95}
+      - {metric_id: coverage, operator: min, value: 0.90, decision_value: lcb95, unit: proportion, independent_unit: founder_event, minimum_independent_n: 500}
+      - {metric_id: leave_one_family_out, operator: max, value: 0.20, decision_value: ucb95, unit: relative_variation, independent_unit: founder_event, minimum_independent_n: 500}
+      - {metric_id: censoring_recognition, operator: min, value: 0.90, decision_value: lcb95, unit: proportion, independent_unit: censored_founder_event, minimum_independent_n: 500}
+  '15':
+    rules:
+      - {metric_id: r2_mae, operator: max, value: 0.02, decision_value: ucb95, unit: absolute_error, independent_unit: variant_pair_maf_ge_0.05, minimum_independent_n: 500}
+      - {metric_id: dprime_mae, operator: max, value: 0.05, decision_value: ucb95, unit: absolute_error, independent_unit: variant_pair_maf_ge_0.05, minimum_independent_n: 500}
+      - {metric_id: r2_bias, operator: max, value: 0.01, decision_value: ucb95, unit: absolute_bias, independent_unit: variant_pair_maf_ge_0.05, minimum_independent_n: 500}
+      - {metric_id: dprime_bias, operator: max, value: 0.02, decision_value: ucb95, unit: absolute_bias, independent_unit: variant_pair_maf_ge_0.05, minimum_independent_n: 500}
+      - {metric_id: density_delta, operator: max, value: 0.03, decision_value: ucb95, unit: median_absolute_delta, independent_unit: paired_density_unit, minimum_independent_n: 500}
+      - {metric_id: evaluability, operator: min, value: 0.95, decision_value: lcb95, unit: proportion, independent_unit: variant_pair, minimum_independent_n: 500}
+  '16':
+    rules:
+      - metric_id: roh_sensitivity
+        operator: contextual
+        unit: proportion
+        independent_unit: roh_event
+        minimum_independent_n: 500
+        contexts:
+          - {context_id: roh_short, when: {declared_scenario_tier: SHORT}, operator: min, value: 0.80, decision_value: lcb95}
+          - {context_id: roh_medium, when: {declared_scenario_tier: MEDIUM}, operator: min, value: 0.95, decision_value: lcb95}
+          - {context_id: roh_long, when: {declared_scenario_tier: LONG}, operator: min, value: 0.95, decision_value: lcb95}
+          - {context_id: roh_multiple, when: {declared_scenario_tier: MULTIPLE}, operator: min, value: 0.95, decision_value: lcb95}
+      - {metric_id: roh_fpr, operator: max, value: 0.01, decision_value: ucb95, unit: proportion, independent_unit: negative_unit, minimum_independent_n: 3000}
+      - {metric_id: boundary_mae, operator: max, value: 0.5, decision_value: ucb95, unit: cM, independent_unit: roh_event, minimum_independent_n: 500}
+      - metric_id: length_error
+        operator: contextual
+        unit: relative_error
+        independent_unit: roh_event
+        minimum_independent_n: 500
+        contexts:
+          - {context_id: roh_length_short, when: {declared_scenario_tier: SHORT}, operator: max, value: 0.20, decision_value: ucb95}
+          - {context_id: roh_length_other, when: {declared_scenario_tier: [MEDIUM, LONG, MULTIPLE]}, operator: max, value: 0.10, decision_value: ucb95}
+      - {metric_id: target_in_roh_accuracy, operator: min, value: 0.95, decision_value: lcb95, unit: proportion, independent_unit: target_roh_unit, minimum_independent_n: 500}
+      - {metric_id: burden_error, operator: max, value: 0.10, decision_value: ucb95, unit: relative_error, independent_unit: subject, minimum_independent_n: 4000}
+      - {metric_id: fusion_fragmentation, operator: min, value: 0.90, decision_value: lcb95, unit: proportion, independent_unit: roh_event, minimum_independent_n: 500}
+  16A:
+    rules:
+      - {metric_id: reference_only_fit, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: fitted_reference_member, minimum_independent_n: 1800}
+      - {metric_id: pure_centroid_accuracy, operator: min, value: 0.95, decision_value: lcb95, unit: proportion, independent_unit: pure_population_unit, minimum_independent_n: 500}
+      - {metric_id: local_accuracy, operator: min, value: 0.90, decision_value: lcb95, unit: proportion, independent_unit: local_ancestry_unit, minimum_independent_n: 500}
+      - {metric_id: mixture_rank_correlation, operator: min, value: 0.90, decision_value: lcb95, unit: spearman_rho, independent_unit: admixed_unit, minimum_independent_n: 500}
+      - {metric_id: procrustes_median, operator: max, value: 0.10, decision_value: ucb95, unit: standard_deviation, independent_unit: subject, minimum_independent_n: 4000}
+      - {metric_id: procrustes_p95, operator: max, value: 0.25, decision_value: ucb95, unit: standard_deviation, independent_unit: subject, minimum_independent_n: 4000}
+  16B:
+    rules:
+      - {metric_id: null_fpr, operator: max, value: 0.05, decision_value: ucb95, unit: proportion, independent_unit: negative_unit_by_null_class, minimum_independent_n: 3000}
+      - metric_id: power
+        operator: contextual
+        unit: proportion
+        independent_unit: founder_event
+        minimum_independent_n: 500
+        contexts:
+          - {context_id: enrichment_young_nf5plus, when: {age_generations_max: 50, founder_families_min: 5}, operator: min, value: 0.80, decision_value: lcb95}
+          - context_id: enrichment_other
+            when:
+              any_of:
+                - {age_generations_min: 75}
+                - {founder_families: 3}
+            operator: min
+            value: 0.70
+            decision_value: lcb95
+      - {metric_id: evaluability, operator: min, value: 0.95, decision_value: lcb95, unit: proportion, independent_unit: scenario_unit, minimum_independent_n: 500}
+      - {metric_id: internal_external_concordance, operator: min, value: 0.90, decision_value: lcb95, unit: proportion, independent_unit: paired_tool_unit, minimum_independent_n: 500}
+  16C:
+    rules:
+      - metric_id: length_sensitivity
+        operator: contextual
+        unit: proportion
+        independent_unit: ibd_pair
+        minimum_independent_n: 500
+        contexts:
+          - {context_id: ibd_length_1cm, when: {length_cm: 1.0}, operator: min, value: 0.70, decision_value: lcb95}
+          - {context_id: ibd_length_1_5cm, when: {length_cm: 1.5}, operator: min, value: 0.80, decision_value: lcb95}
+          - {context_id: ibd_length_2cm, when: {length_cm: 2.0}, operator: min, value: 0.90, decision_value: lcb95}
+          - {context_id: ibd_length_3cm, when: {length_cm: 3.0}, operator: min, value: 0.95, decision_value: lcb95}
+          - {context_id: ibd_length_5cm, when: {length_cm: 5.0}, operator: min, value: 0.95, decision_value: lcb95}
+      - {metric_id: negative_pair_fpr, operator: max, value: 0.001, decision_value: ucb95, unit: proportion, independent_unit: negative_pair, minimum_independent_n: 3000}
+      - metric_id: boundary_error
+        operator: contextual
+        unit: cM
+        independent_unit: ibd_pair
+        minimum_independent_n: 500
+        contexts:
+          - {context_id: ibd_boundary_short, when: {length_cm: [1.0, 1.5]}, operator: max, value: 0.50, decision_value: ucb95}
+          - {context_id: ibd_boundary_longer, when: {length_cm: [2.0, 3.0, 5.0]}, operator: max, value: 0.25, decision_value: ucb95}
+      - metric_id: tool_jaccard
+        operator: contextual
+        unit: ratio
+        independent_unit: ibd_pair
+        minimum_independent_n: 500
+        contexts:
+          - {context_id: ibd_tool_jaccard_short, when: {length_cm: [1.0, 1.5]}, operator: min, value: 0.60, decision_value: lcb95}
+          - {context_id: ibd_tool_jaccard_longer, when: {length_cm: [2.0, 3.0, 5.0]}, operator: min, value: 0.80, decision_value: lcb95}
+      - {metric_id: target_phase_alignment, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: called_positive_pair, minimum_independent_n: 500}
+      - {metric_id: ancestry_control, operator: exact, value: 1.0, decision_value: estimate, unit: availability, independent_unit: release, minimum_independent_n: 1}
+  '17':
+    rules:
+      - {metric_id: pair_validity, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: paired_scenario, minimum_independent_n: 16}
+      - metric_id: signed_delta
+        operator: contextual
+        unit: standardized_delta
+        independent_unit: paired_scenario
+        minimum_independent_n: 500
+        contexts:
+          - {context_id: delta_degradation_detectable, when: {domain_class: DEGRADATION_DETECTABLE}, operator: min, value: 0.20, decision_value: lcb95}
+          - {context_id: delta_monotonic, when: {domain_class: MONOTONIC}, operator: min, value: -0.20, decision_value: lcb95}
+      - {metric_id: sign_concordance, operator: min, value: 0.80, decision_value: lcb95, unit: proportion, independent_unit: degradation_detectable_pair, minimum_independent_n: 500}
+      - metric_id: monotonicity
+        operator: contextual
+        unit: standardized_delta
+        independent_unit: monotonic_pair
+        minimum_independent_n: 500
+        contexts:
+          - {context_id: monotonic_lcb, when: {domain_class: MONOTONIC}, operator: min, value: -0.20, decision_value: lcb95}
+      - metric_id: equivalence
+        operator: contextual
+        unit: standardized_delta
+        independent_unit: equivalent_pair
+        minimum_independent_n: 500
+        contexts:
+          - {context_id: equivalence_ci, when: {domain_class: EQUIVALENT}, operator: equivalence, value: 0.20, decision_value: ci95}
+      - {metric_id: tool_seed_convergence, operator: max, value: 0.10, decision_value: ucb95, unit: standard_deviation, independent_unit: paired_tool_seed, minimum_independent_n: 50}

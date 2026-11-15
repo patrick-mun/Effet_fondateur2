@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:effet-fondateur:calibration:calibration-decision:1.0.0",
+  "title": "Human calibration qualification decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "decision_id", "release_id", "stage_decisions", "qualification", "restrictions", "compatibility", "human_signature", "decided_at"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "decision_id": {"type": "string", "minLength": 1},
+    "release_id": {"type": "string", "minLength": 1},
+    "stage_decisions": {"type": "array", "minItems": 25, "maxItems": 25, "items": {"type": "object"}},
+    "qualification": {"enum": ["QUALIFIED", "QUALIFIED_WITH_RESTRICTIONS", "NOT_QUALIFIED"]},
+    "restrictions": {"type": "array", "items": {"type": "string"}},
+    "compatibility": {"type": "object", "minProperties": 1},
+    "human_signature": {"type": "object", "required": ["reviewer_id", "signed_sha256"], "properties": {"reviewer_id": {"type": "string"}, "signed_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}},
+    "decided_at": {"type": "string", "format": "date-time"}
+  }
+}
