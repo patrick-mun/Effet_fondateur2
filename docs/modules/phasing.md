@@ -67,8 +67,9 @@ avant construction de la clé de cache puis relit l'ordre et les sujets du
 VCF extrait. Les audits contiennent les empreintes et effectifs, pas la liste
 des sujets. Sans sélection configurée, les profils historiques sont inchangés.
 La préparation vérifie la disjonction des donneurs d'origine ; un simple test
-des noms synthétiques ne suffit pas à la démontrer. Voir D23a dans
-`calibration/README.md`. Ce raccord ne qualifie pas à lui seul le phasage.
+des noms synthétiques ne suffit pas à la démontrer. Le banc historique D23a
+est conservé dans `archive/calibration/code/` à des fins d'audit seulement.
+Ce raccord ne qualifie pas à lui seul le phasage.
 
 ## Limites du contrat 12.0
 

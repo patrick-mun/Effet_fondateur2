@@ -140,18 +140,18 @@ résultat scientifique et n'est plus un point d'entrée du dépôt.
 - Ne pas modifier une méthode scientifique ou son interprétation sans test,
   comparaison avec un résultat de référence et signalement explicite.
 
-## Rapports de calibration — exigence permanente
+## Calibration archivée
 
-- Produire des graphiques de résultats qui expliquent les mesures, pas
-  seulement des cartes de chiffres ou un schéma du parcours.
-- Rappeler les équations réellement utilisées, avec variables, unités,
-  hypothèses, seuils et limites ; pour une étape logique, représenter les
-  règles de décision plutôt qu'inventer une formule statistique.
-- Montrer l'incertitude et les effectifs indépendants lorsque mesurables.
-- Conserver la provenance des graphiques, la confidentialité, les verdicts
-  et les résultats sources ; ne jamais inventer une courbe ou une précision.
-- Appliquer les détails du contrat de rapport dans
-  `calibration/CONVENTIONS_DEVELOPPEMENT.md` et le plan de calibration.
+- La campagne R00–R14b est close sous `archive/calibration/` et ne fait plus
+  partie du pipeline actif.
+- Ne pas importer, exécuter ou restaurer directement son code dans le paquet
+  V2. L'archive sert uniquement à l'audit historique.
+- Les preuves locales sont sous
+  `archive/calibration/data-calibration/`, toujours ignorées par Git ; ne pas
+  les publier, les committer ou en exposer le contenu génétique.
+- Toute nouvelle calibration exige un plan explicite, de nouveaux contrats,
+  des tests et une autorisation distincte. Elle ne doit pas modifier
+  rétroactivement les reçus historiques archivés.
 
 ## Validation
 
