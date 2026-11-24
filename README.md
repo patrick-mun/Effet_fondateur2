@@ -54,123 +54,20 @@ effet-fondateur run --config config/testing/synthetic.example.yaml
 python -m pytest tests/
 ```
 
-Le sous-système de calibration unifiée reste séparé du pipeline réel. La
-release synthétique R10 est générique : sa cible est résolue depuis le profil
-de construction et aucune donnée réelle n'est lue. Elle sert uniquement à
-vérifier l'intégrité technique des contrats, de l'aveuglement, des étapes et
-des évaluations ; elle ne mesure pas encore une performance scientifique.
+## Calibration archivée
 
-Construction dans le workspace ignoré (refus d'écrasement) :
+La campagne de calibration R00–R14b est close et isolée sous
+`archive/calibration/`. Son code, ses configurations, ses tests et ses reçus ne
+font plus partie du paquet Python ni des points d'entrée actifs. Les preuves
+locales volumineuses sont conservées, uniquement sur la machine d'origine,
+sous `archive/calibration/data-calibration/`, dossier ignoré par Git.
 
-```bash
-.venv/bin/python -m effet_fondateur.calibration.micro_panel build \
-  --repository-root . \
-  --release-root calibration_workspace/releases/micro_panel_generic_v1_r10
-```
-
-Validation indépendante d'une release existante :
-
-```bash
-.venv/bin/python -m effet_fondateur.calibration.micro_panel validate \
-  --repository-root . \
-  --release-root calibration_workspace/releases/micro_panel_generic_v1_r10
-```
-
-R10 produit 60 sujets synthétiques, six sous-références disjointes totalisant
-240 individus, 169 variants sur les 22 autosomes, 14 familles de vérité privée
-et 11 vues aveugles. Les 25 étapes sont exécutées dans quatre runs fermés avec
-un accès minimal à la vérité après clôture. Aucun outil scientifique externe,
-aucune donnée d'étude et aucun rapport HTML ou PDF ne sont utilisés. Les
-décisions R10 portent donc exclusivement sur l'intégrité technique ;
-`calibrated=false`, `founder_effect_proven=false` et
-`production_promotion=false`. Le pilote scientifique avec les outils réels
-relève de R11 et n'est pas lancé automatiquement.
-
-Le candidat R12 scientifique initial est rejeté. Une release R12b distincte
-fournit désormais une partition `VALIDATION_BLIND` et des composants R13 figés
-pour une validation strictement technique. Elle se contrôle ainsi, sans lancer
-R13 :
-
-```bash
-.venv/bin/python -m effet_fondateur.calibration.r12b_validation \
-  --release-root calibration_workspace/releases/panel_master_generic_v1_r12b_validation_blind \
-  --validate-only --print-g5-receipt
-```
-
-Le reçu G5 positif correspondant est limité à
-`R13_TECHNICAL_BLIND_VALIDATION`. R07 reste à réviser avant une qualification
-scientifique complète, et les trois drapeaux de qualification restent faux.
-
-R13 technique est désormais clos avec 25/25 étapes `PASS`. Ce résultat valide
-l'intégrité des contrats, de la clôture et du routage post-clôture de la
-vérité ; il ne constitue pas une validation de performance scientifique.
-
-R14 est clos par un rapport final limité à ces preuves techniques. La version
-acceptée est dans `calibration_workspace/r14_technical_closure_attempt02`
-(HTML autonome et PDF A4 de 13 pages). Le reçu
-`calibration/readiness/R14_TECHNICAL_CLOSURE.json` maintient la qualification
-scientifique non accordée, la promotion non autorisée et les trois drapeaux de
-qualification à `false`.
-
-Après R14, R07 a été révisé en v2 pour rendre une qualification scientifique
-réalisable sans réduire les effectifs. Le calendrier ferme 640 appels SHAPEIT5
-et 90 mondes IBD ; son reçu maintient toutefois G5 scientifique fermé jusqu'aux
-mesures R11b obligatoires :
-
-```bash
-.venv/bin/python -m effet_fondateur.calibration.r07_revision \
-  --repository-root . --validate-receipt
-```
-
-La confirmation de ressources R11b est reprenable et reste limitée aux données
-synthétiques :
-
-```bash
-.venv/bin/python -m effet_fondateur.calibration.r11b_resources \
-  --repository-root . status
-```
-
-R12c a ensuite gelé les composants scientifiques. Après un checkpoint
-SHAPEIT5 grandeur réelle réussi, la campagne exhaustive R13 a été remplacée
-par un amendement limité à la bonne intégration des outils. Son audit ne lance
-aucun nouvel appel externe :
-
-```bash
-.venv/bin/python -m effet_fondateur.calibration.r13_integration_amendment audit \
-  --repository-root . \
-  --release-root calibration_workspace/releases/panel_master_generic_v1_r12c_scientific_validation \
-  --ibd-release-root calibration_workspace/releases/panel_master_generic_v1_r12_frozen_candidate \
-  --run-root calibration_workspace/r13_scientific/RUN-R13-SCIENTIFIC-001
-```
-
-Le reçu `calibration/readiness/R13_INTEGRATION_AMENDMENT.json` retient un appel
-SHAPEIT5 terminé, retire les 1 179 appels non exécutés et en autorise zéro
-nouveau. Cette portée démontre l'intégration locale, pas les performances
-scientifiques complètes ni un effet fondateur ; les trois drapeaux de
-qualification restent faux.
-
-R14b consolide cette clôture dans un HTML autonome et un PDF A4 détaillés,
-avec statistiques descriptives, graphiques, équations, hypothèses et limites.
-La construction lit uniquement les preuves synthétiques closes et ne relance
-aucun outil scientifique :
-
-```bash
-.venv/bin/python -m effet_fondateur.calibration.r14b_report build \
-  --repository-root . \
-  --r13-run-root calibration_workspace/r13_scientific/RUN-R13-SCIENTIFIC-001 \
-  --r12-ibd-root calibration_workspace/releases/panel_master_generic_v1_r12_frozen_candidate \
-  --r11b-root calibration_workspace/resource_probes/r11b_scientific_resources_v1 \
-  --output-root calibration_workspace/r14b_integration_closure \
-  --template /Users/utilisateur/.codex/skills/report_skill/templates/recherche.html \
-  --chrome "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-```
-
-Le validateur R14b refuse toute qualification scientifique accordée, tout
-drapeau de qualification vrai ou toute divergence d'empreinte des artefacts.
-Le rendu accepté se trouve dans
-`calibration_workspace/r14b_integration_closure` : HTML autonome, PDF A4 de
-16 pages, quatre figures et onze tables. Le reçu suivi correspondant est
-`calibration/readiness/R14B_INTEGRATION_CLOSURE.json`.
+La décision finale est `COMPLETED_WITH_TOOL_INTEGRATION_VERIFIED` :
+SHAPEIT5 est vérifié, Hap-IBD et Refined IBD sont soutenus, mais la performance
+scientifique exhaustive R07/R08 n'a pas été évaluée. Les drapeaux
+`calibrated`, `founder_effect_proven` et `production_promotion` restent à
+`false`. L'archive ne doit pas être utilisée comme pipeline de production ;
+voir `archive/calibration/README.md`.
 
 Pour quitter l'environnement :
 
@@ -184,7 +81,6 @@ Le projet importe directement les bibliothèques suivantes :
 - `PyYAML` et `jsonschema` pour la configuration V2 ;
 - `matplotlib` pour les graphiques ;
 - `fpdf2` pour les rapports PDF ;
-- `websockets` pour attendre la pagination du rapport R14 avant son export PDF ;
 - `pytest` et `pytest-html` pour les tests.
 
 ### Configuration du pipeline

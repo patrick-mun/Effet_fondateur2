@@ -1,9 +1,14 @@
-# Archive — pipeline V1
+# Archives historiques
 
 Ce dossier conserve le pipeline historique (« V1 »), remplacé par la V2
 (`src/effet_fondateur/`). Il est conservé pour référence et vérification des
 dépendances, mais **ne doit plus être exécuté pour produire un résultat
 scientifique** (voir `SESSION.md`, section « Problèmes connus »).
+
+Il conserve aussi sous `calibration/` la campagne de calibration R00–R14b,
+close en novembre 2026. Cette seconde archive n'est ni un paquet Python actif,
+ni un point d'entrée de production ; ses règles propres sont décrites dans
+`calibration/README.md`.
 
 ## Contenu
 

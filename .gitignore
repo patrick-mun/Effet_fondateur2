@@ -32,10 +32,8 @@ data/runs/
 data/cache/
 test/
 
-# Panels et résultats générés par la calibration
-/calibration_workspace/
-/calibration/runs/
-/calibration/local/
+# Preuves locales de la calibration archivée
+/archive/calibration/data-calibration/
 
 # Index locaux des panneaux de référence 1000 Genomes
 /1kGP_high_coverage_Illumina.chr*.vcf.gz.tbi
