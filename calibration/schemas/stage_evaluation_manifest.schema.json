@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:effet-fondateur:calibration:stage-evaluation-manifest:1.0.0",
+  "title": "Closed stage evaluation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evaluation_id", "stage_id", "release_id", "closed_run_id", "truth_grants", "metrics_path", "metrics_sha256", "status", "decision_scope", "scientific_performance_evaluated", "technical_checks", "counts", "criteria_version", "closed"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "evaluation_id": {"type": "string", "minLength": 1},
+    "stage_id": {"type": "string"},
+    "release_id": {"type": "string", "minLength": 1},
+    "closed_run_id": {"type": "string", "minLength": 1},
+    "truth_grants": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^T-"}},
+    "metrics_path": {"type": "string", "pattern": "^evaluations/"},
+    "metrics_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "status": {"enum": ["PASS", "FAIL", "NOT_EVALUABLE", "REVIEW_REQUIRED"]},
+    "decision_scope": {"enum": ["TECHNICAL_INTEGRITY", "SCIENTIFIC_CALIBRATION", "SCIENTIFIC_VALIDATION"]},
+    "scientific_performance_evaluated": {"type": "boolean"},
+    "technical_checks": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+    "counts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["N_EXPECTED", "N_ELIGIBLE", "N_EVALUABLE", "N_EXCLUDED"],
+      "properties": {
+        "N_EXPECTED": {"type": "integer", "minimum": 0},
+        "N_ELIGIBLE": {"type": "integer", "minimum": 0},
+        "N_EVALUABLE": {"type": "integer", "minimum": 0},
+        "N_EXCLUDED": {"type": "integer", "minimum": 0}
+      }
+    },
+    "criteria_version": {"const": "1.0.0"},
+    "closed": {"const": true}
+  }
+}

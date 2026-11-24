@@ -12,6 +12,7 @@ from effet_fondateur.contracts import build_file_artifact, validate_json_documen
 from effet_fondateur.stages.build_visualizations import execute
 from effet_fondateur.visualization import build_consolidated_figures
 from effet_fondateur.visualization.consolidated import VisualizationContractError, _stream_founder_null_draws
+from effet_fondateur.visualization.rendering import DOMAIN_TITLES
 
 
 SIGNATURES = {
@@ -24,6 +25,12 @@ SIGNATURES = {
     "evaluate_founder_haplotype_enrichment": "b6" * 32,
     "run_sensitivity_analyses": "17" * 32,
 }
+
+
+def test_rendering_domain_titles_are_target_generic() -> None:
+    assert DOMAIN_TITLES["EXPLICIT_IBD"] == "IBD explicite autour du variant cible"
+    assert DOMAIN_TITLES["POPULATION_CONVERGENCE"] == "Convergence genome-wide versus région cible"
+    assert all("DOCK6" not in title for title in DOMAIN_TITLES.values())
 
 
 def _tsv(path: Path, columns: list[str], rows: list[list[Any]]) -> None:

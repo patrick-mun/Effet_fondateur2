@@ -1,0 +1,154 @@
+criteria_version: 1.0.0
+source: PLAN_DEVELOPPEMENT_PANEL_SIMULATION.md#8
+intervals:
+  proportions: Wilson
+  rare_zero_proportions: exact_binomial_one_sided
+  continuous_metrics: deterministic_cluster_bootstrap_10000
+  bootstrap_cluster: isolation_unit_id_or_scenario_world_id
+  multiplicity: Holm_alpha_0.05_for_any_of_many_claims
+  decision_precision: before_display_rounding
+decision_order:
+  - FAIL_INTEGRITY
+  - NOT_EVALUABLE_STRUCTURAL
+  - FAIL_POINT_ESTIMATE
+  - NOT_EVALUABLE_PRECISION
+  - REVIEW_REQUIRED
+  - PASS
+structural_not_evaluable_reasons:
+  - INFEASIBLE_TARGET_CATALOG
+  - INFEASIBLE_WINDOW
+  - INFEASIBLE_ROH
+  - INSUFFICIENT_INDEPENDENT_N
+  - INSUFFICIENT_DENSITY
+  - INSUFFICIENT_MINOR_COPIES
+  - INSUFFICIENT_INFORMATIVE_TRANSITIONS
+  - OPTIONAL_CELL_ABSENT_BY_DESIGN
+  - ANCESTRY_PROPORTION_METHOD_ABSENT
+  - CENSORING_MODEL_ABSENT
+  - RESOURCE_BLOCKED
+stages:
+  '00':
+    plan_section: '8.4'
+    primary_metrics: [root_completeness, hash_integrity, isolation, restart_identity]
+    pass_contract: >-
+      100 % des artefacts attendus présents et valides ; toutes les altérations et chemins privés refusés ; reprise donnant les mêmes SHA-256 scientifiques ; aucune écriture dans un run clos.
+  '01':
+    plan_section: '8.4'
+    primary_metrics: [source_sensitivity, source_specificity, autosome_coverage, target_coverage, provenance]
+    pass_contract: >-
+      Sensibilité et spécificité exactes de 100 % ; 22 autosomes et cible couverts ; assemblage, licence, version et empreinte renseignés.
+  '02':
+    plan_section: '8.4'
+    primary_metrics: [registry_bijection, collision_detection, pedigree_detection, no_clinical_inference]
+    pass_contract: >-
+      100 % des lignes valides conservées ; toutes les collisions, échanges, sources partagées et filiations impossibles détectés ; zéro génotype inféré du groupe ou phénotype.
+  '03':
+    plan_section: '8.4'
+    primary_metrics: [sample_concordance, variant_concordance, genotype_concordance, missingness_count, allele_integrity]
+    pass_contract: >-
+      Concordance exacte de 100 % avec l'observation synthétique, compte de manque exact, aucune perte non déclarée ni réorientation silencieuse ; toutes les sentinelles incompatibles rejetées.
+  '04':
+    plan_section: '8.4'
+    primary_metrics: [target_call_concordance, missingness_preservation, molecular_provenance, mendelian_detection]
+    pass_contract: >-
+      Concordance de 100 % sur les appels non manquants ; manque préservé à 100 % ; provenance moléculaire présente ; toutes les erreurs mendéliennes injectées signalées ; aucune inférence clinique.
+  '05':
+    plan_section: '8.4'
+    primary_metrics: [high_defect_sensitivity, low_defect_sensitivity, specificity, missingness_error, call_rate_error, evaluability]
+    pass_contract: >-
+      Sensibilité LCB95 >= 0,90 au niveau haut et >= 0,80 au niveau bas ; spécificité LCB95 >= 0,99 ; erreur absolue manque/appel UCB95 <= 0,005 ; évaluabilité LCB95 >= 0,95.
+  '06':
+    plan_section: '8.4'
+    primary_metrics: [eligibility_recall, eligibility_precision, chromosome_coverage, density_minimum, residual_ld, forbidden_variant_use]
+    pass_contract: >-
+      Rappel et précision LCB95 >= 0,99 ; 22 chromosomes et minima R07 ; fraction de paires dépassant le seuil de pruning UCB95 <= 0,01 ; aucun variant interdit ni cible protégée utilisé contrairement au contrat.
+  '07':
+    plan_section: '8.4'
+    primary_metrics: [related_class_sensitivity, related_class_ppv, unrelated_specificity, kinship_mae, cryptic_detection]
+    pass_contract: >-
+      Par classe liée, sensibilité et VPP LCB95 >= 0,90 ; spécificité non apparentée LCB95 >= 0,99 ; MAE de parenté UCB95 <= 0,03 ; détection cryptique LCB95 >= 0,90.
+  '08':
+    plan_section: '8.4'
+    primary_metrics: [fit_relative_count, pure_centroid_accuracy, outlier_sensitivity, outlier_specificity, procrustes_median, procrustes_p95]
+    pass_contract: >-
+      Zéro apparenté dans l'ajustement ; exactitude centroïde pur LCB95 >= 0,90 ; sensibilité atypique >= 0,90 et spécificité >= 0,95 ; déplacement Procrustes médian UCB95 <= 0,10 écart-type et percentile 95 <= 0,25.
+  '09':
+    plan_section: '8.4'
+    primary_metrics: [cohort_concordance, family_independence, mandatory_nonempty, signed_review]
+    pass_contract: >-
+      100 % des inclusions/exclusions conformes à la politique signée ; zéro composante divisée ; cohortes obligatoires non vides ; empreintes de revue valides. Revue prévue non signée = REVIEW_REQUIRED.
+  '10':
+    plan_section: '8.4'
+    primary_metrics: [high_defect_sensitivity, low_defect_sensitivity, specificity, target_exception_integrity, cohort_audit]
+    pass_contract: >-
+      Sensibilité LCB95 >= 0,90 pour défauts hauts et >= 0,80 pour défauts bas ; spécificité LCB95 >= 0,99 ; 100 % des exceptions cible conformes ; aucune modification de cohorte non auditée.
+  10A:
+    plan_section: '8.5'
+    primary_metrics: [autosome_count, subject_completeness, order_identity, structural_missingness, duplicates, empty_chromosomes]
+    pass_contract: >-
+      Exactement 22 autosomes ; 100 % des sujets dans le même ordre ; zéro génotype structurellement absent, variant dupliqué ou chromosome vide ; tous les retraits justifiés.
+  '11':
+    plan_section: '8.5'
+    primary_metrics: [target_identity, cm_error, bp_error, extrapolation, density, infeasibility_classification]
+    pass_contract: >-
+      Cible et allèles exacts ; erreur cM <= 10^-6 cM et erreur de borne <= 1 bp ; aucune extrapolation ; densités R07 ; classification des cas infaisables exacte à 100 %.
+  '12':
+    plan_section: '8.5'
+    primary_metrics: [gt_concordance, common_ser, rare_ser, point_phase_error, carrier_copy_accuracy, evaluability]
+    pass_contract: >-
+      GT = 100 % ; D_MAX/D_MID avec pedigree complet SER commun UCB95 <= 0,01, SER MAF 0,01–0,05 <= 0,03, erreur ponctuelle <= 0,02 ; D_LOW ou sans pedigree 0,03/0,05/0,05 ; copie H1/H2/BOTH LCB95 >= 0,95 témoin et >= 0,90 stress ; évaluabilité >= 0,95.
+  12A:
+    plan_section: '8.5'
+    primary_metrics: [chromosome_completeness, subject_completeness, allele_concordance, common_ser, point_phase_error]
+    pass_contract: >-
+      22/22 chromosomes et 100 % des sujets ; zéro discordance allélique acceptée ; SER commun UCB95 <= 0,02 à D_MAX/D_MID et <= 0,05 à D_LOW ; erreur ponctuelle <= 0,03 et <= 0,07 respectivement.
+  '13':
+    plan_section: '8.5'
+    primary_metrics: [segment_sensitivity, median_jaccard, null_fpr, normalized_boundary_error, target_containment]
+    pass_contract: >-
+      Âge <= 50 et N_F >= 5 : sensibilité LCB95 >= 0,90 et Jaccard médian >= 0,80 ; âge >= 75 : 0,80/0,65 ; N_F = 3 : retrancher 0,10 avec planchers 0,70/0,55 ; FPR par classe nulle UCB95 <= 0,01 ; erreur médiane normalisée de borne UCB95 <= 1 avec dénominateur max(0,5 cM, 0,25 × longueur vraie) ; cible contenue dans 100 % des positifs appelés.
+  '14':
+    plan_section: '8.5'
+    primary_metrics: [relative_median_bias, mdape, interval_width_ratio, coverage, leave_one_family_out, censoring_recognition]
+    pass_contract: >-
+      N_F=10 : biais <= 0,10, MdAPE <= 0,25, ratio <= 4 ; N_F=5 : 0,15/0,35/6 ; N_F=3 : 0,25/0,50/10 ; couverture 95 % LCB95 >= 0,90 ; variation leave-one-family-out UCB95 <= 0,20 ; censure reconnue LCB95 >= 0,90.
+  '15':
+    plan_section: '8.5'
+    primary_metrics: [r2_mae, dprime_mae, r2_bias, dprime_bias, density_delta, evaluability]
+    pass_contract: >-
+      Pour MAF >= 0,05 : MAE r² <= 0,02, MAE D′ <= 0,05, biais absolus <= 0,01/0,02 ; delta médian entre densités <= 0,03 ; évaluabilité LCB95 >= 0,95 ; moins de 20 copies mineures = NOT_EVALUABLE.
+  '16':
+    plan_section: '8.5'
+    primary_metrics: [roh_sensitivity, roh_fpr, boundary_mae, length_error, target_in_roh_accuracy, burden_error, fusion_fragmentation]
+    pass_contract: >-
+      Sensibilité LCB95 >= 0,80 SHORT et >= 0,95 MEDIUM/LONG/MULTIPLE ; FPR UCB95 <= 0,01 ; MAE de borne <= 0,5 cM ; erreur relative médiane de longueur <= 0,20 courte et <= 0,10 sinon ; cible-dans-ROH >= 0,95 ; fardeau <= 0,10 ; fusion/fragmentation >= 0,90.
+  16A:
+    plan_section: '8.6'
+    primary_metrics: [reference_only_fit, pure_centroid_accuracy, local_accuracy, mixture_rank_correlation, procrustes_median, procrustes_p95]
+    pass_contract: >-
+      Ajustement exclusivement sur REF-ANCESTRY-SYN ; exactitude centroïde pur LCB95 >= 0,95, locale >= 0,90, corrélation de rang des mélanges >= 0,90 ; Procrustes médian <= 0,10 écart-type et p95 <= 0,25 ; proportions d'ascendance = NOT_EVALUABLE.
+  16B:
+    plan_section: '8.6'
+    primary_metrics: [null_fpr, power, evaluability, internal_external_concordance]
+    pass_contract: >-
+      N_DRAW=9 999, p_MC=(b+1)/(N_DRAW+1), décision positive p_MC <= 0,05 ; FPR UCB95 <= 0,05 séparément pour NONE/RECURRENT/BACKGROUND-IBS ; puissance LCB95 >= 0,80 pour âge <= 50 et N_F >= 5, >= 0,70 ailleurs ; concordance interne/externe >= 0,90 ; évaluabilité >= 0,95.
+  16C:
+    plan_section: '8.6'
+    primary_metrics: [length_sensitivity, negative_pair_fpr, boundary_error, tool_jaccard, target_phase_alignment, ancestry_control]
+    pass_contract: >-
+      Sensibilité LCB95 >= 0,70/0,80/0,90/0,95/0,95 pour 1/1,5/2/3/5 cM ; FPR UCB95 <= 0,001 ; erreur de borne <= 0,50 cM à 1–1,5 cM et <= 0,25 cM sinon ; Jaccard outils >= 0,60 puis >= 0,80 ; phase cible 100 % ; contrôle 16A disponible.
+  '17':
+    plan_section: '8.6-8.7'
+    primary_metrics: [pair_validity, signed_delta, sign_concordance, monotonicity, equivalence, tool_seed_convergence]
+    pass_contract: >-
+      Seize domaines, manifests clos et diff exact ; DEGRADATION_DETECTABLE delta signé LCB95 >= 0,20 et signe >= 0,80 ; MONOTONIC LCB95 >= -0,20 ; EQUIVALENT CI95 dans [-0,20,+0,20] ; écart 50–100 graines <= 0,10 écart-type.
+  '18':
+    plan_section: '8.6'
+    primary_metrics: [value_fidelity, unit_fidelity, count_fidelity, interval_fidelity, provenance, forbidden_content]
+    pass_contract: >-
+      100 % des valeurs, unités, effectifs, intervalles, légendes et statuts identiques aux tables closes ; provenance et SHA-256 complets ; PASS/FAIL/NOT_EVALUABLE rendus ; zéro recalcul, donnée individuelle, HTML ou PDF.
+  '19':
+    plan_section: '8.6'
+    primary_metrics: [markdown_coverage, fact_traceability, verdict_fidelity, limit_fidelity, forbidden_claims, human_review]
+    pass_contract: >-
+      24/24 Markdown amont ; 100 % des faits reliés à une source et figure ou justification ; verdicts et limites exacts ; zéro fait orphelin, donnée sensible, conclusion d'effet fondateur ou promotion automatique ; revue humaine signée.

@@ -1,0 +1,138 @@
+{
+  "configuration_sha256": "64e91cff0cfe73a8b9641016f98d90014a8c4eb943212a65f638bb00265115b9",
+  "current_host_logical_cpus": 8,
+  "design_checks": [
+    "R07_MINIMA_PRESERVED",
+    "R08_ALL_25_STAGES_BOUND",
+    "R11B_RESOURCE_READY_BOUND",
+    "R11B_PROJECTION_REBATCHED_TO_8_WORKERS_UNDER_120_DAYS",
+    "VALIDATION_BLIND_NAMESPACE_INDEPENDENT",
+    "TARGET_PROFILE_CONFIGURED_NOT_HARD_CODED",
+    "ALL_1180_EXTERNAL_CALLS_MATERIALIZABLE",
+    "SINGLE_CALL_WORKER_TOOLCHAIN_BOUND",
+    "PRIVATE_TRUTH_SEPARATED_FROM_WORKER"
+  ],
+  "evidence_sha256": {
+    "calibration/configurations/scientific_dimensioning_v2.yaml": "f1ef08a22ed1a799156d989a1257949b4982154333c116ff65a3251bb46e9e36",
+    "calibration/configurations/scientific_metric_rules_v1.yaml": "c58bca971be0e402f0ecdc0cf7300e39b6a65e631967d4a6c25988a242e9f7aa",
+    "calibration/configurations/scientific_validation_v1.yaml": "47bd2c3477cf398bd8b88caf3240124701b4ac7aaa53d98b02a0f49c040ff4c5",
+    "calibration/configurations/stage_criteria_v1.yaml": "a674c3c304d3e8805b320dedf0f207e85c47ebdb9fce2835ce62343701e3e7fe",
+    "calibration/readiness/R11B_RESOURCE_CONFIRMATION.json": "1144968bc3238ffeab695e393b9852532450c1850570b35c3fcd925a0057df51"
+  },
+  "gate_g5_passed": false,
+  "metric_producer_methods": {
+    "method_counts": {
+      "CLOPPER_PEARSON_ONE_SIDED": 4,
+      "DETERMINISTIC_CLUSTER_BOOTSTRAP_10000": 27,
+      "DETERMINISTIC_EXACT": 65,
+      "WILSON_ONE_SIDED": 39
+    },
+    "rule_binding_count": 135,
+    "scientific_evaluation_authorized": false,
+    "stage_count": 25,
+    "stage_producers_complete": true,
+    "state": "METHODS_AND_STAGE_BINDINGS_FROZEN"
+  },
+  "metric_rule_bundle": {
+    "bundle_state": "FULL_RULE_SET_FROZEN",
+    "contextual_rule_count": 21,
+    "evaluator_state": "FULL_EVALUATION_READY",
+    "expanded_bundle_sha256": "f8354a4cdd37a5b0667044d60b7e1dab4a5c756e472405d0db5a05cd14947510",
+    "fragment_count": 2,
+    "manifest_sha256": "c58bca971be0e402f0ecdc0cf7300e39b6a65e631967d4a6c25988a242e9f7aa",
+    "release_id": "panel-master-generic-v1-r12c-scientific-validation",
+    "rule_count": 135,
+    "scientific_evaluation_authorized": false,
+    "stage_count": 25
+  },
+  "missing_before_g5": [],
+  "next_phase": "BUILD_AND_FREEZE_EXECUTABLE_R12C_RELEASE",
+  "partition_id": "VALIDATION_BLIND",
+  "projected_calendar_days": 90.80151949844713,
+  "qualification_flags": {
+    "calibrated": false,
+    "founder_effect_proven": false,
+    "production_promotion": false
+  },
+  "receipt_id": "R12C-SCIENTIFIC-PREFLIGHT-001",
+  "release_id": "panel-master-generic-v1-r12c-scientific-validation",
+  "required_workers": 8,
+  "schema_version": "1.0.0",
+  "scientific_materializer": {
+    "configuration_sha256": "da4ba6dd46c996ba0708ca4bec31f53211bf074af59af1ee15ccc38024f91b51",
+    "dense_variant_count": 1200000,
+    "ibd_call_count": 540,
+    "materializer_id": "r13_scientific_materializer_v1",
+    "observed_variant_totals": {
+      "D_LOW": 100000,
+      "D_MAX": 600000,
+      "D_MID": 300000
+    },
+    "sentinels": {
+      "SENTINEL_LONGEST": 1,
+      "SENTINEL_MEDIAN_LOWER": 11,
+      "SENTINEL_SHORTEST": 21
+    },
+    "shapeit_call_count": 640,
+    "state": "FULL_CALL_MATERIALIZATION_READY",
+    "supported_call_count": 1180,
+    "truth_separated_from_worker": true
+  },
+  "scientific_validation_authorized": false,
+  "scope": "R13_SCIENTIFIC_BLIND_VALIDATION",
+  "single_call_worker": {
+    "bcftools_version": "bcftools 1.21",
+    "checkpoint_transitions": [
+      "RUNNING_TO_COMPLETED",
+      "RUNNING_TO_FAILED"
+    ],
+    "java_version": "openjdk version \"17.0.21.0.2\" 2026-10-22 LTS",
+    "release_id": "panel-master-generic-v1-r12c-scientific-validation",
+    "shapeit_version": "5.1.1",
+    "shell_used": false,
+    "state": "FULL_SINGLE_CALL_EXECUTION_READY",
+    "supported_call_count": 1180,
+    "tool_sha256": {
+      "hap_ibd": "846ddf08db5590339c58072fa9944fff8466f9c2825f9c02612cb9d38492752c",
+      "refined_ibd": "a2c2d7ee6c1dff5c06831a5987ba3a3ce831cb5798a13d413ab0c10a577db919",
+      "shapeit": "88c8c19060e9d5fdff6538aa7bd4ab7d165a179777565fb035e11d53a72f7e6e"
+    },
+    "truth_available_to_worker": false
+  },
+  "stage_metric_producers": {
+    "implemented_stage_count": 25,
+    "implemented_stages": [
+      "00",
+      "01",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "08",
+      "09",
+      "10",
+      "10A",
+      "11",
+      "12",
+      "12A",
+      "13",
+      "14",
+      "15",
+      "16",
+      "16A",
+      "16B",
+      "16C",
+      "17",
+      "18",
+      "19"
+    ],
+    "missing_stage_count": 0,
+    "missing_stages": [],
+    "scientific_evaluation_authorized": false,
+    "stage_producers_complete": true,
+    "state": "FULL_STAGE_PRODUCERS_FROZEN"
+  },
+  "status": "READY_FOR_G5_AUDIT"
+}

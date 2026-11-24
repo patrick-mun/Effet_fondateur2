@@ -1,0 +1,49 @@
+{
+  "evidence_sha256": {
+    "calibration/configurations/scientific_dimensioning_v2.yaml": "f1ef08a22ed1a799156d989a1257949b4982154333c116ff65a3251bb46e9e36",
+    "calibration_workspace/resource_probes/r11_shapeit_sample_scaling_v1/projection.json": "02e592f7cb8f590bd31d011ff04a0def5ea806ed863f95d85c765455ccdca388"
+  },
+  "ibd_schedule": {
+    "allocation_core_hours": 30000,
+    "independent_worlds": 90,
+    "resource_projection_complete": false,
+    "tool_density_calls": 540
+  },
+  "next_phase": "R11B_RESOURCE_CONFIRMATION",
+  "qualification_flags": {
+    "calibrated": false,
+    "founder_effect_proven": false,
+    "production_promotion": false
+  },
+  "r07_revision_complete": true,
+  "receipt_id": "R07-SCIENTIFIC-DIMENSIONING-V2",
+  "required_resource_evidence_before_g5_scientific": [
+    "SHAPEIT_SCALE_BRIDGE_2000_PLUS_1500",
+    "SHAPEIT_TARGET_SCALE_SENTINEL_4000_PLUS_3000",
+    "SHAPEIT_D_LOW_PAIRED_DENSITY_PROBE",
+    "IBD_BATCH_100_PROBES_BOTH_TOOLS_THREE_DENSITIES",
+    "IBD_90_WORLD_PROJECTION_WITH_95_PERCENT_BOUND_AND_FACTOR_2",
+    "FULL_RELEASE_STORAGE_PROJECTION_WITH_FACTOR_2",
+    "SCHEDULE_FEASIBILITY_AT_24_R2_WORKERS"
+  ],
+  "restrictions": [
+    "R07_REVISION_DOES_NOT_ITSELF_QUALIFY_SCIENTIFIC_PERFORMANCE",
+    "R11B_RESOURCE_EVIDENCE_REQUIRED",
+    "NEW_SCIENTIFIC_RELEASE_AND_BLIND_VALIDATION_REQUIRED",
+    "NO_REAL_DATA_AUTHORIZED_BY_THIS_RECEIPT"
+  ],
+  "revision_id": "r07_scientific_dimensioning_v2",
+  "schema_version": "1.0.0",
+  "scientific_g5_authorized": false,
+  "scientific_minima_preserved": true,
+  "shapeit_schedule": {
+    "allocation_core_hours": 75000,
+    "per_call_timeout_hours": 168,
+    "projected_core_hours": 53399.586235,
+    "projected_core_hours_with_25_percent_reserve": 66749.482793,
+    "safe_rss_gib_per_worker": 6.669253,
+    "simultaneous_workers_max": 24,
+    "total_calls": 640
+  },
+  "status": "REVISED_READY_FOR_R11B_RESOURCE_CONFIRMATION"
+}

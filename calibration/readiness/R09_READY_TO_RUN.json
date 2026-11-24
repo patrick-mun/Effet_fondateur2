@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0.0",
+  "receipt_id": "R09-READY-panel_master_generic_v1",
+  "release_design": "panel_master_generic_v1",
+  "scope": "R10_MICRO_PANEL_CONSTRUCTION",
+  "ready_to_run": true,
+  "terms": [
+    "contracts",
+    "data_specification",
+    "sample_sizes",
+    "independence",
+    "tool_contracts",
+    "blinding",
+    "resources",
+    "expected_outputs"
+  ],
+  "checks": [
+    "NINE_SCHEMAS_VALID",
+    "TWENTY_FIVE_STAGES_COVERED",
+    "FOURTEEN_TRUTH_FAMILIES_ROUTED",
+    "ELEVEN_BLINDED_VIEWS_CLOSED",
+    "R08_CRITERIA_HASH_MATCHES",
+    "R07_MICRO_DIMENSIONS_MATCH",
+    "NO_EXTERNAL_TOOL_EXECUTION_IN_R09",
+    "NO_PANEL_GENERATED_IN_R09",
+    "REAL_INPUTS_FORBIDDEN",
+    "TRUTH_ACCESS_AFTER_CLOSURE_ONLY",
+    "DYNAMIC_OUTPUTS_REQUIRE_CLOSED_MANIFEST",
+    "HTML_PDF_RESERVED_FOR_R14"
+  ],
+  "evidence_sha256": {
+    "schemas/panel_release_manifest.schema.json": "47be8b76a208313753eff69526432ab7815baaec1a2ae5a56b6b5f2b3d7a1d32",
+    "schemas/subject_registry.schema.json": "08fe7317e83b96c86482124f3a2d5cb3b43b0fd3142edf93ce3fa88d139e79a6",
+    "schemas/master_truth_manifest.schema.json": "05f19a37bc273df005bcb65089d9ef97d005a37a131ebaba8738cacdb6efda18",
+    "schemas/panel_view_manifest.schema.json": "f019edbc0cfd4ea546d2eaad5479f9ecfbea09878a8dcdb964b260bdef9865ce",
+    "schemas/blinded_input_inventory.schema.json": "e6d82d2ef2206fec2313b7dd47ef5602db91f770039c1a5cb670fe5e8b64f20e",
+    "schemas/pipeline_run_manifest.schema.json": "7398fd4ce0c7452f99804d34613fdf858a99e9960010a89ba417616330088030",
+    "schemas/stage_evaluation_manifest.schema.json": "4733994a0ff9dfbd43d34027f39ee6c96f8d884780668cfa8bc5b120c07a419c",
+    "schemas/readiness_receipt.schema.json": "eecfcca84ff55e64e9bea2ad2770ae27c1b87126c232606823f31b945fbd329a",
+    "schemas/calibration_decision.schema.json": "3d90ba3a47b2626799c492f16ec5feaf2569e1316c93762540e51e938886c9e5",
+    "configurations/contract_bundle_v1.yaml": "4f83192ee55ecfb7bcb13d8f99fc160856f8f332a47a8071ea47f671ce0885ea",
+    "configurations/stage_criteria_v1.yaml": "a674c3c304d3e8805b320dedf0f207e85c47ebdb9fce2835ce62343701e3e7fe",
+    "configurations/micro_panel_v1.yaml": "f5ec4538eb720b6c7d98efbe147cba6361cb195ff638c9aab998f143c1851781",
+    "configurations/isolation_policy_v1.yaml": "1cf297ab3cfe81238214f2946d2ab8a687f8809716be34f80e9b416ffe8361fa",
+    "configurations/tool_harness_v1.yaml": "ab1421be175b914802072f152915dca95c8c14c1cbbd7832fe78ea6b59f0c2c8",
+    "CONVENTIONS_DEVELOPPEMENT.md": "b636775983655852016e737a290bd17b0a7bdaf46eb67756c087e1b2be911636"
+  },
+  "qualification_flags": {
+    "calibrated": false,
+    "founder_effect_proven": false,
+    "production_promotion": false
+  },
+  "restrictions": [
+    "NO_PANEL_GENERATED_IN_R09",
+    "NO_SCIENTIFIC_EXTERNAL_TOOL_EXECUTION_IN_R09",
+    "NO_REAL_DATA",
+    "TECHNICAL_MICRO_VERDICTS_ONLY",
+    "NO_HTML_OR_PDF_BEFORE_R14"
+  ]
+}

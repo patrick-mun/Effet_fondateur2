@@ -1,0 +1,122 @@
+schema_version: 1.0.0
+release_id: panel-master-generic-v1-r12c-scientific-validation
+scope: R13_SCIENTIFIC_BLIND_VALIDATION
+criteria_version: 1.0.0
+draft_state: DRAFT_SUBSET_ONLY
+stages:
+  '00':
+    rules:
+      - {metric_id: root_completeness, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: governance_root, minimum_independent_n: 8}
+      - {metric_id: hash_integrity, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: declared_artifact, minimum_independent_n: 8}
+      - {metric_id: isolation, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: isolation_probe, minimum_independent_n: 1}
+      - {metric_id: restart_identity, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: paired_run, minimum_independent_n: 1}
+  '01':
+    rules:
+      - {metric_id: source_sensitivity, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: deterministic_source_sentinel, minimum_independent_n: 1}
+      - {metric_id: source_specificity, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: deterministic_source_sentinel, minimum_independent_n: 1}
+      - {metric_id: autosome_coverage, operator: exact, value: 22, decision_value: estimate, unit: chromosome_count, independent_unit: release, minimum_independent_n: 1}
+      - {metric_id: target_coverage, operator: exact, value: 1.0, decision_value: estimate, unit: availability, independent_unit: configured_target, minimum_independent_n: 1}
+      - {metric_id: provenance, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: accepted_source, minimum_independent_n: 1}
+  '02':
+    rules:
+      - {metric_id: registry_bijection, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: study_identity, minimum_independent_n: 4000}
+      - {metric_id: collision_detection, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: deterministic_identity_challenge, minimum_independent_n: 1}
+      - {metric_id: pedigree_detection, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: pedigree_component, minimum_independent_n: 200}
+      - {metric_id: no_clinical_inference, operator: exact, value: 1.0, decision_value: estimate, unit: compliance, independent_unit: release, minimum_independent_n: 1}
+  '03':
+    rules:
+      - {metric_id: sample_concordance, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: study_identity, minimum_independent_n: 4000}
+      - {metric_id: variant_concordance, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: observed_variant, minimum_independent_n: 100000}
+      - {metric_id: genotype_concordance, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: scenario_world, minimum_independent_n: 1}
+      - {metric_id: missingness_count, operator: exact, value: 0, decision_value: estimate, unit: count_difference, independent_unit: scenario_world, minimum_independent_n: 1}
+      - {metric_id: allele_integrity, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: allele_sentinel, minimum_independent_n: 1}
+  '04':
+    rules:
+      - {metric_id: target_call_concordance, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: study_identity, minimum_independent_n: 4000}
+      - {metric_id: missingness_preservation, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: study_identity, minimum_independent_n: 4000}
+      - {metric_id: molecular_provenance, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: target_call, minimum_independent_n: 4000}
+      - {metric_id: mendelian_detection, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: trio, minimum_independent_n: 200}
+  '05':
+    rules:
+      - {metric_id: high_defect_sensitivity, operator: min, value: 0.90, decision_value: lcb95, unit: proportion, independent_unit: injected_high_defect_unit, minimum_independent_n: 500}
+      - {metric_id: low_defect_sensitivity, operator: min, value: 0.80, decision_value: lcb95, unit: proportion, independent_unit: injected_low_defect_unit, minimum_independent_n: 500}
+      - {metric_id: specificity, operator: min, value: 0.99, decision_value: lcb95, unit: proportion, independent_unit: negative_unit, minimum_independent_n: 3000}
+      - {metric_id: missingness_error, operator: max, value: 0.005, decision_value: ucb95, unit: absolute_rate_error, independent_unit: scenario_unit, minimum_independent_n: 500}
+      - {metric_id: call_rate_error, operator: max, value: 0.005, decision_value: ucb95, unit: absolute_rate_error, independent_unit: scenario_unit, minimum_independent_n: 500}
+      - {metric_id: evaluability, operator: min, value: 0.95, decision_value: lcb95, unit: proportion, independent_unit: eligible_scenario_unit, minimum_independent_n: 500}
+  '06':
+    rules:
+      - {metric_id: eligibility_recall, operator: min, value: 0.99, decision_value: lcb95, unit: proportion, independent_unit: eligible_variant, minimum_independent_n: 500}
+      - {metric_id: eligibility_precision, operator: min, value: 0.99, decision_value: lcb95, unit: proportion, independent_unit: selected_variant, minimum_independent_n: 500}
+      - {metric_id: chromosome_coverage, operator: exact, value: 22, decision_value: estimate, unit: chromosome_count, independent_unit: release, minimum_independent_n: 1}
+      - metric_id: density_minimum
+        operator: contextual
+        unit: variant_count
+        independent_unit: autosome
+        minimum_independent_n: 22
+        contexts:
+          - {context_id: density_dmax, when: {density: D_MAX}, operator: min, value: 5000, decision_value: estimate, deterministic: true}
+          - {context_id: density_dmid, when: {density: D_MID}, operator: min, value: 3000, decision_value: estimate, deterministic: true}
+          - {context_id: density_dlow, when: {density: D_LOW}, operator: min, value: 1000, decision_value: estimate, deterministic: true}
+      - {metric_id: residual_ld, operator: max, value: 0.01, decision_value: ucb95, unit: proportion, independent_unit: variant_pair_block, minimum_independent_n: 500}
+      - {metric_id: forbidden_variant_use, operator: exact, value: 0, decision_value: estimate, unit: violation_count, independent_unit: release, minimum_independent_n: 1}
+  '07':
+    rules:
+      - {metric_id: related_class_sensitivity, operator: min, value: 0.90, decision_value: lcb95, unit: proportion, independent_unit: designated_related_pair, minimum_independent_n: 500}
+      - {metric_id: related_class_ppv, operator: min, value: 0.90, decision_value: lcb95, unit: proportion, independent_unit: designated_related_pair, minimum_independent_n: 500}
+      - {metric_id: unrelated_specificity, operator: min, value: 0.99, decision_value: lcb95, unit: proportion, independent_unit: designated_unrelated_pair, minimum_independent_n: 3000}
+      - {metric_id: kinship_mae, operator: max, value: 0.03, decision_value: ucb95, unit: absolute_kinship_error, independent_unit: designated_pair_clustered_by_component, minimum_independent_n: 500}
+      - {metric_id: cryptic_detection, operator: min, value: 0.90, decision_value: lcb95, unit: proportion, independent_unit: cryptic_related_pair, minimum_independent_n: 500}
+  '08':
+    rules:
+      - {metric_id: fit_relative_count, operator: exact, value: 0, decision_value: estimate, unit: subject_count, independent_unit: fitted_reference, minimum_independent_n: 1}
+      - {metric_id: pure_centroid_accuracy, operator: min, value: 0.90, decision_value: lcb95, unit: proportion, independent_unit: independent_representative, minimum_independent_n: 500}
+      - {metric_id: outlier_sensitivity, operator: min, value: 0.90, decision_value: lcb95, unit: proportion, independent_unit: independent_representative, minimum_independent_n: 500}
+      - {metric_id: outlier_specificity, operator: min, value: 0.95, decision_value: lcb95, unit: proportion, independent_unit: independent_representative, minimum_independent_n: 500}
+      - {metric_id: procrustes_median, operator: max, value: 0.10, decision_value: ucb95, unit: standard_deviation, independent_unit: independent_representative, minimum_independent_n: 500}
+      - {metric_id: procrustes_p95, operator: max, value: 0.25, decision_value: ucb95, unit: standard_deviation, independent_unit: independent_representative, minimum_independent_n: 500}
+  '09':
+    rules:
+      - {metric_id: cohort_concordance, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: study_identity, minimum_independent_n: 4000}
+      - {metric_id: family_independence, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: pedigree_component, minimum_independent_n: 200}
+      - {metric_id: mandatory_nonempty, operator: exact, value: 1.0, decision_value: estimate, unit: compliance, independent_unit: mandatory_cohort, minimum_independent_n: 1}
+      - {metric_id: signed_review, operator: exact, value: 1.0, decision_value: estimate, unit: signature_validity, independent_unit: release, minimum_independent_n: 1}
+  '10':
+    rules:
+      - {metric_id: high_defect_sensitivity, operator: min, value: 0.90, decision_value: lcb95, unit: proportion, independent_unit: injected_high_defect_unit, minimum_independent_n: 500}
+      - {metric_id: low_defect_sensitivity, operator: min, value: 0.80, decision_value: lcb95, unit: proportion, independent_unit: injected_low_defect_unit, minimum_independent_n: 500}
+      - {metric_id: specificity, operator: min, value: 0.99, decision_value: lcb95, unit: proportion, independent_unit: negative_unit, minimum_independent_n: 3000}
+      - {metric_id: target_exception_integrity, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: configured_target_exception, minimum_independent_n: 1}
+      - {metric_id: cohort_audit, operator: exact, value: 1.0, decision_value: estimate, unit: compliance, independent_unit: cohort_change, minimum_independent_n: 1}
+  10A:
+    rules:
+      - {metric_id: autosome_count, operator: exact, value: 22, decision_value: estimate, unit: chromosome_count, independent_unit: release, minimum_independent_n: 1}
+      - {metric_id: subject_completeness, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: study_identity, minimum_independent_n: 4000}
+      - {metric_id: order_identity, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: study_identity, minimum_independent_n: 4000}
+      - {metric_id: structural_missingness, operator: exact, value: 0, decision_value: estimate, unit: genotype_count, independent_unit: release, minimum_independent_n: 1}
+      - {metric_id: duplicates, operator: exact, value: 0, decision_value: estimate, unit: variant_count, independent_unit: release, minimum_independent_n: 1}
+      - {metric_id: empty_chromosomes, operator: exact, value: 0, decision_value: estimate, unit: chromosome_count, independent_unit: release, minimum_independent_n: 1}
+  '11':
+    rules:
+      - {metric_id: target_identity, operator: exact, value: 1.0, decision_value: estimate, unit: compliance, independent_unit: configured_target, minimum_independent_n: 1}
+      - {metric_id: cm_error, operator: max, value: 0.000001, decision_value: estimate, deterministic: true, unit: cM, independent_unit: target_age_pair, minimum_independent_n: 10}
+      - {metric_id: bp_error, operator: max, value: 1, decision_value: estimate, deterministic: true, unit: bp, independent_unit: target_age_pair, minimum_independent_n: 10}
+      - {metric_id: extrapolation, operator: exact, value: 0, decision_value: estimate, unit: event_count, independent_unit: target_age_pair, minimum_independent_n: 10}
+      - {metric_id: density, operator: exact, value: 1.0, decision_value: estimate, unit: compliance, independent_unit: evaluable_target_window, minimum_independent_n: 1}
+      - {metric_id: infeasibility_classification, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: infeasible_target_age_pair, minimum_independent_n: 1}
+  '18':
+    rules:
+      - {metric_id: value_fidelity, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: rendered_value, minimum_independent_n: 1}
+      - {metric_id: unit_fidelity, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: rendered_value, minimum_independent_n: 1}
+      - {metric_id: count_fidelity, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: rendered_value, minimum_independent_n: 1}
+      - {metric_id: interval_fidelity, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: rendered_interval, minimum_independent_n: 1}
+      - {metric_id: provenance, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: figure, minimum_independent_n: 1}
+      - {metric_id: forbidden_content, operator: exact, value: 0, decision_value: estimate, unit: violation_count, independent_unit: release, minimum_independent_n: 1}
+  '19':
+    rules:
+      - {metric_id: markdown_coverage, operator: exact, value: 24, decision_value: estimate, unit: markdown_count, independent_unit: report, minimum_independent_n: 1}
+      - {metric_id: fact_traceability, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: report_fact, minimum_independent_n: 1}
+      - {metric_id: verdict_fidelity, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: stage_verdict, minimum_independent_n: 25}
+      - {metric_id: limit_fidelity, operator: exact, value: 1.0, decision_value: estimate, unit: proportion, independent_unit: declared_limit, minimum_independent_n: 1}
+      - {metric_id: forbidden_claims, operator: exact, value: 0, decision_value: estimate, unit: claim_count, independent_unit: report, minimum_independent_n: 1}
+      - {metric_id: human_review, operator: exact, value: 1.0, decision_value: estimate, unit: signature_validity, independent_unit: report, minimum_independent_n: 1}

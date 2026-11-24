@@ -1,0 +1,14 @@
+schema_version: 1.0.0
+release_id: panel-master-generic-v1-r12c-scientific-validation
+scope: R13_SCIENTIFIC_BLIND_VALIDATION
+criteria_version: 1.0.0
+bundle_state: FULL_RULE_SET_FROZEN
+fragments:
+  - fragment_id: integrity_to_mapping_and_reporting
+    relative_path: calibration/configurations/scientific_metric_rules_integrity_to_mapping_and_reporting_v1.draft.yaml
+    sha256: 7e27706123e3a24ae15b9310eb32ffe6bf1c11e434d9c4551bd4817aa8be76d9
+    stages: ['00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', 10A, '11', '18', '19']
+  - fragment_id: phasing_to_sensitivity
+    relative_path: calibration/configurations/scientific_metric_rules_phasing_to_sensitivity_v1.draft.yaml
+    sha256: da329e8a705845b1054f8613ca5324b19818c2776d3230a1dfd4b3eb98b8fbfa
+    stages: ['12', 12A, '13', '14', '15', '16', 16A, 16B, 16C, '17']

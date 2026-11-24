@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:effet-fondateur:calibration:subject-registry:1.0.0",
+  "title": "Subject registry contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "release_id", "relative_path", "sha256", "row_count", "columns", "partition_values"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "release_id": {"type": "string", "minLength": 1},
+    "relative_path": {"const": "governance/subject_registry.tsv"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "row_count": {"type": "integer", "minimum": 0},
+    "columns": {"type": "array", "minItems": 8, "uniqueItems": true, "items": {"type": "string"}},
+    "partition_values": {"type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true, "items": {"enum": ["CALIBRATION", "VALIDATION_BLIND", "RESOURCE_ONLY"]}}
+  }
+}

@@ -1,0 +1,81 @@
+configuration_version: 1.0.0
+release_design: panel_master_generic_v1
+scale: CALIBRATION_PILOT
+generation_phase: R11
+generated: false
+assembly: GRCh38
+partition: CALIBRATION
+target:
+  selection: PROFILE_CONFIGURED_AUTOSOMAL
+  hard_coded: false
+  selected_role: STANDARD
+  chromosome: 7
+  position_bp: 15000000
+  ref: A
+  alt: G
+  variant_id: SYN-TARGET-STANDARD
+counts:
+  study_identities: 500
+  phasing_reference: 500
+  ancestry_reference: 300
+  ancestry_reference_per_population: 100
+  null_reference: 500
+  light_repetitions_per_cell: 100
+  external_tool_seeds: 10
+variant_design:
+  dense_truth_variants: 1200000
+  observed_densities:
+    D_MAX: 600000
+    D_MID: 300000
+    D_LOW: 100000
+  regional_variants: 1200
+  regional_common_variants: 1100
+  regional_rare_variants: 100
+  regional_start_bp: 10000000
+  regional_end_bp: 20000000
+  map_start_cm: 0.0
+  map_end_cm: 10.0
+  autosomes: 22
+null_draws_16B: 999
+resources:
+  threads_max: 16
+  rss_gib_max: 64
+  java_heap_gib_max: 48
+  storage_gib_max: 1024
+  wall_hours_max: 168
+  core_hours_max: 12000
+  call_timeout_seconds:
+    R0_R3: 7200
+    R1: 43200
+    R2_REGIONAL: 86400
+    R2_AUTOSOMAL_IBD: 259200
+tools:
+  plink:
+    expected_version_prefix: PLINK v1.9
+    command: plink
+  king:
+    expected_version: 2.3.2
+    command: king
+  bcftools:
+    expected_version: '1.21'
+    command: bcftools
+  shapeit5:
+    expected_version: 5.1.1
+    phase_common_relative_path: calibration_workspace/toolchains/r11/bin/SHAPEIT5_phase_common
+    phase_rare_relative_path: calibration_workspace/toolchains/r11/bin/SHAPEIT5_phase_rare
+  java:
+    expected_major: 17
+    relative_path_glob: calibration_workspace/toolchains/r11/java/*/Contents/Home/bin/java
+  hap_ibd:
+    version: 1.0-15Jun23.92f
+    relative_path: calibration_workspace/toolchains/r11/jars/hap-ibd.jar
+    sha256: 846ddf08db5590339c58072fa9944fff8466f9c2825f9c02612cb9d38492752c
+  refined_ibd:
+    version: 17Jan20.102
+    relative_path: calibration_workspace/toolchains/r11/jars/refined-ibd.17Jan20.102.jar
+    sha256: a2c2d7ee6c1dff5c06831a5987ba3a3ce831cb5798a13d413ab0c10a577db919
+pilot_decision_scope: SCIENTIFIC_CALIBRATION
+qualification_flags:
+  calibrated: false
+  founder_effect_proven: false
+  production_promotion: false

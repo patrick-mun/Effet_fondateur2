@@ -1,0 +1,59 @@
+{
+  "accepted_output": "calibration_workspace/r14b_integration_closure",
+  "artifacts": [
+    {
+      "relative_path": "R14B_DECISION.json",
+      "sha256": "8040f33f74d0e6aeeaca13e2b805c3344393c6256fd76c4fee5467423cd5f922",
+      "size_bytes": 969
+    },
+    {
+      "relative_path": "R14B_SOURCE_INVENTORY.json",
+      "sha256": "07a1ece6306b91cac5fe1316f768f047d3a674a4f7bf1c5cbd123f5e643e68f8",
+      "size_bytes": 4739
+    },
+    {
+      "relative_path": "rapport_final_r14b.html",
+      "sha256": "a5d29e94fd0db71c14a7429ed9214144d2a26ec69fccb549c558169fbab34025",
+      "size_bytes": 564229
+    },
+    {
+      "relative_path": "rapport_final_r14b.pdf",
+      "sha256": "c1c092c04ae9e6241ea59cf530b8e4eac658c58ab798ad66122863f5805ad3bb",
+      "size_bytes": 611413
+    }
+  ],
+  "founder_effect": "NOT_PROVEN",
+  "full_r07_r08_performance": "NOT_EVALUATED",
+  "hap_ibd_integration": "SUPPORTED",
+  "manifest_sha256": "6a490048a97eb45f1f1cbd81bbb01cb6b24267c4aa1a693a230cc346921e044b",
+  "newly_authorized_calls": 0,
+  "next_action": "HUMAN_DECISION_REQUIRED_BEFORE_ANY_FULL_PERFORMANCE_CAMPAIGN_OR_REAL_DATA_ANALYSIS",
+  "production_promotion": "NOT_AUTHORIZED",
+  "qualification_flags": {
+    "calibrated": false,
+    "founder_effect_proven": false,
+    "production_promotion": false
+  },
+  "quality_control": {
+    "doi_link_count": 3,
+    "duplicate_html_ids": 0,
+    "external_render_resources": 0,
+    "figure_count": 4,
+    "figure_numbering_continuous": true,
+    "footer_present": true,
+    "missing_internal_links": [],
+    "page_count": 16,
+    "pagedjs_inlined": true,
+    "placeholder_count": 0,
+    "table_count": 11,
+    "table_numbering_continuous": true
+  },
+  "receipt_id": "R14B-INTEGRATION-CLOSURE-PASS",
+  "refined_ibd_integration": "SUPPORTED",
+  "report_id": "R14B-INTEGRATION-CLOSURE-001",
+  "report_scope": "R14B_TOOL_INTEGRATION_CLOSURE",
+  "schema_version": "1.0.0",
+  "scientific_qualification": "NOT_GRANTED",
+  "shapeit5_integration": "VERIFIED",
+  "status": "COMPLETED_WITH_TOOL_INTEGRATION_VERIFIED"
+}

@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.0.0",
+  "receipt_id": "R12-PREFLIGHT-REJECTED-panel_master_generic_v1",
+  "release_design": "panel_master_generic_v1",
+  "release_id": "panel_master_generic_v1_r12_frozen_candidate",
+  "source_release_id": "pilot_panel_generic_v1_r11_calibration_attempt02",
+  "scope": "R13_BLIND_VALIDATION",
+  "ready_to_run": false,
+  "frozen": true,
+  "gate_g5_passed": false,
+  "candidate_state": "REJECTED_INCOMPLETE",
+  "invalidated_on": "2026-11-12",
+  "invalidation_reason": "PRE_R13_AUDIT_FOUND_NO_SEALED_VALIDATION_PARTITION_OR_FROZEN_R13_EXECUTOR",
+  "checks": [
+    "R11_SOURCE_RELEASE_IMMUTABLE",
+    "SYNTHETIC_VCF_AC_AN_FILLED_WITH_BCFTOOLS",
+    "TEN_OF_TEN_SHAPEIT5_SEEDS_COMPLETED",
+    "HAP_IBD_COMPLETED",
+    "REFINED_IBD_COMPLETED",
+    "ZERO_EXTERNAL_COMMAND_FAILURE",
+    "AFFECTED_STAGES_12_12A_16C_RERUN",
+    "R08_CRITERIA_UNCHANGED",
+    "PRODUCTION_MODULES_UNCHANGED",
+    "COMPATIBILITY_MATRIX_FROZEN",
+    "RELEASE_CHECKSUMS_VALID",
+    "VALIDATION_BLIND_NOT_OPENED",
+    "NO_REAL_DATA",
+    "NO_HTML_OR_PDF",
+    "FOUR_HUNDRED_TESTS_PASSED",
+    "PRE_R13_AUDIT_COMPLETED",
+    "R11_GATE_NOT_PASSED",
+    "VALIDATION_PARTITION_ABSENT",
+    "R13_EXECUTOR_NOT_FROZEN",
+    "QUALIFICATION_RESOURCE_PROJECTION_ABSENT"
+  ],
+  "evidence_sha256": {
+    "frozen_candidate_manifest": "aea89928c781f6fddc87d29d1300f041fa6e72ba6ddc76b9c454464dd36e88f7",
+    "release_checksums": "c552dccefd395ffec5271f9a1b20956b592f93a26e8b092a3dad0b76cdc20875",
+    "pilot_configuration": "8a2e44ab2f6b4bec6de6028a0538d0f8b1126ca9a52ef6d5c73d139ec7bfa608",
+    "stage_criteria": "a674c3c304d3e8805b320dedf0f207e85c47ebdb9fce2835ce62343701e3e7fe",
+    "compatibility_matrix": "195ab767497f6d6c47e2b038262632df5449fa924a2139e230f5b6794fc49e40",
+    "r12_freeze_module": "c0de7800a2989df1d70ba762db3d06e08eb9fda52ec7ba03289f20e86899fb19"
+  },
+  "affected_stage_statuses": {
+    "12": "NOT_EVALUABLE",
+    "12A": "NOT_EVALUABLE",
+    "16C": "NOT_EVALUABLE"
+  },
+  "qualification_flags": {
+    "calibrated": false,
+    "founder_effect_proven": false,
+    "production_promotion": false
+  },
+  "restrictions": [
+    "R13_MUST_NOT_START",
+    "THIS_CANDIDATE_MUST_NOT_BE_USED_FOR_VALIDATION",
+    "R12_IS_NOT_A_SCIENTIFIC_QUALIFICATION",
+    "PILOT_FACTOR_GRIDS_REMAIN_INCOMPLETE",
+    "NO_CODE_METHOD_CRITERIA_OR_COMPATIBILITY_CHANGE_BEFORE_R13",
+    "VALIDATION_TRUTH_MUST_REMAIN_SEALED_UNTIL_RUN_CLOSURE",
+    "NO_REAL_DATA",
+    "NO_HTML_OR_PDF_BEFORE_R14"
+  ],
+  "blocking_findings": [
+    "NO_BLINDED_INPUTS_VALIDATION_BLIND",
+    "NO_PRIVATE_TRUTH_VALIDATION_BLIND",
+    "NO_FROZEN_VALIDATION_GENERATOR_RUNNER_OR_EVALUATOR",
+    "R11_HAS_TWENTY_NOT_EVALUABLE_STAGES",
+    "NO_VERIFIED_R07_PROJECTION_FOR_4000_STUDY_3000_PHASE_REFERENCE_22_AUTOSOMES_50_TOOL_SEEDS",
+    "NO_VERIFIED_R07_PROJECTION_FOR_QUALIFICATION_IBD_WORLDS"
+  ]
+}

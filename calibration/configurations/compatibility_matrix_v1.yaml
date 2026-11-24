@@ -1,0 +1,49 @@
+compatibility_version: 1.0.0
+freeze_phase: R12
+release_design: panel_master_generic_v1
+assembly: GRCh38
+target_contract:
+  selection: PROFILE_CONFIGURED_AUTOSOMAL
+  hard_coded: false
+  autosomal_only: true
+input_contract:
+  study: BGZF_VCF_WITH_GT_AC_AN
+  phasing_reference: BGZF_PHASED_VCF_WITH_GT_AC_AN
+  genetic_map: SHAPEIT_POS_CHR_CM
+  explicit_ibd_map: PLINK_CHR_ID_CM_BP
+tools:
+  plink:
+    compatible_versions: ['1.9.0-b.7.11']
+  king:
+    compatible_versions: ['2.3.2']
+  bcftools:
+    compatible_versions: ['1.21']
+    required_plugins: [fill-tags]
+  shapeit5:
+    compatible_versions: ['5.1.1']
+    adapter_id: shapeit5_phase_common_rare_v1
+  java:
+    compatible_major_versions: [17]
+  hap_ibd:
+    compatible_versions: ['1.0-15Jun23.92f']
+    sha256: 846ddf08db5590339c58072fa9944fff8466f9c2825f9c02612cb9d38492752c
+  refined_ibd:
+    compatible_versions: ['17Jan20.102']
+    sha256: a2c2d7ee6c1dff5c06831a5987ba3a3ce831cb5798a13d413ab0c10a577db919
+frozen_methods:
+  phasing: shapeit5_phase_common_rare_v1
+  explicit_ibd: dual_target_centered_explicit_ibd_v1
+  criteria: stage_criteria_v1
+invalidation_triggers:
+  - assembly_change
+  - target_contract_change
+  - panel_or_density_change
+  - genetic_map_change
+  - phasing_or_ibd_tool_version_change
+  - jar_checksum_change
+  - stage_criteria_change
+  - scientific_parameter_change
+qualification_flags:
+  calibrated: false
+  founder_effect_proven: false
+  production_promotion: false

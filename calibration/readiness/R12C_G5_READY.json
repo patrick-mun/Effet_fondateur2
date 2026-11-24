@@ -1,0 +1,49 @@
+{
+  "audit": {
+    "checksum_count": 20,
+    "execution_workers": 8,
+    "identity_count": 4000,
+    "materializable_call_count": 1180,
+    "partition_id": "VALIDATION_BLIND",
+    "r13_result_count": 0,
+    "release_id": "panel-master-generic-v1-r12c-scientific-validation",
+    "stage_count": 25,
+    "truth_family_count": 14
+  },
+  "correction_reason": "ADD_FROZEN_SCIENTIFIC_MATERIALIZER_AND_SINGLE_CALL_WORKER",
+  "evidence_sha256": {
+    "calibration/configurations/scientific_validation_v1.yaml": "47bd2c3477cf398bd8b88caf3240124701b4ac7aaa53d98b02a0f49c040ff4c5",
+    "r12c_frozen_manifest": "0693d9db38e7901529259877338f2e489e880c29e8459ffba6a455f71e019145",
+    "release_checksums": "1574496aaab98989ddc32a29237e253a1c8a185da13f97a9cfeb8526f6264de4"
+  },
+  "execution_workers": 8,
+  "freeze_revision": "R12C-EXECUTABLE-REFREEZE-002",
+  "gate_g5_passed": true,
+  "issued_on": "2026-11-14",
+  "materializer_state": "FULL_CALL_MATERIALIZATION_READY",
+  "metric_rule_count": 135,
+  "next_phase": "R13_SCIENTIFIC_BLIND_VALIDATION",
+  "partition_id": "VALIDATION_BLIND",
+  "qualification_flags": {
+    "calibrated": false,
+    "founder_effect_proven": false,
+    "production_promotion": false
+  },
+  "receipt_id": "R12C-SCIENTIFIC-G5-READY",
+  "receipt_revision": 2,
+  "release_id": "panel-master-generic-v1-r12c-scientific-validation",
+  "restrictions": [
+    "R13_MUST_CLOSE_BEFORE_TRUTH_ACCESS",
+    "NO_SCIENTIFIC_CLAIM_BEFORE_POST_CLOSURE_EVALUATION",
+    "NO_PRODUCTION_PROMOTION"
+  ],
+  "schema_version": "1.0.0",
+  "scientific_validation_authorized": true,
+  "scientific_validation_executed": false,
+  "scientific_volume_reduced": false,
+  "scope": "R13_SCIENTIFIC_BLIND_VALIDATION",
+  "single_call_worker_state": "FULL_SINGLE_CALL_EXECUTION_READY",
+  "stage_producer_count": 25,
+  "status": "READY_FOR_R13_SCIENTIFIC_VALIDATION",
+  "supersedes_incomplete_g5_sha256": "bfcac60accf286dbb8956bf420c766f0372c3da1ade7d715af9b2b224130efa8"
+}

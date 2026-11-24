@@ -5,7 +5,10 @@ from effet_fondateur.dating.gamma import (
     GammaEstimate,
     chance_sharing_correction_cm,
     estimate_correlated_gamma,
+    estimate_correlated_gamma_r_faithful,
     estimate_independent_gamma,
+    estimate_independent_gamma_r_faithful,
+    estimate_independent_gamma_type2_censored,
 )
 from effet_fondateur.dating.analysis import VariantAgePublication, publish_variant_age
 
@@ -14,7 +17,10 @@ __all__ = [
     "GammaEstimate",
     "chance_sharing_correction_cm",
     "estimate_correlated_gamma",
+    "estimate_correlated_gamma_r_faithful",
     "estimate_independent_gamma",
+    "estimate_independent_gamma_r_faithful",
+    "estimate_independent_gamma_type2_censored",
     "VariantAgePublication",
     "publish_variant_age",
 ]

@@ -1,33 +1,28 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Inventaire opérateur sans liaison à la vérité D18",
-  "type": "object", "additionalProperties": false,
-  "required": ["schema_version", "scope", "assembly", "bundles", "artifacts"],
+  "$id": "urn:effet-fondateur:calibration:blinded-input-inventory:1.0.0",
+  "title": "Closed whitelist of blinded inputs",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "inventory_id", "release_id", "partition_id", "opaque_view_id", "artifacts"],
   "properties": {
     "schema_version": {"const": "1.0.0"},
-    "scope": {"const": "REGIONAL_SOURCE_VALIDATION_ONLY"},
-    "assembly": {"const": "GRCh38"},
-    "bundles": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/bundle"}},
-    "artifacts": {"type": "array", "minItems": 8, "items": {"$ref": "#/$defs/artifact"}}
-  },
-  "$defs": {
-    "bundleId": {"type": "string", "pattern": "^B[0-9a-f]{16}$"},
-    "count": {"type": "integer", "minimum": 1},
-    "bundle": {
-      "type": "object", "additionalProperties": false,
-      "required": ["bundle_id", "sample_count", "marker_count"],
-      "properties": {"bundle_id": {"$ref": "#/$defs/bundleId"}, "sample_count": {"$ref": "#/$defs/count"}, "marker_count": {"$ref": "#/$defs/count"}}
-    },
-    "artifact": {
-      "type": "object", "additionalProperties": false,
-      "required": ["bundle_id", "role", "path", "sha256", "size_bytes", "record_count"],
-      "properties": {
-        "bundle_id": {"$ref": "#/$defs/bundleId"},
-        "role": {"enum": ["OBSERVED_VCF", "ACPA_SOURCE", "SAMPLE_METADATA", "PIPELINE_CONFIG"]},
-        "path": {"type": "string", "pattern": "^bundles/B[0-9a-f]{16}/(?:observed\\.vcf\\.gz|pipeline\\.yaml|metadata/samples\\.tsv|acpa_samples/S[0-9a-f]{16}\\.txt)$"},
-        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-        "size_bytes": {"$ref": "#/$defs/count"},
-        "record_count": {"$ref": "#/$defs/count"}
+    "inventory_id": {"type": "string", "minLength": 1},
+    "release_id": {"type": "string", "minLength": 1},
+    "partition_id": {"enum": ["CALIBRATION", "VALIDATION_BLIND", "RESOURCE_ONLY"]},
+    "opaque_view_id": {"type": "string", "pattern": "^VIEW-[0-9a-f]{16,64}$"},
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["artifact_id", "relative_path", "sha256", "size_bytes", "media_type"],
+        "properties": {
+          "artifact_id": {"type": "string", "minLength": 1},
+          "relative_path": {"type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*private_truth)(?!.*governance).+$"},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "size_bytes": {"type": "integer", "minimum": 0},
+          "media_type": {"type": "string", "minLength": 1}
+        }
       }
     }
   }

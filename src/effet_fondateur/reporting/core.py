@@ -23,8 +23,8 @@ DOMAIN_TITLES = {
     "REFERENCE_ANCESTRY_LOCAL": "Positionnement haplotypique local sur références 1000G",
     "FOUNDER_HAPLOTYPE_ENRICHMENT": "Rareté du partage haplotypique exact",
     "SENSITIVITY": "Analyses de sensibilité",
-    "EXPLICIT_IBD": "IBD explicite autour de DOCK6",
-    "POPULATION_CONVERGENCE": "Convergence genome-wide versus région DOCK6",
+    "EXPLICIT_IBD": "IBD explicite autour du variant cible",
+    "POPULATION_CONVERGENCE": "Convergence genome-wide versus région cible",
 }
 PARAMETER_STAGES = (
     "qc_preliminary", "build_kinship_panel", "infer_kinship",
@@ -84,6 +84,11 @@ def _study_context(run_dir: Path) -> dict[str, Any]:
         "target": config["target"],
         "parameters_by_stage": parameters,
     }
+
+
+def _target_display_name(target: dict[str, Any]) -> str:
+    """Retourne un libellé d'étude sans supposer de gène ou de variant précis."""
+    return target.get("gene") or target.get("project_variant_id") or "variant cible"
 
 
 def _kinship_facts(run_dir: Path, artifacts: dict[str, dict[str, Any]]) -> dict[str, Any]:
@@ -297,10 +302,11 @@ def _render_html(facts: dict[str, Any], draft: dict[str, Any], artifacts: dict[s
         content.append(f'<section class="card"><h2>{esc(section["title"])} <span class="badge">{esc(section["status"])}</span></h2>{figure_html}<div class="facts"><strong>Faits contrôlés</strong><ul>{facts_html}</ul><strong>Limites</strong><ul class="limit">{limits_html}</ul></div><h3>Commentaire à relire</h3><textarea data-section="{esc(section["section_id"])}">{esc(text)}</textarea></section>')
     content.append('<section class="card" id="human-validation"><h2>Validation humaine</h2><label>Relecteur ou rôle <input id="reviewer" required></label><p><label><input class="approval-check" type="checkbox"> Faits et nombres contrôlés</label><br><label><input class="approval-check" type="checkbox"> Limites conservées</label><br><label><input class="approval-check" type="checkbox"> Aucun langage causal ou de preuve</label><br><label><input class="approval-check" type="checkbox"> Primaire et exploratoire distingués</label></p><button id="approve-report" type="button">Valider le rapport</button><p id="approval-result"></p></section><p>La validation éditoriale ne démontre pas un effet fondateur.</p></main><script src="report_editor.js"></script></body></html>')
     document = "".join(content)
-    cover = f'<section class="cover"><h1>Effet fondateur autour de DOCK6 à La Réunion</h1><p>Rapport scientifique en couches · brouillon soumis à validation humaine</p><p>Run {esc(facts["run_id"])} · {esc(context["assembly"])} · sensitive_genetic</p></section><nav class="toc-page"><h2>Sommaire</h2><ol><li><a class="toc-entry" href="#study"><span class="toc-title">Contexte, cohortes et méthodes</span><span class="toc-dots"></span><span class="toc-page-num"></span></a></li><li><a class="toc-entry" href="#results"><span class="toc-title">Résultats et interprétation</span><span class="toc-dots"></span><span class="toc-page-num"></span></a></li><li><a class="toc-entry" href="#human-validation"><span class="toc-title">Validation humaine</span><span class="toc-dots"></span><span class="toc-page-num"></span></a></li></ol></nav>'
+    target_name = esc(_target_display_name(target))
+    cover = f'<section class="cover"><h1>Analyse d’un possible effet fondateur — {target_name}</h1><p>Rapport scientifique en couches · brouillon soumis à validation humaine</p><p>Run {esc(facts["run_id"])} · {esc(context["assembly"])} · sensitive_genetic</p></section><nav class="toc-page"><h2>Sommaire</h2><ol><li><a class="toc-entry" href="#study"><span class="toc-title">Contexte, cohortes et méthodes</span><span class="toc-dots"></span><span class="toc-page-num"></span></a></li><li><a class="toc-entry" href="#results"><span class="toc-title">Résultats et interprétation</span><span class="toc-dots"></span><span class="toc-page-num"></span></a></li><li><a class="toc-entry" href="#human-validation"><span class="toc-title">Validation humaine</span><span class="toc-dots"></span><span class="toc-page-num"></span></a></li></ol></nav>'
     document = document.replace('<header><h1>Rapport V2 révisable</h1><p>Brouillon non validé · données pseudonymisées · sensitive_genetic</p></header><main>', cover + '<main><div id="study"></div><div id="results"></div>', 1)
     document = document.replace('<img class="figure" src="kinship_network.svg" alt="Réseau KING pseudonymisé">', f'<div class="figure">{_network_svg(kin)}</div>')
-    document = document.replace('<script src="report_editor.js"></script>', f'<footer class="page-footer">Effet fondateur DOCK6 · rapport scientifique révisable</footer><script>{_editor_script()}</script>')
+    document = document.replace('<script src="report_editor.js"></script>', f'<footer class="page-footer">Effet fondateur — {target_name} · rapport scientifique révisable</footer><script>{_editor_script()}</script>')
     return document
 
 

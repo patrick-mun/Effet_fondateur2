@@ -39,8 +39,8 @@ DOMAIN_TITLES = {
     "REFERENCE_ANCESTRY_LOCAL": "Positionnement haplotypique local sur références 1000G",
     "FOUNDER_HAPLOTYPE_ENRICHMENT": "Rareté du partage haplotypique exact",
     "SENSITIVITY": "Analyses de sensibilité",
-    "EXPLICIT_IBD": "IBD explicite autour de DOCK6",
-    "POPULATION_CONVERGENCE": "Convergence genome-wide versus région DOCK6",
+    "EXPLICIT_IBD": "IBD explicite autour du variant cible",
+    "POPULATION_CONVERGENCE": "Convergence genome-wide versus région cible",
 }
 
 DOMAIN_LIMITS = {

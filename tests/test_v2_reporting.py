@@ -88,6 +88,8 @@ def test_stage_19_builds_editable_pseudonymized_report_without_ai_call(tmp_path:
     validate_json_document(validation, "report_validation.schema.json")
     combined = "".join(path.read_text(encoding="utf-8") for path in (report_dir / "interpretation_facts.json", report_dir / "interpretation_prompt.txt", report_dir / "report_draft.html"))
     assert "PRIVATE_KIN" not in combined and "KIN-001" in combined
+    assert "Analyse d’un possible effet fondateur — GENE_EXAMPLE" in combined
+    assert "DOCK6" not in combined and "La Réunion" not in combined
     assert "Paramètres d’entrée de l’étude" in combined and "Tableau des paires KING" in combined
     assert "approve-report" in combined and "report_review.json" in (report_dir / "report_editor.js").read_text(encoding="utf-8")
     assert draft["draft_status"] == "DETERMINISTIC_DRAFT"

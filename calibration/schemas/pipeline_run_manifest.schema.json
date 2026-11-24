@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:effet-fondateur:calibration:pipeline-run-manifest:1.0.0",
+  "title": "Closed blinded pipeline run",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "release_id", "partition_id", "run_state", "closed_at", "manifest_sha256", "consumed_inventory_sha256", "stage_outputs", "dependencies"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "release_id": {"type": "string", "minLength": 1},
+    "partition_id": {"enum": ["CALIBRATION", "VALIDATION_BLIND", "RESOURCE_ONLY"]},
+    "run_state": {"const": "CLOSED"},
+    "closed_at": {"type": "string", "format": "date-time"},
+    "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "consumed_inventory_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "stage_outputs": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["stage_id", "artifact_id", "relative_path", "sha256"],
+        "properties": {
+          "stage_id": {"type": "string"},
+          "artifact_id": {"type": "string"},
+          "relative_path": {"type": "string", "pattern": "^runs/"},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "dependencies": {"type": "object"}
+  }
+}

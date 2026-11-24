@@ -2,8 +2,10 @@
 
 ## Objectif du projet
 
-Ce dépôt contient un pipeline de recherche pour étudier un possible effet
-fondateur autour d'une mutation de `DOCK6` sur le chromosome 19. Le moteur
+Ce dépôt contient un pipeline de recherche générique pour étudier un possible
+effet fondateur autour d'une variation génétique cible autosomique. La cible
+(gène, chromosome, position, allèles et identifiant) est définie par chaque
+profil d'étude et ne doit jamais être codée en dur dans le moteur. Le moteur
 combine Python, PLINK, KING, bcftools, SHAPEIT5, des appels IBD explicites et
 une estimation Gamma implémentée en Python.
 

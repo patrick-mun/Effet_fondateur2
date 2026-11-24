@@ -1,0 +1,42 @@
+configuration_version: 1.0.0
+release_design: panel_master_generic_v1
+release_id: panel-master-generic-v1-r12b-validation-blind
+generation_phase: R12b
+partition: VALIDATION_BLIND
+generated: false
+assembly: GRCh38
+autosomes: 22
+scope: R13_TECHNICAL_BLIND_VALIDATION
+target:
+  selection: PROFILE_CONFIGURED_AUTOSOMAL
+  hard_coded: false
+  resolved_at_generation: true
+  chromosome: 7
+  position_bp: 15000000
+  ref: A
+  alt: G
+  variant_id: SYN-TARGET-STANDARD
+counts:
+  study_identities: 60
+  variants: 169
+  truth_families: 14
+  blinded_views: 11
+  stages: 25
+independence:
+  namespace: VALIDATION_BLIND_R12B_V1
+  identity_prefix: VAL-R12B
+  reuses_r10_subjects: false
+  reuses_r11_subjects: false
+  reuses_r12_inputs: false
+r07_status: REVISION_REQUIRED
+r07_revision_topics:
+  - QUALIFICATION_SAMPLE_SIZES
+  - SHAPEIT5_RESOURCE_ENVELOPE
+  - AUTOSOME_BY_SEED_CPU_BUDGET
+  - EXPLICIT_IBD_WORLD_PROJECTION
+allowed_verdict_scope: TECHNICAL_INTEGRITY_ONLY
+scientific_performance_decision_allowed: false
+qualification_flags:
+  calibrated: false
+  founder_effect_proven: false
+  production_promotion: false
