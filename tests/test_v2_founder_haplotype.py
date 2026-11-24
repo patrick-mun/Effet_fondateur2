@@ -6,7 +6,10 @@ from pathlib import Path
 import pytest
 
 from effet_fondateur.contracts import validate_tsv_table
+from effet_fondateur.external_tools import ExternalCommandError
 from effet_fondateur.founder import FounderAnalysisError, infer_target_centered_ibs
+from effet_fondateur.founder import local_ibs
+from effet_fondateur.stages import infer_founder_haplotype
 
 
 def _write_tsv(path: Path, columns: list[str], rows: list[list[str]]) -> None:
@@ -107,6 +110,39 @@ def _prepare_inputs(tmp_path: Path) -> dict[str, Path]:
         "bcf": bcf_path, "map": map_path, "carriers": carrier_path,
         "cohorts": cohorts_path, "samples": samples_path, "bcftools": bcftools_path,
     }
+
+
+@pytest.mark.parametrize(
+    ("technical_error", "expected_message"),
+    [
+        (ExternalCommandError("bcftools_query", timed_out=True), "bcftools_query_unavailable"),
+        (ExternalCommandError("bcftools_query", 7), "bcftools_query_failed:7"),
+    ],
+)
+def test_bcftools_query_errors_keep_the_founder_contract(
+    monkeypatch: pytest.MonkeyPatch,
+    technical_error: ExternalCommandError,
+    expected_message: str,
+) -> None:
+    def fail(*_args, **_kwargs):
+        raise technical_error
+
+    monkeypatch.setattr(local_ibs, "run_checked", fail)
+
+    with pytest.raises(FounderAnalysisError, match=expected_message):
+        local_ibs._run_bcftools("bcftools", ["query"], 30)
+
+
+def test_bcftools_version_error_keeps_the_founder_contract(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail(*_args, **_kwargs):
+        raise ExternalCommandError("bcftools_version", 7)
+
+    monkeypatch.setattr(infer_founder_haplotype, "run_checked", fail)
+
+    with pytest.raises(FounderAnalysisError, match="bcftools_version_unavailable"):
+        infer_founder_haplotype._bcftools_version("bcftools", 30)
 
 
 def test_exact_ibs_publishes_conservative_founder_candidate(tmp_path: Path) -> None:

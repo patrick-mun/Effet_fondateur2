@@ -15,7 +15,10 @@ from effet_fondateur.founder_enrichment.observed import (
     EnrichmentAnalysisError, distinct_background_count,
     validate_independent_family_profiles,
 )
+from effet_fondateur.external_tools import ExternalCommandError
+from effet_fondateur.stages import evaluate_founder_haplotype_enrichment
 from effet_fondateur.stages.evaluate_founder_haplotype_enrichment import (
+    FounderEnrichmentExternalError,
     FounderEnrichmentInputError,
     _classification,
     _required_observed_values,
@@ -35,6 +38,33 @@ def _markers() -> tuple[Marker, ...]:
 
 def _profile(individual: str, haplotype: str, alleles: tuple[str | None, ...]) -> HaplotypeProfile:
     return HaplotypeProfile(individual, haplotype, alleles)
+
+
+@pytest.mark.parametrize(
+    ("technical_error", "expected_message"),
+    [
+        (ExternalCommandError("bcftools", timed_out=True), "bcftools_unavailable_or_timeout"),
+        (ExternalCommandError("bcftools", 7), "bcftools_failed:7"),
+    ],
+)
+def test_bcftools_errors_keep_the_enrichment_contract(
+    monkeypatch: pytest.MonkeyPatch,
+    technical_error: ExternalCommandError,
+    expected_message: str,
+) -> None:
+    def fail(*_args, **_kwargs):
+        raise technical_error
+
+    monkeypatch.setattr(
+        evaluate_founder_haplotype_enrichment,
+        "run_checked",
+        fail,
+    )
+
+    with pytest.raises(FounderEnrichmentExternalError, match=expected_message):
+        evaluate_founder_haplotype_enrichment._run_bcftools(
+            "bcftools", ["query"], 30
+        )
 
 
 def test_observed_segment_is_asymmetric_and_target_is_excluded() -> None:

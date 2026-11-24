@@ -7,7 +7,6 @@ import csv
 import gzip
 import json
 import re
-import subprocess
 import sys
 from collections import defaultdict
 from itertools import chain
@@ -32,6 +31,11 @@ from effet_fondateur.founder_enrichment.observed import (
 )
 from effet_fondateur.founder_enrichment.publication import (
     NULL_DRAW_COLUMNS, null_draw_rows, write_tsv,
+)
+from effet_fondateur.external_tools import (
+    ExternalCommandError,
+    default_command_runner,
+    run_checked,
 )
 from effet_fondateur.orchestrator.state import utc_now
 
@@ -162,11 +166,18 @@ def _validated_path(artifact: dict[str, Any], run_dir: Path) -> Path:
 
 def _run_bcftools(command: str, arguments: list[str], timeout: int) -> str:
     try:
-        completed = subprocess.run([command, *arguments], capture_output=True, text=True, check=False, timeout=timeout)
-    except (OSError, subprocess.TimeoutExpired) as error:
+        completed = run_checked(
+            default_command_runner,
+            [command, *arguments],
+            timeout,
+            "bcftools",
+        )
+    except ExternalCommandError as error:
+        if error.returncode is not None:
+            raise FounderEnrichmentExternalError(
+                f"bcftools_failed:{error.returncode}"
+            ) from error
         raise FounderEnrichmentExternalError("bcftools_unavailable_or_timeout") from error
-    if completed.returncode != 0:
-        raise FounderEnrichmentExternalError(f"bcftools_failed:{completed.returncode}")
     return completed.stdout
 
 

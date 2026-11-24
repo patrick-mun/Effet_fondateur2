@@ -2,7 +2,7 @@
 
 **Date :** 24 novembre 2026
 
-**Branche :** `agent/archive-calibration`
+**Branche :** `codex/refactor-external-adapters`
 
 **Base :** `origin/main` à `9dfc0bc`
 
@@ -60,6 +60,14 @@ Le lot d'analyses secondaires utilise maintenant la couche commune dans
 les exécutions ROH/LD, sont centralisées. Les copies de sorties natives gardent
 leurs usages locaux de `shutil`.
 
+Le lot IBD et haplotype fondateur est également centralisé. Les requêtes
+bcftools de `call_explicit_ibd`, la sonde Java et les lancements Hap-IBD et
+Refined IBD passent par la couche commune. La sonde de version et les requêtes
+bcftools de `infer_founder_haplotype`, ainsi que les requêtes de
+`evaluate_founder_haplotype_enrichment`, utilisent le même adaptateur. Les
+exceptions métier, codes retour, sorties capturées et journaux historiques
+sont conservés.
+
 La configuration pytest limite désormais la collecte à `tests/`. Une invocation
 simple de `pytest` ne collecte donc plus les tests historiques archivés, qui
 produisaient 37 erreurs de collecte hors du périmètre actif.
@@ -96,8 +104,11 @@ PLINK n'effectue plus qu'un seul appel à `shutil.which`.
 - Les fonctions monolithiques restantes se concentrent encore dans plusieurs
   étapes scientifiques et de préparation ; elles doivent être traitées sans
   mêler de changement scientifique.
-- Les trois derniers appels directs aux outils externes se trouvent dans IBD
-  explicite, l'inférence du haplotype fondateur et l'enrichissement.
+- La centralisation demandée est terminée dans IBD explicite, l'inférence du
+  haplotype fondateur et l'enrichissement. Des adaptateurs directs subsistent
+  dans d'autres infrastructures hors de ce lot, notamment l'orchestrateur,
+  l'environnement, l'harmonisation des références et certains composants de
+  phasage.
 - Aucun outil de lint, typage statique ou couverture n'est configuré dans le
   dépôt actif.
 
@@ -129,11 +140,16 @@ explicites.
   après la préparation du panel et 23 après l'exécution du phasage ;
 - validations séquentielles réussies pour les analyses secondaires : 16 tests
   pour ROH et 17 pour le LD local ;
+- validations séquentielles réussies pour le dernier lot : 12 tests pour IBD
+  explicite, 7 pour l'inférence du haplotype fondateur et 19 pour
+  l'enrichissement ;
+- validation transversale du lot et de l'intégration de la phase cible : 49
+  tests réussis ;
 - aucun nœud `assert` dans le paquet actif ;
-- suite active complète : 383 tests réussis en 769,81 s.
+- suite active complète : 392 tests réussis en 728,58 s.
 
 ## Prochaine action
 
-Terminer la centralisation dans `call_explicit_ibd`, puis
-`infer_founder_haplotype` et `evaluate_founder_haplotype_enrichment`, un module
-à la fois avec tests ciblés avant chaque migration.
+Choisir le prochain lot de centralisation parmi les infrastructures de
+références, de phasage ou d'orchestration encore autonomes, puis commit/push du
+lot actuel sur demande explicite.

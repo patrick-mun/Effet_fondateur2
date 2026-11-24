@@ -4,7 +4,9 @@ from pathlib import Path
 import pytest
 
 from effet_fondateur.audit import sha256_file
+from effet_fondateur.external_tools import ExternalCommandError
 from effet_fondateur.explicit_ibd.execution import ExplicitIbdExternalError, run_tool, validate_adapters
+from effet_fondateur.explicit_ibd import execution
 from effet_fondateur.orchestrator.environment import build_environment
 
 
@@ -20,6 +22,26 @@ def test_adapter_refuses_bad_jar_hash(tmp_path: Path):
     adapters["hap_ibd_sha256"] = "0" * 64
     with pytest.raises(ExplicitIbdExternalError, match="sha256"):
         validate_adapters(adapters)
+
+
+@pytest.mark.parametrize(
+    ("technical_error", "expected_message"),
+    [
+        (ExternalCommandError("java_version", timed_out=True), "java_unavailable_or_timeout"),
+        (ExternalCommandError("java_version", 7), "java_version_mismatch"),
+    ],
+)
+def test_java_probe_errors_keep_the_explicit_ibd_contract(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    technical_error: ExternalCommandError, expected_message: str,
+) -> None:
+    def fail(*_args, **_kwargs):
+        raise technical_error
+
+    monkeypatch.setattr(execution, "run_checked", fail)
+
+    with pytest.raises(ExplicitIbdExternalError, match=expected_message):
+        validate_adapters(_adapters(tmp_path))
 
 
 def test_tool_timeout_is_controlled(tmp_path: Path):

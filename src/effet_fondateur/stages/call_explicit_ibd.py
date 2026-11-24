@@ -27,6 +27,11 @@ from effet_fondateur.explicit_ibd.analysis import (
     boundaries_are_concordant,
 )
 from effet_fondateur.explicit_ibd.execution import ExplicitIbdExternalError, run_tool, validate_adapters
+from effet_fondateur.external_tools import (
+    ExternalCommandError,
+    default_command_runner,
+    run_checked,
+)
 from effet_fondateur.orchestrator.state import utc_now
 
 
@@ -55,13 +60,19 @@ def _path(artifact: dict[str, Any], run_dir: Path) -> Path:
 
 
 def _run(command: Sequence[str], timeout: int) -> str:
-    import subprocess
     try:
-        result = subprocess.run(list(command), capture_output=True, text=True, check=False, timeout=timeout)
-    except (OSError, subprocess.TimeoutExpired) as error:
+        result = run_checked(
+            default_command_runner,
+            command,
+            timeout,
+            "bcftools",
+        )
+    except ExternalCommandError as error:
+        if error.returncode is not None:
+            raise ExplicitIbdExternalError(
+                f"bcftools_failed:{error.returncode}"
+            ) from error
         raise ExplicitIbdExternalError("bcftools_unavailable_or_timeout") from error
-    if result.returncode != 0:
-        raise ExplicitIbdExternalError(f"bcftools_failed:{result.returncode}")
     return result.stdout
 
 

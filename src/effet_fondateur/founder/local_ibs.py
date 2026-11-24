@@ -4,13 +4,17 @@ from __future__ import annotations
 
 import csv
 import json
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from effet_fondateur.audit import atomic_write_json
 from effet_fondateur.contracts import validate_tsv_table
+from effet_fondateur.external_tools import (
+    ExternalCommandError,
+    default_command_runner,
+    run_checked,
+)
 
 
 class FounderAnalysisError(ValueError):
@@ -100,14 +104,18 @@ def _write_tsv(path: Path, columns: tuple[str, ...], rows: list[dict[str, Any]])
 
 def _run_bcftools(command: str, arguments: list[str], timeout_seconds: float) -> str:
     try:
-        completed = subprocess.run(
-            [command, *arguments], check=False, capture_output=True, text=True,
-            timeout=timeout_seconds,
+        completed = run_checked(
+            default_command_runner,
+            [command, *arguments],
+            timeout_seconds,
+            "bcftools_query",
         )
-    except (OSError, subprocess.TimeoutExpired) as error:
+    except ExternalCommandError as error:
+        if error.returncode is not None:
+            raise FounderAnalysisError(
+                f"bcftools_query_failed:{error.returncode}"
+            ) from error
         raise FounderAnalysisError("bcftools_query_unavailable") from error
-    if completed.returncode != 0:
-        raise FounderAnalysisError(f"bcftools_query_failed:{completed.returncode}")
     return completed.stdout
 
 

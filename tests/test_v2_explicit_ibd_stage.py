@@ -1,5 +1,10 @@
 import subprocess
 
+import pytest
+
+from effet_fondateur.explicit_ibd.execution import ExplicitIbdExternalError
+from effet_fondateur.external_tools import ExternalCommandError
+from effet_fondateur.stages import call_explicit_ibd
 from effet_fondateur.stages.call_explicit_ibd import (
     _audit_checks,
     _calibration_status,
@@ -11,9 +16,32 @@ from effet_fondateur.stages.call_explicit_ibd import (
 
 def test_missing_or_unphased_genotypes_are_excluded_from_hap_ibd(monkeypatch, tmp_path):
     output = "v1\t19\t100\t0|0\t0|1\nv2\t19\t200\t0|.\t0|0\nv3\t19\t300\t0/1\t0|0\n"
-    monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: subprocess.CompletedProcess(args[0], 0, output, ""))
+    monkeypatch.setattr(
+        call_explicit_ibd,
+        "default_command_runner",
+        lambda command, timeout: subprocess.CompletedProcess(command, 0, output, ""),
+    )
     rows = _query_complete_variants("bcftools", tmp_path / "input.bcf", 10)
     assert [row[3] for row in rows] == [True, False, False]
+
+
+@pytest.mark.parametrize(
+    ("technical_error", "expected_message"),
+    [
+        (ExternalCommandError("bcftools", timed_out=True), "bcftools_unavailable_or_timeout"),
+        (ExternalCommandError("bcftools", 7), "bcftools_failed:7"),
+    ],
+)
+def test_bcftools_errors_keep_the_stage_contract(
+    monkeypatch, technical_error, expected_message
+):
+    def fail(*_args, **_kwargs):
+        raise technical_error
+
+    monkeypatch.setattr(call_explicit_ibd, "run_checked", fail)
+
+    with pytest.raises(ExplicitIbdExternalError, match=expected_message):
+        call_explicit_ibd._run(["bcftools", "query"], 10)
 
 
 def _raw_scenario(

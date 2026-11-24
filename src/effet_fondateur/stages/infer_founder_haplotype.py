@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 import sys
 from pathlib import Path, PurePosixPath
 from time import monotonic
@@ -19,6 +18,11 @@ from effet_fondateur.contracts import (
     validate_tsv_table,
 )
 from effet_fondateur.founder import FounderAnalysisError, infer_target_centered_ibs
+from effet_fondateur.external_tools import (
+    ExternalCommandError,
+    default_command_runner,
+    run_checked,
+)
 from effet_fondateur.orchestrator.state import utc_now
 
 
@@ -88,13 +92,15 @@ def _validated_path(artifact: dict[str, Any], run_dir: Path) -> Path:
 
 def _bcftools_version(command: str, timeout_seconds: int) -> str:
     try:
-        completed = subprocess.run(
-            [command, "--version"], check=False, capture_output=True, text=True,
-            timeout=timeout_seconds,
+        completed = run_checked(
+            default_command_runner,
+            [command, "--version"],
+            timeout_seconds,
+            "bcftools_version",
         )
-    except (OSError, subprocess.TimeoutExpired) as error:
+    except ExternalCommandError as error:
         raise FounderAnalysisError("bcftools_version_unavailable") from error
-    if completed.returncode != 0 or not completed.stdout.strip():
+    if not completed.stdout.strip():
         raise FounderAnalysisError("bcftools_version_unavailable")
     return completed.stdout.splitlines()[0].strip()
 

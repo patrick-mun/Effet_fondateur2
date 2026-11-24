@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import re
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from effet_fondateur.audit import sha256_file
+from effet_fondateur.external_tools import (
+    CommandRunner,
+    ExternalCommandError,
+    default_command_runner,
+    run_checked,
+)
 
 
 class ExplicitIbdExternalError(RuntimeError):
@@ -34,8 +39,15 @@ def validate_adapters(adapters: dict[str, Any] | None) -> dict[str, Any]:
         if sha256_file(jar) != adapters[f"{name}_sha256"]:
             raise ExplicitIbdExternalError(f"{name}_jar_sha256_mismatch")
     try:
-        probe = subprocess.run([adapters["java_command"], "-version"], capture_output=True, text=True, check=False, timeout=15)
-    except (OSError, subprocess.TimeoutExpired) as error:
+        probe = run_checked(
+            default_command_runner,
+            [adapters["java_command"], "-version"],
+            15,
+            "java_version",
+        )
+    except ExternalCommandError as error:
+        if error.returncode is not None:
+            raise ExplicitIbdExternalError("java_version_mismatch") from error
         raise ExplicitIbdExternalError("java_unavailable_or_timeout") from error
     version_text = probe.stderr + probe.stdout
     match = re.search(r'version "(\d+)', version_text)
@@ -48,7 +60,7 @@ def run_tool(
     *, tool: str, adapters: dict[str, Any], vcf_path: Path, map_path: Path,
     output_prefix: Path, minimum_cm: float, minimum_markers: int,
     threads: int, memory_mb: int, timeout_seconds: int,
-    runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+    runner: CommandRunner = default_command_runner,
 ) -> ToolRun:
     """Exécute un JAR borné et exige la sortie `.ibd.gz` attendue."""
     if tool not in {"HAP_IBD", "REFINED_IBD"}:
@@ -64,12 +76,23 @@ def run_tool(
         command.extend((f"length={minimum_cm}", f"nthreads={threads}"))
     log_path = output_prefix.with_suffix(".log")
     try:
-        completed = runner(command, capture_output=True, text=True, check=False, timeout=timeout_seconds)
-    except (OSError, subprocess.TimeoutExpired) as error:
+        completed = run_checked(
+            runner,
+            command,
+            timeout_seconds,
+            key,
+        )
+    except ExternalCommandError as error:
+        if error.returncode is not None:
+            log_path.write_text(
+                error.stdout + error.stderr,
+                encoding="utf-8",
+            )
+            raise ExplicitIbdExternalError(
+                f"{key}_failed:{error.returncode}"
+            ) from error
         raise ExplicitIbdExternalError(f"{key}_unavailable_or_timeout") from error
     log_path.write_text((completed.stdout or "") + (completed.stderr or ""), encoding="utf-8")
-    if completed.returncode != 0:
-        raise ExplicitIbdExternalError(f"{key}_failed:{completed.returncode}")
     output_path = Path(f"{output_prefix}.ibd.gz")
     if not output_path.is_file():
         raise ExplicitIbdExternalError(f"{key}_output_missing")
