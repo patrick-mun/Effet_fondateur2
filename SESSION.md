@@ -12,8 +12,10 @@ mais rejeté. La release indépendante R12b a franchi G5 et R13 est terminé ave
 rapport technique de 13 pages et une décision explicite de non-qualification
 scientifique. R07 a ensuite été révisé en v2 sans réduire les effectifs ; la
 confirmation de ressources R11b est terminée avec le verdict
-`RESOURCE_READY_FOR_NEW_SCIENTIFIC_RELEASE`. Une nouvelle release scientifique
-indépendante reste requise avant toute qualification.
+`RESOURCE_READY_FOR_NEW_SCIENTIFIC_RELEASE`. La release R12c a ensuite franchi
+G5. R13 est maintenant clos dans une portée amendée limitée à l'intégration
+des outils. R14b est terminé par un rapport final d'intégration de 16 pages ;
+la performance R07/R08 complète reste non évaluée.
 
 ## État décisionnel
 
@@ -712,11 +714,54 @@ indépendante reste requise avant toute qualification.
 - À la demande de l'utilisateur, cette tentative a été interrompue proprement
   à 18:27:09 UTC pour laisser refroidir la machine. Le reçu de tentative
   conserve `KeyboardInterrupt`, tandis que le ledger autoritatif conserve
-  `INTERRUPTED_BY_USER`. Aucun processus R13 ne tourne. Le registre contient
-  zéro `RUNNING`, 1 179 `PENDING`, un `FAILED` reprenable, zéro `COMPLETED` et
-  `resume_safe=true` après vérification des empreintes. La reprise doit
-  réclamer un seul appel : elle sélectionnera le même checkpoint et créera
-  `attempt-02` sans réutiliser la sortie partielle d'`attempt-01`.
+  `INTERRUPTED_BY_USER`.
+- La reprise du 15 novembre 2026 a passé le préflight, puis réservé uniquement
+  le même checkpoint avec `attempts=2`. Cette tentative a exécuté trois
+  burn-in complets puis atteint le burn-in 4/5, mais sa session d'exécution a
+  disparu à 11:40:20 sans processus, reçu ni erreur SHAPEIT. Le ledger a été
+  fermé avec `EXTERNAL_EXEC_SESSION_TERMINATED_NO_RECEIPT` : cet arrêt externe
+  après 1 h 19 min 41 s n'est pas un échec scientifique.
+- La tentative 3 a démarré le 15 novembre 2026 à 11:54:38 (La Réunion), dans
+  la session macOS `screen` détachée
+  `r13_shapeit_dmax_chr01_seed01_a03`, réadoptée par le PID 1. Elle a terminé
+  avec succès à 17:53:45 : code retour 0, 21 548,10 s murales (5 h 59 min
+  08 s), 21 203,21 s CPU utilisateur, 293,28 s CPU système et
+  2 248 622 080 octets de RSS maximal. Le BCF final contient exactement
+  4 000 échantillons et 46 524 variants ; son index CSI, le journal et les
+  empreintes du reçu sont valides. Les journaux d'erreur sont vides et aucun
+  processus ne reste actif. Le registre contient 1 `COMPLETED`, 1 179
+  `PENDING`, zéro `RUNNING`, zéro `FAILED` et `resume_safe=true` après
+  vérification des empreintes.
+- Décision méthodologique du 15 novembre 2026 : R13 ne doit pas redémontrer la
+  validité scientifique intrinsèque de SHAPEIT5 ni des autres outils déjà
+  établie par leurs publications. La qualification locale doit démontrer leur
+  utilisation correcte dans le pipeline selon les critères publiés : identité
+  et version de l'outil, entrées et paramètres conformes, contrôles familiaux
+  ou synthétiques appropriés, sorties intègres, métriques prévues et
+  provenance auditable. Le checkpoint en cours reste une preuve d'intégration
+  grandeur réelle ; aucun autre appel ne doit être réclamé avant un amendement
+  explicite de R13 et du gel concerné réduisant les répétitions redondantes.
+- L'amendement `R13-LIGHTWEIGHT-INTEGRATION-001` a été audité et clos le
+  15 novembre 2026 à 14:37:22 UTC. Sa portée est strictement
+  `R13_TOOL_INTEGRATION_VERIFICATION`. Le checkpoint
+  `SHAPEIT-DMAX-CHR01-SEED01` tentative 3 est la preuve principale : SHAPEIT5
+  5.1.1, code retour 0, 4 000 sujets, 3 000 références, 46 524 variants,
+  200 trios, zéro erreur mendélienne et BCF final 4 000 × 46 524 vérifié avec
+  bcftools. Les sorties, le reçu et le journal sont liés par SHA-256 ; le
+  worker n'a pas eu accès à la vérité.
+- Les contrôles positifs R12 soutiennent l'intégration Hap-IBD (23/25
+  duplicats, 178 segments) et Refined IBD (22/25, 122 segments). Les 189
+  fichiers indexés de cette release ont été revérifiés. Les publications de
+  référence sont liées au contrat pour la validité intrinsèque des méthodes,
+  sans transformer ces contrôles locaux en qualification de performance.
+- Le registre historique reste inchangé à 1 `COMPLETED` et 1 179 `PENDING`.
+  La vue amendée classe ces 1 179 appels comme retirés non exécutés et en
+  autorise zéro nouveau. L'overlay
+  `governance/r13_execution_amendment.json` bloque désormais toute nouvelle
+  réservation ; le reçu suivi est
+  `calibration/readiness/R13_INTEGRATION_AMENDMENT.json`. La vérité privée
+  reste fermée, la performance complète reste non évaluée et les trois
+  drapeaux de qualification restent faux.
 - Validation précédant le premier lancement : 102 tests ciblés
   R07/R11b/R12c/R13 réussis en 11,90 s après le gel final ; imports V2 et
   `git diff --check` réussissent.
@@ -724,28 +769,66 @@ indépendante reste requise avant toute qualification.
   calibration et de rendu réussissent en 25,92 s ; la suite complète réussit
   avec 516 tests en 723,23 s. Les imports V2, `git diff --check`, l'audit des
   fichiers candidats et le contrôle de motifs de secrets réussissent aussi.
+- Validation de l'amendement R13 : l'audit réel, le contrôle bcftools du BCF,
+  les empreintes du reçu et le verrou d'exécution réussissent. Les 180 tests de
+  calibration hors fichier R09 passent en 15,98 s ; la suite calibration
+  complète donne 184 succès et un échec préexistant en 16,45 s. Les imports V2
+  et `git diff --check` réussissent. Le seul test R09 défaillant est antérieur à
+  cet amendement : son reçu suivi conserve l'ancienne empreinte de
+  `CONVENTIONS_DEVELOPPEMENT.md` alors que le fichier présent dans `HEAD` a une
+  autre empreinte. Cette incohérence indépendante n'a pas été corrigée ici.
+
+## R14b — rapport final d'intégration terminé
+
+- Le rapport `R14B-INTEGRATION-CLOSURE-001` est produit dans
+  `calibration_workspace/r14b_integration_closure` avec le modèle autonome
+  `report-formater`. Il contient un HTML autonome et un PDF A4 de 16 pages,
+  quatre figures, onze tables, trois liens DOI et aucun espace réservé ni
+  ressource externe de rendu.
+- Les graphiques montrent la hiérarchie des preuves, le temps et la mémoire
+  SHAPEIT5 observés, les détections IBD avec IC95 de Wilson descriptifs, et les
+  temps IBD moyens avec étendues sur trois répétitions par cellule. Les
+  équations d'intégration, de Wilson, de résumé des répétitions et de la
+  borne conservatrice R11b sont explicitées avec unités et hypothèses.
+- La conclusion est `COMPLETED_WITH_TOOL_INTEGRATION_VERIFIED` : SHAPEIT5 est
+  `VERIFIED`, Hap-IBD et Refined IBD sont `SUPPORTED`, tandis que la performance
+  R07/R08 complète reste `NOT_EVALUATED`, l'effet fondateur `NOT_PROVEN` et la
+  promotion `NOT_AUTHORIZED`. Aucun nouvel appel n'est autorisé.
+- Le reçu suivi est
+  `calibration/readiness/R14B_INTEGRATION_CLOSURE.json`. Il lie par SHA-256 la
+  décision, l'inventaire des sources, le HTML, le PDF et le manifeste. Les
+  drapeaux `calibrated`, `founder_effect_proven` et `production_promotion`
+  restent tous à `false`.
+- Le contrôle visuel a couvert la couverture, la traçabilité, les résultats
+  centraux et la dernière page. Une coupure des indices 13–16 de l'inventaire
+  a été corrigée avant le rendu accepté.
+- Validation finale : 15 tests ciblés R13/R14b puis 186 tests de calibration
+  hors fichier R09 réussissent ; `git diff --check`, les imports V2 et le
+  validateur R14b réussissent. Le fichier R09 isolé conserve ses quatre succès
+  et son unique échec préexistant `receipt_evidence_mismatch`, déjà documenté
+  ci-dessus et indépendant de R14b.
 
 ## État Git
 
 - R01–R02 ont été commités et poussés dans `65f1cbc`.
-- Les modifications locales comprennent R03–R12b (`SESSION.md` et le plan
-  unifié), la clarification du cadrage générique, les libellés de rendu
-  configurables, le noyau R09, les constructions R10–R11, leurs contrats et
-  tests, ainsi que les gels R12, R12b et R12c.
+- R03–R14, la clarification du cadrage générique, le noyau de calibration,
+  les contrats, tests et gels R12/R12b/R12c ont été commités et poussés dans
+  `d02e81a` sur `agent/calibration-d24-d28`.
 - `calibration_workspace/` contient la release R10, les essais et projections
   R11, le toolchain R11, le candidat rejeté R12, la release R12b et le
   workspace R13 technique clos, la release R12c scientifique, ainsi que le
-  rapport R14 accepté et son premier rendu rejeté ; il reste ignoré par Git.
+  rapport R14 accepté, son premier rendu rejeté et le rapport R14b final ; il
+  reste ignoré par Git.
 - Aucun commit, push ou merge n'est autorisé sans nouvelle demande.
 
 ## Prochaine action
 
-R12c exécutable et G5 révision 2 sont terminés. La prochaine action est de
-reprendre uniquement `SHAPEIT-DMAX-CHR01-SEED01` : exécuter le préflight,
-réclamer un lot de taille 1 avec `LOCAL-8CPU`, vérifier que la réclamation
-produit `attempts=2`, puis lancer et surveiller `attempt-02` jusqu'à son reçu
-`COMPLETED` ou `FAILED`. Ne réclamer aucun autre appel pendant cette première
-mesure complète.
+R12c exécutable, G5 révision 2, l'amendement R13 allégé et R14b sont terminés.
+Ne réclamer aucun des 1 179 appels retirés : le verrou d'exécution doit rester
+actif. La prochaine décision éventuelle doit porter séparément sur l'archivage
+du cycle ou sur la nécessité d'une qualification de performance R07/R08
+complète ; cette dernière exige un nouveau plan explicite et ne peut pas être
+déduite de la seule preuve d'intégration.
 Ne toucher à aucune donnée réelle sans protocole autorisé. Les
 drapeaux `calibrated`, `founder_effect_proven` et `production_promotion`
 restent tous à `false`.

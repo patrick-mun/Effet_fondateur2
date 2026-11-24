@@ -23,8 +23,10 @@ LEDGER_RELATIVE = Path("governance/external_call_checkpoints.json")
 TSV_RELATIVE = Path("governance/external_call_checkpoints.tsv")
 MARKDOWN_RELATIVE = Path("governance/external_call_checkpoints.md")
 LOCK_RELATIVE = Path("governance/external_call_checkpoints.lock")
+AMENDMENT_RELATIVE = Path("governance/r13_execution_amendment.json")
 ALLOWED_STATES = ("PENDING", "RUNNING", "COMPLETED", "FAILED")
 MAX_BATCH_SIZE = 8
+AMENDMENT_ID = "R13-LIGHTWEIGHT-INTEGRATION-001"
 
 
 class R13CheckpointError(RuntimeError):
@@ -316,6 +318,42 @@ def _mutate_ledger(run_root: Path, mutation: Any) -> dict[str, Any]:
     return ledger
 
 
+def _assert_execution_open(run_root: Path) -> None:
+    """Refuse toute nouvelle réservation après un amendement de clôture.
+
+    La simple présence d'un overlay illisible ou incohérent bloque aussi
+    l'exécution : une gouvernance endommagée ne doit jamais rouvrir des appels.
+    """
+    amendment_path = run_root.resolve(strict=True) / AMENDMENT_RELATIVE
+    if not amendment_path.exists():
+        return
+    try:
+        amendment = load_json(amendment_path)
+    except Exception as error:
+        raise R13CheckpointError(
+            "checkpoint_execution_amendment_invalid", str(amendment_path)
+        ) from error
+    required = {
+        "schema_version": "1.0.0",
+        "amendment_id": AMENDMENT_ID,
+        "release_id": RELEASE_ID,
+        "run_id": "RUN-R13-SCIENTIFIC-001",
+        "state": "EXECUTION_CLOSED_BY_AMENDMENT",
+        "historical_call_count": 1_180,
+        "retained_call_ids": ["SHAPEIT-DMAX-CHR01-SEED01"],
+        "retained_completed_calls": 1,
+        "withdrawn_unexecuted_calls": 1_179,
+        "authorized_call_ids": [],
+    }
+    if any(amendment.get(key) != expected for key, expected in required.items()):
+        _fail("checkpoint_execution_amendment_invalid", str(amendment_path))
+    if amendment.get("original_ledger_sha256") != file_sha256(
+        run_root.resolve(strict=True) / LEDGER_RELATIVE
+    ):
+        _fail("checkpoint_execution_amendment_invalid", "original_ledger_sha256")
+    _fail("checkpoint_execution_closed_by_amendment", AMENDMENT_ID)
+
+
 def claim_next_batch(
     run_root: Path,
     *,
@@ -333,6 +371,7 @@ def claim_next_batch(
         _fail("checkpoint_batch_size_invalid")
     if not isinstance(worker_id, str) or not worker_id:
         _fail("checkpoint_worker_id_invalid")
+    _assert_execution_open(run_root)
     claimed: list[dict[str, Any]] = []
     allowed = {"PENDING", "FAILED"} if retry_failed else {"PENDING"}
 

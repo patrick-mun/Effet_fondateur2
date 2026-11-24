@@ -1,0 +1,117 @@
+{
+  "amended_execution_state": "EXECUTION_CLOSED_BY_AMENDMENT",
+  "amendment_id": "R13-LIGHTWEIGHT-INTEGRATION-001",
+  "amendment_implementation_sha256": {
+    "r13_checkpoint_ledger.py": "8ba9b4ca9eb6d9235a8cd5629b9d742f325ce74b5d7ad3f69b343605dc012491",
+    "r13_integration_amendment.py": "a1fd18b368e4bed68348cee389dce81c2e4b322d2368e4a6a6bc14db1f60ddc0"
+  },
+  "checkpoint_disposition_sha256": "16d486d6c64490e18074b931cd8536c9136380c55993a498b8a14b56dc8688d9",
+  "closed_at": "2026-11-15T14:37:22Z",
+  "evidence_sha256": {
+    "r12_ibd_release/evaluations/explicit_ibd_r12.json": "eaebd671b2f5d424bd55bc3325a470e79d4cc1472fef50ad1d73fa5a15707c20",
+    "r12_ibd_release/governance/frozen_candidate_manifest.json": "aea89928c781f6fddc87d29d1300f041fa6e72ba6ddc76b9c454464dd36e88f7",
+    "r12_ibd_release/governance/release_checksums.sha256": "c552dccefd395ffec5271f9a1b20956b592f93a26e8b092a3dad0b76cdc20875",
+    "r12_ibd_release/outputs/explicit_ibd/hap_ibd.hbd.gz": "eae3093b751babdbf4e0cfea8c4dfc6bcf87fb8fb2ed906aed07e31f6db64e55",
+    "r12_ibd_release/outputs/explicit_ibd/hap_ibd.ibd.gz": "4bed412b0b08ac6e19c5b00d742f3caf044d522c5d0316243eb4c5842cc61d96",
+    "r12_ibd_release/outputs/explicit_ibd/hap_ibd.log": "8630df8a0bcc24f7d219d5365ece794237b770202c32e11fd8ef534927b57cd9",
+    "r12_ibd_release/outputs/explicit_ibd/refined_ibd.hbd.gz": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83",
+    "r12_ibd_release/outputs/explicit_ibd/refined_ibd.ibd.gz": "b81b7878e090ad4f78881e729632115776d8020d9386ab2a77a106e7cf5c5eb0",
+    "r12_ibd_release/outputs/explicit_ibd/refined_ibd.log": "65371d030b702a870ae250048adc3e30f1e4f84fcc805f6e426571a995674d9c",
+    "r12c_release/governance/r12c_frozen_manifest.json": "0693d9db38e7901529259877338f2e489e880c29e8459ffba6a455f71e019145",
+    "r12c_release/governance/r13_execution_contract.json": "93bc8e172faef24fdb4c53433ad0d3506577bf90034d175ccfeff678489e3429",
+    "r13_run/governance/external_call_checkpoints.json": "b5e008abe99224a23636cda41f1890ca64fe85d4118acad1206e6fb4efa28787",
+    "r13_run/outputs/external_calls/SHAPEIT-DMAX-CHR01-SEED01/attempt-03/phased.bcf": "a046db99337a561b9e9598da42cf1d4277296115edf396858c302ea3e2967cc8",
+    "r13_run/outputs/external_calls/SHAPEIT-DMAX-CHR01-SEED01/attempt-03/phased.bcf.csi": "1bc4a54dd192b02b2650b6e2869d34a1ffc7b16c7157c573bf215129cbc5d586",
+    "r13_run/outputs/external_calls/SHAPEIT-DMAX-CHR01-SEED01/attempt-03/receipt.json": "d1bcb710a6f855e4fd53896a5e67c9813f44c65bcedb048f38b04d823e560fb4",
+    "r13_run/outputs/external_calls/SHAPEIT-DMAX-CHR01-SEED01/attempt-03/shapeit.log": "b51f129d1fa0a664c409e4dd457077a29733a8b4f564483667e33a2782a5c23a",
+    "repository/calibration/configurations/r13_integration_amendment_v1.yaml": "795b824addd5e115630e7a6b80443fc7300ce1b7a736377d6794eea58ef66180",
+    "repository/calibration/readiness/R12C_G5_READY.json": "a8750f77ba4ef258e4ce15a5d3c2439b48226d8af9e05b84fbb2648331c889eb"
+  },
+  "execution_overlay_sha256": "88fd7039971c22ab487c1b18b276c53c906ab82370146fce697db24eab0d6e4d",
+  "explicit_ibd_integration": {
+    "hap_ibd": {
+      "designated_duplicate_detected": 23,
+      "designated_duplicate_expected": 25,
+      "pair_count": 101,
+      "segment_count": 178,
+      "verdict": "LOCAL_INTEGRATION_SUPPORTED"
+    },
+    "refined_ibd": {
+      "designated_duplicate_detected": 22,
+      "designated_duplicate_expected": 25,
+      "pair_count": 44,
+      "segment_count": 122,
+      "verdict": "LOCAL_INTEGRATION_SUPPORTED"
+    }
+  },
+  "full_performance_qualification_evaluated": false,
+  "literature": [
+    {
+      "citation": "Hofmeister et al., Nature Genetics, 2023",
+      "doi": "10.1038/s41588-023-01415-w",
+      "role": "EXTERNAL_METHOD_VALIDITY",
+      "tool": "SHAPEIT5",
+      "url": "https://doi.org/10.1038/s41588-023-01415-w"
+    },
+    {
+      "citation": "Zhou, Browning and Browning, American Journal of Human Genetics, 2020",
+      "doi": "10.1016/j.ajhg.2020.02.010",
+      "role": "EXTERNAL_METHOD_VALIDITY",
+      "tool": "Hap-IBD",
+      "url": "https://doi.org/10.1016/j.ajhg.2020.02.010"
+    },
+    {
+      "citation": "Browning and Browning, Genetics, 2013",
+      "doi": "10.1534/genetics.113.150029",
+      "role": "EXTERNAL_METHOD_VALIDITY",
+      "tool": "Refined IBD",
+      "url": "https://doi.org/10.1534/genetics.113.150029"
+    }
+  ],
+  "original_campaign": {
+    "disposition": "SUPERSEDED_NOT_EXECUTED",
+    "historical_call_count": 1180,
+    "newly_authorized_calls": 0,
+    "retained_completed_calls": 1,
+    "withdrawn_unexecuted_calls": 1179
+  },
+  "partition_id": "VALIDATION_BLIND",
+  "qualification_flags": {
+    "calibrated": false,
+    "founder_effect_proven": false,
+    "production_promotion": false
+  },
+  "receipt_id": "R13-INTEGRATION-AMENDMENT-PASS",
+  "release_id": "panel-master-generic-v1-r12c-scientific-validation",
+  "restrictions": [
+    "INTEGRATION_EVIDENCE_ONLY",
+    "NO_INTRINSIC_TOOL_REVALIDATION",
+    "NO_FULL_R07_R08_PERFORMANCE_CLAIM",
+    "NO_FOUNDER_EFFECT_CLAIM",
+    "NO_PRODUCTION_PROMOTION",
+    "NO_ADDITIONAL_R13_EXTERNAL_CALL"
+  ],
+  "run_id": "RUN-R13-SCIENTIFIC-001",
+  "schema_version": "1.0.0",
+  "scientific_method_modified": false,
+  "scope": "R13_TOOL_INTEGRATION_VERIFICATION",
+  "shapeit5_integration": {
+    "attempt": 3,
+    "call_id": "SHAPEIT-DMAX-CHR01-SEED01",
+    "maximum_rss_native": 2248622080,
+    "mendel_errors": 0,
+    "output_samples": 4000,
+    "output_variants": 46524,
+    "reference_samples": 3000,
+    "shell_used": false,
+    "study_samples": 4000,
+    "tool_version": "5.1.1",
+    "trios": 200,
+    "truth_available_to_worker": false,
+    "variants": 46524,
+    "verdict": "INTEGRATION_VERIFIED",
+    "wall_seconds": 21548.097565123055
+  },
+  "status": "CLOSED_LIGHTWEIGHT_INTEGRATION_VERIFIED",
+  "truth_opened": false
+}

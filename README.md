@@ -130,6 +130,48 @@ synthétiques :
   --repository-root . status
 ```
 
+R12c a ensuite gelé les composants scientifiques. Après un checkpoint
+SHAPEIT5 grandeur réelle réussi, la campagne exhaustive R13 a été remplacée
+par un amendement limité à la bonne intégration des outils. Son audit ne lance
+aucun nouvel appel externe :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.r13_integration_amendment audit \
+  --repository-root . \
+  --release-root calibration_workspace/releases/panel_master_generic_v1_r12c_scientific_validation \
+  --ibd-release-root calibration_workspace/releases/panel_master_generic_v1_r12_frozen_candidate \
+  --run-root calibration_workspace/r13_scientific/RUN-R13-SCIENTIFIC-001
+```
+
+Le reçu `calibration/readiness/R13_INTEGRATION_AMENDMENT.json` retient un appel
+SHAPEIT5 terminé, retire les 1 179 appels non exécutés et en autorise zéro
+nouveau. Cette portée démontre l'intégration locale, pas les performances
+scientifiques complètes ni un effet fondateur ; les trois drapeaux de
+qualification restent faux.
+
+R14b consolide cette clôture dans un HTML autonome et un PDF A4 détaillés,
+avec statistiques descriptives, graphiques, équations, hypothèses et limites.
+La construction lit uniquement les preuves synthétiques closes et ne relance
+aucun outil scientifique :
+
+```bash
+.venv/bin/python -m effet_fondateur.calibration.r14b_report build \
+  --repository-root . \
+  --r13-run-root calibration_workspace/r13_scientific/RUN-R13-SCIENTIFIC-001 \
+  --r12-ibd-root calibration_workspace/releases/panel_master_generic_v1_r12_frozen_candidate \
+  --r11b-root calibration_workspace/resource_probes/r11b_scientific_resources_v1 \
+  --output-root calibration_workspace/r14b_integration_closure \
+  --template /Users/utilisateur/.codex/skills/report_skill/templates/recherche.html \
+  --chrome "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+```
+
+Le validateur R14b refuse toute qualification scientifique accordée, tout
+drapeau de qualification vrai ou toute divergence d'empreinte des artefacts.
+Le rendu accepté se trouve dans
+`calibration_workspace/r14b_integration_closure` : HTML autonome, PDF A4 de
+16 pages, quatre figures et onze tables. Le reçu suivi correspondant est
+`calibration/readiness/R14B_INTEGRATION_CLOSURE.json`.
+
 Pour quitter l'environnement :
 
 ```bash

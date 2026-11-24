@@ -5,7 +5,9 @@ from pathlib import Path
 
 import pytest
 
+from effet_fondateur.calibration.contracts import file_sha256
 from effet_fondateur.calibration.r13_checkpoint_ledger import (
+    AMENDMENT_RELATIVE,
     LEDGER_RELATIVE,
     MARKDOWN_RELATIVE,
     TSV_RELATIVE,
@@ -154,3 +156,34 @@ def test_status_cli_can_verify_output_hashes(
 
     assert exit_code == 0
     assert result["output_hashes_verified"] is True
+
+
+def test_checkpoint_claim_is_blocked_by_lightweight_amendment(tmp_path: Path) -> None:
+    run_root = tmp_path / "run"
+    initialize_checkpoint_ledger(run_root)
+    amendment_path = run_root / AMENDMENT_RELATIVE
+    amendment_path.parent.mkdir(parents=True, exist_ok=True)
+    amendment_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0.0",
+                "amendment_id": "R13-LIGHTWEIGHT-INTEGRATION-001",
+                "release_id": "panel-master-generic-v1-r12c-scientific-validation",
+                "run_id": "RUN-R13-SCIENTIFIC-001",
+                "state": "EXECUTION_CLOSED_BY_AMENDMENT",
+                "historical_call_count": 1_180,
+                "retained_call_ids": ["SHAPEIT-DMAX-CHR01-SEED01"],
+                "retained_completed_calls": 1,
+                "withdrawn_unexecuted_calls": 1_179,
+                "authorized_call_ids": [],
+                "original_ledger_sha256": file_sha256(run_root / LEDGER_RELATIVE),
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(R13CheckpointError, match="execution_closed_by_amendment"):
+        claim_next_batch(run_root, batch_size=1, worker_id="WORKER")
+
+    status = checkpoint_status(run_root)
+    assert status["pending"] == 1_180

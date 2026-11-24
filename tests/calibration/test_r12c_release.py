@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from effet_fondateur.calibration.contracts import load_json
+from effet_fondateur.calibration.contracts import file_sha256, load_json
 from effet_fondateur.calibration.r12c_release import (
     FROZEN_COMPONENTS,
     G5_RECEIPT_PATH,
@@ -73,13 +73,23 @@ def test_r12c_release_rejects_registry_tampering(tmp_path: Path) -> None:
         validate_release(REPOSITORY_ROOT, release_root)
 
 
-def test_tracked_r12c_g5_receipt_matches_frozen_release() -> None:
+def test_tracked_r12c_freeze_is_preserved_and_superseded_by_amendment() -> None:
     release_root = (
         REPOSITORY_ROOT
         / "calibration_workspace/releases/panel_master_generic_v1_r12c_scientific_validation"
     )
-
-    assert load_json(REPOSITORY_ROOT / G5_RECEIPT_PATH) == g5_receipt_document(
-        REPOSITORY_ROOT,
-        release_root,
+    amendment = load_json(
+        REPOSITORY_ROOT / "calibration/readiness/R13_INTEGRATION_AMENDMENT.json"
     )
+    frozen_manifest = release_root / "governance/r12c_frozen_manifest.json"
+
+    assert load_json(REPOSITORY_ROOT / G5_RECEIPT_PATH)["gate_g5_passed"] is True
+    assert amendment["evidence_sha256"][
+        "r12c_release/governance/r12c_frozen_manifest.json"
+    ] == file_sha256(frozen_manifest)
+    assert amendment["amended_execution_state"] == "EXECUTION_CLOSED_BY_AMENDMENT"
+    with pytest.raises(R12cReleaseError, match="r12c_frozen_component_drift"):
+        validate_release(
+            REPOSITORY_ROOT,
+            release_root,
+        )

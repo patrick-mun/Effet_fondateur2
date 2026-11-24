@@ -2029,8 +2029,9 @@ bloquent pas le contrôle d'intégrité technique R13 prescrit par R12b.
 
 #### R12c — Nouvelle release de validation scientifique
 
-**État :** release scientifique gelée et G5 obtenu le 14 novembre 2026 ; R13
-scientifique non lancé.
+**État :** release scientifique gelée et G5 obtenu le 14 novembre 2026 ; un
+checkpoint R13 grandeur réelle a été terminé, puis la campagne exhaustive a
+été remplacée par l'amendement d'intégration décrit en R13.
 
 Le contrat `scientific_validation_v1.yaml` reprend sans réduction les minima
 R07 v2, les 640 appels SHAPEIT5, les 90 mondes IBD et les 25 critères R08. Il
@@ -2072,8 +2073,9 @@ de Holm et `p_MC=(b+1)/(N_DRAW+1)` sont implémentées. Cet audit vaut seulement
 Le raccordement spécifique couvre les 25 étapes `00` à `19`. Une preuve
 manquante bloque la production et une discordance devient une observation en
 échec. L'état est `FULL_STAGE_PRODUCERS_FROZEN` (`25/25`). La release contient
-4 000 identités pseudonymisées et 14 familles de vérité scellées ; le reçu
-`R12C_G5_READY.json` autorise R13 mais aucun résultat n'existe encore.
+4 000 identités pseudonymisées et 14 familles de vérité scellées. Le reçu
+`R12C_G5_READY.json` a autorisé le plan exhaustif R13 ; il reste une preuve
+historique et n'est pas réécrit par l'amendement ultérieur.
 
 Le fractionnement R13 est fermé avant exécution par un registre de 1 180
 checkpoints, un par appel externe. Les réservations contiennent de un à huit
@@ -2120,8 +2122,54 @@ scientifique externe ni donnée réelle. L'évaluateur figé a ensuite produit 2
 `scientific_performance_evaluated=false`, G6 scientifique à `false` et les
 trois drapeaux de qualification à `false`.
 
-**Porte :** aucun changement de code, méthode ou seuil entre clôture et
-évaluation.
+#### Amendement R13 allégé — intégration des outils scientifiques
+
+**État :** amendement `R13-LIGHTWEIGHT-INTEGRATION-001` clos le 15 novembre
+2026 dans la seule portée `R13_TOOL_INTEGRATION_VERIFICATION`.
+
+La validité intrinsèque de SHAPEIT5, Hap-IBD et Refined IBD relève de leurs
+publications méthodologiques. La vérification locale porte donc sur leur bon
+raccordement au pipeline : identité et version, paramètres et entrées,
+contrôles synthétiques appropriés, sorties non vides et intègres, séparation
+de la vérité et provenance reproductible. Cette décision ne remplace pas une
+mesure de performance R07/R08 et ne qualifie aucune conclusion biologique.
+
+La preuve principale SHAPEIT5 est le checkpoint
+`SHAPEIT-DMAX-CHR01-SEED01`, tentative 3 : SHAPEIT5 5.1.1 a terminé avec code
+0 sur 4 000 sujets, 3 000 références, 46 524 variants et 200 trios, avec zéro
+erreur mendélienne. Le BCF final contient 4 000 échantillons et 46 524
+variants ; le BCF, son index CSI, le journal et le reçu sont liés par SHA-256.
+L'exécution a duré 21 548,10 secondes et n'a donné au worker aucun accès à la
+vérité privée.
+
+L'intégration locale de Hap-IBD et Refined IBD repose sur les contrôles
+positifs synthétiques R12 déjà clos : 23/25 duplicats désignés retrouvés et
+178 segments pour Hap-IBD ; 22/25 et 122 segments pour Refined IBD. Ces
+résultats démontrent que les deux adaptateurs s'exécutent et produisent les
+sorties attendues ; ils ne satisfont pas la grille de sensibilité,
+spécificité, précision des bornes et concordance prévue pour une
+qualification complète.
+
+Le plan historique de 1 180 appels reste intact pour l'audit. Sa disposition
+amendée est de 1 appel terminé et retenu, 1 179 appels non exécutés retirés et
+zéro nouvel appel autorisé. Un overlay de gouvernance bloque toute nouvelle
+réservation ; les lignes `PENDING` ne sont ni effacées ni faussement marquées
+`COMPLETED`. Le reçu suivi est
+`calibration/readiness/R13_INTEGRATION_AMENDMENT.json`.
+
+Les références externes liées au contrat sont Hofmeister et al. (SHAPEIT5,
+DOI `10.1038/s41588-023-01415-w`), Zhou, Browning et Browning (Hap-IBD, DOI
+`10.1016/j.ajhg.2020.02.010`) et Browning et Browning (Refined IBD, DOI
+`10.1534/genetics.113.150029`). Elles justifient de ne pas répéter une
+validation intrinsèque des méthodes ; la preuve d'intégration reste locale.
+
+La vérité `VALIDATION_BLIND` n'est pas ouverte. La performance scientifique
+complète reste `NOT_EVALUATED` et les drapeaux `calibrated`,
+`founder_effect_proven` et `production_promotion` restent faux.
+
+**Porte de la validation technique historique :** aucun changement de code,
+méthode ou seuil entre sa clôture et son évaluation. L'amendement ultérieur
+est une décision de portée distincte et traçable.
 
 ### R14 — Décider la qualification et produire le rapport final
 
@@ -2141,6 +2189,33 @@ empreintes. Il maintient G6 scientifique et G7 promotion à `false` ainsi que
 les trois drapeaux de qualification à `false`.
 
 **Porte :** décision humaine explicite reliée aux versions et empreintes.
+
+### R14b — Clore l'intégration scientifique amendée
+
+**État :** terminé le 15 novembre 2026 après la clôture de l'amendement
+`R13-LIGHTWEIGHT-INTEGRATION-001`. Le rendu accepté contient 16 pages A4,
+quatre figures, onze tables et aucun espace réservé.
+
+R14b produit un rapport final autonome, détaillé et strictement limité à
+la bonne intégration locale des outils. Il consolide comme preuve principale
+le checkpoint SHAPEIT5 grandeur réelle terminé, puis comme preuves de soutien
+les contrôles positifs Hap-IBD et Refined IBD et les mesures de ressources
+R11b. Les graphiques montrent les mesures observées, leurs effectifs et leurs
+limites ; les équations employées sont rappelées avec leurs hypothèses et
+leurs unités.
+
+Les intervalles binomiaux IBD sont descriptifs : l'indépendance des 25
+duplicats désignés n'est pas établie. Le temps SHAPEIT5 est une observation
+unique et ne reçoit donc pas d'intervalle de performance inventé. R14b ne
+rouvre pas la vérité privée, ne relance aucun outil scientifique et ne
+reclasse pas les 1 179 appels retirés comme exécutés.
+
+La décision autorisée est `INTEGRATION_VERIFIED_PERFORMANCE_NOT_EVALUATED`.
+Elle maintient G6 scientifique, G7 promotion, `calibrated`,
+`founder_effect_proven` et `production_promotion` à `false`.
+
+**Porte :** HTML autonome, PDF A4 paginé, manifeste et contrôles qualité
+validés ; reçu suivi liant les empreintes des artefacts finaux.
 
 ## 12. Portes globales
 
@@ -2272,18 +2347,16 @@ qualification selon une matrice de compatibilité à produire en clôture.
 
 ## 18. Prochaine action
 
-R14 reste clos dans la seule portée `R14_TECHNICAL_CLOSURE_ONLY`. R07 v2 puis
-R11b ont fermé le dimensionnement et la faisabilité des ressources sans
-réinterpréter les sorties historiques R12b–R14. Le reçu R11b suivi autorise
-maintenant la construction de R12c, nouvelle release scientifique indépendante.
+R12c et G5 sont terminés. L'amendement R13 allégé conserve comme preuve
+principale le checkpoint SHAPEIT5 grandeur réelle terminé et les contrôles IBD
+R12 ; les 1 179 appels restants sont retirés sans être déclarés exécutés. Le
+verrou d'exécution interdit toute nouvelle réservation. Une qualification de
+performance R07/R08 complète nécessiterait une nouvelle décision et un nouveau
+plan explicites ; elle ne doit pas être inférée de cet amendement.
 
-R12c et G5 sont terminés. Le registre du futur run R13 scientifique est
-initialisé avec 1 180 appels `PENDING` et zéro calcul exécuté. La prochaine
-action est de construire le plan fermé R13 depuis la release, puis d'exécuter
-les appels par réservations de un à huit, avec huit workers au maximum. Aucun
-paramètre scientifique ne doit être réduit et la vérité ne doit être ouverte
-qu'après clôture complète.
-
-Le rapport HTML/PDF R14 accepté est le seul rendu final autorisé dans ce cycle.
-Aucune donnée réelle n'a été utilisée. Les trois drapeaux de qualification
+R14b est terminé et complète l'ancien R14 sans le réinterpréter : il qualifie
+l'intégration locale, pas les performances R07/R08, un effet fondateur ou la
+production. La prochaine décision éventuelle porte donc soit sur l'archivage de
+ce cycle, soit sur un nouveau plan explicite de qualification de performance.
+Aucune donnée réelle n'est utilisée et les trois drapeaux de qualification
 restent faux.

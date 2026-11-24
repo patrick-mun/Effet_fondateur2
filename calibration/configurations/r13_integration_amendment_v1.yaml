@@ -1,0 +1,75 @@
+schema_version: 1.0.0
+amendment_id: R13-LIGHTWEIGHT-INTEGRATION-001
+scope: R13_TOOL_INTEGRATION_VERIFICATION
+release_id: panel-master-generic-v1-r12c-scientific-validation
+run_id: RUN-R13-SCIENTIFIC-001
+partition_id: VALIDATION_BLIND
+
+original_campaign:
+  call_count: 1180
+  shapeit_call_count: 640
+  ibd_call_count: 540
+  disposition: SUPERSEDED_BY_LIGHTWEIGHT_INTEGRATION_AMENDMENT
+
+retained_checkpoint:
+  call_id: SHAPEIT-DMAX-CHR01-SEED01
+  expected_attempt: 3
+  expected_density: D_MAX
+  expected_autosome: 1
+  expected_seed: 15052001
+  expected_threads: 1
+  expected_study_samples: 4000
+  expected_reference_samples: 3000
+  expected_trios: 200
+  expected_variants: 46524
+  expected_mendel_errors: 0
+
+local_evidence:
+  shapeit_receipt: outputs/external_calls/SHAPEIT-DMAX-CHR01-SEED01/attempt-03/receipt.json
+  shapeit_bcf: outputs/external_calls/SHAPEIT-DMAX-CHR01-SEED01/attempt-03/phased.bcf
+  shapeit_csi: outputs/external_calls/SHAPEIT-DMAX-CHR01-SEED01/attempt-03/phased.bcf.csi
+  shapeit_log: outputs/external_calls/SHAPEIT-DMAX-CHR01-SEED01/attempt-03/shapeit.log
+  ibd_source_release_id: panel_master_generic_v1_r12_frozen_candidate
+  ibd_evaluation: evaluations/explicit_ibd_r12.json
+  ibd_outputs:
+    - outputs/explicit_ibd/hap_ibd.ibd.gz
+    - outputs/explicit_ibd/hap_ibd.hbd.gz
+    - outputs/explicit_ibd/hap_ibd.log
+    - outputs/explicit_ibd/refined_ibd.ibd.gz
+    - outputs/explicit_ibd/refined_ibd.hbd.gz
+    - outputs/explicit_ibd/refined_ibd.log
+
+literature:
+  - tool: SHAPEIT5
+    role: EXTERNAL_METHOD_VALIDITY
+    citation: Hofmeister et al., Nature Genetics, 2023
+    doi: 10.1038/s41588-023-01415-w
+    url: https://doi.org/10.1038/s41588-023-01415-w
+  - tool: Hap-IBD
+    role: EXTERNAL_METHOD_VALIDITY
+    citation: Zhou, Browning and Browning, American Journal of Human Genetics, 2020
+    doi: 10.1016/j.ajhg.2020.02.010
+    url: https://doi.org/10.1016/j.ajhg.2020.02.010
+  - tool: Refined IBD
+    role: EXTERNAL_METHOD_VALIDITY
+    citation: Browning and Browning, Genetics, 2013
+    doi: 10.1534/genetics.113.150029
+    url: https://doi.org/10.1534/genetics.113.150029
+
+decision:
+  retained_completed_calls: 1
+  withdrawn_unexecuted_calls: 1179
+  newly_authorized_calls: 0
+  truth_opening_authorized: false
+  full_performance_qualification_evaluated: false
+  qualification_flags:
+    calibrated: false
+    founder_effect_proven: false
+    production_promotion: false
+  restrictions:
+    - INTEGRATION_EVIDENCE_ONLY
+    - NO_INTRINSIC_TOOL_REVALIDATION
+    - NO_FULL_R07_R08_PERFORMANCE_CLAIM
+    - NO_FOUNDER_EFFECT_CLAIM
+    - NO_PRODUCTION_PROMOTION
+    - NO_ADDITIONAL_R13_EXTERNAL_CALL
