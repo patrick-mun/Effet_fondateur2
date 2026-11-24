@@ -8,18 +8,25 @@ import csv
 import hashlib
 import json
 import math
-import shutil
-import subprocess
 import sys
 import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path, PurePosixPath
+from subprocess import CompletedProcess
 from time import monotonic
 from typing import Any, Callable, Sequence
 
 from effet_fondateur.ancestry import cache_ancestry_metadata, cache_reference_extract, load_reference_samples
 from effet_fondateur.audit import atomic_write_json, read_json, sha256_file
 from effet_fondateur.contracts import DocumentValidationError, build_file_artifact, load_pipeline_config, validate_json_document
+from effet_fondateur.external_tools import (
+    ExternalCommandError,
+    ExternalToolConfigurationError,
+    ExternalToolNotFoundError,
+    default_command_runner,
+    resolve_executable,
+    run_checked,
+)
 from effet_fondateur.orchestrator.state import utc_now
 from effet_fondateur.phasing.shapeit5 import parse_shapeit5_adapter_config, probe_shapeit5
 from effet_fondateur.references.genetic_maps import ensure_genetic_map_cached, resolve_genetic_map
@@ -63,15 +70,32 @@ def _integer(parameters: dict[str, Any], name: str, default: int) -> int:
     return value
 
 
-def _run(command: Sequence[str], timeout: int, code: str) -> subprocess.CompletedProcess[str]:
+def _resolve_tools(
+    plink_command: str | None, bcftools_command: str | None
+) -> tuple[str, str]:
     try:
-        result = subprocess.run(list(command), capture_output=True, text=True, check=False, timeout=timeout)
-    except (OSError, subprocess.TimeoutExpired) as error:
-        raise AutosomalPhasingExternalError(code) from error
-    if result.returncode != 0:
-        detail = f"{result.stdout or ''}\n{result.stderr or ''}"[-2000:].replace("\n", " ")
-        raise AutosomalPhasingExternalError(f"{code}:{result.returncode}:{detail}")
-    return result
+        if plink_command is None or bcftools_command is None:
+            raise ExternalToolConfigurationError("phasing_tool_not_configured")
+        return (
+            resolve_executable(plink_command, "plink"),
+            resolve_executable(bcftools_command, "bcftools"),
+        )
+    except (ExternalToolConfigurationError, ExternalToolNotFoundError) as error:
+        raise AutosomalPhasingExternalError("plink_or_bcftools_not_found") from error
+
+
+def _run(
+    command: Sequence[str], timeout: int, code: str
+) -> CompletedProcess[str]:
+    try:
+        return run_checked(default_command_runner, command, timeout, code)
+    except ExternalCommandError as error:
+        if error.returncode is None:
+            message = code
+        else:
+            detail = f"{error.stdout}\n{error.stderr}"[-2000:].replace("\n", " ")
+            message = f"{code}:{error.returncode}:{detail}"
+        raise AutosomalPhasingExternalError(message) from error
 
 
 def _file(path: Path, root: Path) -> dict[str, Any]:
@@ -259,9 +283,9 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
     expected_samples = [row[1] for row in fam_rows]
     if len(expected_samples) != descriptor["sample_count"] or len(set(expected_samples)) != len(expected_samples):
         raise AutosomalPhasingInputError("autosomal_panel_samples_invalid")
-    plink, bcftools = shutil.which(config["tools"]["plink"]), shutil.which(config["tools"]["bcftools"])
-    if plink is None or bcftools is None:
-        raise AutosomalPhasingExternalError("plink_or_bcftools_not_found")
+    plink, bcftools = _resolve_tools(
+        config["tools"]["plink"], config["tools"]["bcftools"]
+    )
     adapter = parse_shapeit5_adapter_config(config["tools"]["phasing_adapter"])
     shapeit5 = probe_shapeit5(adapter)
     metadata_cache = cache_ancestry_metadata(catalog_path=paths["config_input_ancestry_reference_catalog"], cache_root=cache_root, offline=offline, timeout_seconds=extract_timeout)

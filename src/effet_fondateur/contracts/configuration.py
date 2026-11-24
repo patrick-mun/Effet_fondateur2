@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 import json
+from importlib.resources.abc import Traversable
 from pathlib import Path
 from typing import Any
 
 import jsonschema
 import yaml
 
+from effet_fondateur.resources import SCHEMAS_DIR
 
-DEFAULT_SCHEMA_PATH = Path(__file__).resolve().parents[3] / "schemas" / "pipeline_config.schema.json"
+
+DEFAULT_SCHEMA_PATH = SCHEMAS_DIR / "pipeline_config.schema.json"
 
 
 class ConfigurationError(ValueError):
@@ -24,7 +27,7 @@ def _format_validation_path(error: jsonschema.ValidationError) -> str:
 
 def load_pipeline_config(
     config_path: Path,
-    schema_path: Path = DEFAULT_SCHEMA_PATH,
+    schema_path: Path | Traversable = DEFAULT_SCHEMA_PATH,
 ) -> dict[str, Any]:
     """Charge un YAML et le valide sans résoudre ni modifier ses chemins."""
     try:

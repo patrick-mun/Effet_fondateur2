@@ -7,8 +7,6 @@ import csv
 import hashlib
 import json
 import math
-import shutil
-import subprocess
 import sys
 import tempfile
 from pathlib import Path, PurePosixPath
@@ -26,6 +24,15 @@ from effet_fondateur.contracts import (
     load_pipeline_config,
     validate_json_document,
     validate_tsv_table,
+)
+from effet_fondateur.external_tools import (
+    ExternalCommandError,
+    ExternalToolConfigurationError,
+    ExternalToolNotFoundError,
+    default_command_runner,
+    resolve_executable,
+    run_checked,
+    run_probe,
 )
 from effet_fondateur.orchestrator.state import utc_now
 
@@ -244,18 +251,15 @@ def _sample_context(
 def _resolve_executable(command: str | None) -> str:
     if command is None:
         raise ExternalToolError("plink_not_configured")
-    executable = shutil.which(command)
-    if executable is None:
-        raise ExternalToolError("plink_not_available")
-    return executable
+    try:
+        return resolve_executable(command, "plink")
+    except (ExternalToolConfigurationError, ExternalToolNotFoundError) as error:
+        raise ExternalToolError("plink_not_available") from error
 
 
 def _plink_version(executable: str) -> str | None:
-    try:
-        completed = subprocess.run(
-            [executable, "--version"], capture_output=True, check=False, text=True, timeout=10
-        )
-    except (OSError, subprocess.TimeoutExpired):
+    completed = run_probe(default_command_runner, [executable, "--version"], 10)
+    if completed is None:
         return None
     output = (completed.stdout or completed.stderr).strip().splitlines()
     return output[0][:200] if output else None
@@ -277,13 +281,15 @@ def _export_dosages(
         str(output_prefix),
     ]
     try:
-        completed = subprocess.run(
-            command, capture_output=True, check=False, text=True, timeout=timeout_seconds
+        run_checked(
+            default_command_runner,
+            command,
+            timeout_seconds,
+            "plink_dosage_export",
         )
-    except (OSError, subprocess.TimeoutExpired) as error:
-        raise ExternalToolError("plink_dosage_export_failed") from error
-    if completed.returncode != 0:
-        raise ExternalToolError(f"plink_dosage_export_failed:{completed.returncode}")
+    except ExternalCommandError as error:
+        suffix = "" if error.returncode is None else f":{error.returncode}"
+        raise ExternalToolError(f"plink_dosage_export_failed{suffix}") from error
     raw_path = output_prefix.with_suffix(".raw")
     if not raw_path.is_file():
         raise ExternalToolError("plink_dosage_output_missing")

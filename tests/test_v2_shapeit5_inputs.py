@@ -4,6 +4,7 @@ from effet_fondateur.phasing.inputs import (
     Shapeit5InputBlockError,
     _mendel_exclusion_rows,
     _sample_rows,
+    _variant_selection,
 )
 
 
@@ -79,4 +80,57 @@ def test_mendel_policy_never_excludes_target_variant() -> None:
             [("child", "father", "mother")],
             "target",
             "exclude_non_target_variants",
+        )
+
+
+def test_variant_selection_exposes_included_common_and_target_rows() -> None:
+    target = {
+        "VARIANT_ID": "target",
+        "SHAPEIT_ROLE": "RARE_TARGET",
+        "INCLUDED": True,
+        "IS_TARGET_VARIANT": True,
+    }
+    common = {
+        "VARIANT_ID": "common",
+        "SHAPEIT_ROLE": "COMMON",
+        "INCLUDED": True,
+        "IS_TARGET_VARIANT": False,
+    }
+    excluded = {
+        "VARIANT_ID": "excluded",
+        "SHAPEIT_ROLE": "EXCLUDED",
+        "INCLUDED": False,
+        "IS_TARGET_VARIANT": False,
+    }
+
+    selection = _variant_selection([target, common, excluded])
+
+    assert selection.included_rows == [target, common]
+    assert selection.common_rows == [common]
+    assert selection.target_row is target
+
+
+def test_variant_selection_uses_post_mendel_error_code() -> None:
+    rows = [
+        {
+            "SHAPEIT_ROLE": "RARE_TARGET",
+            "INCLUDED": True,
+            "IS_TARGET_VARIANT": True,
+        },
+        {
+            "SHAPEIT_ROLE": "EXCLUDED",
+            "INCLUDED": False,
+            "IS_TARGET_VARIANT": False,
+        },
+    ]
+
+    with pytest.raises(
+        Shapeit5InputBlockError,
+        match="insufficient_variants_after_mendel_exclusions",
+    ):
+        _variant_selection(
+            rows,
+            insufficient_variants_error=(
+                "insufficient_variants_after_mendel_exclusions"
+            ),
         )

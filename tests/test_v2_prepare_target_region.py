@@ -9,8 +9,10 @@ from pathlib import Path
 import pytest
 import yaml
 
+from effet_fondateur.external_tools import ExternalCommandError
 from effet_fondateur.orchestrator import StageExecutionError
 from effet_fondateur.orchestrator.pipeline import run_pipeline
+from effet_fondateur.stages import prepare_target_region
 from effet_fondateur.audit import sha256_file
 from effet_fondateur.references.genetic_maps import ensure_genetic_map_cached, resolve_genetic_map
 from test_v2_qc_final import prepare_final_qc_inputs
@@ -319,6 +321,24 @@ def test_target_region_plink_failure_uses_external_tool_code(tmp_path: Path) -> 
         run_pipeline(config_path, runs_dir)
 
     assert error.value.return_code == 3
+
+
+@pytest.mark.parametrize(
+    ("returncode", "expected_code"),
+    ((None, "plink_target_region_failed"), (8, "plink_target_region_failed:8")),
+)
+def test_target_region_plink_adapter_preserves_historical_error_codes(
+    monkeypatch: pytest.MonkeyPatch,
+    returncode: int | None,
+    expected_code: str,
+) -> None:
+    def fail(*args: object, **kwargs: object) -> None:
+        raise ExternalCommandError("plink_target_region", returncode)
+
+    monkeypatch.setattr(prepare_target_region, "run_checked", fail)
+
+    with pytest.raises(prepare_target_region.ExternalToolError, match=expected_code):
+        prepare_target_region._run_plink("plink", ["--chr", "19"], 30)
 
 
 def test_target_region_invalid_parameter_uses_input_code(tmp_path: Path) -> None:

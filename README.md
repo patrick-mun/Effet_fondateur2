@@ -15,7 +15,8 @@ définissent ni la portée du moteur ni ses valeurs par défaut.
 ### Python
 
 - Python 3.12
-- dépendances déclarées dans `requirements.txt`
+- dépendances d'exécution déclarées dans `pyproject.toml`
+- dépendances de développement et de test regroupées dans `requirements.txt`
 
 Installation recommandée :
 
@@ -26,6 +27,12 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 python -m pip install -e .
 ```
+
+La distribution Python embarque les schémas versionnés, les catalogues de
+référence par défaut et les ressources du rapport. Une installation depuis une
+wheel ne dépend donc pas de la présence d'un clone du dépôt. Les chemins
+`schemas/` et `config/references/` restent disponibles dans le dépôt comme
+liens de compatibilité pour les profils et la documentation existants.
 
 ### Activer l'environnement du projet
 
@@ -886,11 +893,11 @@ Pour produire le rapport HTML :
 ## Organisation
 
 ```text
-src/effet_fondateur/            pipeline V2 et logique scientifique
+src/effet_fondateur/            pipeline V2, logique scientifique et ressources distribuées
 scripts/                        analyses complémentaires et installation d'outils
 simulation_genotype_famille/    préparation ACPA, simulation et injection
-config/                         profils d'étude et catalogues de référence
-schemas/                        contrats JSON et TSV
+config/                         profils d'étude et lien vers les catalogues embarqués
+schemas/                        lien de compatibilité vers les contrats embarqués
 docs/modules/                   documentation des étapes V2
 archive/                        pipeline V1 archivé (voir archive/README.md)
 data/input/                     données sources et métadonnées non versionnées

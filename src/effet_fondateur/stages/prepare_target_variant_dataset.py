@@ -6,8 +6,6 @@ import argparse
 import csv
 import hashlib
 import json
-import shutil
-import subprocess
 import sys
 from pathlib import Path, PurePosixPath
 from time import monotonic
@@ -23,6 +21,15 @@ from effet_fondateur.contracts import (
     load_pipeline_config,
     validate_json_document,
     validate_tsv_table,
+)
+from effet_fondateur.external_tools import (
+    ExternalCommandError,
+    ExternalToolConfigurationError,
+    ExternalToolNotFoundError,
+    default_command_runner,
+    resolve_executable,
+    run_checked,
+    run_probe,
 )
 from effet_fondateur.orchestrator.state import utc_now
 
@@ -299,22 +306,15 @@ def _write_single_variant_ped_map(
 def _resolve_executable(command: str | None) -> str:
     if command is None:
         raise ExternalToolError("plink_not_configured")
-    resolved = shutil.which(command)
-    if resolved is None:
-        raise ExternalToolError("plink_not_available")
-    return resolved
+    try:
+        return resolve_executable(command, "plink")
+    except (ExternalToolConfigurationError, ExternalToolNotFoundError) as error:
+        raise ExternalToolError("plink_not_available") from error
 
 
 def _plink_version(executable: str) -> str | None:
-    try:
-        completed = subprocess.run(
-            [executable, "--version"],
-            capture_output=True,
-            check=False,
-            text=True,
-            timeout=10,
-        )
-    except (OSError, subprocess.TimeoutExpired):
+    completed = run_probe(default_command_runner, [executable, "--version"], 10)
+    if completed is None:
         return None
     output = completed.stdout.strip() or completed.stderr.strip()
     return output.splitlines()[0][:500] if output else None
@@ -322,17 +322,19 @@ def _plink_version(executable: str) -> str | None:
 
 def _run_plink(executable: str, arguments: list[str], timeout_seconds: int) -> None:
     try:
-        completed = subprocess.run(
+        run_checked(
+            default_command_runner,
             [executable, *arguments],
-            capture_output=True,
-            check=False,
-            text=True,
-            timeout=timeout_seconds,
+            timeout_seconds,
+            "plink",
         )
-    except (OSError, subprocess.TimeoutExpired) as error:
-        raise ExternalToolError("plink_execution_failed") from error
-    if completed.returncode != 0:
-        raise ExternalToolError("plink_command_failed")
+    except ExternalCommandError as error:
+        code = (
+            "plink_execution_failed"
+            if error.returncode is None
+            else "plink_command_failed"
+        )
+        raise ExternalToolError(code) from error
 
 
 def _complete_single_variant_alleles(prefix: Path, metadata: dict[str, Any]) -> None:

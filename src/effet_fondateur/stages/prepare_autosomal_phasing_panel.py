@@ -5,11 +5,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import shutil
-import subprocess
 import sys
 from collections import Counter
 from pathlib import Path, PurePosixPath
+from subprocess import CompletedProcess
 from time import monotonic
 from typing import Any, Sequence
 
@@ -19,6 +18,14 @@ from effet_fondateur.contracts import (
     build_file_artifact,
     load_pipeline_config,
     validate_json_document,
+)
+from effet_fondateur.external_tools import (
+    ExternalCommandError,
+    ExternalToolConfigurationError,
+    ExternalToolNotFoundError,
+    default_command_runner,
+    resolve_executable,
+    run_checked,
 )
 from effet_fondateur.orchestrator.state import utc_now
 
@@ -59,15 +66,27 @@ def _positive_integer(parameters: dict[str, Any], name: str, default: int) -> in
     return value
 
 
-def _run(command: list[str], timeout: int, code: str) -> subprocess.CompletedProcess[str]:
+def _resolve_plink(command: str | None) -> str:
+    if command is None:
+        raise AutosomalPanelExternalError("plink_not_found")
     try:
-        completed = subprocess.run(command, capture_output=True, text=True, check=False, timeout=timeout)
-    except (OSError, subprocess.TimeoutExpired) as error:
-        raise AutosomalPanelExternalError(code) from error
-    if completed.returncode != 0:
-        detail = (completed.stderr or completed.stdout or "")[-500:].replace("\n", " ")
-        raise AutosomalPanelExternalError(f"{code}:{completed.returncode}:{detail}")
-    return completed
+        return resolve_executable(command, "plink")
+    except (ExternalToolConfigurationError, ExternalToolNotFoundError) as error:
+        raise AutosomalPanelExternalError("plink_not_found") from error
+
+
+def _run(
+    command: list[str], timeout: int, code: str
+) -> CompletedProcess[str]:
+    try:
+        return run_checked(default_command_runner, command, timeout, code)
+    except ExternalCommandError as error:
+        if error.returncode is None:
+            message = code
+        else:
+            detail = (error.stderr or error.stdout)[-500:].replace("\n", " ")
+            message = f"{code}:{error.returncode}:{detail}"
+        raise AutosomalPanelExternalError(message) from error
 
 
 def _rows(path: Path, columns: int, code: str) -> list[list[str]]:
@@ -132,9 +151,7 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
     keep_rows = _rows(paths["cohort_keep_target_chromosome_all_qc"], 2, "cohort_keep_malformed")
     if len(keep_rows) != len({tuple(row) for row in keep_rows}):
         raise AutosomalPanelInputError("cohort_keep_duplicate")
-    plink = shutil.which(config["tools"]["plink"])
-    if plink is None:
-        raise AutosomalPanelExternalError("plink_not_found")
+    plink = _resolve_plink(config["tools"]["plink"])
     version_result = _run([plink, "--version"], timeout, "plink_version_failed")
     plink_version = (version_result.stdout or version_result.stderr).splitlines()[0]
     output_dir.mkdir(parents=True, exist_ok=True)

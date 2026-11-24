@@ -106,7 +106,10 @@ def cache_ancestry_metadata(
     entry_dir = entry_parent / cache_key
     population_asset = catalog["population_metadata"]
     unrelated_asset = catalog["unrelated_sample_index"]
-    assert isinstance(population_asset, dict) and isinstance(unrelated_asset, dict)
+    if not isinstance(population_asset, dict) or not isinstance(
+        unrelated_asset, dict
+    ):
+        raise AncestryReferenceError("ancestry_reference_catalog_assets_invalid")
     population_name = Path(urlparse(str(population_asset["url"])).path).name
     unrelated_name = Path(urlparse(str(unrelated_asset["url"])).path).name
     manifest_path = entry_dir / "ancestry_metadata_cache_manifest.json"

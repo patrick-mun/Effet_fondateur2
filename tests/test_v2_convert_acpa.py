@@ -6,8 +6,10 @@ from pathlib import Path
 import pytest
 import yaml
 
+from effet_fondateur.external_tools import ExternalCommandError
 from effet_fondateur.orchestrator import StageExecutionError
 from effet_fondateur.orchestrator.pipeline import run_pipeline
+from effet_fondateur.stages import convert_acpa
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -319,3 +321,22 @@ def test_plink_failure_uses_external_tool_return_code(tmp_path: Path) -> None:
         run_pipeline(config_path, runs_dir)
 
     assert error.value.return_code == 3
+
+
+@pytest.mark.parametrize(
+    ("returncode", "expected_code"),
+    ((None, "plink_execution_failed"), (8, "plink_make_bed_failed")),
+)
+def test_convert_plink_adapter_preserves_historical_error_codes(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    returncode: int | None,
+    expected_code: str,
+) -> None:
+    def fail(*args: object, **kwargs: object) -> None:
+        raise ExternalCommandError("plink_make_bed", returncode)
+
+    monkeypatch.setattr(convert_acpa, "run_checked", fail)
+
+    with pytest.raises(convert_acpa.ExternalToolError, match=expected_code):
+        convert_acpa._run_plink("plink", tmp_path / "dataset", 30)

@@ -4,6 +4,7 @@ from pathlib import Path
 from effet_fondateur.founder_enrichment import (
     HaplotypeProfile,
     Marker,
+    SharingStatistic,
     empirical_probability,
     enumerate_internal_null,
     evaluate_exact_sharing,
@@ -14,7 +15,11 @@ from effet_fondateur.founder_enrichment.observed import (
     EnrichmentAnalysisError, distinct_background_count,
     validate_independent_family_profiles,
 )
-from effet_fondateur.stages.evaluate_founder_haplotype_enrichment import _classification
+from effet_fondateur.stages.evaluate_founder_haplotype_enrichment import (
+    FounderEnrichmentInputError,
+    _classification,
+    _required_observed_values,
+)
 from effet_fondateur.contracts import validate_tsv_table
 from effet_fondateur.founder_enrichment.publication import NULL_DRAW_COLUMNS, null_draw_rows, write_tsv
 from itertools import chain
@@ -117,6 +122,27 @@ def test_absent_threshold_stays_not_classified() -> None:
     assert _classification(0.0001, 0.001, True, False) == "UNUSUAL_TARGET_CENTERED_SHARING"
     assert _classification(0.5, 0.001, True, False) == "NO_UNUSUAL_SHARING_DETECTED"
     assert _classification(None, None, False, False) == "NOT_EVALUATED"
+
+
+def test_evaluated_observation_requires_complete_values() -> None:
+    incomplete = SharingStatistic(
+        evaluation_status="EVALUATED",
+        left_shared_cm=0.2,
+        right_shared_cm=0.1,
+        total_shared_cm=None,
+        left_shared_bp=20,
+        right_shared_bp=10,
+        left_marker_count=2,
+        right_marker_count=1,
+        left_bound_index=0,
+        right_bound_index=3,
+    )
+
+    with pytest.raises(
+        FounderEnrichmentInputError,
+        match="observed_sharing_statistic_incomplete",
+    ):
+        _required_observed_values(incomplete)
 
 
 def test_synthetic_scientific_flow_runs_end_to_end_without_real_data(tmp_path: Path) -> None:

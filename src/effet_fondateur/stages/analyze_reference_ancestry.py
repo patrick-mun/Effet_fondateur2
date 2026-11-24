@@ -8,13 +8,12 @@ import hashlib
 import importlib.metadata
 import json
 import math
-import shutil
-import subprocess
 import sys
 import tempfile
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path, PurePosixPath
+from subprocess import CompletedProcess
 from time import monotonic
 from typing import Any, Callable, Iterable, Sequence
 
@@ -48,6 +47,15 @@ from effet_fondateur.contracts import (
     load_pipeline_config,
     validate_json_document,
     validate_tsv_table,
+)
+from effet_fondateur.external_tools import (
+    ExternalCommandError,
+    ExternalToolConfigurationError,
+    ExternalToolNotFoundError,
+    default_command_runner,
+    resolve_executable,
+    run_checked,
+    run_checked_to_text_file,
 )
 from effet_fondateur.orchestrator.state import utc_now
 
@@ -164,33 +172,42 @@ def _validated_path(artifact: dict[str, Any], run_dir: Path) -> Path:
 
 
 def _resolve_tool(command: str | None, name: str) -> str:
-    executable = shutil.which(command) if command else None
-    if executable is None:
+    if command is None:
         raise AnalyzeReferenceAncestryExternalError(f"{name}_not_available")
-    return executable
+    try:
+        return resolve_executable(command, name)
+    except (ExternalToolConfigurationError, ExternalToolNotFoundError) as error:
+        raise AnalyzeReferenceAncestryExternalError(
+            f"{name}_not_available"
+        ) from error
 
 
 def _tool_version(executable: str) -> str | None:
-    completed = subprocess.run([executable, "--version"], capture_output=True, text=True, check=False, timeout=10)
+    completed = default_command_runner([executable, "--version"], 10)
     lines = (completed.stdout or completed.stderr).strip().splitlines()
     return lines[0][:200] if lines else None
 
 
-def _run(command: list[str], timeout: int, code: str, stdout_path: Path | None = None) -> subprocess.CompletedProcess[str] | None:
+def _run(
+    command: list[str],
+    timeout: int,
+    code: str,
+    stdout_path: Path | None = None,
+) -> CompletedProcess[str] | None:
     try:
         if stdout_path is None:
-            completed = subprocess.run(command, capture_output=True, text=True, check=False, timeout=timeout)
+            return run_checked(default_command_runner, command, timeout, code)
         else:
-            with stdout_path.open("x", encoding="utf-8") as handle:
-                binary = subprocess.run(command, stdout=handle, stderr=subprocess.PIPE, text=True, check=False, timeout=timeout)
-            completed = binary
-    except subprocess.TimeoutExpired as error:
-        raise AnalyzeReferenceAncestryExternalError(f"{code}:timeout:{timeout}") from error
-    except OSError as error:
-        raise AnalyzeReferenceAncestryExternalError(code) from error
-    if completed.returncode != 0:
-        raise AnalyzeReferenceAncestryExternalError(f"{code}:{(completed.stderr or '')[:300]}")
-    return completed if stdout_path is None else None
+            run_checked_to_text_file(command, timeout, code, stdout_path)
+            return None
+    except ExternalCommandError as error:
+        if error.timed_out:
+            message = f"{code}:timeout:{timeout}"
+        elif error.returncode is None:
+            message = code
+        else:
+            message = f"{code}:{error.stderr[:300]}"
+        raise AnalyzeReferenceAncestryExternalError(message) from error
 
 
 def _extract_remote_reference(
@@ -290,7 +307,10 @@ def _validated_local_reference_source(
 
 def _samples(bcftools: str, path: Path, timeout: int) -> tuple[str, ...]:
     completed = _run([bcftools, "query", "--list-samples", str(path)], timeout, "bcftools_ancestry_samples_failed")
-    assert completed is not None
+    if completed is None:
+        raise AnalyzeReferenceAncestryExternalError(
+            "bcftools_ancestry_samples_missing_output"
+        )
     samples = tuple(line for line in completed.stdout.splitlines() if line)
     if not samples or len(samples) != len(set(samples)):
         raise AnalyzeReferenceAncestryInputError("ancestry_vcf_samples_invalid")

@@ -9,7 +9,10 @@ description = "Pipeline reproductible d'étude d'un possible effet fondateur"
 requires-python = ">=3.12"
 dependencies = [
     "jsonschema>=4.21,<5",
+    "numpy==1.26.4",
     "PyYAML>=6.0,<7",
+    "scipy>=1.11,<1.14",
+    "fpdf2>=2.7",
 ]
 
 [project.scripts]
@@ -18,5 +21,14 @@ effet-fondateur = "effet_fondateur.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+effet_fondateur = [
+    "reporting/assets/*",
+    "reporting/assets/vendor/*",
+    "resources/references/*.json",
+    "resources/schemas/*.json",
+]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+testpaths = ["tests"]

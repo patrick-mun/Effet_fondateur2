@@ -5,8 +5,6 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import shutil
-import subprocess
 import sys
 from collections import defaultdict
 from pathlib import Path, PurePosixPath
@@ -22,6 +20,14 @@ from effet_fondateur.contracts import (
     validate_cohorts_frozen,
     validate_json_document,
     validate_tsv_table,
+)
+from effet_fondateur.external_tools import (
+    ExternalCommandError,
+    ExternalToolConfigurationError,
+    ExternalToolNotFoundError,
+    default_command_runner,
+    resolve_executable,
+    run_checked,
 )
 from effet_fondateur.ld import LocalLdError, publish_local_ld
 from effet_fondateur.orchestrator.state import utc_now
@@ -226,16 +232,24 @@ def _cohort_context(
 
 
 def _resolve_plink(command: str | None) -> tuple[str, str]:
-    if command is None or shutil.which(command) is None:
-        raise LocalLdError("plink_not_available")
-    executable = shutil.which(command)
-    assert executable is not None
     try:
-        completed = subprocess.run([executable, "--version"], capture_output=True, check=False, text=True, timeout=10)
-    except (OSError, subprocess.TimeoutExpired) as error:
-        raise LocalLdError("plink_version_failed") from error
+        if command is None:
+            raise ExternalToolConfigurationError("plink_not_configured")
+        executable = resolve_executable(command, "plink")
+    except (ExternalToolConfigurationError, ExternalToolNotFoundError) as error:
+        raise LocalLdError("plink_not_available") from error
+    try:
+        completed = run_checked(
+            default_command_runner,
+            [executable, "--version"],
+            10,
+            "plink_version",
+        )
+    except ExternalCommandError as error:
+        code = "plink_version_failed" if error.returncode is None else "plink19_required"
+        raise LocalLdError(code) from error
     version = (completed.stdout or completed.stderr).strip().splitlines()
-    if completed.returncode != 0 or not version or "1.9" not in version[0]:
+    if not version or "1.9" not in version[0]:
         raise LocalLdError("plink19_required")
     return executable, version[0][:200]
 

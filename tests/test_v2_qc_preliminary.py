@@ -8,6 +8,9 @@ import yaml
 
 from effet_fondateur.orchestrator import StageExecutionError
 from effet_fondateur.orchestrator.pipeline import run_pipeline
+from effet_fondateur.external_tools import ExternalCommandError
+from effet_fondateur.stages import qc_preliminary
+from effet_fondateur.stages import build_kinship_panel
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -399,6 +402,42 @@ def test_plink_qc_failure_uses_external_tool_return_code(tmp_path: Path) -> None
         run_pipeline(config_path, runs_dir)
 
     assert error.value.return_code == 3
+
+
+@pytest.mark.parametrize(
+    ("returncode", "expected_code"),
+    ((None, "plink_execution_failed"), (8, "plink_command_failed")),
+)
+def test_qc_plink_adapter_preserves_historical_error_codes(
+    monkeypatch: pytest.MonkeyPatch,
+    returncode: int | None,
+    expected_code: str,
+) -> None:
+    def fail(*args: object, **kwargs: object) -> None:
+        raise ExternalCommandError("plink", returncode)
+
+    monkeypatch.setattr(qc_preliminary, "run_checked", fail)
+
+    with pytest.raises(qc_preliminary.ExternalToolError, match=expected_code):
+        qc_preliminary._run_plink("plink", ["--missing"], 30)
+
+
+@pytest.mark.parametrize(
+    ("returncode", "expected_code"),
+    ((None, "plink_execution_failed"), (8, "plink_command_failed")),
+)
+def test_kinship_panel_plink_adapter_preserves_historical_error_codes(
+    monkeypatch: pytest.MonkeyPatch,
+    returncode: int | None,
+    expected_code: str,
+) -> None:
+    def fail(*args: object, **kwargs: object) -> None:
+        raise ExternalCommandError("plink", returncode)
+
+    monkeypatch.setattr(build_kinship_panel, "run_checked", fail)
+
+    with pytest.raises(build_kinship_panel.ExternalToolError, match=expected_code):
+        build_kinship_panel._run_plink("plink", ["--indep-pairwise"], 30)
 
 
 def test_build_kinship_panel_publishes_autosomal_ld_pruned_dataset(

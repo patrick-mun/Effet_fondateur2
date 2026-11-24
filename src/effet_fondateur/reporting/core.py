@@ -10,6 +10,7 @@ from typing import Any
 
 from effet_fondateur.audit import atomic_write_json, read_json, sha256_file
 from effet_fondateur.contracts import load_pipeline_config, validate_json_document, validate_tsv_table
+from effet_fondateur.resources import REPORTING_ASSETS_DIR
 
 
 METHOD_ID = "reviewable_scientific_report_v1"
@@ -273,7 +274,7 @@ def _render_html(facts: dict[str, Any], draft: dict[str, Any], artifacts: dict[s
     context = facts["study_context"]
     sections_by_id = {item["section_id"]: item for item in draft["sections"]}
     styles = "body{margin:0;background:#f5f7fb;color:#172554;font:16px system-ui}header{padding:3rem 6%;color:white;background:linear-gradient(120deg,#172554,#0f766e)}main{max-width:1180px;margin:auto;padding:2rem}.card{background:white;border:1px solid #dbe4ee;border-radius:14px;padding:1.4rem;margin:1.4rem 0;box-shadow:0 8px 25px #0f172a10}table{width:100%;border-collapse:collapse}th,td{padding:.55rem;border:1px solid #cbd5e1;text-align:left}th{background:#e6fffb}textarea{width:100%;min-height:190px;padding:1rem;border:2px solid #94a3b8;border-radius:8px;font:15px system-ui;box-sizing:border-box}.facts{background:#f8fafc;padding:1rem;border-left:5px solid #0f766e}.limit{color:#9a3412}.badge{padding:.25rem .7rem;border-radius:2rem;background:#fef3c7}img.figure{width:100%}button{background:#0f766e;color:white;border:0;padding:1rem 1.5rem;border-radius:8px;font-weight:700;cursor:pointer}code{overflow-wrap:anywhere}"
-    asset_root = Path(__file__).with_name("assets")
+    asset_root = REPORTING_ASSETS_DIR
     styles = asset_root.joinpath("report-linear.css").read_text(encoding="utf-8") + styles
     target = context["target"]
     content = ["<!doctype html><html lang=\"fr\"><head><meta charset=\"utf-8\"><meta name=\"robots\" content=\"noindex,nofollow\"><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self'\"><title>Rapport V2 révisable</title>", f"<style>{styles}</style></head><body data-run-id=\"{esc(facts['run_id'])}\" data-facts-sha=\"{facts_sha}\" data-draft-sha=\"{draft_sha}\"><header><h1>Rapport V2 révisable</h1><p>Brouillon non validé · données pseudonymisées · sensitive_genetic</p></header><main>"]

@@ -7,9 +7,15 @@ import subprocess
 import pytest
 
 from effet_fondateur.contracts import validate_tsv_table
+from effet_fondateur.external_tools import ExternalCommandError
 from effet_fondateur.orchestrator.pipeline import ANALYZE_ROH_STAGE
 from effet_fondateur.roh import publish_roh
-from effet_fondateur.stages.analyze_roh import AnalyzeRohInputError, _parameters
+from effet_fondateur.roh import analysis as roh_analysis
+from effet_fondateur.stages import analyze_roh
+from effet_fondateur.stages.analyze_roh import (
+    AnalyzeRohInputError,
+    _parameters,
+)
 
 
 def _pairs(start: int, count: int) -> list[tuple[str, str]]:
@@ -143,6 +149,44 @@ def test_roh_stage_is_secondary_and_does_not_depend_on_13_15() -> None:
     assert "infer_founder_haplotype" not in ANALYZE_ROH_STAGE.dependencies
     assert "estimate_variant_age" not in ANALYZE_ROH_STAGE.dependencies
     assert "analyze_local_ld" not in ANALYZE_ROH_STAGE.dependencies
+
+
+@pytest.mark.parametrize(
+    ("returncode", "expected_code"),
+    ((None, "plink_roh_failed"), (8, "plink_roh_failed:8")),
+)
+def test_roh_plink_adapter_preserves_historical_error_codes(
+    monkeypatch: pytest.MonkeyPatch,
+    returncode: int | None,
+    expected_code: str,
+) -> None:
+    def fail(*args: object, **kwargs: object) -> None:
+        raise ExternalCommandError("plink_roh", returncode)
+
+    monkeypatch.setattr(roh_analysis, "run_checked", fail)
+
+    with pytest.raises(roh_analysis.RohAnalysisError, match=expected_code):
+        roh_analysis._run_plink("plink", ["--homozyg"], 30)
+
+
+@pytest.mark.parametrize(
+    ("returncode", "expected_code"),
+    ((None, "plink_version_failed"), (8, "plink19_required")),
+)
+def test_roh_version_adapter_preserves_historical_error_codes(
+    monkeypatch: pytest.MonkeyPatch,
+    returncode: int | None,
+    expected_code: str,
+) -> None:
+    monkeypatch.setattr(analyze_roh, "resolve_executable", lambda *args: "plink")
+
+    def fail(*args: object, **kwargs: object) -> None:
+        raise ExternalCommandError("plink_version", returncode)
+
+    monkeypatch.setattr(analyze_roh, "run_checked", fail)
+
+    with pytest.raises(roh_analysis.RohAnalysisError, match=expected_code):
+        analyze_roh._resolve_plink("plink")
 
 
 @pytest.mark.skipif(shutil.which("plink") is None, reason="PLINK 1.9 absent")

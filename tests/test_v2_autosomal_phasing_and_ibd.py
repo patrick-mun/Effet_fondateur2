@@ -3,8 +3,13 @@ from pathlib import Path
 import pytest
 
 from effet_fondateur.contracts import validate_json_document
+from effet_fondateur.external_tools import ExternalCommandError
 from effet_fondateur.explicit_ibd.analysis import IbdSegment
-from effet_fondateur.stages import call_explicit_ibd
+from effet_fondateur.stages import (
+    call_explicit_ibd,
+    phase_autosomal_panel,
+    prepare_autosomal_phasing_panel,
+)
 from effet_fondateur.stages.call_explicit_ibd import (
     _align_mutant_haplotypes,
     _control_frequency,
@@ -83,6 +88,70 @@ def test_shapeit5_input_command_fills_ac_and_an_tags(tmp_path: Path):
 def test_shapeit5_single_thread_does_not_enable_multithread_mode():
     assert _shapeit5_thread_arguments(1) == []
     assert _shapeit5_thread_arguments(4) == ["--thread", "4"]
+
+
+@pytest.mark.parametrize(
+    ("error", "expected_code"),
+    (
+        (ExternalCommandError("plink_panel"), "plink_panel"),
+        (
+            ExternalCommandError(
+                "plink_panel", 8, stdout="fallback output\n", stderr=""
+            ),
+            "plink_panel:8:fallback output ",
+        ),
+        (
+            ExternalCommandError("plink_panel", 9, stderr="failure\n"),
+            "plink_panel:9:failure ",
+        ),
+    ),
+)
+def test_autosomal_panel_adapter_preserves_historical_error_codes(
+    monkeypatch: pytest.MonkeyPatch,
+    error: ExternalCommandError,
+    expected_code: str,
+) -> None:
+    def fail(*args: object, **kwargs: object) -> None:
+        raise error
+
+    monkeypatch.setattr(prepare_autosomal_phasing_panel, "run_checked", fail)
+
+    with pytest.raises(
+        prepare_autosomal_phasing_panel.AutosomalPanelExternalError,
+        match=expected_code,
+    ):
+        prepare_autosomal_phasing_panel._run(
+            ["plink", "--make-bed"], 30, "plink_panel"
+        )
+
+
+@pytest.mark.parametrize(
+    ("error", "expected_code"),
+    (
+        (ExternalCommandError("phase"), "phase"),
+        (
+            ExternalCommandError(
+                "phase", 8, stdout="standard output", stderr="standard error\n"
+            ),
+            "phase:8:standard output standard error ",
+        ),
+    ),
+)
+def test_autosomal_phasing_adapter_preserves_historical_error_codes(
+    monkeypatch: pytest.MonkeyPatch,
+    error: ExternalCommandError,
+    expected_code: str,
+) -> None:
+    def fail(*args: object, **kwargs: object) -> None:
+        raise error
+
+    monkeypatch.setattr(phase_autosomal_panel, "run_checked", fail)
+
+    with pytest.raises(
+        phase_autosomal_panel.AutosomalPhasingExternalError,
+        match=expected_code,
+    ):
+        phase_autosomal_panel._run(["shapeit5", "--input", "study.vcf"], 30, "phase")
 
 
 def test_ibd_map_requires_vcf_compatible_chr_label_and_is_monotonic(tmp_path: Path):

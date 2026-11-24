@@ -6,8 +6,10 @@ from pathlib import Path
 import pytest
 import yaml
 
+from effet_fondateur.external_tools import ExternalCommandError
 from effet_fondateur.orchestrator import StageExecutionError
 from effet_fondateur.orchestrator.pipeline import run_pipeline
+from effet_fondateur.stages import infer_kinship
 from effet_fondateur.stages.infer_kinship import _classify_relationship
 from test_v2_qc_preliminary import prepare_inputs
 
@@ -118,6 +120,25 @@ def prepare_kinship_inputs(
 def read_tsv(path: Path) -> list[dict[str, str]]:
     with path.open(encoding="utf-8") as input_file:
         return list(csv.DictReader(input_file, delimiter="\t"))
+
+
+@pytest.mark.parametrize(
+    ("returncode", "expected_code"),
+    ((None, "king_execution_failed"), (8, "king_command_failed")),
+)
+def test_king_adapter_preserves_historical_error_codes(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    returncode: int | None,
+    expected_code: str,
+) -> None:
+    def fail(*args: object, **kwargs: object) -> None:
+        raise ExternalCommandError("king", returncode)
+
+    monkeypatch.setattr(infer_kinship, "run_checked", fail)
+
+    with pytest.raises(infer_kinship.ExternalToolError, match=expected_code):
+        infer_kinship._run_king("king", tmp_path / "panel.bed", tmp_path / "out", 4, 2, 30)
 
 
 def test_infer_kinship_accepts_empty_related_pair_set(tmp_path: Path) -> None:

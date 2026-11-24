@@ -23,8 +23,8 @@ from effet_fondateur.contracts import (
     load_pipeline_config, validate_json_document, validate_tsv_table,
 )
 from effet_fondateur.founder_enrichment import (
-    HaplotypeProfile, Marker, enumerate_internal_null, evaluate_exact_sharing,
-    sample_external_null, summarize_null,
+    HaplotypeProfile, Marker, SharingStatistic, enumerate_internal_null,
+    evaluate_exact_sharing, sample_external_null, summarize_null,
 )
 from effet_fondateur.founder_enrichment.observed import (
     EnrichmentAnalysisError, distinct_background_count,
@@ -275,6 +275,41 @@ def _classification(probability: float | None, threshold: float | None, evaluabl
     return "UNUSUAL_TARGET_CENTERED_SHARING" if probability is not None and probability <= threshold else "NO_UNUSUAL_SHARING_DETECTED"
 
 
+def _required_observed_values(
+    observed: SharingStatistic,
+) -> tuple[int, int, float, float, float, int, int]:
+    """Valide les valeurs nécessaires après une évaluation de partage réussie."""
+    left = observed.left_bound_index
+    right = observed.right_bound_index
+    total_shared_cm = observed.total_shared_cm
+    left_shared_cm = observed.left_shared_cm
+    right_shared_cm = observed.right_shared_cm
+    left_marker_count = observed.left_marker_count
+    right_marker_count = observed.right_marker_count
+    if (
+        observed.evaluation_status != "EVALUATED"
+        or left is None
+        or right is None
+        or total_shared_cm is None
+        or left_shared_cm is None
+        or right_shared_cm is None
+        or left_marker_count is None
+        or right_marker_count is None
+    ):
+        raise FounderEnrichmentInputError(
+            "observed_sharing_statistic_incomplete"
+        )
+    return (
+        left,
+        right,
+        total_shared_cm,
+        left_shared_cm,
+        right_shared_cm,
+        left_marker_count,
+        right_marker_count,
+    )
+
+
 def _load_target_metadata(path: Path) -> dict[str, Any]:
     """Charge les métadonnées cible YAML/JSON et valide leur contrat."""
     try:
@@ -335,7 +370,16 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
     representatives = tuple(_profile(study_alleles, row["SAMPLE_ID"], row["CARRIER_HAPLOTYPE_ID"], row["FAMILY_ID"]) for row in selected_rows)
     validate_independent_family_profiles(representatives, parameters["minimum_independent_units"])
     observed = evaluate_exact_sharing(markers, representatives, minimum_flank_markers=parameters["minimum_flank_markers"])
-    if observed.evaluation_status != "EVALUATED" or any(abs(actual - float(expected)) > 1e-9 for actual, expected in ((observed.left_shared_cm, consensus["LEFT_LENGTH_CM"]), (observed.right_shared_cm, consensus["RIGHT_LENGTH_CM"]))) or observed.left_marker_count != int(consensus["LEFT_MARKER_COUNT"]) or observed.right_marker_count != int(consensus["RIGHT_MARKER_COUNT"]):
+    (
+        left,
+        right,
+        observed_total_shared_cm,
+        observed_left_shared_cm,
+        observed_right_shared_cm,
+        observed_left_marker_count,
+        observed_right_marker_count,
+    ) = _required_observed_values(observed)
+    if any(abs(actual - float(expected)) > 1e-9 for actual, expected in ((observed_left_shared_cm, consensus["LEFT_LENGTH_CM"]), (observed_right_shared_cm, consensus["RIGHT_LENGTH_CM"]))) or observed_left_marker_count != int(consensus["LEFT_MARKER_COUNT"]) or observed_right_marker_count != int(consensus["RIGHT_MARKER_COUNT"]):
         raise FounderEnrichmentInputError("step13_observed_statistic_not_reproduced")
 
     qc_samples = {row["SAMPLE_ID"] for row in cohort_rows if row["COHORT_ID"] == "target_chromosome_all_qc" and row["INCLUDED"]}
@@ -359,8 +403,6 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             external_draws_by_stratum[superpopulation] = sample_external_null(markers, stratum_profiles, unit_count=len(representatives), evaluable_draws=parameters["external_null_draws"], max_attempts=parameters["external_null_max_attempts"], random_seed=parameters["random_seed"] + stratum_index, minimum_flank_markers=parameters["minimum_flank_markers"], stratum=superpopulation)
     external_draws = external_draws_by_stratum["ALL"]
 
-    left, right = observed.left_bound_index, observed.right_bound_index
-    assert left is not None and right is not None and observed.total_shared_cm is not None
     signature_indexes = tuple(index for index in range(left, right + 1) if not markers[index].is_target)
     representative_signature = tuple(representatives[0].alleles[index] for index in signature_indexes)
     consistency_rows = []
@@ -378,15 +420,15 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         multiple_backgrounds |= family_multiple
         consistency_rows.append({"FAMILY_ID": family_id, "EXPLICIT_MUTANT_COPY_COUNT": len(mutant_profiles), "EVALUABLE_MUTANT_COPY_COUNT": len(mutant_profiles), "COMPATIBLE_COPY_COUNT": compatible, "BACKGROUND_COUNT": backgrounds, "STATUS": "MULTIPLE_CARRIER_BACKGROUNDS" if family_multiple else "CONSISTENT", "DETAIL_CODE": "SIGNATURE_DISCORDANCE" if family_multiple else None})
 
-    internal_summary = summarize_null(internal_draws, observed.total_shared_cm, exhaustive=True)
-    external_summary = summarize_null(external_draws, observed.total_shared_cm, exhaustive=False)
+    internal_summary = summarize_null(internal_draws, observed_total_shared_cm, exhaustive=True)
+    external_summary = summarize_null(external_draws, observed_total_shared_cm, exhaustive=False)
     minimum_null = parameters["minimum_evaluable_null_draws"]
     evaluable = (
         internal_summary.evaluable_draws >= minimum_null
         and external_summary.evaluable_draws >= minimum_null
     )
     status = _classification(external_summary.empirical_probability, parameters["empirical_classification_threshold"], evaluable, multiple_backgrounds)
-    summaries = [("INTERNAL", "ALL", None, internal_summary)] + [("EXTERNAL", stratum, parameters["external_null_draws"], summarize_null(draws, observed.total_shared_cm, exhaustive=False)) for stratum, draws in external_draws_by_stratum.items()]
+    summaries = [("INTERNAL", "ALL", None, internal_summary)] + [("EXTERNAL", stratum, parameters["external_null_draws"], summarize_null(draws, observed_total_shared_cm, exhaustive=False)) for stratum, draws in external_draws_by_stratum.items()]
 
     analysis_dir = output_dir / "founder_enrichment"; analysis_dir.mkdir(parents=True)
     units_path = analysis_dir / "founder_haplotype_units.tsv"

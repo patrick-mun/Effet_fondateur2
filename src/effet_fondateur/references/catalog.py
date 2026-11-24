@@ -4,19 +4,18 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from importlib.resources.abc import Traversable
 from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin, urlparse
 
 from effet_fondateur.audit import sha256_file
 from effet_fondateur.contracts import DocumentValidationError, validate_json_document
+from effet_fondateur.resources import REFERENCES_DIR
 
 
 DEFAULT_REFERENCE_CATALOG_PATH = (
-    Path(__file__).resolve().parents[3]
-    / "config"
-    / "references"
-    / "1000g_high_coverage_grch38_phased.json"
+    REFERENCES_DIR / "1000g_high_coverage_grch38_phased.json"
 )
 OFFICIAL_REFERENCE_HOST = "ftp.1000genomes.ebi.ac.uk"
 REQUIRED_AUTOSOMES = frozenset(range(1, 23))
@@ -57,7 +56,7 @@ class ResolvedReferencePanel:
     index: ReferenceAsset
 
 
-def _read_catalog(path: Path) -> dict[str, Any]:
+def _read_catalog(path: Path | Traversable) -> dict[str, Any]:
     try:
         document = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError as error:
@@ -109,7 +108,7 @@ def _validate_panel(panel: dict[str, Any]) -> dict[int, dict[str, Any]]:
 
 
 def load_reference_catalog(
-    catalog_path: Path = DEFAULT_REFERENCE_CATALOG_PATH,
+    catalog_path: Path | Traversable = DEFAULT_REFERENCE_CATALOG_PATH,
 ) -> dict[str, Any]:
     """Charge le catalogue et applique les contrôles sémantiques de confiance."""
     catalog = _read_catalog(catalog_path)
@@ -127,7 +126,7 @@ def resolve_reference_panel(
     panel_id: str,
     assembly: str,
     chromosome: int,
-    catalog_path: Path = DEFAULT_REFERENCE_CATALOG_PATH,
+    catalog_path: Path | Traversable = DEFAULT_REFERENCE_CATALOG_PATH,
 ) -> ResolvedReferencePanel:
     """Résout un autosome sans accès réseau et sans sélection de population."""
     if (

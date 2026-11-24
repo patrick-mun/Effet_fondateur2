@@ -6,7 +6,6 @@ import csv
 import math
 import shutil
 import statistics
-import subprocess
 import tempfile
 from collections import defaultdict
 from dataclasses import dataclass
@@ -15,6 +14,11 @@ from typing import Any, Iterable
 
 from effet_fondateur.audit import atomic_write_json
 from effet_fondateur.contracts import validate_json_document, validate_tsv_table
+from effet_fondateur.external_tools import (
+    ExternalCommandError,
+    default_command_runner,
+    run_checked,
+)
 
 
 SEGMENT_COLUMNS = (
@@ -89,14 +93,15 @@ def _read_whitespace(path: Path, *, allow_header_only: bool = False) -> list[dic
 
 def _run_plink(executable: str, arguments: list[str], timeout_seconds: int) -> None:
     try:
-        completed = subprocess.run(
-            [executable, *arguments], capture_output=True, check=False, text=True,
-            timeout=timeout_seconds,
+        run_checked(
+            default_command_runner,
+            [executable, *arguments],
+            timeout_seconds,
+            "plink_roh",
         )
-    except (OSError, subprocess.TimeoutExpired) as error:
-        raise RohAnalysisError("plink_roh_failed") from error
-    if completed.returncode != 0:
-        raise RohAnalysisError(f"plink_roh_failed:{completed.returncode}")
+    except ExternalCommandError as error:
+        suffix = "" if error.returncode is None else f":{error.returncode}"
+        raise RohAnalysisError(f"plink_roh_failed{suffix}") from error
 
 
 def _plink_arguments(parameters: dict[str, Any]) -> list[str]:

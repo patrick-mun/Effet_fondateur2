@@ -6,8 +6,10 @@ from pathlib import Path
 import pytest
 import yaml
 
+from effet_fondateur.external_tools import ExternalCommandError
 from effet_fondateur.orchestrator import StageExecutionError
 from effet_fondateur.orchestrator.pipeline import run_pipeline
+from effet_fondateur.stages import qc_final
 from effet_fondateur.stages.qc_final import DATASET_POLICIES, _hwe_by_variant, _variant_rows
 from test_v2_freeze_cohorts import prepare_cohort_inputs
 
@@ -134,6 +136,24 @@ def prepare_final_qc_inputs(
 def read_tsv(path: Path) -> list[dict[str, str]]:
     with path.open(encoding="utf-8") as input_file:
         return list(csv.DictReader(input_file, delimiter="\t"))
+
+
+@pytest.mark.parametrize(
+    ("returncode", "expected_code"),
+    ((None, "plink_final_qc_failed"), (8, "plink_final_qc_failed:8")),
+)
+def test_final_qc_plink_adapter_preserves_historical_error_codes(
+    monkeypatch: pytest.MonkeyPatch,
+    returncode: int | None,
+    expected_code: str,
+) -> None:
+    def fail(*args: object, **kwargs: object) -> None:
+        raise ExternalCommandError("plink_final_qc", returncode)
+
+    monkeypatch.setattr(qc_final, "run_checked", fail)
+
+    with pytest.raises(qc_final.ExternalToolError, match=expected_code):
+        qc_final._run_plink("plink", ["--missing"], 30)
 
 
 @pytest.mark.parametrize("test_label", ["ALL", "ALL(NP)", "ALL(QT)"])

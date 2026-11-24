@@ -11,6 +11,7 @@ import yaml
 from effet_fondateur.ancestry import GenotypePanel, ReferenceSample, Variant, harmonize_alt_dosages
 from effet_fondateur.audit import atomic_write_json, sha256_file
 from effet_fondateur.contracts import build_file_artifact, validate_json_document, validate_tsv_table
+from effet_fondateur.external_tools import ExternalCommandError
 from effet_fondateur.orchestrator.pipeline import DEFAULT_STAGE_DEFINITIONS, build_stage_catalog
 from effet_fondateur.stages.analyze_reference_ancestry import (
     AUDIT_COLUMNS,
@@ -18,6 +19,7 @@ from effet_fondateur.stages.analyze_reference_ancestry import (
     EIGENVALUE_COLUMNS,
     LOADING_COLUMNS,
     SCORE_COLUMNS,
+    AnalyzeReferenceAncestryExternalError,
     _centroid_rows,
     _eigenvalue_rows,
     _extract_remote_reference,
@@ -25,6 +27,8 @@ from effet_fondateur.stages.analyze_reference_ancestry import (
     _parameters,
     _require_complete_local_target,
     _score_rows,
+    _samples,
+    _run,
     _validated_local_reference_source,
     _variant_audit_rows,
     _write_tsv,
@@ -73,6 +77,47 @@ def test_stage_16a_parameters_cover_global_local_and_offline_cache() -> None:
 def test_stage_16a_rejects_too_many_reference_extract_workers() -> None:
     with pytest.raises(ValueError, match="invalid_ancestry_configuration"):
         _parameters({"reference_extract_workers": 23})
+
+
+def test_sample_query_rejects_missing_completed_process(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(ancestry_stage, "_run", lambda *args, **kwargs: None)
+
+    with pytest.raises(
+        AnalyzeReferenceAncestryExternalError,
+        match="bcftools_ancestry_samples_missing_output",
+    ):
+        _samples("bcftools", tmp_path / "panel.vcf.gz", 30)
+
+
+@pytest.mark.parametrize(
+    ("error", "expected_code"),
+    (
+        (
+            ExternalCommandError("bcftools_query", timed_out=True),
+            "bcftools_query:timeout:30",
+        ),
+        (ExternalCommandError("bcftools_query"), "bcftools_query"),
+        (
+            ExternalCommandError("bcftools_query", 8, stderr="bad query"),
+            "bcftools_query:bad query",
+        ),
+    ),
+)
+def test_ancestry_adapter_preserves_historical_error_codes(
+    monkeypatch: pytest.MonkeyPatch,
+    error: ExternalCommandError,
+    expected_code: str,
+) -> None:
+    def fail(*args: object, **kwargs: object) -> None:
+        raise error
+
+    monkeypatch.setattr(ancestry_stage, "run_checked", fail)
+
+    with pytest.raises(AnalyzeReferenceAncestryExternalError, match=expected_code):
+        _run(["bcftools", "query"], 30, "bcftools_query")
 
 
 def test_remote_reference_extraction_is_split_into_bounded_chunks(tmp_path: Path) -> None:

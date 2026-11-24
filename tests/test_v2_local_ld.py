@@ -7,11 +7,18 @@ import subprocess
 import pytest
 
 from effet_fondateur.contracts import validate_tsv_table
-from effet_fondateur.ld import publish_local_ld
+from effet_fondateur.external_tools import (
+    ExternalCommandError,
+    ExternalToolNotFoundError,
+)
+from effet_fondateur.ld import LocalLdError, publish_local_ld
+from effet_fondateur.ld import local as local_ld
 from effet_fondateur.orchestrator.pipeline import ANALYZE_LOCAL_LD_STAGE
+from effet_fondateur.stages import analyze_local_ld
 from effet_fondateur.stages.analyze_local_ld import (
     AnalyzeLocalLdInputError,
     _parameters,
+    _resolve_plink,
 )
 
 
@@ -129,6 +136,82 @@ def test_local_ld_contract_is_secondary_and_independent_from_stages_13_14() -> N
 def test_local_ld_parameters_require_bins_to_cover_configured_window() -> None:
     with pytest.raises(AnalyzeLocalLdInputError, match="distance_bins_cm"):
         _parameters({"max_pair_distance_cm": 1.0, "distance_bins_cm": [0.1, 0.5]})
+
+
+def test_plink_resolution_uses_one_lookup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lookups: list[str] = []
+
+    def fake_resolve(command: str, tool: str) -> str:
+        lookups.append(command)
+        assert tool == "plink"
+        return "/opt/tools/plink"
+
+    monkeypatch.setattr(analyze_local_ld, "resolve_executable", fake_resolve)
+    monkeypatch.setattr(
+        analyze_local_ld,
+        "run_checked",
+        lambda *args, **kwargs: subprocess.CompletedProcess(
+            args[1], 0, stdout="PLINK v1.90b6.21\n", stderr=""
+        ),
+    )
+
+    assert _resolve_plink("plink") == (
+        "/opt/tools/plink",
+        "PLINK v1.90b6.21",
+    )
+    assert lookups == ["plink"]
+
+
+def test_plink_resolution_reports_unavailable_tool(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def unavailable(*args: object) -> None:
+        raise ExternalToolNotFoundError("plink_not_found")
+
+    monkeypatch.setattr(analyze_local_ld, "resolve_executable", unavailable)
+
+    with pytest.raises(LocalLdError, match="plink_not_available"):
+        _resolve_plink("plink")
+
+
+@pytest.mark.parametrize(
+    ("returncode", "expected_code"),
+    ((None, "plink_local_ld_failed"), (8, "plink_local_ld_failed:8")),
+)
+def test_local_ld_plink_adapter_preserves_historical_error_codes(
+    monkeypatch: pytest.MonkeyPatch,
+    returncode: int | None,
+    expected_code: str,
+) -> None:
+    def fail(*args: object, **kwargs: object) -> None:
+        raise ExternalCommandError("plink_local_ld", returncode)
+
+    monkeypatch.setattr(local_ld, "run_checked", fail)
+
+    with pytest.raises(LocalLdError, match=expected_code):
+        local_ld._run_plink("plink", ["--r2"], 30)
+
+
+@pytest.mark.parametrize(
+    ("returncode", "expected_code"),
+    ((None, "plink_version_failed"), (8, "plink19_required")),
+)
+def test_local_ld_version_adapter_preserves_historical_error_codes(
+    monkeypatch: pytest.MonkeyPatch,
+    returncode: int | None,
+    expected_code: str,
+) -> None:
+    monkeypatch.setattr(analyze_local_ld, "resolve_executable", lambda *args: "plink")
+
+    def fail(*args: object, **kwargs: object) -> None:
+        raise ExternalCommandError("plink_version", returncode)
+
+    monkeypatch.setattr(analyze_local_ld, "run_checked", fail)
+
+    with pytest.raises(LocalLdError, match=expected_code):
+        _resolve_plink("plink")
 
 
 @pytest.mark.skipif(shutil.which("plink") is None, reason="PLINK 1.9 absent")

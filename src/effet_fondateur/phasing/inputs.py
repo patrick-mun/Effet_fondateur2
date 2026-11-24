@@ -12,7 +12,7 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Sequence
+from typing import Any, Sequence
 
 import yaml
 
@@ -23,11 +23,19 @@ from effet_fondateur.contracts import (
     validate_json_document,
     validate_tsv_table,
 )
+from effet_fondateur.external_tools import (
+    CommandRunner,
+    ExternalCommandError,
+    ExternalToolConfigurationError,
+    ExternalToolNotFoundError,
+    default_command_runner,
+    resolve_executable,
+    run_checked,
+)
 from effet_fondateur.orchestrator.state import utc_now
 from effet_fondateur.phasing.shapeit5 import SHAPEIT5_CONTRACT
 
 
-CommandRunner = Callable[[Sequence[str], float], subprocess.CompletedProcess[str]]
 COMMON_STATUSES = {
     "MATCHED_DIRECT",
     "MATCHED_SWAPPED",
@@ -99,12 +107,68 @@ class PreparedShapeit5Inputs:
     mendel_excluded_variant_count: int
 
 
+@dataclass(frozen=True)
+class _VariantSelection:
+    """Vue validée des variants retenus pour préparer les entrées SHAPEIT5."""
+
+    included_rows: list[dict[str, Any]]
+    common_rows: list[dict[str, Any]]
+    target_row: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class _Shapeit5InputPlan:
+    """Regroupe les entrées validées nécessaires à la publication."""
+
+    timeout_seconds: float
+    chromosome: int
+    phasing_manifest: dict[str, Any]
+    target_metadata: dict[str, Any]
+    harmonization_rows: list[dict[str, Any]]
+    selection_rows: list[dict[str, Any]]
+    variant_selection: _VariantSelection
+    sample_rows: list[dict[str, Any]]
+    pedigree_rows: list[tuple[str, str, str]]
+    map_rows: list[dict[str, Any]]
+    plink_executable: str
+    bcftools_executable: str
+    plink_version: str
+    bcftools_version: str
+
+
+@dataclass(frozen=True)
+class _Shapeit5StagingPaths:
+    """Nomme les artefacts publiés et temporaires d'un répertoire de travail."""
+
+    root: Path
+    selection: Path
+    sample_mapping: Path
+    pedigree: Path
+    genetic_map: Path
+    mendel_exclusions: Path
+    extract: Path
+    reference_alleles: Path
+    update_ids: Path
+    plink_export_prefix: Path
+    plink_vcf: Path
+    study_vcf: Path
+    study_index: Path
+
+
+@dataclass(frozen=True)
+class _ValidatedStudyVcf:
+    """Résume le VCF d'étude après exclusions et contrôles scientifiques."""
+
+    variant_selection: _VariantSelection
+    observed_samples: list[str]
+    observed_variants: list[tuple[str, int, str, str, str]]
+    mendel_exclusion_count: int
+
+
 def _default_runner(
     command: Sequence[str], timeout_seconds: float
 ) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        list(command), check=False, capture_output=True, text=True, timeout=timeout_seconds
-    )
+    return default_command_runner(command, timeout_seconds)
 
 
 def _positive_number(value: float, name: str) -> float:
@@ -119,12 +183,12 @@ def _positive_number(value: float, name: str) -> float:
 
 
 def _resolve_executable(command: str, tool: str) -> str:
-    if not isinstance(command, str) or not command.strip():
-        raise Shapeit5InputError(f"{tool}_not_configured")
-    executable = shutil.which(command)
-    if executable is None:
-        raise Shapeit5InputExternalError(f"{tool}_not_found")
-    return executable
+    try:
+        return resolve_executable(command, tool)
+    except ExternalToolConfigurationError as error:
+        raise Shapeit5InputError(str(error)) from error
+    except ExternalToolNotFoundError as error:
+        raise Shapeit5InputExternalError(str(error)) from error
 
 
 def _run_checked(
@@ -134,14 +198,9 @@ def _run_checked(
     operation: str,
 ) -> subprocess.CompletedProcess[str]:
     try:
-        completed = runner(command, timeout_seconds)
-    except (OSError, subprocess.TimeoutExpired) as error:
-        raise Shapeit5InputExternalError(f"{operation}_failed") from error
-    if completed.returncode != 0:
-        raise Shapeit5InputExternalError(
-            f"{operation}_failed:{completed.returncode}"
-        )
-    return completed
+        return run_checked(runner, command, timeout_seconds, operation)
+    except ExternalCommandError as error:
+        raise Shapeit5InputExternalError(str(error)) from error
 
 
 def _read_fam(path: Path) -> list[list[str]]:
@@ -218,16 +277,39 @@ def _selection_rows(
                 "IS_TARGET_VARIANT": is_target,
             }
         )
+    return rows
+
+
+def _variant_selection(
+    rows: list[dict[str, Any]],
+    *,
+    insufficient_variants_error: str = "fewer_than_two_shapeit5_study_variants",
+) -> _VariantSelection:
+    """Construit une vue cohérente et vérifie les invariants de sélection."""
     target_rows = [row for row in rows if row["IS_TARGET_VARIANT"]]
     if len(target_rows) != 1 or not target_rows[0]["INCLUDED"]:
         raise Shapeit5InputBlockError("target_variant_not_retained_for_shapeit5")
     included_rows = [row for row in rows if row["INCLUDED"]]
-    common_count = sum(row["SHAPEIT_ROLE"] in {"COMMON", "COMMON_TARGET"} for row in rows)
+    common_rows = [
+        row
+        for row in included_rows
+        if row["SHAPEIT_ROLE"] in {"COMMON", "COMMON_TARGET"}
+    ]
     if len(included_rows) < 2:
-        raise Shapeit5InputBlockError("fewer_than_two_shapeit5_study_variants")
-    if common_count < 1:
-        raise Shapeit5InputBlockError("no_common_variant_for_phase_common")
-    return rows
+        raise Shapeit5InputBlockError(insufficient_variants_error)
+    if not common_rows:
+        error_code = (
+            insufficient_variants_error
+            if insufficient_variants_error
+            != "fewer_than_two_shapeit5_study_variants"
+            else "no_common_variant_for_phase_common"
+        )
+        raise Shapeit5InputBlockError(error_code)
+    return _VariantSelection(
+        included_rows=included_rows,
+        common_rows=common_rows,
+        target_row=target_rows[0],
+    )
 
 
 def _sample_rows(
@@ -540,7 +622,7 @@ def _result(output_dir: Path, manifest: dict[str, Any]) -> PreparedShapeit5Input
     )
 
 
-def build_shapeit5_inputs(
+def _prepare_shapeit5_input_plan(
     *,
     study_bed_path: Path,
     study_bim_path: Path,
@@ -553,16 +635,14 @@ def build_shapeit5_inputs(
     harmonization_manifest_path: Path,
     reference_vcf_path: Path,
     reference_index_path: Path,
-    reference_variant_set_id: str,
-    stage_root: Path,
     output_dir: Path,
-    plink_command: str = "plink",
-    bcftools_command: str = "bcftools",
-    timeout_seconds: float = 300,
-    mendel_error_policy: str = "block",
-    command_runner: CommandRunner = _default_runner,
-) -> PreparedShapeit5Inputs:
-    """Construit les fichiers 12.5 sans exécuter le logiciel de phasage."""
+    plink_command: str,
+    bcftools_command: str,
+    timeout_seconds: float,
+    mendel_error_policy: str,
+    command_runner: CommandRunner,
+) -> _Shapeit5InputPlan:
+    """Valide les sources et prépare toutes les données immuables du build."""
     timeout = _positive_number(timeout_seconds, "timeout_seconds")
     if mendel_error_policy not in {"block", "exclude_non_target_variants"}:
         raise Shapeit5InputError("invalid_shapeit5_input_parameter:mendel_error_policy")
@@ -594,15 +674,7 @@ def build_shapeit5_inputs(
         "reference_harmonization_manifest_invalid",
     )
     target_metadata = _load_target_metadata(target_metadata_path)
-    if (
-        len(
-            {
-                path.with_suffix("")
-                for path in (study_bed_path, study_bim_path, study_fam_path)
-            }
-        )
-        != 1
-    ):
+    if len({path.with_suffix("") for path in (study_bed_path, study_bim_path, study_fam_path)}) != 1:
         raise Shapeit5InputError("study_plink_files_do_not_share_prefix")
     if (
         phasing_manifest["files"]["bed"] != study_bed_path.name
@@ -623,44 +695,33 @@ def build_shapeit5_inputs(
         or target_metadata["chromosome"] != chromosome
     ):
         raise Shapeit5InputError("shapeit5_input_chromosome_mismatch")
-    if (
-        phasing_manifest["target_variant_id"]
-        != target_metadata["project_variant_id"]
-    ):
+    if phasing_manifest["target_variant_id"] != target_metadata["project_variant_id"]:
         raise Shapeit5InputError("shapeit5_target_identity_mismatch")
     if (
-        harmonization_manifest["files"]["vcf"]["sha256"]
-        != sha256_file(reference_vcf_path)
-        or harmonization_manifest["files"]["index"]["sha256"]
-        != sha256_file(reference_index_path)
-        or harmonization_manifest["files"]["harmonization"]["sha256"]
-        != sha256_file(harmonization_path)
+        harmonization_manifest["files"]["vcf"]["sha256"] != sha256_file(reference_vcf_path)
+        or harmonization_manifest["files"]["index"]["sha256"] != sha256_file(reference_index_path)
+        or harmonization_manifest["files"]["harmonization"]["sha256"] != sha256_file(harmonization_path)
     ):
         raise Shapeit5InputError("shapeit5_harmonization_artifact_mismatch")
-    harmonization_table = validate_tsv_table(
+
+    harmonization_rows = validate_tsv_table(
         harmonization_path, "variant_harmonization.schema.json"
-    )
-    selection_rows = _selection_rows(harmonization_table.rows, target_metadata)
-    included_rows = [row for row in selection_rows if row["INCLUDED"]]
-    common_rows = [
-        row
-        for row in included_rows
-        if row["SHAPEIT_ROLE"] in {"COMMON", "COMMON_TARGET"}
-    ]
-    target_row = next(row for row in included_rows if row["IS_TARGET_VARIANT"])
+    ).rows
+    selection_rows = _selection_rows(harmonization_rows, target_metadata)
+    variant_selection = _variant_selection(selection_rows)
     fam_rows = _read_fam(study_fam_path)
-    samples_table = validate_tsv_table(samples_master_path, "samples_master.schema.json")
-    sample_rows, pedigree_rows = _sample_rows(fam_rows, samples_table.rows)
-    map_table = validate_tsv_table(
+    samples_rows = validate_tsv_table(
+        samples_master_path, "samples_master.schema.json"
+    ).rows
+    sample_rows, pedigree_rows = _sample_rows(fam_rows, samples_rows)
+    map_rows = validate_tsv_table(
         target_genetic_map_path, "target_genetic_map.schema.json"
-    )
+    ).rows
+
     plink_executable = _resolve_executable(plink_command, "plink")
     bcftools_executable = _resolve_executable(bcftools_command, "bcftools")
     plink_version_result = _run_checked(
-        command_runner,
-        [plink_executable, "--version"],
-        timeout,
-        "plink_version",
+        command_runner, [plink_executable, "--version"], timeout, "plink_version"
     )
     bcftools_version_result = _run_checked(
         command_runner,
@@ -668,349 +729,443 @@ def build_shapeit5_inputs(
         timeout,
         "bcftools_version",
     )
-    plink_version = (
-        plink_version_result.stdout.splitlines()[0]
-        if plink_version_result.stdout
-        else ""
-    )
-    bcftools_version = (
-        bcftools_version_result.stdout.splitlines()[0]
-        if bcftools_version_result.stdout
-        else ""
-    )
+    plink_version = plink_version_result.stdout.splitlines()[0] if plink_version_result.stdout else ""
+    bcftools_version = bcftools_version_result.stdout.splitlines()[0] if bcftools_version_result.stdout else ""
     if not plink_version or not bcftools_version.startswith("bcftools "):
         raise Shapeit5InputExternalError("shapeit5_input_tool_version_invalid")
+    return _Shapeit5InputPlan(
+        timeout_seconds=timeout,
+        chromosome=chromosome,
+        phasing_manifest=phasing_manifest,
+        target_metadata=target_metadata,
+        harmonization_rows=harmonization_rows,
+        selection_rows=selection_rows,
+        variant_selection=variant_selection,
+        sample_rows=sample_rows,
+        pedigree_rows=pedigree_rows,
+        map_rows=map_rows,
+        plink_executable=plink_executable,
+        bcftools_executable=bcftools_executable,
+        plink_version=plink_version,
+        bcftools_version=bcftools_version,
+    )
+
+
+def _staging_paths(staging_dir: Path) -> _Shapeit5StagingPaths:
+    plink_export_prefix = staging_dir / "study.plink_export"
+    study_vcf = staging_dir / "study.shapeit5.vcf.gz"
+    return _Shapeit5StagingPaths(
+        root=staging_dir,
+        selection=staging_dir / "shapeit5_variant_selection.tsv",
+        sample_mapping=staging_dir / "shapeit5_sample_mapping.tsv",
+        pedigree=staging_dir / "shapeit5.pedigree.tsv",
+        genetic_map=staging_dir / "shapeit5.genetic_map.tsv.gz",
+        mendel_exclusions=staging_dir / "shapeit5_mendel_exclusions.tsv",
+        extract=staging_dir / "variants.extract.txt",
+        reference_alleles=staging_dir / "reference_alleles.tsv",
+        update_ids=staging_dir / "sample_ids.update.tsv",
+        plink_export_prefix=plink_export_prefix,
+        plink_vcf=Path(f"{plink_export_prefix}.vcf.gz"),
+        study_vcf=study_vcf,
+        study_index=Path(f"{study_vcf}.tbi"),
+    )
+
+
+def _write_shapeit5_metadata_inputs(
+    paths: _Shapeit5StagingPaths, plan: _Shapeit5InputPlan
+) -> None:
+    """Écrit les audits initiaux, le pedigree et la carte génétique."""
+    _write_tsv(paths.selection, VARIANT_SELECTION_COLUMNS, plan.selection_rows)
+    _write_tsv(paths.sample_mapping, SAMPLE_MAPPING_COLUMNS, plan.sample_rows)
+    validate_tsv_table(paths.selection, "shapeit5_variant_selection.schema.json")
+    validate_tsv_table(paths.sample_mapping, "shapeit5_sample_mapping.schema.json")
+    paths.pedigree.write_text(
+        "".join("\t".join(row) + "\n" for row in plan.pedigree_rows),
+        encoding="utf-8",
+    )
+    _write_shapeit_map(paths.genetic_map, plan.map_rows, plan.chromosome)
+
+
+def _export_shapeit5_study_vcf(
+    paths: _Shapeit5StagingPaths,
+    plan: _Shapeit5InputPlan,
+    study_bed_path: Path,
+    command_runner: CommandRunner,
+) -> None:
+    """Exporte le jeu PLINK canonique en VCF indexé avec AC et AN."""
+    paths.extract.write_text(
+        "".join(f"{row['VARIANT_ID']}\n" for row in plan.variant_selection.included_rows),
+        encoding="utf-8",
+    )
+    paths.reference_alleles.write_text(
+        "".join(
+            f"{row['CANONICAL_REF']}\t{row['VARIANT_ID']}\n"
+            for row in plan.variant_selection.included_rows
+        ),
+        encoding="utf-8",
+    )
+    paths.update_ids.write_text(
+        "".join(
+            f"{row['FID']}\t{row['IID']}\t{row['SAMPLE_ID']}\t{row['SAMPLE_ID']}\n"
+            for row in plan.sample_rows
+        ),
+        encoding="utf-8",
+    )
+    _run_checked(
+        command_runner,
+        [
+            plan.plink_executable,
+            "--bfile", str(study_bed_path.with_suffix("")),
+            "--extract", str(paths.extract),
+            "--update-ids", str(paths.update_ids),
+            "--a2-allele", str(paths.reference_alleles), "1", "2",
+            "--keep-allele-order", "--real-ref-alleles",
+            "--output-chr", "chrM", "--recode", "vcf-iid", "bgz",
+            "--out", str(paths.plink_export_prefix),
+        ],
+        plan.timeout_seconds,
+        "plink_shapeit5_vcf_export",
+    )
+    if paths.plink_vcf.is_symlink() or not paths.plink_vcf.is_file():
+        raise Shapeit5InputExternalError("plink_shapeit5_vcf_missing")
+    _run_checked(
+        command_runner,
+        [
+            plan.bcftools_executable, "+fill-tags", str(paths.plink_vcf),
+            "--output-type", "z", "--output", str(paths.study_vcf),
+            "--", "--tags", "AC,AN",
+        ],
+        plan.timeout_seconds,
+        "bcftools_fill_shapeit5_allele_counts",
+    )
+    _run_checked(
+        command_runner,
+        [plan.bcftools_executable, "index", "--tbi", str(paths.study_vcf)],
+        plan.timeout_seconds,
+        "bcftools_index_shapeit5_study",
+    )
+    if paths.study_index.is_symlink() or not paths.study_index.is_file():
+        raise Shapeit5InputExternalError("shapeit5_study_index_missing")
+
+
+def _apply_mendel_policy(
+    paths: _Shapeit5StagingPaths,
+    plan: _Shapeit5InputPlan,
+    mendel_error_policy: str,
+    command_runner: CommandRunner,
+) -> tuple[_VariantSelection, list[str], int]:
+    """Contrôle les transmissions et exclut les variants autorisés par la politique."""
+    expected_samples = [row["SAMPLE_ID"] for row in plan.sample_rows]
+    observed_samples = _bcftools_samples(
+        plan.bcftools_executable, paths.study_vcf, command_runner, plan.timeout_seconds
+    )
+    if observed_samples != expected_samples:
+        raise Shapeit5InputBlockError("shapeit5_study_sample_set_or_order_mismatch")
+    mendel_records = _query_mendel_records(
+        plan.bcftools_executable,
+        paths.study_vcf,
+        len(observed_samples),
+        command_runner,
+        plan.timeout_seconds,
+    )
+    mendel_exclusions = _mendel_exclusion_rows(
+        mendel_records,
+        observed_samples,
+        plan.pedigree_rows,
+        plan.target_metadata["project_variant_id"],
+        mendel_error_policy,
+    )
+    variant_selection = plan.variant_selection
+    if mendel_exclusions:
+        excluded_ids = {row["VARIANT_ID"] for row in mendel_exclusions}
+        for row in plan.selection_rows:
+            if row["VARIANT_ID"] in excluded_ids:
+                row.update(
+                    {
+                        "SHAPEIT_ROLE": "EXCLUDED",
+                        "INCLUDED": False,
+                        "CANONICAL_REF": None,
+                        "CANONICAL_ALT": None,
+                        "EXCLUSION_CODE": "mendelian_incompatibility_before_phasing",
+                    }
+                )
+        variant_selection = _variant_selection(
+            plan.selection_rows,
+            insufficient_variants_error="insufficient_variants_after_mendel_exclusions",
+        )
+        exclude_path = paths.root / "mendel_variants.exclude.txt"
+        exclude_path.write_text(
+            "".join(f"{variant_id}\n" for variant_id in sorted(excluded_ids)),
+            encoding="utf-8",
+        )
+        filtered_path = paths.root / "study.mendel_filtered.vcf.gz"
+        _run_checked(
+            command_runner,
+            [
+                plan.bcftools_executable, "view", "--exclude", f"ID=@{exclude_path}",
+                "--output-type", "z", "--output", str(filtered_path), str(paths.study_vcf),
+            ],
+            plan.timeout_seconds,
+            "bcftools_exclude_mendel_variants",
+        )
+        _run_checked(
+            command_runner,
+            [plan.bcftools_executable, "index", "--tbi", str(filtered_path)],
+            plan.timeout_seconds,
+            "bcftools_index_mendel_filtered_study",
+        )
+        paths.study_vcf.unlink()
+        paths.study_index.unlink()
+        os.replace(filtered_path, paths.study_vcf)
+        os.replace(Path(f"{filtered_path}.tbi"), paths.study_index)
+        exclude_path.unlink()
+
+    _write_tsv(paths.selection, VARIANT_SELECTION_COLUMNS, plan.selection_rows)
+    _write_tsv(
+        paths.mendel_exclusions,
+        MENDEL_EXCLUSION_COLUMNS,
+        mendel_exclusions
+        or [{
+            "VARIANT_ID": "NOT_APPLICABLE",
+            "CHROMOSOME": None,
+            "POSITION_BP": None,
+            "AFFECTED_PEDIGREE_RECORD_COUNT": 0,
+            "POLICY": mendel_error_policy,
+            "REASON": "no_mendelian_incompatibility",
+            "IS_TARGET_VARIANT": False,
+        }],
+    )
+    validate_tsv_table(paths.selection, "shapeit5_variant_selection.schema.json")
+    validate_tsv_table(paths.mendel_exclusions, "shapeit5_mendel_exclusions.schema.json")
+    return variant_selection, observed_samples, len(mendel_exclusions)
+
+
+def _validate_shapeit5_vcfs(
+    *,
+    paths: _Shapeit5StagingPaths,
+    plan: _Shapeit5InputPlan,
+    variant_selection: _VariantSelection,
+    observed_samples: list[str],
+    reference_vcf_path: Path,
+    command_runner: CommandRunner,
+) -> list[tuple[str, int, str, str, str]]:
+    """Vérifie identité, allèles, référence commune et couverture de carte."""
+    expected_variants = [
+        (
+            f"chr{plan.chromosome}", int(row["POSITION_BP"]), row["VARIANT_ID"],
+            row["CANONICAL_REF"], row["CANONICAL_ALT"],
+        )
+        for row in variant_selection.included_rows
+    ]
+    observed_variants = _bcftools_variants(
+        plan.bcftools_executable, paths.study_vcf, command_runner, plan.timeout_seconds
+    )
+    if observed_variants != expected_variants:
+        raise Shapeit5InputBlockError("shapeit5_study_variant_identity_or_order_mismatch")
+    _validate_allele_counts(
+        plan.bcftools_executable, paths.study_vcf, command_runner, plan.timeout_seconds
+    )
+    reference_samples = _bcftools_samples(
+        plan.bcftools_executable, reference_vcf_path, command_runner, plan.timeout_seconds
+    )
+    if set(reference_samples) & set(observed_samples):
+        raise Shapeit5InputBlockError("study_reference_sample_id_overlap")
+    reference_variants = set(
+        _bcftools_variants(
+            plan.bcftools_executable,
+            reference_vcf_path,
+            command_runner,
+            plan.timeout_seconds,
+        )
+    )
+    common_ids = {row["VARIANT_ID"] for row in variant_selection.common_rows}
+    expected_common = {
+        (
+            f"chr{plan.chromosome}", int(row["POSITION_BP"]), row["REFERENCE_ID"] or ".",
+            row["REFERENCE_REF"], row["REFERENCE_ALT"],
+        )
+        for row in plan.harmonization_rows
+        if row["STUDY_VARIANT_ID"] in common_ids
+    }
+    reference_keys = {
+        (chromosome_name, position_bp, ref, alt)
+        for chromosome_name, position_bp, _, ref, alt in reference_variants
+    }
+    if any(
+        (chromosome_name, position_bp, ref, alt) not in reference_keys
+        for chromosome_name, position_bp, _, ref, alt in expected_common
+    ):
+        raise Shapeit5InputBlockError("shapeit5_common_variant_missing_from_reference")
+    if not (
+        int(plan.map_rows[0]["POSITION_BP"])
+        <= int(variant_selection.included_rows[0]["POSITION_BP"])
+        and int(plan.map_rows[-1]["POSITION_BP"])
+        >= int(variant_selection.included_rows[-1]["POSITION_BP"])
+    ):
+        raise Shapeit5InputBlockError("shapeit5_map_does_not_cover_study_variants")
+    return observed_variants
+
+
+def _remove_shapeit5_export_helpers(paths: _Shapeit5StagingPaths) -> None:
+    """Retire les fichiers nécessaires à l'export mais absents du contrat publié."""
+    for temporary_path in (
+        paths.extract,
+        paths.reference_alleles,
+        paths.update_ids,
+        paths.plink_vcf,
+        Path(f"{paths.plink_export_prefix}.log"),
+        Path(f"{paths.plink_export_prefix}.nosex"),
+    ):
+        if temporary_path.exists():
+            temporary_path.unlink()
+
+
+def _shapeit5_inputs_manifest(
+    *,
+    paths: _Shapeit5StagingPaths,
+    plan: _Shapeit5InputPlan,
+    validated_study: _ValidatedStudyVcf,
+    reference_vcf_path: Path,
+    reference_index_path: Path,
+    reference_variant_set_id: str,
+    stage_root: Path,
+    mendel_error_policy: str,
+) -> dict[str, Any]:
+    """Construit le manifeste final à partir des artefacts déjà validés."""
+    first_position = validated_study.variant_selection.included_rows[0]["POSITION_BP"]
+    last_position = validated_study.variant_selection.included_rows[-1]["POSITION_BP"]
+    input_region = f"chr{plan.chromosome}:{first_position}-{last_position}"
+    return {
+        "schema_version": "1.0.0",
+        "created_at": utc_now(),
+        "method_id": "plink_vcf_shapeit5_inputs_v1",
+        "adapter_id": SHAPEIT5_CONTRACT.adapter_id,
+        "assembly": "GRCh38",
+        "chromosome": plan.chromosome,
+        "input_region": input_region,
+        "scaffold_region": input_region,
+        "sample_set_id": plan.phasing_manifest["sample_set_id"],
+        "study_variant_set_id": f"shapeit5_study_{sha256_file(paths.study_vcf)[:16]}",
+        "reference_variant_set_id": reference_variant_set_id,
+        "sample_count": len(validated_study.observed_samples),
+        "study_variant_count": len(validated_study.observed_variants),
+        "common_variant_count": len(validated_study.variant_selection.common_rows),
+        "pedigree_record_count": len(plan.pedigree_rows),
+        "mendel_error_policy": mendel_error_policy,
+        "mendel_excluded_variant_count": validated_study.mendel_exclusion_count,
+        "target_variant_id": plan.target_metadata["project_variant_id"],
+        "target_variant_role": validated_study.variant_selection.target_row["SHAPEIT_ROLE"],
+        "tools": {
+            "plink": plan.plink_version,
+            "bcftools": plan.bcftools_version.removeprefix("bcftools "),
+        },
+        "files": {
+            "study_vcf": _file_record(paths.study_vcf),
+            "study_index": _file_record(paths.study_index),
+            "reference_vcf": _stage_file_record(reference_vcf_path, stage_root),
+            "reference_index": _stage_file_record(reference_index_path, stage_root),
+            "genetic_map": _file_record(paths.genetic_map),
+            "pedigree": _file_record(paths.pedigree),
+            "variant_selection": _file_record(paths.selection),
+            "sample_mapping": _file_record(paths.sample_mapping),
+            "mendel_exclusions": _file_record(paths.mendel_exclusions),
+        },
+        "checks": {
+            "sample_identity_and_order": "PASS",
+            "pedigree_identity": "PASS",
+            "canonical_ref_alt": "PASS",
+            "allele_counts": "PASS",
+            "reference_common_variants": "PASS",
+            "target_variant_retained": "PASS",
+            "genetic_map": "PASS",
+            "tabix_index": "PASS",
+            "mendel_variant_policy": "PASS",
+        },
+    }
+
+
+def build_shapeit5_inputs(
+    *,
+    study_bed_path: Path,
+    study_bim_path: Path,
+    study_fam_path: Path,
+    phasing_manifest_path: Path,
+    target_genetic_map_path: Path,
+    samples_master_path: Path,
+    target_metadata_path: Path,
+    harmonization_path: Path,
+    harmonization_manifest_path: Path,
+    reference_vcf_path: Path,
+    reference_index_path: Path,
+    reference_variant_set_id: str,
+    stage_root: Path,
+    output_dir: Path,
+    plink_command: str = "plink",
+    bcftools_command: str = "bcftools",
+    timeout_seconds: float = 300,
+    mendel_error_policy: str = "block",
+    command_runner: CommandRunner = _default_runner,
+) -> PreparedShapeit5Inputs:
+    """Construit les fichiers 12.5 sans exécuter le logiciel de phasage."""
+    plan = _prepare_shapeit5_input_plan(
+        study_bed_path=study_bed_path,
+        study_bim_path=study_bim_path,
+        study_fam_path=study_fam_path,
+        phasing_manifest_path=phasing_manifest_path,
+        target_genetic_map_path=target_genetic_map_path,
+        samples_master_path=samples_master_path,
+        target_metadata_path=target_metadata_path,
+        harmonization_path=harmonization_path,
+        harmonization_manifest_path=harmonization_manifest_path,
+        reference_vcf_path=reference_vcf_path,
+        reference_index_path=reference_index_path,
+        output_dir=output_dir,
+        plink_command=plink_command,
+        bcftools_command=bcftools_command,
+        timeout_seconds=timeout_seconds,
+        mendel_error_policy=mendel_error_policy,
+        command_runner=command_runner,
+    )
 
     output_dir.parent.mkdir(parents=True, exist_ok=True)
     staging_dir = Path(
         tempfile.mkdtemp(prefix=f".{output_dir.name}.", dir=output_dir.parent)
     )
+    paths = _staging_paths(staging_dir)
     published = False
     try:
-        selection_path = staging_dir / "shapeit5_variant_selection.tsv"
-        sample_mapping_path = staging_dir / "shapeit5_sample_mapping.tsv"
-        pedigree_path = staging_dir / "shapeit5.pedigree.tsv"
-        genetic_map_path = staging_dir / "shapeit5.genetic_map.tsv.gz"
-        mendel_exclusions_path = staging_dir / "shapeit5_mendel_exclusions.tsv"
-        _write_tsv(selection_path, VARIANT_SELECTION_COLUMNS, selection_rows)
-        _write_tsv(sample_mapping_path, SAMPLE_MAPPING_COLUMNS, sample_rows)
-        validate_tsv_table(selection_path, "shapeit5_variant_selection.schema.json")
-        validate_tsv_table(sample_mapping_path, "shapeit5_sample_mapping.schema.json")
-        pedigree_path.write_text(
-            "".join("\t".join(row) + "\n" for row in pedigree_rows),
-            encoding="utf-8",
-        )
-        _write_shapeit_map(genetic_map_path, map_table.rows, chromosome)
-
-        extract_path = staging_dir / "variants.extract.txt"
-        reference_alleles_path = staging_dir / "reference_alleles.tsv"
-        update_ids_path = staging_dir / "sample_ids.update.tsv"
-        extract_path.write_text(
-            "".join(f"{row['VARIANT_ID']}\n" for row in included_rows),
-            encoding="utf-8",
-        )
-        reference_alleles_path.write_text(
-            "".join(
-                f"{row['CANONICAL_REF']}\t{row['VARIANT_ID']}\n"
-                for row in included_rows
-            ),
-            encoding="utf-8",
-        )
-        update_ids_path.write_text(
-            "".join(
-                f"{row['FID']}\t{row['IID']}\t{row['SAMPLE_ID']}\t{row['SAMPLE_ID']}\n"
-                for row in sample_rows
-            ),
-            encoding="utf-8",
-        )
-        plink_export_prefix = staging_dir / "study.plink_export"
-        _run_checked(
-            command_runner,
-            [
-                plink_executable,
-                "--bfile",
-                str(study_bed_path.with_suffix("")),
-                "--extract",
-                str(extract_path),
-                "--update-ids",
-                str(update_ids_path),
-                "--a2-allele",
-                str(reference_alleles_path),
-                "1",
-                "2",
-                "--keep-allele-order",
-                "--real-ref-alleles",
-                "--output-chr",
-                "chrM",
-                "--recode",
-                "vcf-iid",
-                "bgz",
-                "--out",
-                str(plink_export_prefix),
-            ],
-            timeout,
-            "plink_shapeit5_vcf_export",
-        )
-        plink_vcf_path = Path(f"{plink_export_prefix}.vcf.gz")
-        study_vcf_path = staging_dir / "study.shapeit5.vcf.gz"
-        study_index_path = Path(f"{study_vcf_path}.tbi")
-        if plink_vcf_path.is_symlink() or not plink_vcf_path.is_file():
-            raise Shapeit5InputExternalError("plink_shapeit5_vcf_missing")
-        _run_checked(
-            command_runner,
-            [
-                bcftools_executable,
-                "+fill-tags",
-                str(plink_vcf_path),
-                "--output-type",
-                "z",
-                "--output",
-                str(study_vcf_path),
-                "--",
-                "--tags",
-                "AC,AN",
-            ],
-            timeout,
-            "bcftools_fill_shapeit5_allele_counts",
-        )
-        _run_checked(
-            command_runner,
-            [bcftools_executable, "index", "--tbi", str(study_vcf_path)],
-            timeout,
-            "bcftools_index_shapeit5_study",
-        )
-        if study_index_path.is_symlink() or not study_index_path.is_file():
-            raise Shapeit5InputExternalError("shapeit5_study_index_missing")
-        expected_samples = [row["SAMPLE_ID"] for row in sample_rows]
-        observed_samples = _bcftools_samples(
-            bcftools_executable,
-            study_vcf_path,
-            command_runner,
-            timeout,
-        )
-        if observed_samples != expected_samples:
-            raise Shapeit5InputBlockError("shapeit5_study_sample_set_or_order_mismatch")
-        mendel_records = _query_mendel_records(
-            bcftools_executable,
-            study_vcf_path,
-            len(observed_samples),
-            command_runner,
-            timeout,
-        )
-        mendel_exclusions = _mendel_exclusion_rows(
-            mendel_records,
-            observed_samples,
-            pedigree_rows,
-            target_metadata["project_variant_id"],
-            mendel_error_policy,
-        )
-        mendel_exclusion_count = len(mendel_exclusions)
-        if mendel_exclusions:
-            excluded_ids = {row["VARIANT_ID"] for row in mendel_exclusions}
-            for row in selection_rows:
-                if row["VARIANT_ID"] in excluded_ids:
-                    row.update(
-                        {
-                            "SHAPEIT_ROLE": "EXCLUDED",
-                            "INCLUDED": False,
-                            "CANONICAL_REF": None,
-                            "CANONICAL_ALT": None,
-                            "EXCLUSION_CODE": "mendelian_incompatibility_before_phasing",
-                        }
-                    )
-            included_rows = [row for row in selection_rows if row["INCLUDED"]]
-            common_rows = [
-                row
-                for row in included_rows
-                if row["SHAPEIT_ROLE"] in {"COMMON", "COMMON_TARGET"}
-            ]
-            target_row = next(row for row in included_rows if row["IS_TARGET_VARIANT"])
-            if len(included_rows) < 2 or not common_rows:
-                raise Shapeit5InputBlockError(
-                    "insufficient_variants_after_mendel_exclusions"
-                )
-            exclude_path = staging_dir / "mendel_variants.exclude.txt"
-            exclude_path.write_text(
-                "".join(f"{variant_id}\n" for variant_id in sorted(excluded_ids)),
-                encoding="utf-8",
-            )
-            filtered_path = staging_dir / "study.mendel_filtered.vcf.gz"
-            _run_checked(
-                command_runner,
-                [
-                    bcftools_executable,
-                    "view",
-                    "--exclude",
-                    f"ID=@{exclude_path}",
-                    "--output-type",
-                    "z",
-                    "--output",
-                    str(filtered_path),
-                    str(study_vcf_path),
-                ],
-                timeout,
-                "bcftools_exclude_mendel_variants",
-            )
-            _run_checked(
-                command_runner,
-                [bcftools_executable, "index", "--tbi", str(filtered_path)],
-                timeout,
-                "bcftools_index_mendel_filtered_study",
-            )
-            study_vcf_path.unlink()
-            study_index_path.unlink()
-            os.replace(filtered_path, study_vcf_path)
-            os.replace(Path(f"{filtered_path}.tbi"), study_index_path)
-            exclude_path.unlink()
-        _write_tsv(selection_path, VARIANT_SELECTION_COLUMNS, selection_rows)
-        _write_tsv(
-            mendel_exclusions_path,
-            MENDEL_EXCLUSION_COLUMNS,
-            mendel_exclusions
-            or [{
-                "VARIANT_ID": "NOT_APPLICABLE",
-                "CHROMOSOME": None,
-                "POSITION_BP": None,
-                "AFFECTED_PEDIGREE_RECORD_COUNT": 0,
-                "POLICY": mendel_error_policy,
-                "REASON": "no_mendelian_incompatibility",
-                "IS_TARGET_VARIANT": False,
-            }],
-        )
-        validate_tsv_table(selection_path, "shapeit5_variant_selection.schema.json")
-        validate_tsv_table(
-            mendel_exclusions_path, "shapeit5_mendel_exclusions.schema.json"
-        )
-        expected_variants = [
-            (
-                f"chr{chromosome}",
-                int(row["POSITION_BP"]),
-                row["VARIANT_ID"],
-                row["CANONICAL_REF"],
-                row["CANONICAL_ALT"],
-            )
-            for row in included_rows
-        ]
-        observed_variants = _bcftools_variants(
-            bcftools_executable,
-            study_vcf_path,
-            command_runner,
-            timeout,
-        )
-        if observed_variants != expected_variants:
-            raise Shapeit5InputBlockError("shapeit5_study_variant_identity_or_order_mismatch")
-        _validate_allele_counts(
-            bcftools_executable,
-            study_vcf_path,
-            command_runner,
-            timeout,
-        )
-        reference_samples = _bcftools_samples(
-            bcftools_executable,
-            reference_vcf_path,
-            command_runner,
-            timeout,
-        )
-        if set(reference_samples) & set(observed_samples):
-            raise Shapeit5InputBlockError("study_reference_sample_id_overlap")
-        reference_variants = set(
-            _bcftools_variants(
-                bcftools_executable,
-                reference_vcf_path,
-                command_runner,
-                timeout,
+        _write_shapeit5_metadata_inputs(paths, plan)
+        _export_shapeit5_study_vcf(paths, plan, study_bed_path, command_runner)
+        variant_selection, observed_samples, mendel_exclusion_count = (
+            _apply_mendel_policy(
+                paths, plan, mendel_error_policy, command_runner
             )
         )
-        expected_common = {
-            (
-                f"chr{chromosome}",
-                int(row["POSITION_BP"]),
-                row["REFERENCE_ID"] or ".",
-                row["REFERENCE_REF"],
-                row["REFERENCE_ALT"],
-            )
-            for row in harmonization_table.rows
-            if row["STUDY_VARIANT_ID"]
-            in {common_row["VARIANT_ID"] for common_row in common_rows}
-        }
-        reference_keys = {
-            (chromosome_name, position_bp, ref, alt)
-            for chromosome_name, position_bp, _, ref, alt in reference_variants
-        }
-        if any(
-            (chromosome_name, position_bp, ref, alt) not in reference_keys
-            for chromosome_name, position_bp, _, ref, alt in expected_common
-        ):
-            raise Shapeit5InputBlockError("shapeit5_common_variant_missing_from_reference")
-        if not (
-            int(map_table.rows[0]["POSITION_BP"])
-            <= int(included_rows[0]["POSITION_BP"])
-            and int(map_table.rows[-1]["POSITION_BP"])
-            >= int(included_rows[-1]["POSITION_BP"])
-        ):
-            raise Shapeit5InputBlockError("shapeit5_map_does_not_cover_study_variants")
-
-        for temporary_path in (
-            extract_path,
-            reference_alleles_path,
-            update_ids_path,
-            plink_vcf_path,
-            Path(f"{plink_export_prefix}.log"),
-            Path(f"{plink_export_prefix}.nosex"),
-        ):
-            if temporary_path.exists():
-                temporary_path.unlink()
-        input_region = (
-            f"chr{chromosome}:{included_rows[0]['POSITION_BP']}-{included_rows[-1]['POSITION_BP']}"
+        observed_variants = _validate_shapeit5_vcfs(
+            paths=paths,
+            plan=plan,
+            variant_selection=variant_selection,
+            observed_samples=observed_samples,
+            reference_vcf_path=reference_vcf_path,
+            command_runner=command_runner,
         )
-        scaffold_region = input_region
-        manifest = {
-            "schema_version": "1.0.0",
-            "created_at": utc_now(),
-            "method_id": "plink_vcf_shapeit5_inputs_v1",
-            "adapter_id": SHAPEIT5_CONTRACT.adapter_id,
-            "assembly": "GRCh38",
-            "chromosome": chromosome,
-            "input_region": input_region,
-            "scaffold_region": scaffold_region,
-            "sample_set_id": phasing_manifest["sample_set_id"],
-            "study_variant_set_id": f"shapeit5_study_{sha256_file(study_vcf_path)[:16]}",
-            "reference_variant_set_id": reference_variant_set_id,
-            "sample_count": len(observed_samples),
-            "study_variant_count": len(observed_variants),
-            "common_variant_count": len(common_rows),
-            "pedigree_record_count": len(pedigree_rows),
-            "mendel_error_policy": mendel_error_policy,
-            "mendel_excluded_variant_count": mendel_exclusion_count,
-            "target_variant_id": target_metadata["project_variant_id"],
-            "target_variant_role": target_row["SHAPEIT_ROLE"],
-            "tools": {
-                "plink": plink_version,
-                "bcftools": bcftools_version.removeprefix("bcftools "),
-            },
-            "files": {
-                "study_vcf": _file_record(study_vcf_path),
-                "study_index": _file_record(study_index_path),
-                "reference_vcf": _stage_file_record(reference_vcf_path, stage_root),
-                "reference_index": _stage_file_record(reference_index_path, stage_root),
-                "genetic_map": _file_record(genetic_map_path),
-                "pedigree": _file_record(pedigree_path),
-                "variant_selection": _file_record(selection_path),
-                "sample_mapping": _file_record(sample_mapping_path),
-                "mendel_exclusions": _file_record(mendel_exclusions_path),
-            },
-            "checks": {
-                "sample_identity_and_order": "PASS",
-                "pedigree_identity": "PASS",
-                "canonical_ref_alt": "PASS",
-                "allele_counts": "PASS",
-                "reference_common_variants": "PASS",
-                "target_variant_retained": "PASS",
-                "genetic_map": "PASS",
-                "tabix_index": "PASS",
-                "mendel_variant_policy": "PASS",
-            },
-        }
+        validated_study = _ValidatedStudyVcf(
+            variant_selection=variant_selection,
+            observed_samples=observed_samples,
+            observed_variants=observed_variants,
+            mendel_exclusion_count=mendel_exclusion_count,
+        )
+        _remove_shapeit5_export_helpers(paths)
+        manifest = _shapeit5_inputs_manifest(
+            paths=paths,
+            plan=plan,
+            validated_study=validated_study,
+            reference_vcf_path=reference_vcf_path,
+            reference_index_path=reference_index_path,
+            reference_variant_set_id=reference_variant_set_id,
+            stage_root=stage_root,
+            mendel_error_policy=mendel_error_policy,
+        )
         validate_json_document(manifest, "shapeit5_inputs_manifest.schema.json")
         atomic_write_json(staging_dir / "shapeit5_inputs_manifest.json", manifest)
         os.replace(staging_dir, output_dir)

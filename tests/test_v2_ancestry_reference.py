@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+import effet_fondateur.ancestry.reference as ancestry_reference
 from effet_fondateur.ancestry import (
     AncestryReferenceError,
     cache_ancestry_metadata,
@@ -94,6 +95,33 @@ def test_ancestry_metadata_offline_miss_blocks(tmp_path: Path) -> None:
     _catalog(catalog_path, contents)
 
     with pytest.raises(AncestryReferenceError, match="offline_miss"):
+        cache_ancestry_metadata(
+            catalog_path=catalog_path,
+            cache_root=tmp_path / "cache",
+            offline=True,
+        )
+
+
+def test_ancestry_metadata_rejects_non_object_catalog_assets(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    catalog_path = tmp_path / "catalog.json"
+    catalog_path.write_text("{}\n", encoding="utf-8")
+    monkeypatch.setattr(
+        ancestry_reference,
+        "_catalog",
+        lambda _path: {
+            "catalog_id": "invalid_assets",
+            "population_metadata": [],
+            "unrelated_sample_index": {},
+        },
+    )
+
+    with pytest.raises(
+        AncestryReferenceError,
+        match="ancestry_reference_catalog_assets_invalid",
+    ):
         cache_ancestry_metadata(
             catalog_path=catalog_path,
             cache_root=tmp_path / "cache",

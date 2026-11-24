@@ -7,8 +7,10 @@ import numpy as np
 import pytest
 import yaml
 
+from effet_fondateur.external_tools import ExternalCommandError
 from effet_fondateur.orchestrator import StageExecutionError
 from effet_fondateur.orchestrator.pipeline import run_pipeline
+from effet_fondateur.stages import analyze_population_structure
 from effet_fondateur.stages.analyze_population_structure import _fit_and_project
 from test_v2_infer_kinship import prepare_kinship_inputs
 
@@ -199,6 +201,29 @@ def test_population_plink_failure_uses_external_tool_code(tmp_path: Path) -> Non
         run_pipeline(config_path, runs_dir)
 
     assert error.value.return_code == 3
+
+
+@pytest.mark.parametrize(
+    ("returncode", "expected_code"),
+    ((None, "plink_dosage_export_failed"), (8, "plink_dosage_export_failed:8")),
+)
+def test_population_plink_adapter_preserves_historical_error_codes(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    returncode: int | None,
+    expected_code: str,
+) -> None:
+    def fail(*args: object, **kwargs: object) -> None:
+        raise ExternalCommandError("plink_dosage_export", returncode)
+
+    monkeypatch.setattr(analyze_population_structure, "run_checked", fail)
+
+    with pytest.raises(
+        analyze_population_structure.ExternalToolError, match=expected_code
+    ):
+        analyze_population_structure._export_dosages(
+            "plink", tmp_path / "panel", tmp_path / "dosages", 30
+        )
 
 
 def test_malformed_dosage_header_uses_external_tool_code(tmp_path: Path) -> None:

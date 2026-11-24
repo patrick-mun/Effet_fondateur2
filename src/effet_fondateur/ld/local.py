@@ -6,7 +6,6 @@ import csv
 import math
 import shutil
 import statistics
-import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -14,6 +13,11 @@ from typing import Any, Iterable
 
 from effet_fondateur.audit import atomic_write_json
 from effet_fondateur.contracts import validate_json_document, validate_tsv_table
+from effet_fondateur.external_tools import (
+    ExternalCommandError,
+    default_command_runner,
+    run_checked,
+)
 
 
 COHORT_IDS = (
@@ -86,14 +90,15 @@ def _read_whitespace(path: Path, *, allow_header_only: bool = False) -> list[dic
 
 def _run_plink(executable: str, arguments: list[str], timeout_seconds: int) -> None:
     try:
-        completed = subprocess.run(
-            [executable, *arguments], capture_output=True, check=False, text=True,
-            timeout=timeout_seconds,
+        run_checked(
+            default_command_runner,
+            [executable, *arguments],
+            timeout_seconds,
+            "plink_local_ld",
         )
-    except (OSError, subprocess.TimeoutExpired) as error:
-        raise LocalLdError("plink_local_ld_failed") from error
-    if completed.returncode != 0:
-        raise LocalLdError(f"plink_local_ld_failed:{completed.returncode}")
+    except ExternalCommandError as error:
+        suffix = "" if error.returncode is None else f":{error.returncode}"
+        raise LocalLdError(f"plink_local_ld_failed{suffix}") from error
 
 
 def _pair_key(first: str, second: str, order: dict[str, int]) -> tuple[str, str]:

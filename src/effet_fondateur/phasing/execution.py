@@ -9,10 +9,16 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Sequence
+from typing import Any, Sequence
 
 from effet_fondateur.audit import atomic_write_json, read_json, sha256_file
 from effet_fondateur.contracts import validate_json_document, validate_tsv_table
+from effet_fondateur.external_tools import (
+    CommandRunner,
+    ExternalCommandError,
+    default_command_runner,
+    run_checked,
+)
 from effet_fondateur.orchestrator.state import utc_now
 from effet_fondateur.phasing.shapeit5 import (
     SHAPEIT5_CONTRACT,
@@ -24,7 +30,6 @@ from effet_fondateur.phasing.shapeit5 import (
 )
 
 
-CommandRunner = Callable[[Sequence[str], float], subprocess.CompletedProcess[str]]
 CARRIER_COLUMNS = (
     "SAMPLE_ORDER", "SAMPLE_ID", "TARGET_VARIANT_ID", "EXPLICIT_GENOTYPE",
     "PHASED_GT", "ALT_COPY_COUNT", "CARRIER_HAPLOTYPE", "PHASE_CONFIDENCE",
@@ -94,18 +99,22 @@ VariantKey = tuple[str, int, str, str, str]
 MissingGenotypeMask = frozenset[tuple[VariantKey, str]]
 
 
-def _default_runner(command: Sequence[str], timeout: float) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(list(command), capture_output=True, text=True, timeout=timeout, check=False)
+def _default_runner(
+    command: Sequence[str], timeout: float
+) -> subprocess.CompletedProcess[str]:
+    return default_command_runner(command, timeout)
 
 
-def _run(runner: CommandRunner, command: Sequence[str], timeout: float, operation: str) -> subprocess.CompletedProcess[str]:
+def _run(
+    runner: CommandRunner,
+    command: Sequence[str],
+    timeout: float,
+    operation: str,
+) -> subprocess.CompletedProcess[str]:
     try:
-        result = runner(command, timeout)
-    except (OSError, subprocess.TimeoutExpired) as error:
-        raise Shapeit5ExecutionExternalError(f"{operation}_failed") from error
-    if result.returncode != 0:
-        raise Shapeit5ExecutionExternalError(f"{operation}_failed:{result.returncode}")
-    return result
+        return run_checked(runner, command, timeout, operation)
+    except ExternalCommandError as error:
+        raise Shapeit5ExecutionExternalError(str(error)) from error
 
 
 def _samples(executable: str, path: Path, runner: CommandRunner, timeout: float) -> list[str]:

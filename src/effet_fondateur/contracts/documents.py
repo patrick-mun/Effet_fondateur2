@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import json
+from importlib.resources.abc import Traversable
 from pathlib import Path
 from typing import Any
 
 import jsonschema
 
+from effet_fondateur.resources import SCHEMAS_DIR
 
-DEFAULT_SCHEMAS_DIR = Path(__file__).resolve().parents[3] / "schemas"
+
+DEFAULT_SCHEMAS_DIR = SCHEMAS_DIR
 
 
 class DocumentValidationError(ValueError):
@@ -19,7 +22,7 @@ class DocumentValidationError(ValueError):
 def validate_json_document(
     document: dict[str, Any],
     schema_name: str,
-    schemas_dir: Path = DEFAULT_SCHEMAS_DIR,
+    schemas_dir: Path | Traversable = DEFAULT_SCHEMAS_DIR,
 ) -> None:
     """Valide un objet Python avec un schéma JSON local nommé explicitement."""
     schema_path = schemas_dir / schema_name

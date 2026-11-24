@@ -5,8 +5,6 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import shutil
-import subprocess
 import sys
 from collections import defaultdict
 from pathlib import Path, PurePosixPath
@@ -20,6 +18,14 @@ from effet_fondateur.contracts import (
     DocumentValidationError, TableValidationError, build_file_artifact,
     load_pipeline_config, validate_cohorts_frozen, validate_json_document,
     validate_tsv_table,
+)
+from effet_fondateur.external_tools import (
+    ExternalCommandError,
+    ExternalToolConfigurationError,
+    ExternalToolNotFoundError,
+    default_command_runner,
+    resolve_executable,
+    run_checked,
 )
 from effet_fondateur.orchestrator.state import utc_now
 from effet_fondateur.roh import RohAnalysisError, publish_roh
@@ -215,15 +221,24 @@ def _common_variants(first: list[list[str]], second: list[list[str]]) -> tuple[l
 
 
 def _resolve_plink(command: str | None) -> tuple[str, str]:
-    executable = shutil.which(command) if command else None
-    if executable is None:
-        raise RohAnalysisError("plink_not_available")
     try:
-        completed = subprocess.run([executable, "--version"], capture_output=True, check=False, text=True, timeout=10)
-    except (OSError, subprocess.TimeoutExpired) as error:
-        raise RohAnalysisError("plink_version_failed") from error
+        if command is None:
+            raise ExternalToolConfigurationError("plink_not_configured")
+        executable = resolve_executable(command, "plink")
+    except (ExternalToolConfigurationError, ExternalToolNotFoundError) as error:
+        raise RohAnalysisError("plink_not_available") from error
+    try:
+        completed = run_checked(
+            default_command_runner,
+            [executable, "--version"],
+            10,
+            "plink_version",
+        )
+    except ExternalCommandError as error:
+        code = "plink_version_failed" if error.returncode is None else "plink19_required"
+        raise RohAnalysisError(code) from error
     lines = (completed.stdout or completed.stderr).strip().splitlines()
-    if completed.returncode != 0 or not lines or "1.9" not in lines[0]:
+    if not lines or "1.9" not in lines[0]:
         raise RohAnalysisError("plink19_required")
     return executable, lines[0][:200]
 

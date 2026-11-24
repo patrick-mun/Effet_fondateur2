@@ -6,8 +6,6 @@ import argparse
 import csv
 import json
 import math
-import shutil
-import subprocess
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path, PurePosixPath
@@ -22,6 +20,15 @@ from effet_fondateur.contracts import (
     load_pipeline_config,
     validate_json_document,
     validate_tsv_table,
+)
+from effet_fondateur.external_tools import (
+    ExternalCommandError,
+    ExternalToolConfigurationError,
+    ExternalToolNotFoundError,
+    default_command_runner,
+    resolve_executable,
+    run_checked,
+    run_probe,
 )
 from effet_fondateur.orchestrator.state import utc_now
 
@@ -224,22 +231,15 @@ def _parameters(parameters: dict[str, Any]) -> dict[str, Any]:
 def _resolve_executable(command: str | None) -> str:
     if command is None:
         raise ExternalToolError("king_not_configured")
-    executable = shutil.which(command)
-    if executable is None:
-        raise ExternalToolError("king_not_available")
-    return executable
+    try:
+        return resolve_executable(command, "king")
+    except (ExternalToolConfigurationError, ExternalToolNotFoundError) as error:
+        raise ExternalToolError("king_not_available") from error
 
 
 def _king_version(executable: str) -> str | None:
-    try:
-        completed = subprocess.run(
-            [executable, "--version"],
-            capture_output=True,
-            check=False,
-            text=True,
-            timeout=10,
-        )
-    except (OSError, subprocess.TimeoutExpired):
+    completed = run_probe(default_command_runner, [executable, "--version"], 10)
+    if completed is None:
         return None
     output = completed.stdout.strip() or completed.stderr.strip()
     return output.splitlines()[0][:500] if output else None
@@ -266,17 +266,19 @@ def _run_king(
         str(output_prefix),
     ]
     try:
-        completed = subprocess.run(
+        run_checked(
+            default_command_runner,
             command,
-            capture_output=True,
-            check=False,
-            text=True,
-            timeout=timeout_seconds,
+            timeout_seconds,
+            "king",
         )
-    except (OSError, subprocess.TimeoutExpired) as error:
-        raise ExternalToolError("king_execution_failed") from error
-    if completed.returncode != 0:
-        raise ExternalToolError("king_command_failed")
+    except ExternalCommandError as error:
+        code = (
+            "king_execution_failed"
+            if error.returncode is None
+            else "king_command_failed"
+        )
+        raise ExternalToolError(code) from error
 
 
 def _read_king_table(path: Path, *, required: bool) -> list[dict[str, str]]:

@@ -6,6 +6,7 @@ import csv
 import gzip
 import json
 from dataclasses import dataclass
+from importlib.resources.abc import Traversable
 from pathlib import Path
 from typing import Any
 
@@ -35,7 +36,9 @@ class ValidatedTable:
         return len(self.rows)
 
 
-def _load_table_schema(schema_name: str, schemas_dir: Path) -> dict[str, Any]:
+def _load_table_schema(
+    schema_name: str, schemas_dir: Path | Traversable
+) -> dict[str, Any]:
     """Charge un schéma possédant les extensions tabulaires V2 attendues."""
     schema_path = schemas_dir / schema_name
     try:
@@ -108,7 +111,7 @@ def _validation_column(error: jsonschema.ValidationError) -> str:
 def validate_tsv_table(
     table_path: Path,
     schema_name: str,
-    schemas_dir: Path = DEFAULT_SCHEMAS_DIR,
+    schemas_dir: Path | Traversable = DEFAULT_SCHEMAS_DIR,
 ) -> ValidatedTable:
     """Valide l'en-tête et chaque ligne TSV sans journaliser leur contenu."""
     schema = _load_table_schema(schema_name, schemas_dir)

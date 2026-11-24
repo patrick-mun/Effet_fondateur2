@@ -7,8 +7,10 @@ from pathlib import Path
 import pytest
 import yaml
 
+from effet_fondateur.external_tools import ExternalCommandError
 from effet_fondateur.orchestrator import StageExecutionError
 from effet_fondateur.orchestrator.pipeline import run_pipeline
+from effet_fondateur.stages import prepare_target_variant_dataset
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -366,3 +368,23 @@ def test_plink_merge_failure_uses_external_tool_return_code(tmp_path: Path) -> N
         run_pipeline(config_path, runs_dir)
 
     assert error.value.return_code == 3
+
+
+@pytest.mark.parametrize(
+    ("returncode", "expected_code"),
+    ((None, "plink_execution_failed"), (8, "plink_command_failed")),
+)
+def test_target_variant_plink_adapter_preserves_historical_error_codes(
+    monkeypatch: pytest.MonkeyPatch,
+    returncode: int | None,
+    expected_code: str,
+) -> None:
+    def fail(*args: object, **kwargs: object) -> None:
+        raise ExternalCommandError("plink", returncode)
+
+    monkeypatch.setattr(prepare_target_variant_dataset, "run_checked", fail)
+
+    with pytest.raises(
+        prepare_target_variant_dataset.ExternalToolError, match=expected_code
+    ):
+        prepare_target_variant_dataset._run_plink("plink", ["--merge"], 30)
