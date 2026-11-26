@@ -875,6 +875,26 @@ les artefacts publiés :
 .venv/bin/python -m pytest tests/
 ```
 
+### Qualité du code et couverture
+
+```bash
+.venv/bin/ruff check src/effet_fondateur tests
+.venv/bin/mypy
+.venv/bin/python -m pytest \
+  --cov=effet_fondateur \
+  --cov-config=pyproject.toml \
+  --cov-report=term-missing:skip-covered \
+  tests/
+```
+
+Ruff est volontairement limité aux erreurs Python et au code manifestement
+inutilisé. Le périmètre mypy initial couvre les adaptateurs externes et les
+modules de références, phasage et environnement récemment centralisés ; il
+doit être étendu module par module. La couverture fournit d'abord une mesure de
+référence sans seuil bloquant. Ces trois contrôles doivent précéder toute
+nouvelle suppression fondée sur une analyse statique ou sur l'absence de
+couverture.
+
 ### Pipeline V1 archivé
 
 Le pipeline historique (`archive/run_pipeline.py`, `archive/scripts/`,

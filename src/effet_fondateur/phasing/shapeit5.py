@@ -3,11 +3,18 @@
 from __future__ import annotations
 
 import re
-import shutil
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
+
+from effet_fondateur.external_tools import (
+    ExternalCommandError,
+    ExternalToolConfigurationError,
+    ExternalToolNotFoundError,
+    default_command_runner,
+    resolve_executable,
+    run_checked,
+)
 
 
 SHAPEIT5_VERSION_PATTERN = re.compile(r"\*\s+Version\s+:\s+(\d+\.\d+\.\d+)")
@@ -111,28 +118,33 @@ def parse_shapeit5_adapter_config(
 
 
 def _resolve_executable(command: str, component: str) -> str:
-    executable = shutil.which(command)
-    if executable is None:
-        raise Shapeit5ContractError(f"shapeit5_executable_not_available:{component}")
-    return executable
+    try:
+        return resolve_executable(command, f"shapeit5_{component}")
+    except (ExternalToolConfigurationError, ExternalToolNotFoundError) as error:
+        raise Shapeit5ContractError(
+            f"shapeit5_executable_not_available:{component}"
+        ) from error
 
 
 def _read_version(executable: str, component: str, timeout_seconds: int) -> str:
     try:
-        completed = subprocess.run(
+        completed = run_checked(
+            default_command_runner,
             [executable, "--help"],
-            capture_output=True,
-            check=False,
-            text=True,
-            timeout=timeout_seconds,
+            timeout_seconds,
+            f"shapeit5_probe_{component}",
         )
-    except (OSError, subprocess.TimeoutExpired) as error:
+    except ExternalCommandError as error:
+        if error.returncode is not None:
+            raise Shapeit5ContractError(
+                f"shapeit5_version_unreadable:{component}"
+            ) from error
         raise Shapeit5ContractError(
             f"shapeit5_probe_failed:{component}"
         ) from error
     output = "\n".join(part for part in (completed.stdout, completed.stderr) if part)
     match = SHAPEIT5_VERSION_PATTERN.search(output)
-    if completed.returncode != 0 or match is None:
+    if match is None:
         raise Shapeit5ContractError(f"shapeit5_version_unreadable:{component}")
     return match.group(1)
 

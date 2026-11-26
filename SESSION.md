@@ -1,6 +1,6 @@
 # Continuité de session — Effet_fondateur2
 
-**Date :** 24 novembre 2026
+**Date :** 26 novembre 2026
 
 **Branche :** `codex/refactor-external-adapters`
 
@@ -68,6 +68,31 @@ bcftools de `infer_founder_haplotype`, ainsi que les requêtes de
 exceptions métier, codes retour, sorties capturées et journaux historiques
 sont conservés.
 
+Le lot d'infrastructure des références est terminé dans `references/window.py`
+et `references/harmonization.py`. La résolution de bcftools et toutes les
+commandes d'extraction, de contrôle et de normalisation passent maintenant par
+la couche commune. Les runners injectables, les erreurs métier historiques et
+le nettoyage des répertoires de staging sont conservés.
+
+La centralisation des adaptateurs externes est désormais achevée dans les
+derniers composants autonomes. `phasing/shapeit5.py` délègue la résolution et
+les sondes de version, `phasing/execution.py` délègue la résolution résiduelle
+de bcftools, et `orchestrator/environment.py` utilise les sondes communes sans
+rendre l'inventaire bloquant. Les seuls appels directs restants sont les deux
+frontières intentionnelles : `external_tools.py`, qui implémente la couche
+commune, et `orchestrator/runner.py`, qui lance les modules Python des étapes.
+
+Un audit séparé du code mort a ensuite couvert tous les fichiers Python actifs
+du dépôt, y compris `scripts/`, les simulations et les tests, en excluant
+explicitement `.venv`, `archive/`, les caches, builds et données. Les candidats
+ont été vérifiés par AST, comptage lexical global et recherches ciblées. Ont été
+retirés : l'exception jamais référencée `PhaseTargetRegionExternalError`, la
+propriété interne jamais lue `_ReferenceVariant.canonical_key`, la constante
+jamais lue `INDEPENDENT_COHORT_IDS`, le wrapper privé `_mendel_errors` utilisé
+uniquement par deux assertions de test, et cinq imports inutilisés. Les tests
+appellent désormais directement `_mendel_check().error_count`. Les façades de
+réexport, symboles publics et usages par les scripts racine ont été conservés.
+
 La configuration pytest limite désormais la collecte à `tests/`. Une invocation
 simple de `pytest` ne collecte donc plus les tests historiques archivés, qui
 produisaient 37 erreurs de collecte hors du périmètre actif.
@@ -104,13 +129,26 @@ PLINK n'effectue plus qu'un seul appel à `shutil.which`.
 - Les fonctions monolithiques restantes se concentrent encore dans plusieurs
   étapes scientifiques et de préparation ; elles doivent être traitées sans
   mêler de changement scientifique.
-- La centralisation demandée est terminée dans IBD explicite, l'inférence du
-  haplotype fondateur et l'enrichissement. Des adaptateurs directs subsistent
-  dans d'autres infrastructures hors de ce lot, notamment l'orchestrateur,
-  l'environnement, l'harmonisation des références et certains composants de
-  phasage.
-- Aucun outil de lint, typage statique ou couverture n'est configuré dans le
-  dépôt actif.
+- La centralisation progressive des outils scientifiques externes est
+  terminée. Les imports `subprocess` ou `CompletedProcess` qui subsistent hors
+  des deux frontières intentionnelles servent uniquement aux annotations de
+  types.
+- Ruff contrôle désormais les erreurs Python et le code manifestement inutilisé
+  sur le paquet actif et les tests. Son premier passage a confirmé puis permis
+  de retirer une variable LD, une affectation de rapport et un import de test
+  inutilisés, avec 24 tests ciblés réussis avant et après.
+- Mypy est configuré sur un périmètre initial explicite de six modules
+  centralisés (adaptateurs externes, environnement, phasage et références).
+  Étendre ce périmètre module par module plutôt que masquer globalement la dette
+  de typage restante.
+- La couverture lignes/branches inclut les sous-processus Python des tests
+  d'intégration et exclut la copie temporaire de la wheel afin d'éviter un
+  double comptage. La référence actuelle est de 77,4 %, sans seuil bloquant.
+- Le ré-audit après nettoyage ne trouve plus de définition, méthode ou
+  constante limitée à sa seule déclaration, ni d'import inutilisé hors façades
+  de réexport explicites. Cette preuve reste statique et conservatrice face aux
+  usages dynamiques ou externes ; une ligne non couverte n'est pas, à elle
+  seule, une preuve de code mort.
 
 Points positifs vérifiés : aucune cible génétique propre à l'étude n'est codée
 en dur dans `src/`, et les usages aléatoires repérés utilisent des graines
@@ -145,11 +183,27 @@ explicites.
   l'enrichissement ;
 - validation transversale du lot et de l'intégration de la phase cible : 49
   tests réussis ;
+- validations séquentielles réussies pour l'infrastructure des références : 10
+  tests pour l'extraction de fenêtre et 10 pour l'harmonisation ; validation
+  transversale avec phasage et ascendance : 65 tests réussis ;
+- validations séquentielles réussies pour le dernier lot : 10 tests pour la
+  sonde SHAPEIT5, 12 pour l'exécution du phasage et 19 pour l'inventaire
+  d'environnement avec ses consommateurs ; validation transversale références,
+  phasage et environnement : 81 tests réussis ;
+- audit de code mort validé par petits lots : 16 tests pour les définitions de
+  phasage, 20 pour les références et 32 pour les imports/constante restants ;
+- dernier lot de code inutilisé détecté par Ruff : 24 tests ciblés réussis avant
+  et après suppression ;
+- `ruff check src/effet_fondateur tests` réussi ;
+- `mypy` réussi sur les six modules du périmètre initial ;
+- suite active complète avec couverture des sous-processus : 407 tests réussis
+  en 1 759,43 s, couverture lignes/branches de 77,4 % ;
 - aucun nœud `assert` dans le paquet actif ;
-- suite active complète : 392 tests réussis en 728,58 s.
+- `pip check`, imports du paquet et `git diff --check` réussis.
 
 ## Prochaine action
 
-Choisir le prochain lot de centralisation parmi les infrastructures de
-références, de phasage ou d'orchestration encore autonomes, puis commit/push du
-lot actuel sur demande explicite.
+Commit/push du lot combiné uniquement sur demande explicite. Pour poursuivre
+l'audit, étendre mypy et examiner les zones faiblement couvertes un module à la
+fois ; confirmer chaque absence d'usage par recherche statique et tests ciblés
+avant toute suppression supplémentaire.

@@ -14,7 +14,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path, PurePosixPath
 from subprocess import CompletedProcess
 from time import monotonic
-from typing import Any, Callable, Sequence
+from typing import Any, Sequence
 
 from effet_fondateur.ancestry import cache_ancestry_metadata, cache_reference_extract, load_reference_samples
 from effet_fondateur.audit import atomic_write_json, read_json, sha256_file

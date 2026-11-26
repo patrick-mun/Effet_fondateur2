@@ -9,7 +9,7 @@ import pytest
 import yaml
 
 from effet_fondateur.audit import sha256_file
-from effet_fondateur.contracts import build_file_artifact, load_pipeline_config, validate_tsv_table
+from effet_fondateur.contracts import build_file_artifact, validate_tsv_table
 from effet_fondateur.sensitivity import SensitivityAnalysisError, publish_sensitivity_analysis
 from effet_fondateur.stages.run_sensitivity_analyses import execute
 

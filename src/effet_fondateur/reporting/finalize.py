@@ -96,7 +96,8 @@ def finalize_report(report_dir: Path, review_path: Path) -> tuple[Path, Path, Pa
     """Vérifie une relecture et publie les formats finaux sans toucher aux faits."""
     facts_path, draft_path = report_dir / "interpretation_facts.json", report_dir / "interpretation_draft.json"
     review = read_json(review_path); validate_json_document(review, "report_review.schema.json")
-    facts, draft = read_json(facts_path), read_json(draft_path)
+    facts = read_json(facts_path)
+    read_json(draft_path)
     if review["run_id"] != facts["run_id"] or review["facts_sha256"] != sha256_file(facts_path) or review["draft_sha256"] != sha256_file(draft_path):
         raise ValueError("review_provenance_mismatch")
     texts = _approved_texts(review)

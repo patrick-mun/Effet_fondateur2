@@ -8,11 +8,18 @@ import pytest
 import yaml
 
 from effet_fondateur.audit import sha256_file
+from effet_fondateur.external_tools import (
+    ExternalCommandError,
+    ExternalToolConfigurationError,
+    ExternalToolNotFoundError,
+)
 from effet_fondateur.references import (
     ExtractedReferenceWindow,
+    ReferenceHarmonizationError,
     ReferenceHarmonizationIntegrityError,
     harmonize_reference_window,
 )
+from effet_fondateur.references import harmonization
 
 
 def _reference_window(tmp_path: Path) -> ExtractedReferenceWindow:
@@ -358,3 +365,50 @@ def test_detects_modified_reference_before_bcftools(tmp_path: Path) -> None:
         )
 
     assert runner.commands == []
+
+
+@pytest.mark.parametrize(
+    ("technical_error", "expected_message"),
+    [
+        (
+            ExternalToolConfigurationError("bcftools_not_configured"),
+            "invalid_harmonization_parameter:bcftools_command",
+        ),
+        (ExternalToolNotFoundError("bcftools_not_found"), "bcftools_not_found"),
+    ],
+)
+def test_executable_errors_keep_the_harmonization_contract(
+    monkeypatch: pytest.MonkeyPatch,
+    technical_error: Exception,
+    expected_message: str,
+) -> None:
+    def fail(*_args, **_kwargs):
+        raise technical_error
+
+    monkeypatch.setattr(harmonization, "resolve_executable", fail)
+
+    with pytest.raises(ReferenceHarmonizationError, match=expected_message):
+        harmonization._resolve_executable("bcftools")
+
+
+@pytest.mark.parametrize(
+    ("technical_error", "expected_message"),
+    [
+        (ExternalCommandError("version", timed_out=True), "bcftools_version_failed"),
+        (ExternalCommandError("version", 7), "bcftools_version_failed:7"),
+    ],
+)
+def test_command_errors_keep_the_harmonization_contract(
+    monkeypatch: pytest.MonkeyPatch,
+    technical_error: ExternalCommandError,
+    expected_message: str,
+) -> None:
+    def fail(*_args, **_kwargs):
+        raise technical_error
+
+    monkeypatch.setattr(harmonization, "run_checked", fail)
+
+    with pytest.raises(ReferenceHarmonizationError, match=expected_message):
+        harmonization._run_checked(
+            FakeBcftools(), ["bcftools", "--version"], 30, "version"
+        )

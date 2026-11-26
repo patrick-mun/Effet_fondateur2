@@ -3,16 +3,14 @@
 from __future__ import annotations
 
 import csv
-import json
 import math
 import os
 import re
 import shutil
-import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Sequence
+from typing import Any, Sequence
 
 import yaml
 
@@ -23,11 +21,19 @@ from effet_fondateur.contracts import (
     validate_json_document,
     validate_tsv_table,
 )
+from effet_fondateur.external_tools import (
+    CommandRunner,
+    ExternalCommandError,
+    ExternalToolConfigurationError,
+    ExternalToolNotFoundError,
+    default_command_runner,
+    resolve_executable,
+    run_checked,
+)
 from effet_fondateur.orchestrator.state import utc_now
 from effet_fondateur.references.window import ExtractedReferenceWindow
 
 
-CommandRunner = Callable[[Sequence[str], float], subprocess.CompletedProcess[str]]
 DNA_ALLELE = re.compile(r"^[ACGT]+$")
 HARMONIZATION_COLUMNS = (
     "STUDY_VARIANT_ORDER",
@@ -88,18 +94,6 @@ class _ReferenceVariant:
     ref: str
     alt: str
 
-    @property
-    def canonical_key(self) -> tuple[int, int, str, str]:
-        return (self.chromosome, self.position_bp, self.ref, self.alt)
-
-
-def _default_runner(
-    command: Sequence[str], timeout_seconds: float
-) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        list(command), check=False, capture_output=True, text=True, timeout=timeout_seconds
-    )
-
 
 def _positive_integer(value: int, name: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
@@ -119,14 +113,14 @@ def _positive_number(value: float, name: str) -> float:
 
 
 def _resolve_executable(command: str) -> str:
-    if not isinstance(command, str) or not command.strip():
+    try:
+        return resolve_executable(command, "bcftools")
+    except ExternalToolConfigurationError as error:
         raise ReferenceHarmonizationError(
             "invalid_harmonization_parameter:bcftools_command"
-        )
-    executable = shutil.which(command)
-    if executable is None:
-        raise ReferenceHarmonizationError("bcftools_not_found")
-    return executable
+        ) from error
+    except ExternalToolNotFoundError as error:
+        raise ReferenceHarmonizationError("bcftools_not_found") from error
 
 
 def _run_checked(
@@ -134,16 +128,15 @@ def _run_checked(
     command: Sequence[str],
     timeout_seconds: float,
     operation: str,
-) -> subprocess.CompletedProcess[str]:
+) -> Any:
     try:
-        completed = runner(command, timeout_seconds)
-    except (OSError, subprocess.TimeoutExpired) as error:
+        return run_checked(runner, command, timeout_seconds, operation)
+    except ExternalCommandError as error:
+        if error.returncode is not None:
+            raise ReferenceHarmonizationError(
+                f"bcftools_{operation}_failed:{error.returncode}"
+            ) from error
         raise ReferenceHarmonizationError(f"bcftools_{operation}_failed") from error
-    if completed.returncode != 0:
-        raise ReferenceHarmonizationError(
-            f"bcftools_{operation}_failed:{completed.returncode}"
-        )
-    return completed
 
 
 def _validated_reference_manifest(
@@ -547,7 +540,7 @@ def harmonize_reference_window(
     threads: int = 1,
     timeout_seconds: float = 7_200,
     minimum_common_variants: int = 1,
-    command_runner: CommandRunner = _default_runner,
+    command_runner: CommandRunner = default_command_runner,
 ) -> HarmonizedReferenceWindow:
     """Décompose la référence et audite la jointure chr+position+REF+ALT."""
     resolved_threads = _positive_integer(threads, "threads")

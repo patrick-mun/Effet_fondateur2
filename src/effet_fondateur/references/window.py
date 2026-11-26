@@ -2,26 +2,32 @@
 
 from __future__ import annotations
 
-import json
 import math
 import os
 import re
 import shutil
-import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Sequence
+from typing import Any, Sequence
 
 from effet_fondateur.audit import atomic_write_json, read_json, sha256_file
 from effet_fondateur.contracts import DocumentValidationError, validate_json_document
+from effet_fondateur.external_tools import (
+    CommandRunner,
+    ExternalCommandError,
+    ExternalToolConfigurationError,
+    ExternalToolNotFoundError,
+    default_command_runner,
+    resolve_executable,
+    run_checked,
+)
 from effet_fondateur.orchestrator.state import utc_now
 from effet_fondateur.references.cache import CachedReferencePanel
 from effet_fondateur.references.catalog import ResolvedReferencePanel
 from effet_fondateur.references.selection import ReferenceSampleSelection
 
 
-CommandRunner = Callable[[Sequence[str], float], subprocess.CompletedProcess[str]]
 GRCH38_AUTOSOME_LENGTHS = {
     1: 248_956_422,
     2: 242_193_529,
@@ -91,25 +97,15 @@ def _positive_number(value: float, name: str) -> float:
     return float(value)
 
 
-def _default_runner(
-    command: Sequence[str], timeout_seconds: float
-) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        list(command),
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=timeout_seconds,
-    )
-
-
 def _resolve_executable(command: str) -> str:
-    if not isinstance(command, str) or not command.strip():
-        raise ReferenceWindowError("invalid_reference_window_parameter:bcftools_command")
-    resolved = shutil.which(command)
-    if resolved is None:
-        raise ReferenceWindowError("bcftools_not_found")
-    return resolved
+    try:
+        return resolve_executable(command, "bcftools")
+    except ExternalToolConfigurationError as error:
+        raise ReferenceWindowError(
+            "invalid_reference_window_parameter:bcftools_command"
+        ) from error
+    except ExternalToolNotFoundError as error:
+        raise ReferenceWindowError("bcftools_not_found") from error
 
 
 def _run_checked(
@@ -117,14 +113,15 @@ def _run_checked(
     command: Sequence[str],
     timeout_seconds: float,
     operation: str,
-) -> subprocess.CompletedProcess[str]:
+) -> Any:
     try:
-        completed = runner(command, timeout_seconds)
-    except (OSError, subprocess.TimeoutExpired) as error:
+        return run_checked(runner, command, timeout_seconds, operation)
+    except ExternalCommandError as error:
+        if error.returncode is not None:
+            raise ReferenceWindowError(
+                f"bcftools_{operation}_failed:{error.returncode}"
+            ) from error
         raise ReferenceWindowError(f"bcftools_{operation}_failed") from error
-    if completed.returncode != 0:
-        raise ReferenceWindowError(f"bcftools_{operation}_failed:{completed.returncode}")
-    return completed
 
 
 def _cache_manifest(
@@ -298,7 +295,7 @@ def extract_reference_window(
     bcftools_command: str = "bcftools",
     threads: int = 1,
     timeout_seconds: float = 7_200,
-    command_runner: CommandRunner = _default_runner,
+    command_runner: CommandRunner = default_command_runner,
     sample_selection: ReferenceSampleSelection | None = None,
 ) -> ExtractedReferenceWindow:
     """Extrait une fenêtre complète ou une sélection explicitement déclarée."""

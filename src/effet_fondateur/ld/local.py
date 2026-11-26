@@ -311,7 +311,6 @@ def publish_local_ld(
                 ))
                 continue
 
-            cohort_prefix = work_dir / cohort_id
             report_prefix = work_dir / f"{cohort_id}_metrics"
             _run_plink(plink_executable, [
                 "--bfile", str(dataset_prefix), "--keep", str(cohort_keep_paths[cohort_id]),

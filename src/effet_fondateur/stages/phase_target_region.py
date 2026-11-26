@@ -59,10 +59,6 @@ class PhaseTargetRegionInputError(ValueError):
     """Signale une entrée ou une configuration invalide de l'étape 12."""
 
 
-class PhaseTargetRegionExternalError(RuntimeError):
-    """Signale un échec d'acquisition ou de bcftools."""
-
-
 class PhaseTargetRegionBlockError(RuntimeError):
     """Signale une référence ou une harmonisation scientifiquement inutilisable."""
 

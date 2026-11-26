@@ -14,7 +14,7 @@ import time
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Iterator, Literal
+from typing import Callable, Iterator, Literal
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 

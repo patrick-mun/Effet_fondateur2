@@ -4,7 +4,12 @@ from pathlib import Path
 import pytest
 
 from effet_fondateur.contracts import ConfigurationError, load_pipeline_config
+from effet_fondateur.external_tools import (
+    ExternalCommandError,
+    ExternalToolNotFoundError,
+)
 from effet_fondateur.orchestrator.environment import build_environment
+from effet_fondateur.phasing import shapeit5
 from effet_fondateur.phasing import (
     SHAPEIT5_CONTRACT,
     Shapeit5ContractError,
@@ -171,3 +176,45 @@ def test_command_rejects_default_map_substitution_and_non_bcf_output(
             output_path=Path("phased.vcf.gz"),
             log_path=Path("phase.log"),
         )
+
+
+def test_missing_executable_keeps_the_shapeit5_contract(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail(*_args, **_kwargs):
+        raise ExternalToolNotFoundError("shapeit5_phase_common_not_found")
+
+    monkeypatch.setattr(shapeit5, "resolve_executable", fail)
+
+    with pytest.raises(
+        Shapeit5ContractError,
+        match="shapeit5_executable_not_available:phase_common",
+    ):
+        shapeit5._resolve_executable("phase_common", "phase_common")
+
+
+@pytest.mark.parametrize(
+    ("technical_error", "expected_message"),
+    [
+        (
+            ExternalCommandError("shapeit5_probe_phase_common", timed_out=True),
+            "shapeit5_probe_failed:phase_common",
+        ),
+        (
+            ExternalCommandError("shapeit5_probe_phase_common", 7),
+            "shapeit5_version_unreadable:phase_common",
+        ),
+    ],
+)
+def test_probe_errors_keep_the_shapeit5_contract(
+    monkeypatch: pytest.MonkeyPatch,
+    technical_error: ExternalCommandError,
+    expected_message: str,
+) -> None:
+    def fail(*_args, **_kwargs):
+        raise technical_error
+
+    monkeypatch.setattr(shapeit5, "run_checked", fail)
+
+    with pytest.raises(Shapeit5ContractError, match=expected_message):
+        shapeit5._read_version("phase_common", "phase_common", 10)

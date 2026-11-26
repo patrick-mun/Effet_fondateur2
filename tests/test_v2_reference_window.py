@@ -6,6 +6,11 @@ from typing import Sequence
 
 import pytest
 
+from effet_fondateur.external_tools import (
+    ExternalCommandError,
+    ExternalToolConfigurationError,
+    ExternalToolNotFoundError,
+)
 from effet_fondateur.references import (
     ReferenceAsset,
     ReferenceWindowError,
@@ -14,6 +19,7 @@ from effet_fondateur.references import (
     cache_reference_panel,
     extract_reference_window,
 )
+from effet_fondateur.references import window
 
 
 def _md5(content: bytes) -> str:
@@ -242,3 +248,48 @@ def test_detects_modified_cached_vcf_before_extraction(tmp_path: Path) -> None:
         )
 
     assert runner.commands == []
+
+
+@pytest.mark.parametrize(
+    ("technical_error", "expected_message"),
+    [
+        (
+            ExternalToolConfigurationError("bcftools_not_configured"),
+            "invalid_reference_window_parameter:bcftools_command",
+        ),
+        (ExternalToolNotFoundError("bcftools_not_found"), "bcftools_not_found"),
+    ],
+)
+def test_executable_errors_keep_the_reference_window_contract(
+    monkeypatch: pytest.MonkeyPatch,
+    technical_error: Exception,
+    expected_message: str,
+) -> None:
+    def fail(*_args, **_kwargs):
+        raise technical_error
+
+    monkeypatch.setattr(window, "resolve_executable", fail)
+
+    with pytest.raises(ReferenceWindowError, match=expected_message):
+        window._resolve_executable("bcftools")
+
+
+@pytest.mark.parametrize(
+    ("technical_error", "expected_message"),
+    [
+        (ExternalCommandError("version", timed_out=True), "bcftools_version_failed"),
+        (ExternalCommandError("version", 7), "bcftools_version_failed:7"),
+    ],
+)
+def test_command_errors_keep_the_reference_window_contract(
+    monkeypatch: pytest.MonkeyPatch,
+    technical_error: ExternalCommandError,
+    expected_message: str,
+) -> None:
+    def fail(*_args, **_kwargs):
+        raise technical_error
+
+    monkeypatch.setattr(window, "run_checked", fail)
+
+    with pytest.raises(ReferenceWindowError, match=expected_message):
+        window._run_checked(FakeBcftools(), ["bcftools", "--version"], 30, "version")

@@ -1,12 +1,14 @@
 import pytest
 
+from effet_fondateur.external_tools import ExternalToolNotFoundError
+from effet_fondateur.phasing import execution
 from effet_fondateur.phasing.execution import (
     PhasedVariant,
     Shapeit5ExecutionBlockError,
+    Shapeit5ExecutionExternalError,
     _build_missing_genotype_mask,
     _carrier_rows,
     _mendel_check,
-    _mendel_errors,
     _remask_vcf_gt_text,
     _same_unphased_genotype,
     _transmissions,
@@ -52,15 +54,15 @@ def test_trio_transmission_identifies_direct_child_haplotype_orientation() -> No
     assert rows[0]["TRANSMISSION_STATUS"] == "DIRECT"
     assert rows[0]["PATERNAL_CHILD_HAPLOTYPE"] == "H1"
     assert rows[0]["MATERNAL_CHILD_HAPLOTYPE"] == "H2"
-    assert _mendel_errors([target], samples, pedigree) == 0
+    assert _mendel_check([target], samples, pedigree).error_count == 0
 
 
 def test_mendel_error_is_detected_before_phasing() -> None:
     target = _target("0/0", "0/0", "1/1", confidences=(None, None, None))
 
-    assert _mendel_errors(
+    assert _mendel_check(
         [target], ["father", "mother", "child"], [("child", "father", "mother")]
-    ) == 1
+    ).error_count == 1
 
 
 def test_missing_pedigree_genotype_is_not_evaluated() -> None:
@@ -157,3 +159,15 @@ def test_missing_target_gt_remains_forbidden() -> None:
             [{"SAMPLE_ID": "sample", "GENOTYPE": "A/G"}],
             0.9,
         )
+
+
+def test_missing_bcftools_keeps_the_shapeit5_execution_contract(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail(*_args, **_kwargs):
+        raise ExternalToolNotFoundError("bcftools_not_found")
+
+    monkeypatch.setattr(execution, "resolve_executable", fail)
+
+    with pytest.raises(Shapeit5ExecutionExternalError, match="bcftools_not_found"):
+        execution._resolve_bcftools("bcftools")

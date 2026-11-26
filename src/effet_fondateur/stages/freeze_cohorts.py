@@ -37,11 +37,6 @@ COHORT_IDS = (
     "target_chromosome_all_qc",
     "genomewide_structure_reference",
 )
-INDEPENDENT_COHORT_IDS = {
-    "controls_unrelated",
-    "target_carriers_independent",
-    "genomewide_structure_reference",
-}
 DEFAULT_REQUIRED_COHORT_IDS = (
     "controls_unrelated",
     "target_carriers_all",

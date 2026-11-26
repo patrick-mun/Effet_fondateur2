@@ -3,13 +3,18 @@
 from __future__ import annotations
 
 import platform
-import shutil
-import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
 from effet_fondateur import __version__
+from effet_fondateur.external_tools import (
+    ExternalToolConfigurationError,
+    ExternalToolNotFoundError,
+    default_command_runner,
+    resolve_executable,
+    run_probe,
+)
 
 
 TOOL_VERSION_ARGUMENTS = {
@@ -29,20 +34,19 @@ def capture_tool_environment(
     """Détecte un outil sans rendre son absence bloquante au bootstrap."""
     if command_name is None:
         return {"configured": None, "available": False, "version": None}
-    resolved_path = shutil.which(command_name)
-    if resolved_path is None:
+    try:
+        resolved_path = resolve_executable(command_name, tool_key)
+    except (ExternalToolConfigurationError, ExternalToolNotFoundError):
         return {"configured": command_name, "available": False, "version": None}
 
     version = None
     arguments = TOOL_VERSION_ARGUMENTS.get(tool_key, ("--version",))
-    try:
-        completed_process = subprocess.run(
-            [resolved_path, *arguments],
-            capture_output=True,
-            check=False,
-            text=True,
-            timeout=5,
-        )
+    completed_process = run_probe(
+        default_command_runner,
+        [resolved_path, *arguments],
+        5,
+    )
+    if completed_process is not None:
         version_output = completed_process.stdout.strip() or completed_process.stderr.strip()
         if version_output:
             version_lines = version_output.splitlines()
@@ -54,8 +58,6 @@ def capture_tool_environment(
                 version = version_line[:500]
             else:
                 version = version_lines[0][:500]
-    except (OSError, subprocess.TimeoutExpired):
-        version = None
     # L'étape qui utilise réellement l'outil décidera si une absence ou une
     # version illisible est bloquante. Le bootstrap reste générique.
     return {"configured": command_name, "available": True, "version": version}

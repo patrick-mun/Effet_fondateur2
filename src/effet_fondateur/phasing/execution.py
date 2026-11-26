@@ -5,7 +5,6 @@ from __future__ import annotations
 import csv
 import os
 import shutil
-import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,7 +15,10 @@ from effet_fondateur.contracts import validate_json_document, validate_tsv_table
 from effet_fondateur.external_tools import (
     CommandRunner,
     ExternalCommandError,
+    ExternalToolConfigurationError,
+    ExternalToolNotFoundError,
     default_command_runner,
+    resolve_executable,
     run_checked,
 )
 from effet_fondateur.orchestrator.state import utc_now
@@ -99,22 +101,24 @@ VariantKey = tuple[str, int, str, str, str]
 MissingGenotypeMask = frozenset[tuple[VariantKey, str]]
 
 
-def _default_runner(
-    command: Sequence[str], timeout: float
-) -> subprocess.CompletedProcess[str]:
-    return default_command_runner(command, timeout)
-
-
 def _run(
     runner: CommandRunner,
     command: Sequence[str],
     timeout: float,
     operation: str,
-) -> subprocess.CompletedProcess[str]:
+) -> Any:
     try:
         return run_checked(runner, command, timeout, operation)
     except ExternalCommandError as error:
         raise Shapeit5ExecutionExternalError(str(error)) from error
+
+
+def _resolve_bcftools(command: str) -> str:
+    """Résout bcftools en conservant l'erreur publique historique."""
+    try:
+        return resolve_executable(command, "bcftools")
+    except (ExternalToolConfigurationError, ExternalToolNotFoundError) as error:
+        raise Shapeit5ExecutionExternalError("bcftools_not_found") from error
 
 
 def _samples(executable: str, path: Path, runner: CommandRunner, timeout: float) -> list[str]:
@@ -421,15 +425,6 @@ def _mendel_check(
     return MendelSummary(errors, evaluable, not_evaluated)
 
 
-def _mendel_errors(
-    variants: list[PhasedVariant],
-    samples: list[str],
-    pedigree: list[tuple[str, str | None, str | None]],
-) -> int:
-    """Conserve l'API historique tout en ignorant les transmissions non évaluables."""
-    return _mendel_check(variants, samples, pedigree).error_count
-
-
 def _read_pedigree(path: Path, samples: set[str]) -> list[tuple[str, str | None, str | None]]:
     rows: list[tuple[str, str | None, str | None]] = []
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -515,7 +510,7 @@ def run_shapeit5_phasing(
     threads: int = 1, seed: int = SHAPEIT5_CONTRACT.default_seed,
     effective_size: int = SHAPEIT5_CONTRACT.default_effective_size,
     minimum_phase_confidence: float = 0.9, timeout_seconds: float = 7200,
-    command_runner: CommandRunner = _default_runner,
+    command_runner: CommandRunner = default_command_runner,
 ) -> Shapeit5PhasingResult:
     """Exécute les deux passes et attribue H1/H2 depuis le GT cible phasé."""
     if output_dir.exists() or not 0.5 <= minimum_phase_confidence <= 1:
@@ -532,9 +527,7 @@ def run_shapeit5_phasing(
     if any(not path.is_file() or path.is_symlink() or sha256_file(path) != expected for path, expected in expected_hashes):
         raise Shapeit5ExecutionError("shapeit5_execution_input_modified")
     genotype_table = validate_tsv_table(target_genotype_audit_path, "target_genotype_audit.schema.json")
-    bcftools = shutil.which(bcftools_command)
-    if bcftools is None:
-        raise Shapeit5ExecutionExternalError("bcftools_not_found")
+    bcftools = _resolve_bcftools(bcftools_command)
     try:
         probe = probe_shapeit5(adapter_config)
     except Shapeit5ContractError as error:
