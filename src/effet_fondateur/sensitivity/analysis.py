@@ -374,7 +374,24 @@ def publish_sensitivity_analysis(
     relative_change_tolerances: dict[str, float | None],
     consolidation_config: dict[str, Any],
 ) -> SensitivityPublication:
-    """Valide les runs déclarés et publie leurs comparaisons sans les recalculer."""
+    """Compare des runs signés sans recalculer leurs analyses scientifiques.
+
+    Le registre doit contenir exactement un scénario primaire ``BASELINE`` et
+    déclarer, pour chaque sensibilité, les domaines dont un résultat est
+    attendu. Tous les runs doivent partager assemblage et cible ; leurs
+    signatures et artefacts sont revalidés avant comparaison.
+
+    Les valeurs quantitatives restent dans l'unité de leur domaine source. Une
+    variation relative n'est calculée que si le primaire et le scénario sont
+    tous deux évalués et si la valeur primaire permet ce rapport. Les tolérances
+    qualifient la stabilité, sans fusionner IBS, datation, LD, ROH, ascendance
+    ou IBD en un score composite.
+
+    Le résultat publie les comparaisons, convergences et signatures de scénarios
+    dans ``output_dir``. Les incohérences de registre, de provenance ou de
+    comparabilité lèvent :class:`SensitivityAnalysisError`. Voir
+    ``docs/modules/sensitivity.md``.
+    """
     table = validate_tsv_table(registry_path, "sensitivity_scenario_registry.schema.json")
     rows = list(table.rows)
     primary_rows = [row for row in rows if row["ROLE"] == "PRIMARY"]

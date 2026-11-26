@@ -232,7 +232,20 @@ def _validate_selected_reference(bcftools: str, vcf: Path, expected_samples: lis
 
 
 def execute(stage_inputs_path: Path, output_dir: Path) -> int:
-    """Extrait la référence aux marqueurs observés puis phase chromosome par chromosome."""
+    """Phase les 22 autosomes sur un univers de référence explicitement figé.
+
+    Pour chaque chromosome, seuls les SNP bialléliques complets, polymorphes et
+    appariés sans ambiguïté sont extraits de la référence. Les mêmes individus,
+    dans le même ordre, sont phasés avec la carte ``bp``/``cM`` versionnée. Le
+    variant cible n'est pas attribué ici : cette responsabilité appartient au
+    phasage régional.
+
+    Le cache est contrôlé par empreinte et les paramètres de parallélisme ne
+    changent ni la graine ni l'ordre publié des chromosomes. Les incohérences
+    d'entrée, blocages scientifiques et échecs externes utilisent des classes
+    d'erreur distinctes. Voir ``docs/modules/reference_panel.md`` et
+    ``docs/modules/shapeit5_execution.md``.
+    """
     started_at, started_clock = utc_now(), monotonic()
     stage_inputs = read_json(stage_inputs_path)
     validate_json_document(stage_inputs, "stage_inputs.schema.json")

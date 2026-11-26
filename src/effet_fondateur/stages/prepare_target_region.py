@@ -550,7 +550,14 @@ def _clean_plink_sidecars(prefix: Path) -> None:
 
 
 def execute(stage_inputs_path: Path, output_dir: Path) -> int:
-    """Prépare une région cible ordonnée avec positions génétiques contrôlées."""
+    """Prépare la région cible ordonnée et sa carte génétique contrôlée.
+
+    La fenêtre physique est résolue depuis la cible configurée, exprimée en
+    ``bp``, puis associée à des positions ``cM`` provenant de la carte
+    versionnée. L'étape vérifie variants, échantillons, allèles et ordre avant
+    de publier les artefacts régionaux ; elle n'effectue aucun phasage. Voir
+    ``docs/modules/target_region.md``.
+    """
     started_at = utc_now()
     started_clock = monotonic()
     stage_inputs = read_json(stage_inputs_path)

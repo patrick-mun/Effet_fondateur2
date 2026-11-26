@@ -359,6 +359,12 @@ def _individual_metrics(
     heterozygosity_z_alert: float,
     alerts: list[dict[str, str]],
 ) -> list[dict[str, str]]:
+    """Joint les rapports PLINK individuels et applique les alertes pré-QC.
+
+    Les taux de données manquantes et d'hétérozygotie sont sans unité. Le
+    z-score est calculé par lot lorsque sa dispersion permet une
+    standardisation ; une alerte n'est pas automatiquement une exclusion.
+    """
     imiss_by_id = {(row["FID"], row["IID"]): row for row in imiss_rows}
     het_by_id = {(row["FID"], row["IID"]): row for row in het_rows}
     records: list[dict[str, Any]] = []
@@ -490,6 +496,12 @@ def _variant_metrics(
     batch_delta_alert: float,
     alerts: list[dict[str, str]],
 ) -> list[dict[str, str]]:
+    """Construit les métriques variant et les alertes globales/par lot.
+
+    L'ordre de sortie suit le BIM. Les taux de données manquantes, MAF et écarts
+    entre lots sont sans unité ; les ensembles de variants PLINK doivent être
+    strictement identiques avant toute décision.
+    """
     lmiss_by_id = {row["SNP"]: row for row in lmiss_rows}
     frequency_by_id = {row["SNP"]: row for row in frequency_rows}
     bim_by_id = {row[1]: row for row in bim_rows}
@@ -783,7 +795,15 @@ def _dataset_artifacts(
 
 
 def execute(stage_inputs_path: Path, output_dir: Path) -> int:
-    """Produit un jeu genome-wide pré-QC et des métriques techniques auditables."""
+    """Produit le jeu genome-wide pré-QC et ses métriques auditables.
+
+    L'étape valide les artefacts d'entrée, exécute les rapports PLINK, applique
+    les seuils configurés aux individus et variants, puis publie un nouveau jeu
+    PLINK sans modifier sa source. Les fréquences et taux sont sans unité ; les
+    seuils restent enregistrés dans l'audit. Une exclusion technique n'est ni
+    un diagnostic clinique ni une inférence de génotype cible. Voir
+    ``docs/modules/preliminary_qc.md``.
+    """
     started_at = utc_now()
     started_clock = monotonic()
     stage_inputs = read_json(stage_inputs_path)

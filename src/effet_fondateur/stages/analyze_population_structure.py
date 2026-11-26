@@ -338,6 +338,14 @@ def _fit_and_project(
     reference_indices: np.ndarray,
     parameters: dict[str, Any],
 ) -> dict[str, Any]:
+    """Ajuste la PCA sur la référence interne puis projette tout le panel.
+
+    ``dosages`` a la forme ``(échantillons, variants)`` et contient des comptes
+    d'allèle alternatif diploïdes ou ``NaN``. ``reference_indices`` désigne
+    uniquement les individus autorisés à déterminer fréquences, échelles et
+    axes. Le dictionnaire retourné conserve modèle, scores et masques nécessaires
+    à l'audit de la projection.
+    """
     reference_dosages = dosages[reference_indices]
     nonmissing_counts = np.sum(~np.isnan(reference_dosages), axis=0)
     call_rates = nonmissing_counts / reference_dosages.shape[0]

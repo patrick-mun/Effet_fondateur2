@@ -508,7 +508,14 @@ def _dataset_artifacts(
 
 
 def execute(stage_inputs_path: Path, output_dir: Path) -> int:
-    """Prépare le jeu cible enrichi sans modifier le jeu PLINK de l'étape 03."""
+    """Prépare un jeu cible enrichi sans modifier le jeu PLINK source.
+
+    La cible est résolue depuis les métadonnées moléculaires du run, contrôlée
+    par assemblage, position ``bp`` et allèles, puis ajoutée ou vérifiée selon
+    la règle d'injection explicitement configurée. L'origine de chaque génotype
+    reste auditée ; aucun statut clinique ou groupe ne peut servir de valeur de
+    remplacement. Voir ``docs/modules/target_variant.md``.
+    """
     started_at = utc_now()
     started_clock = monotonic()
     stage_inputs = read_json(stage_inputs_path)

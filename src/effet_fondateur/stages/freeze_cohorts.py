@@ -403,7 +403,26 @@ def _cohort_rows(
     control_group_labels: set[str],
     alt: str,
 ) -> tuple[list[dict[str, str]], dict[str, set[str]]]:
+    """Applique les règles gelées des sept cohortes analytiques.
+
+    Les génotypes cibles, décisions QC, propositions d'indépendance et scores
+    de structure sont déjà validés par leurs schémas avant l'appel. Un statut
+    clinique ou un libellé de groupe ne crée jamais un génotype : ``alt`` est
+    comparé uniquement au génotype moléculaire explicite.
+
+    Une unité indépendante est une famille ``FID`` pour les porteurs et les
+    contrôles. Les représentants sont choisis de façon déterministe par
+    :func:`_family_representatives`. Les exclusions humaines approuvées ont
+    priorité sur la proposition automatique correspondante. La fonction
+    retourne une ligne incluse ou exclue par échantillon et par cohorte, ainsi
+    que les ensembles candidats utilisés pour construire le résumé d'audit.
+
+    L'ordre des motifs d'exclusion est observable dans ``cohorts.frozen.tsv`` :
+    le modifier constitue donc un changement de contrat. Voir
+    ``docs/modules/cohort_freeze.md`` pour la définition de chaque cohorte.
+    """
     samples_by_id = {row["SAMPLE_ID"]: row for row in sample_rows}
+    # Le statut porteur provient uniquement du génotype cible explicite.
     carrier_ids = {
         sample_id
         for sample_id, genotype in genotype_by_sample.items()
@@ -422,6 +441,8 @@ def _cohort_rows(
         for sample_id in carrier_ids
         if samples_by_id[sample_id]["INCLUDE_TARGET_CHROMOSOME"]
     }
+    # Les approbations 07/08 figent les exclusions humaines sans réinterpréter
+    # les métriques qui ont produit les propositions automatiques.
     control_eligible = {
         sample_id
         for sample_id in control_candidates
@@ -458,6 +479,8 @@ def _cohort_rows(
     structure_family_representatives = _family_representatives(
         structure_included, samples_by_id, qc_by_sample
     )
+    # Un candidat reste visible même s'il est ensuite exclu. Cette distinction
+    # permet au résumé de séparer disponibilité biologique et décision finale.
     candidate_sets = {
         "controls_unrelated": control_candidates,
         "target_carriers_all": carrier_ids,
@@ -491,6 +514,8 @@ def _cohort_rows(
         "genomewide_structure_reference": structure_included,
     }
     rows: list[dict[str, str]] = []
+    # La première branche applicable fixe le motif publié. Conserver cet ordre
+    # préserve l'explication historique d'une exclusion multifactorielle.
     for cohort_id in COHORT_IDS:
         for sample in sample_rows:
             sample_id = sample["SAMPLE_ID"]

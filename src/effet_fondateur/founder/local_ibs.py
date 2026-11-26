@@ -237,7 +237,27 @@ def infer_target_centered_ibs(
     minimum_independent_carriers: int, minimum_flank_markers: int,
     excluded_variant_ids: frozenset[str] = frozenset(),
 ) -> FounderAnalysisResult:
-    """Publie une analyse IBS exacte, centrée sur la mutation et sans prétention IBD."""
+    """Mesure et publie le partage IBS exact centré sur la cible.
+
+    Les porteurs proviennent exclusivement de la cohorte gelée
+    ``target_carriers_independent`` : l'unité statistique est donc la famille,
+    pas chaque individu disponible. Les attributions ``H1``, ``H2`` ou ``BOTH``
+    sont relues dans le BCF phasé et une phase non fiable reste publiée comme
+    exclusion.
+
+    Le segment consensus avance depuis la cible jusqu'au premier allèle manquant
+    ou discordant. Les positions physiques sont en ``bp`` et les longueurs de
+    bras en ``cM`` selon ``genetic_map_path``. Les limites individuelles sont
+    les extensions pairwise maximales ; elles ne remplacent pas l'intersection
+    exacte utilisée pour la conclusion primaire. La fréquence de fond exclut la
+    cible de la signature afin de ne pas fabriquer une fréquence nulle.
+
+    Le résultat contient les chemins publiés, le statut et des effectifs
+    agrégés. :class:`FounderAnalysisError` signale notamment une identité de
+    cible, un ordre d'échantillons ou une attribution porteuse incohérents.
+    Cette méthode démontre un partage IBS, jamais un IBD ni un effet fondateur.
+    Voir ``docs/modules/founder_haplotype.md``.
+    """
     if minimum_independent_carriers < 2 or minimum_flank_markers < 1:
         raise FounderAnalysisError("invalid_founder_analysis_threshold")
     sample_ids, variants, map_version = _load_variants(
@@ -255,6 +275,8 @@ def infer_target_centered_ibs(
     sample_rows = validate_tsv_table(samples_master_path, "samples_master.schema.json").rows
     families = {row["SAMPLE_ID"]: row["FID"] for row in sample_rows}
     assignments = {row["SAMPLE_ID"]: row for row in carrier_rows}
+    # La cohorte gelée fixe l'unité familiale avant toute observation du
+    # segment ; aucun porteur n'est sélectionné a posteriori sur sa longueur.
     independent_rows = [
         row for row in cohort_rows
         if row["COHORT_ID"] == "target_carriers_independent" and row["INCLUDED"]
@@ -306,6 +328,8 @@ def infer_target_centered_ibs(
     carrier_keys = tuple(
         (sample_indexes[carrier.sample_id], carrier.haplotype_index) for carrier in selected
     )
+    # Le consensus primaire est l'intersection exacte de toutes les copies
+    # porteuses retenues, distincte des extensions individuelles pairwise.
     segment = _shared_segment(variants, carrier_keys)
     segment_values = _segment_values(variants, segment)
     enough_carriers = len(selected) >= minimum_independent_carriers
@@ -383,6 +407,8 @@ def infer_target_centered_ibs(
             "DISTINCT_ALLELE_COUNT": str(len(set(called))), "MARKER_STATUS": marker_status,
         })
     signature_indexes = [index for index in range(segment.left_index, segment.right_index + 1) if index != segment.target_index]
+    # La cible est volontairement absente de la signature de fond : comparer
+    # porteurs et non-porteurs sur cet allèle rendrait le test circulaire.
     background_ids = {
         row["SAMPLE_ID"] for row in cohort_rows
         if row["COHORT_ID"] == "controls_unrelated" and row["INCLUDED"]

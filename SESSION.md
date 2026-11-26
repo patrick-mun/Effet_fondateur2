@@ -110,6 +110,14 @@ typés, la lecture des échantillons bcftools refuse un résultat absent, la
 statistique d'enrichissement exige toutes ses valeurs évaluées et la résolution
 PLINK n'effectue plus qu'un seul appel à `shutil.which`.
 
+Le lot documentaire destiné à l'ouverture du projet ajoute un guide public
+`CONTRIBUTING.md` et relie les docstrings complexes aux contrats de
+`docs/modules/`. Les blocs scientifiques et décisionnels prioritaires décrivent
+désormais leurs unités, unités indépendantes, hypothèses, exclusions, limites
+d'interprétation et erreurs. Les 52 fonctions d'au moins 75 lignes possèdent
+maintenant une docstring ; les commentaires ajoutés expliquent uniquement les
+décisions non évidentes, sans paraphraser le code.
+
 ## Décisions
 
 - Ne modifier aucune méthode scientifique, formule, donnée ou schéma dans ce
@@ -149,6 +157,9 @@ PLINK n'effectue plus qu'un seul appel à `shutil.which`.
   de réexport explicites. Cette preuve reste statique et conservatrice face aux
   usages dynamiques ou externes ; une ligne non couverte n'est pas, à elle
   seule, une preuve de code mort.
+- La documentation source est reliée aux 29 contrats de module existants. Un
+  changement scientifique doit mettre à jour ensemble docstring, document de
+  méthode, tests de référence et audit publié.
 
 Points positifs vérifiés : aucune cible génétique propre à l'étude n'est codée
 en dur dans `src/`, et les usages aléatoires repérés utilisent des graines
@@ -200,10 +211,12 @@ explicites.
   en 1 759,43 s, couverture lignes/branches de 77,4 % ;
 - aucun nœud `assert` dans le paquet actif ;
 - `pip check`, imports du paquet et `git diff --check` réussis.
+- lot documentaire : 187 tests ciblés réussis en 668,16 s ; compilation, Ruff,
+  mypy et vérification des 29 liens vers `docs/modules/` réussies.
 
 ## Prochaine action
 
-Commit/push du lot combiné uniquement sur demande explicite. Pour poursuivre
-l'audit, étendre mypy et examiner les zones faiblement couvertes un module à la
-fois ; confirmer chaque absence d'usage par recherche statique et tests ciblés
-avant toute suppression supplémentaire.
+Relire puis commit/push du lot documentaire uniquement sur demande explicite.
+Pour poursuivre l'audit, étendre mypy et examiner les zones faiblement
+couvertes un module à la fois ; confirmer chaque absence d'usage par recherche
+statique et tests ciblés avant toute suppression supplémentaire.

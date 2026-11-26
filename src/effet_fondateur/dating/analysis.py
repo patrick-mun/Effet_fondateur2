@@ -108,7 +108,21 @@ def publish_variant_age(
     generation_years: Sequence[float], leave_one_family_out: bool,
     chance_sharing_parameters: dict[str, float | int] | None,
 ) -> VariantAgePublication:
-    """Dérive les entrées Gamma et publie estimations et non-conclusions."""
+    """Dérive, calcule et publie les scénarios de datation Gamma.
+
+    Chaque ligne incluse représente une unité familiale indépendante de
+    l'étape 13 et fournit deux longueurs strictement positives en ``cM``. Les
+    estimateurs retournent des générations ; ``generation_years`` publie des
+    conversions séparées en années sans les fusionner en une date unique.
+
+    Moins de trois unités produit une non-estimation documentée, trois ou quatre
+    une estimation exploratoire, et le statut primaire exige le minimum
+    configuré d'au moins cinq unités. Les sensibilités indépendante,
+    leave-one-family-out et de durée de génération restent distinctes. Les
+    paramètres impossibles ou une provenance incohérente lèvent
+    :class:`GammaAgeError`. Voir ``docs/modules/variant_age.md`` pour les
+    formules, corrections de bord, références et limites de calibration.
+    """
     if minimum_units_for_estimate < 3:
         raise GammaAgeError("minimum_units_for_estimate_below_three")
     if minimum_units_for_primary < 5 or minimum_units_for_primary < minimum_units_for_estimate:

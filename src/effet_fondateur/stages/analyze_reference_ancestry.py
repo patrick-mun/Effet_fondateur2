@@ -539,7 +539,26 @@ def _require_complete_local_target(
 
 
 def execute(stage_inputs_path: Path, output_dir: Path) -> int:
-    """Publie deux PCA séparées sans jamais ajuster les axes sur l'étude."""
+    """Projette l'étude dans deux PCA ajustées sur les références uniquement.
+
+    La branche globale utilise les individus de référence non apparentés et les
+    variants autosomiques du panel KING. La branche locale utilise les
+    haplotypes de la fenêtre cible ; références et étude y sont projetées comme
+    entités haploïdes. Les deux modèles, sorties et interprétations restent
+    séparés.
+
+    Les dosages sont harmonisés par coordonnée GRCh38 et paire REF/ALT. Les
+    individus de l'étude ne déterminent jamais fréquences, échelles ou axes.
+    Les positions sont en ``bp`` et les scores PCA sont sans unité. Cette étape
+    fournit un positionnement relatif : elle ne prouve ni origine ethnique,
+    ascendance locale, ancêtre généalogique, IBD ou effet fondateur.
+
+    Les contrats d'entrée invalides lèvent
+    :class:`AnalyzeReferenceAncestryInputError`, les échecs d'outils
+    :class:`AnalyzeReferenceAncestryExternalError` et les incohérences
+    scientifiques les erreurs des modules ``ancestry``. Voir
+    ``docs/modules/reference_ancestry.md``.
+    """
 
     started_at, started_clock = utc_now(), monotonic()
     stage_inputs = read_json(stage_inputs_path)
@@ -565,6 +584,8 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         if configured_target[key] != target[key]:
             raise AnalyzeReferenceAncestryInputError("ancestry_target_config_mismatch")
 
+    # La référence publique et ses empreintes sont résolues avant toute lecture
+    # des génotypes d'étude ; aucune donnée privée n'est envoyée au serveur.
     plink = _resolve_tool(config["tools"]["plink"], "plink")
     bcftools = _resolve_tool(config["tools"]["bcftools"], "bcftools")
     cache_root = Path(parameters["ancestry_cache_dir"])
@@ -585,6 +606,8 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
     if reference_panel["assembly"] != target["assembly"]:
         raise AnalyzeReferenceAncestryInputError("reference_target_assembly_mismatch")
 
+    # Le panel global et le BCF régional ont des contrats distincts. Les
+    # contrôler séparément empêche de mélanger individus diploïdes et haplotypes.
     descriptor = read_json(paths["kinship_panel_dataset"])
     validate_json_document(descriptor, "plink_dataset.schema.json")
     study_variants = read_bim_variants(paths["kinship_panel_bim"])
@@ -630,6 +653,8 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         ], parameters["plink_timeout_seconds"], "plink_global_ancestry_export_failed")
         global_study = read_plink_raw_panel(raw_prefix.with_suffix(".raw"), study_variants, sample_by_plink)
 
+        # PCA globale : extraction chromosome par chromosome, harmonisation,
+        # ajustement sur les références puis projection des individus d'étude.
         variants_by_chromosome: dict[int, list[Variant]] = defaultdict(list)
         for variant in study_variants:
             chromosome = int(variant.chromosome.removeprefix("chr"))
@@ -707,6 +732,9 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             minimum_reference_call_rate=parameters["minimum_reference_call_rate"],
         )
 
+        # PCA locale : les deux copies phasées deviennent des entités haploïdes.
+        # La cible doit rester observable dans l'étude mais n'est jamais inventée
+        # lorsqu'elle est absente de la référence publique.
         study_local_samples = _samples(bcftools, paths["shapeit5_final_bcf"], parameters["bcftools_timeout_seconds"])
         local_study = _query_panel(
             bcftools, paths["shapeit5_final_bcf"], study_local_samples,

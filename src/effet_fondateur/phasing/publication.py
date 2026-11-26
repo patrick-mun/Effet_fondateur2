@@ -100,7 +100,16 @@ def publish_phasing_qc(
     unreliable_regions_path: Path,
     output_dir: Path,
 ) -> PublishedPhasingQc:
-    """Publie le QC final sans recalculer ni réinterpréter le phasage."""
+    """Valide et publie le QC final sans réinterpréter le phasage.
+
+    Les entrées sont les résultats déjà produits par SHAPEIT5 et les contrats
+    de cible, carte, pedigree et exclusions. La fonction contrôle empreintes,
+    effectifs, ordre et cohérence mendélienne, puis construit les tables et le
+    manifeste de publication. Elle ne modifie ni phase, ni génotype, ni carte.
+    Positions et distances restent respectivement en ``bp`` et ``cM``. Un
+    dossier de sortie existant ou un contrat incohérent lève
+    :class:`PhasingPublicationError`. Voir ``docs/modules/phasing_qc.md``.
+    """
     if output_dir.exists() or output_dir.is_symlink():
         raise PhasingPublicationError("phasing_qc_output_exists")
     inputs_manifest = read_json(inputs_manifest_path)

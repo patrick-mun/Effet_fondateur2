@@ -498,6 +498,13 @@ def _variant_rows(
     parameters: dict[str, Any],
     target_variant_id: str,
 ) -> tuple[list[dict[str, str]], set[str]]:
+    """Applique une politique QC aux variants dans l'ordre du BIM.
+
+    La fonction joint missingness, fréquence et éventuellement HWE, puis
+    retourne la table d'audit et l'ensemble des identifiants exclus. Les seuils
+    sont sans unité et la cible conserve les protections définies par la
+    politique du jeu concerné.
+    """
     lmiss_by_variant = {row["SNP"]: row for row in lmiss_rows}
     frequency_by_variant = {row["SNP"]: row for row in frequency_rows}
     variant_ids = {row[1] for row in bim_rows}
@@ -702,7 +709,15 @@ def _clean_plink_sidecars(prefix: Path) -> None:
 
 
 def execute(stage_inputs_path: Path, output_dir: Path) -> int:
-    """Produit trois jeux QC finaux sans appliquer une politique unique à tous."""
+    """Produit les trois jeux QC finaux selon leurs politiques distinctes.
+
+    Les jeux genome-wide, chromosome cible et analyse familiale ne partagent
+    pas automatiquement les mêmes filtres : chacun conserve ses seuils,
+    exclusions et motifs dans les tables publiées. Les statistiques HWE,
+    fréquences et taux sont sans unité. Cette étape applique des règles
+    techniques et ne transforme pas un statut clinique en génotype. Voir
+    ``docs/modules/final_qc.md``.
+    """
     started_at = utc_now()
     started_clock = monotonic()
     stage_inputs = read_json(stage_inputs_path)

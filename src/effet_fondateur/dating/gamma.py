@@ -1,4 +1,14 @@
-"""Estimateur Gamma de Gandolfo, Bahlo et Speed (2014)."""
+"""Estimateurs Gamma de l'âge d'un variant rare.
+
+Les longueurs publiques de ce module sont exprimées en centiMorgans et sont
+converties en Morgans à la frontière du calcul. Les estimations et intervalles
+sont exprimés en générations. La méthode, ses variantes historiques et leurs
+limites sont documentées dans ``docs/modules/variant_age.md``.
+
+Référence : Gandolfo, Bahlo et Speed, *Dating Rare Mutations from Small
+Samples with Dense Marker Data*, Genetics 197:1315–1327 (2014),
+doi:10.1534/genetics.114.164616.
+"""
 
 from __future__ import annotations
 
@@ -35,7 +45,13 @@ def chance_sharing_correction_cm(
     markers_on_chromosome: int,
     chromosome_length_cm: float,
 ) -> float:
-    """Calcule la correction de partage fortuit décrite par l'implémentation R."""
+    """Calcule en cM la correction de partage fortuit du script R officiel.
+
+    La fréquence est celle de l'allèle médian sur le chromosome complet ; le
+    nombre de marqueurs et la longueur génétique décrivent ce même chromosome.
+    La fonction refuse les valeurs absentes ou non biologiquement admissibles
+    au lieu d'introduire une correction par défaut.
+    """
     if not 0 < median_allele_frequency < 1:
         raise GammaAgeError("gamma_median_allele_frequency_invalid")
     if markers_on_chromosome <= 0 or chromosome_length_cm <= 0:
@@ -96,7 +112,19 @@ def estimate_independent_gamma(
     *, confidence_level: float = 0.95,
     chance_sharing_correction_cm: float = 0.0,
 ) -> GammaEstimate:
-    """Calcule l'estimateur sans biais et son intervalle exact sous indépendance."""
+    """Calcule l'estimateur historique sous indépendance des unités familiales.
+
+    Les deux séquences donnent, en cM et dans le même ordre, les bras gauche et
+    droit d'une unité indépendante. La correction de partage fortuit est
+    appliquée seulement à partir de dix unités, conformément à
+    l'implémentation historique. Le résultat contient un âge et un intervalle
+    en générations. Les longueurs non positives, non finies ou désalignées
+    lèvent :class:`GammaAgeError`.
+
+    Cette fonction conserve le contrat V1. Pour choisir explicitement le modèle
+    d'observation des bornes, utiliser ``estimate_independent_gamma_r_faithful``
+    ou ``estimate_independent_gamma_type2_censored``.
+    """
     left, right = _lengths_morgans(left_lengths_cm, right_lengths_cm)
     sample_size = len(left)
     chance_correction = _chance_correction_morgans(
@@ -158,7 +186,15 @@ def estimate_correlated_gamma(
     *, confidence_level: float = 0.95,
     chance_sharing_correction_cm: float = 0.0,
 ) -> GammaEstimate:
-    """Calcule Gamma en remplaçant n par l'effectif effectif estimé des longueurs."""
+    """Calcule le modèle historique corrélé à partir des longueurs en cM.
+
+    Chaque indice représente la même unité familiale dans les bras gauche et
+    droit. La corrélation entre longueurs totales détermine un effectif
+    effectif, utilisé pour le point et l'intervalle en générations. Au moins
+    trois unités sont requises. Cette variante V1 est conservée pour la
+    reproductibilité ; la variante ``_r_faithful`` documente séparément les
+    deux usages de l'effectif effectif dans le script R officiel.
+    """
     left, right = _lengths_morgans(left_lengths_cm, right_lengths_cm)
     sample_size = len(left)
     if sample_size < 3:

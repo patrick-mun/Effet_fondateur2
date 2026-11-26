@@ -38,7 +38,21 @@ def fit_reference_pca(
     requested_components: int,
     ploidy: int = 2,
 ) -> ReferencePca:
-    """Ajuste les axes sur la référence, avec imputation à la fréquence de référence."""
+    """Ajuste une PCA exclusivement sur les entités de référence.
+
+    ``reference_dosages`` a la forme ``(entités, variants)``. Ses valeurs sont
+    des nombres de copies de l'allèle alternatif entre zéro et ``ploidy`` ; les
+    valeurs manquantes ``NaN`` sont imputées à la fréquence calculée sur la
+    référence. Les variants non polymorphes sont exclus, puis les dosages sont
+    centrés et réduits par ``sqrt(ploidy * p * (1-p))``.
+
+    Le modèle retourne fréquences, échelles, axes, valeurs propres, scores de
+    référence et masque des variants informatifs. Le signe de chaque axe est
+    rendu déterministe en orientant positivement son chargement de plus grande
+    valeur absolue. Aucun échantillon d'étude ne doit être fourni ici ; il doit
+    être projeté ensuite avec :func:`project_pca`. Voir
+    ``docs/modules/reference_ancestry.md``.
+    """
     matrix = _matrix(reference_dosages, "reference")
     if ploidy not in {1, 2} or requested_components < 1:
         raise AncestryPcaError("invalid_ancestry_pca_parameters")
@@ -93,7 +107,14 @@ def fit_reference_pca(
 
 
 def project_pca(model: ReferencePca, dosages: np.ndarray, *, ploidy: int = 2) -> np.ndarray:
-    """Projette des échantillons sans modifier fréquences, échelles ni axes."""
+    """Projette des entités sans réajuster le modèle de référence.
+
+    ``dosages`` suit le même ordre de variants que la matrice ayant servi à
+    l'ajustement et a la forme ``(entités, variants)``. L'imputation, le
+    centrage et la réduction réutilisent strictement les fréquences et échelles
+    du modèle. Une dimension ou une ploïdie incompatible lève
+    :class:`AncestryPcaError`.
+    """
     matrix = _matrix(dosages, "projection")
     if matrix.shape[1] != model.allele_frequencies.size or ploidy not in {1, 2}:
         raise AncestryPcaError("ancestry_projection_variant_mismatch")

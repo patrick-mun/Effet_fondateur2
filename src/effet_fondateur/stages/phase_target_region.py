@@ -252,6 +252,13 @@ def _output_artifacts(
     study_sample_set_id: str,
     study_variant_set_id: str,
 ) -> list[dict[str, Any]]:
+    """Décrit les sorties régionales avec provenance et sensibilité.
+
+    Chaque artefact conserve l'assemblage et l'identité de l'univers
+    échantillons/variants auquel il appartient. Les chemins publiés sont
+    relatifs au dossier immuable de l'étape ; cette fonction ne lit ni ne
+    transforme leur contenu.
+    """
     specifications = (
         (
             "reference_window_vcf",
@@ -359,6 +366,12 @@ def _shapeit5_input_artifacts(
     sample_set_id: str,
     variant_set_id: str,
 ) -> list[dict[str, Any]]:
+    """Décrit les entrées SHAPEIT5 préparées pour le manifeste d'étape.
+
+    Les empreintes lient VCF d'étude, référence, carte, pedigree et audit cible
+    aux mêmes ensembles d'échantillons et variants. Aucune donnée n'est copiée
+    ou recalculée par ce constructeur de métadonnées.
+    """
     specifications = (
         (
             "shapeit5_study_vcf",
@@ -493,7 +506,15 @@ def _phasing_qc_artifacts(
 
 
 def execute(stage_inputs_path: Path, output_dir: Path) -> int:
-    """Prépare les entrées, exécute SHAPEIT5 et attribue les haplotypes porteurs."""
+    """Phase la région cible et attribue explicitement les copies porteuses.
+
+    Les entrées SHAPEIT5, la carte et la référence sont revalidées avant les
+    passes common/rare. L'attribution ``H1``/``H2`` provient du génotype cible
+    phasé et n'est jamais déduite du groupe ou du statut clinique. Les positions
+    sont en ``bp`` et ``cM`` ; les exclusions mendéliennes et incertitudes de
+    phase restent publiées. Voir ``docs/modules/phasing.md`` et
+    ``docs/modules/phasing_qc.md``.
+    """
     started_at = utc_now()
     started_clock = monotonic()
     stage_inputs = read_json(stage_inputs_path)

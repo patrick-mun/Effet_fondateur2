@@ -334,7 +334,26 @@ def _load_target_metadata(path: Path) -> dict[str, Any]:
 
 
 def execute(stage_inputs_path: Path, output_dir: Path) -> int:
-    """Valide les producteurs, calcule 16B et publie sans modifier aucun run antérieur."""
+    """Évalue la rareté du partage IBS cible observé entre familles.
+
+    L'unité primaire est la famille indépendante gelée en étape 09. La
+    statistique observée, exprimée en ``cM``, est la somme des bras gauche et
+    droit reproduits à l'identique depuis l'étape 13 ; la cible est exclue de
+    la signature comparée.
+
+    Deux fonds nuls restent séparés : l'interne énumère les haplotypes fiables
+    de non-porteurs de l'étude, tandis que l'externe échantillonne sans remise
+    des individus parmi les 2 504 références non apparentées, avec une seule
+    copie haplotypique par individu et une graine enregistrée. Les sensibilités
+    par superpopulation sont descriptives et n'attribuent aucune ascendance aux
+    familles étudiées.
+
+    La fonction publie unités, bornes, cohérence familiale, tirages nuls et
+    résumés agrégés. Une provenance, une cible ou une statistique observée non
+    reproductible lève :class:`FounderEnrichmentInputError`. Même un statut de
+    partage inhabituel reste une observation IBS et ne prouve ni IBD, ni effet
+    fondateur. Voir ``docs/modules/founder_haplotype_enrichment.md``.
+    """
     started_at, started_clock = utc_now(), monotonic()
     stage_inputs = read_json(stage_inputs_path); validate_json_document(stage_inputs, "stage_inputs.schema.json")
     parameters = _parameters(stage_inputs["parameters"])
@@ -363,6 +382,8 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
         raise FounderEnrichmentInputError("bcftools_not_configured")
     version = _run_bcftools(bcftools, ["--version"], parameters["bcftools_timeout_seconds"]).splitlines()[0]
 
+    # Reproduire d'abord la statistique de l'étape 13 interdit de redéfinir les
+    # bornes ou de sélectionner a posteriori des représentants plus favorables.
     markers, study_alleles, allele_pairs = _study_panel(bcftools, paths["shapeit5_final_bcf"], paths["target_genetic_map"], parameters["bcftools_timeout_seconds"])
     target_marker = next(marker for marker in markers if marker.is_target)
     if target_marker.variant_id != target["project_variant_id"] or target_marker.position_bp != target["position_bp"] or allele_pairs[target_marker.variant_id] != (target["ref"], target["alt"]):
@@ -393,11 +414,15 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
     if any(abs(actual - float(expected)) > 1e-9 for actual, expected in ((observed_left_shared_cm, consensus["LEFT_LENGTH_CM"]), (observed_right_shared_cm, consensus["RIGHT_LENGTH_CM"]))) or observed_left_marker_count != int(consensus["LEFT_MARKER_COUNT"]) or observed_right_marker_count != int(consensus["RIGHT_MARKER_COUNT"]):
         raise FounderEnrichmentInputError("step13_observed_statistic_not_reproduced")
 
+    # Le fond interne est exhaustif et conserve l'individu comme contrainte :
+    # H1 et H2 d'une même personne ne constituent pas deux unités indépendantes.
     qc_samples = {row["SAMPLE_ID"] for row in cohort_rows if row["COHORT_ID"] == "target_chromosome_all_qc" and row["INCLUDED"]}
     reliable_noncarriers = [row for row in carrier_rows if row["SAMPLE_ID"] in qc_samples and row["RELIABILITY_STATUS"] == "PASS" and row["ALT_COPY_COUNT"] == "0"]
     internal_profiles = tuple(_profile(study_alleles, row["SAMPLE_ID"], haplotype_id, family_by_sample[row["SAMPLE_ID"]]) for row in reliable_noncarriers for haplotype_id in ("H1", "H2"))
     internal_draws = enumerate_internal_null(markers, internal_profiles, unit_count=len(representatives), minimum_flank_markers=parameters["minimum_flank_markers"])
 
+    # Le fond externe tire une copie par individu non apparenté. Les strates de
+    # superpopulation sont des sensibilités séparées du résultat externe global.
     ancestry_rows = validate_tsv_table(paths["ancestry_scores"], "ancestry_scores.schema.json").rows
     reference_rows = [row for row in ancestry_rows if row["ANALYSIS_SCOPE"] == "LOCAL" and row["ENTITY_TYPE"] == "REFERENCE_HAPLOTYPE" and row["REFERENCE_INCLUDED"]]
     reference_ids = tuple(sorted({row["SAMPLE_ID"] for row in reference_rows}))
@@ -414,6 +439,8 @@ def execute(stage_inputs_path: Path, output_dir: Path) -> int:
             external_draws_by_stratum[superpopulation] = sample_external_null(markers, stratum_profiles, unit_count=len(representatives), evaluable_draws=parameters["external_null_draws"], max_attempts=parameters["external_null_max_attempts"], random_seed=parameters["random_seed"] + stratum_index, minimum_flank_markers=parameters["minimum_flank_markers"], stratum=superpopulation)
     external_draws = external_draws_by_stratum["ALL"]
 
+    # Cette vérification cherche plusieurs fonds porteurs au sein d'une famille,
+    # sans transformer les copies supplémentaires en réplications indépendantes.
     signature_indexes = tuple(index for index in range(left, right + 1) if not markers[index].is_target)
     representative_signature = tuple(representatives[0].alleles[index] for index in signature_indexes)
     consistency_rows = []

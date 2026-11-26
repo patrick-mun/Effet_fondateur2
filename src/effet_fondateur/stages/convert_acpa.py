@@ -582,7 +582,15 @@ def _dataset_artifacts(
 
 
 def execute(stage_inputs_path: Path, output_dir: Path) -> int:
-    """Convertit les sources approuvées en deux jeux PLINK cohérents et audités."""
+    """Convertit les sources ACPA approuvées en deux jeux PLINK alignés.
+
+    La fonction valide l'inventaire des sources, sérialise temporairement les
+    génotypes par échantillon, sélectionne les marqueurs selon la politique
+    configurée, puis produit les jeux genome-wide et cible dans le même ordre
+    d'échantillons. Les coordonnées physiques sont en ``bp``. Les fichiers
+    temporaires sont supprimés après validation et chaque rejet reste visible
+    dans l'audit. Voir ``docs/modules/acpa.md``.
+    """
     started_at = utc_now()
     started_clock = monotonic()
     stage_inputs = read_json(stage_inputs_path)

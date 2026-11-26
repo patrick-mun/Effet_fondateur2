@@ -88,7 +88,14 @@ def parse_phased_genotype(value: str) -> tuple[int | None, int | None]:
 def r_squared(
     first: Sequence[int | None], second: Sequence[int | None], *, minimum_called: int = 20,
 ) -> tuple[float | None, int]:
-    """Calcule le carré de la corrélation allélique sur les copies appelées."""
+    """Calcule le ``r²`` allélique sur les copies haplotypiques appelées.
+
+    Les deux séquences, ordonnées de façon identique, contiennent des allèles
+    bialléliques ``0/1`` ou une valeur manquante. Le calcul utilise uniquement
+    les paires complètes et retourne ``(None, effectif)`` si leur nombre est
+    inférieur à ``minimum_called`` ou si un locus est monomorphe. ``r²`` est
+    sans unité et borné numériquement dans ``[0, 1]``.
+    """
 
     if len(first) != len(second):
         raise MatchedLdError("haplotype_length_mismatch")

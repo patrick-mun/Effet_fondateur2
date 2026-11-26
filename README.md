@@ -895,6 +895,14 @@ référence sans seuil bloquant. Ces trois contrôles doivent précéder toute
 nouvelle suppression fondée sur une analyse statique ou sur l'absence de
 couverture.
 
+### Contribution et documentation scientifique
+
+Le guide [CONTRIBUTING.md](CONTRIBUTING.md) présente l'architecture active, les
+règles de documentation, les unités, les frontières scientifiques et les
+contrôles attendus avant une contribution. Les contrats détaillés de chaque
+étape restent dans `docs/modules/` et doivent être mis à jour avec toute
+évolution de méthode, d'entrée, de sortie ou d'interprétation.
+
 ### Pipeline V1 archivé
 
 Le pipeline historique (`archive/run_pipeline.py`, `archive/scripts/`,

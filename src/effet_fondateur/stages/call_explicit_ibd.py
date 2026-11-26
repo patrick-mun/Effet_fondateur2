@@ -351,7 +351,19 @@ def _evaluation_status(value: ScenarioEvaluation) -> str:
 
 
 def execute(stage_inputs_path: Path, output_dir: Path) -> int:
-    """Appelle les deux outils sans statut mutationnel, puis évalue chr cible."""
+    """Appelle deux moteurs IBD en aveugle, puis évalue la région cible.
+
+    Hap-IBD et Refined IBD reçoivent les 22 autosomes phasés, la carte et les
+    scénarios déclarés, mais ni statut porteur, ni cohorte, ni position cible.
+    Après normalisation des segments, l'évaluation exige les paires familiales
+    prévues et compare la concordance des bornes autour de la cible en ``bp`` et
+    ``cM``. Les témoins indépendants servent à une calibration empirique
+    distincte.
+
+    Une absence d'appel ne réfute pas un effet fondateur ; seul un support
+    concordant des deux outils reçoit le statut primaire correspondant. Voir
+    ``docs/modules/explicit_ibd.md``.
+    """
     started_at, started_clock = utc_now(), monotonic()
     stage_inputs = read_json(stage_inputs_path); validate_json_document(stage_inputs, "stage_inputs.schema.json")
     parameters = stage_inputs["parameters"]

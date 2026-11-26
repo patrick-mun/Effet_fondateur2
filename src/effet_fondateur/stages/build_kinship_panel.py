@@ -670,7 +670,14 @@ def _output_artifacts(
 
 
 def execute(stage_inputs_path: Path, output_dir: Path) -> int:
-    """Construit et audite le panel de marqueurs destiné à KING et à la PCA."""
+    """Construit le panel de marqueurs indépendant destiné à KING et à la PCA.
+
+    La fonction applique les filtres configurés, l'élagage LD et les contrôles
+    d'intégrité sans changer l'ordre des échantillons accepté en amont. Les
+    distances physiques sont en ``bp`` et les seuils de fréquence/LD sont sans
+    unité. Le panel décrit une base technique commune ; il ne décide pas seul
+    des exclusions humaines. Voir ``docs/modules/kinship_panel.md``.
+    """
     started_at = utc_now()
     started_clock = monotonic()
     stage_inputs = read_json(stage_inputs_path)
